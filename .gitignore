@@ -37,3 +37,4 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
+.ace-tool/

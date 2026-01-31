@@ -15,9 +15,12 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "noUnusedLocals": true,
+        "types": [
+            "node"
+        ],
         "lib": [
-           "dom",
-           "es2015",
+            "dom",
+            "es2015",
            "es2015.iterable",
            "es2017",
            "es7"
