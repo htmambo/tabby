@@ -45,16 +45,16 @@
     "eslint": "^8.48.0",
     "eslint-import-resolver-typescript": "^3.6.0",
     "eslint-plugin-import": "^2.28.1",
-    "filesize": "^9",
     "file-loader": "^6.2.0",
+    "filesize": "^9",
     "gettext-extractor": "^3.8.0",
     "graceful-fs": "^4.2.10",
     "html-loader": "4.2.0",
     "json-loader": "^0.5.7",
     "lru-cache": "^6.0.0",
     "macos-release": "^3.3.0",
-    "ngx-toastr": "^16.0.2",
     "ngx-filesize": "^3.0.2",
+    "ngx-toastr": "^16.0.2",
     "node-abi": "^4",
     "npmlog": "6.0.2",
     "npx": "^10.2.2",
@@ -93,9 +93,7 @@
     "zone.js": "^0.13.0"
   },
   "resolutions": {
-    "*/pug": "^3",
     "lzma-native": "^8.0.6",
-    "**/graceful-fs": "^4.2.4",
     "nan": "2.22.2",
     "node-abi": "^4",
     "node-gyp": "^10.0.0"
