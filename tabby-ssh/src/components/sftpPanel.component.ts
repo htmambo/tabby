@@ -1,7 +1,8 @@
 import * as C from 'constants'
+import * as localPath from 'path'
 import { posix as path } from 'path'
 import { Component, Input, Output, EventEmitter, Inject, Optional } from '@angular/core'
-import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService } from 'tabby-core'
+import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry } from 'tabby-core'
 import { SFTPSession, SFTPFile } from '../session/sftp'
 import { SSHSession } from '../session/ssh'
 import { SFTPContextMenuItemProvider } from '../api'
@@ -24,13 +25,20 @@ export class SFTPPanelComponent {
     sftp: SFTPSession
     fileList: SFTPFile[]|null = null
     filteredFileList: SFTPFile[] = []
+    localFileList: LocalFileEntry[]|null = null
+    filteredLocalFileList: LocalFileEntry[] = []
     @Input() path = '/'
     @Output() pathChange = new EventEmitter<string>()
     pathSegments: PathSegment[] = []
+    localPath = ''
+    localPathSegments: PathSegment[] = []
     @Input() cwdDetectionAvailable = false
     editingPath: string|null = null
     showFilter = false
     filterText = ''
+    selectedLocalItemPath: string|null = null
+    private localClickTimer: ReturnType<typeof setTimeout>|null = null
+    private readonly localSingleClickDelayMs = 300
 
     constructor (
         private ngbModal: NgbModal,
@@ -41,6 +49,17 @@ export class SFTPPanelComponent {
         this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
     }
 
+    get showLocalPanel (): boolean {
+        return this.platform.supportsLocalDirectoryListing()
+    }
+
+    get canLocalGoUp (): boolean {
+        if (!this.localPath) {
+            return false
+        }
+        return localPath.dirname(this.localPath) !== this.localPath
+    }
+
     async ngOnInit (): Promise<void> {
         this.sftp = await this.session.openSFTP()
         try {
@@ -49,6 +68,18 @@ export class SFTPPanelComponent {
             console.warn('Could not navigate to', this.path, ':', error)
             this.notifications.error(error.message)
             await this.navigate('/')
+        }
+
+        if (this.showLocalPanel) {
+            try {
+                const defaultLocalDirectory = await this.platform.getDefaultLocalDirectory()
+                if (defaultLocalDirectory) {
+                    await this.navigateLocal(defaultLocalDirectory)
+                }
+            } catch (error) {
+                console.warn('Could not initialize local directory:', error)
+                this.notifications.error(error.message)
+            }
         }
     }
 
@@ -76,16 +107,35 @@ export class SFTPPanelComponent {
         } catch (error) {
             this.notifications.error(error.message)
             if (previousPath && fallbackOnError) {
-                this.navigate(previousPath, false)
+                await this.navigate(previousPath, false)
             }
             return
         }
 
-        const dirKey = a => a.isDirectory ? 1 : 0
-        this.fileList.sort((a, b) =>
-            dirKey(b) - dirKey(a) ||
-            a.name.localeCompare(b.name))
+        this.sortEntries(this.fileList)
 
+        this.updateFilteredList()
+    }
+
+    async navigateLocal (newPath: string, fallbackOnError = true): Promise<void> {
+        const previousPath = this.localPath
+        this.localPath = localPath.resolve(newPath)
+        this.selectedLocalItemPath = null
+        this.updateLocalPathSegments()
+
+        this.localFileList = null
+        this.filteredLocalFileList = []
+        try {
+            this.localFileList = await this.platform.readLocalDirectory(this.localPath)
+        } catch (error) {
+            this.notifications.error(error.message)
+            if (previousPath && fallbackOnError) {
+                await this.navigateLocal(previousPath, false)
+            }
+            return
+        }
+
+        this.sortEntries(this.localFileList)
         this.updateFilteredList()
     }
 
@@ -128,7 +178,7 @@ export class SFTPPanelComponent {
         }
     }
 
-    getIcon (item: SFTPFile): string {
+    getIcon (item: SFTPFile|LocalFileEntry): string {
         if (item.isDirectory) {
             return 'fas fa-folder text-info'
         }
@@ -154,6 +204,13 @@ export class SFTPPanelComponent {
         this.navigate(path.dirname(this.path))
     }
 
+    localGoUp (): void {
+        if (!this.canLocalGoUp) {
+            return
+        }
+        this.navigateLocal(localPath.dirname(this.localPath))
+    }
+
     async open (item: SFTPFile): Promise<void> {
         if (item.isDirectory) {
             await this.navigate(item.fullPath)
@@ -167,6 +224,47 @@ export class SFTPPanelComponent {
             }
         } else {
             await this.download(item.fullPath, item.mode, item.size)
+        }
+    }
+
+    async openLocal (item: LocalFileEntry): Promise<void> {
+        if (item.isDirectory) {
+            await this.navigateLocal(item.fullPath)
+        }
+    }
+
+    onLocalItemClick (item: LocalFileEntry): void {
+        this.selectedLocalItemPath = item.fullPath
+        this.scheduleLocalSingleClick(item)
+    }
+
+    async onLocalItemDoubleClick (item: LocalFileEntry): Promise<void> {
+        this.clearLocalClickTimer()
+        await this.uploadLocalItem(item)
+    }
+
+    async uploadLocalItem (item: LocalFileEntry): Promise<void> {
+        try {
+            if (item.isDirectory) {
+                const transfer = await this.platform.startUploadDirectory([item.fullPath])
+                await this.uploadOneFolder(transfer)
+            } else {
+                const transfers = await this.platform.startUpload({ multiple: false }, [item.fullPath])
+                if (!transfers.length) {
+                    return
+                }
+                await this.uploadOne(transfers[0])
+            }
+            this.notifications.notice(`Uploaded ${item.name}`)
+        } catch (error) {
+            this.notifications.error(`Failed to upload ${item.name}: ${error.message}`)
+        }
+    }
+
+    async selectLocalDirectory (): Promise<void> {
+        const selectedDirectory = await this.platform.pickDirectory()
+        if (selectedDirectory) {
+            await this.navigateLocal(selectedDirectory)
         }
     }
 
@@ -310,7 +408,7 @@ export class SFTPPanelComponent {
         }
     }
 
-    getModeString (item: SFTPFile): string {
+    getModeString (item: SFTPFile|LocalFileEntry): string {
         const s = 'SGdrwxrwxrwx'
         const e = '   ---------'
         const c = [
@@ -338,6 +436,56 @@ export class SFTPPanelComponent {
     async showContextMenu (item: SFTPFile, event: MouseEvent): Promise<void> {
         event.preventDefault()
         this.platform.popupContextMenu(await this.buildContextMenu(item), event)
+    }
+
+    async buildLocalContextMenu (item: LocalFileEntry): Promise<MenuItemOptions[]> {
+        const items: MenuItemOptions[] = [
+            {
+                click: () => this.uploadLocalItem(item),
+                label: 'Upload',
+            },
+            {
+                click: () => this.platform.setClipboard({
+                    text: item.fullPath,
+                }),
+                label: 'Copy full path',
+            },
+        ]
+
+        if (item.isDirectory) {
+            items.unshift({
+                click: () => this.openLocal(item),
+                label: 'Open directory',
+            })
+        }
+
+        return items
+    }
+
+    async showLocalContextMenu (item: LocalFileEntry, event: MouseEvent): Promise<void> {
+        event.preventDefault()
+        this.clearLocalClickTimer()
+        this.selectedLocalItemPath = item.fullPath
+        this.platform.popupContextMenu(await this.buildLocalContextMenu(item), event)
+    }
+
+    private scheduleLocalSingleClick (item: LocalFileEntry): void {
+        this.clearLocalClickTimer()
+        this.localClickTimer = setTimeout(() => {
+            this.localClickTimer = null
+            if (!item.isDirectory) {
+                return
+            }
+            void this.openLocal(item)
+        }, this.localSingleClickDelayMs)
+    }
+
+    private clearLocalClickTimer (): void {
+        if (this.localClickTimer === null) {
+            return
+        }
+        clearTimeout(this.localClickTimer)
+        this.localClickTimer = null
     }
 
     get shouldShowCWDTip (): boolean {
@@ -375,18 +523,65 @@ export class SFTPPanelComponent {
     }
 
     private updateFilteredList (): void {
+        const filterText = this.filterText.toLowerCase()
+        const applyFilter = <T extends { name: string }>(items: T[]): T[] =>
+            items.filter(item => item.name.toLowerCase().includes(filterText))
+
         if (!this.fileList) {
             this.filteredFileList = []
-            return
-        }
-
-        if (!this.showFilter || this.filterText.trim() === '') {
+        } else if (!this.showFilter || this.filterText.trim() === '') {
             this.filteredFileList = this.fileList
-            return
+        } else {
+            this.filteredFileList = applyFilter(this.fileList)
         }
 
-        this.filteredFileList = this.fileList.filter(item =>
-            item.name.toLowerCase().includes(this.filterText.toLowerCase()),
+        if (!this.localFileList) {
+            this.filteredLocalFileList = []
+        } else if (!this.showFilter || this.filterText.trim() === '') {
+            this.filteredLocalFileList = this.localFileList
+        } else {
+            this.filteredLocalFileList = applyFilter(this.localFileList)
+        }
+    }
+
+    private sortEntries<T extends { isDirectory: boolean, name: string }> (items: T[]): void {
+        const dirKey = (a: T) => a.isDirectory ? 1 : 0
+        items.sort((a, b) =>
+            dirKey(b) - dirKey(a) ||
+            a.name.localeCompare(b.name),
         )
     }
+
+    private updateLocalPathSegments (): void {
+        if (!this.localPath) {
+            this.localPathSegments = []
+            return
+        }
+
+        const parsed = localPath.parse(this.localPath)
+        const segments: PathSegment[] = []
+        let currentPath = this.localPath
+
+        while (currentPath !== parsed.root) {
+            segments.unshift({
+                name: localPath.basename(currentPath),
+                path: currentPath,
+            })
+            const parentPath = localPath.dirname(currentPath)
+            if (parentPath === currentPath) {
+                break
+            }
+            currentPath = parentPath
+        }
+
+        if (parsed.root) {
+            segments.unshift({
+                name: parsed.root,
+                path: parsed.root,
+            })
+        }
+
+        this.localPathSegments = segments
+    }
+
 }

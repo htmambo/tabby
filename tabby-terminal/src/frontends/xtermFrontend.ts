@@ -541,6 +541,37 @@ export class XTermFrontend extends Frontend {
     private getSelectionAsHTML (): string {
         return this.serializeAddon.serializeAsHTML({ includeGlobalBackground: true, onlySelection: true  })
     }
+
+    /**
+     * Refit the terminal to its container and refresh the display.
+     * Used to restore canvas dimensions after they've been zeroed out
+     * (e.g., when a tab becomes visible again after being hidden).
+     */
+    refit (): void {
+        try {
+            if (this.xterm.element && getComputedStyle(this.xterm.element).getPropertyValue('height') !== 'auto') {
+                const canvasZeroed = this.xterm.element.querySelector('canvas')?.width === 0
+                const prevCols = this.xterm.cols
+                const prevRows = this.xterm.rows
+                this.fitAddon.fit()
+                // If canvas was zeroed (GPU memory optimization for hidden tabs)
+                // and fit() didn't restore it (dimensions unchanged),
+                // force a resize cycle to rebuild canvas elements
+                if (canvasZeroed
+                    && this.xterm.element.querySelector('canvas')?.width === 0
+                    && prevCols > 0 && prevRows > 0
+                    && this.xterm.cols === prevCols && this.xterm.rows === prevRows) {
+                    this.xterm.resize(prevCols, prevRows + 1)
+                    this.xterm.resize(prevCols, prevRows)
+                }
+                if (this.xterm.rows > 0) {
+                    this.xterm.refresh(0, this.xterm.rows - 1)
+                }
+            }
+        } catch (e) {
+            console.warn('Could not refit xterm', e)
+        }
+    }
 }
 
 /** @hidden */

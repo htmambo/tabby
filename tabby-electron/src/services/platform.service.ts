@@ -5,7 +5,7 @@ import * as os from 'os'
 import promiseIpc, { RendererProcessType } from 'electron-promise-ipc'
 import { execFile } from 'mz/child_process'
 import { Injectable, NgZone } from '@angular/core'
-import { PlatformService, ClipboardContent, Platform, MenuItemOptions, MessageBoxOptions, MessageBoxResult, DirectoryUpload, FileUpload, FileDownload, DirectoryDownload, FileUploadOptions, wrapPromise, TranslateService, FileTransfer, PlatformTheme } from 'tabby-core'
+import { PlatformService, ClipboardContent, Platform, MenuItemOptions, MessageBoxOptions, MessageBoxResult, DirectoryUpload, FileUpload, FileDownload, DirectoryDownload, FileUploadOptions, wrapPromise, TranslateService, FileTransfer, PlatformTheme, LocalFileEntry } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 import { ElectronHostWindow } from './hostWindow.service'
 import { ShellIntegrationService } from './shellIntegration.service'
@@ -174,6 +174,43 @@ export class ElectronPlatformService extends PlatformService {
             return fonts
         }
         return []
+    }
+
+    supportsLocalDirectoryListing (): boolean {
+        return true
+    }
+
+    async getDefaultLocalDirectory (): Promise<string|null> {
+        return os.homedir()
+    }
+
+    async readLocalDirectory (directory: string): Promise<LocalFileEntry[]> {
+        const items = await fs.readdir(directory, { withFileTypes: true })
+        return Promise.all(items.map(async item => {
+            const fullPath = path.join(directory, item.name)
+            const linkStats = await fs.lstat(fullPath)
+            let fileStats = linkStats
+            let isDirectory = item.isDirectory()
+
+            if (item.isSymbolicLink()) {
+                try {
+                    fileStats = await fs.stat(fullPath)
+                    isDirectory = fileStats.isDirectory()
+                } catch {
+                    // Broken symbolic links are displayed but treated as files.
+                }
+            }
+
+            return {
+                name: item.name,
+                fullPath,
+                isDirectory,
+                isSymlink: item.isSymbolicLink(),
+                size: fileStats.size,
+                modified: fileStats.mtimeMs,
+                mode: fileStats.mode,
+            }
+        }))
     }
 
     popupContextMenu (menu: MenuItemOptions[], _event?: MouseEvent): void {

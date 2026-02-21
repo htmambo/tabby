@@ -117,6 +117,16 @@ export interface FileUploadOptions {
     multiple: boolean
 }
 
+export interface LocalFileEntry {
+    name: string
+    fullPath: string
+    isDirectory: boolean
+    isSymlink: boolean
+    size: number
+    modified: number
+    mode: number
+}
+
 export class DirectoryUpload {
     private childrens: (FileUpload|DirectoryUpload)[] = []
 
@@ -157,8 +167,20 @@ export abstract class PlatformService {
 
     abstract startDownload (name: string, mode: number, size: number): Promise<FileDownload|null>
     abstract startDownloadDirectory (name: string, estimatedSize?: number): Promise<DirectoryDownload|null>
-    abstract startUpload (options?: FileUploadOptions): Promise<FileUpload[]>
+    abstract startUpload (options?: FileUploadOptions, paths?: string[]): Promise<FileUpload[]>
     abstract startUploadDirectory (paths?: string[]): Promise<DirectoryUpload>
+
+    supportsLocalDirectoryListing (): boolean {
+        return false
+    }
+
+    async getDefaultLocalDirectory (): Promise<string|null> {
+        return null
+    }
+
+    async readLocalDirectory (_path: string): Promise<LocalFileEntry[]> {
+        throw new Error('Unsupported')
+    }
 
     async startUploadFromDragEvent (event: DragEvent, multiple = false): Promise<DirectoryUpload> {
         const result = new DirectoryUpload()

@@ -37,3 +37,7 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
+**/.omc/
+**/.codex/
+**/.claude/
+

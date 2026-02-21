@@ -100,9 +100,15 @@
     "node-abi": "^4",
     "node-gyp": "^10.0.0"
   },
+  "overrides": {
+    "pug-loader": {
+      "pug": "$pug"
+    }
+  },
   "scripts": {
     "build": "npm run build:typings && node scripts/build-modules.mjs",
     "build:typings": "node scripts/build-typings.mjs",
+    "build:linux:deb": "npm run build && node scripts/prepackage-plugins.mjs && ARCH=x64 npx electron-builder --linux deb --x64 --publish never",
     "watch": "cross-env TABBY_DEV=1 webpack --progress --color --watch",
     "start": "cross-env TABBY_DEV=1 electron app -d --inspect",
     "start:prod": "electron app --debug",

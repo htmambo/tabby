@@ -118,7 +118,7 @@ export class WebPlatformService extends PlatformService {
         throw new Error('Unsupported')
     }
 
-    startUpload (options?: FileUploadOptions): Promise<FileUpload[]> {
+    startUpload (options?: FileUploadOptions, _paths?: string[]): Promise<FileUpload[]> {
         return new Promise(resolve => {
             this.fileSelector.onchange = () => {
                 const transfers: FileUpload[] = []
