@@ -219,9 +219,13 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         }, 100)
     }
 
-    @HostListener('click')
-    onClick (): void {
+    @HostListener('document:keydown.escape', ['$event'])
+    onEscape (event: KeyboardEvent): void {
+        if (!this.sftpPanelVisible) {
+            return
+        }
         this.sftpPanelVisible = false
+        event.stopPropagation()
     }
 
     protected isSessionExplicitlyTerminated (): boolean {
