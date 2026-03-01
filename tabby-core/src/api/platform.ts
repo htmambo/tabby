@@ -165,8 +165,8 @@ export abstract class PlatformService {
     abstract loadConfig (): Promise<string>
     abstract saveConfig (content: string): Promise<void>
 
-    abstract startDownload (name: string, mode: number, size: number): Promise<FileDownload|null>
-    abstract startDownloadDirectory (name: string, estimatedSize?: number): Promise<DirectoryDownload|null>
+    abstract startDownload (name: string, mode: number, size: number, filePath?: string, defaultDirectory?: string): Promise<FileDownload|null>
+    abstract startDownloadDirectory (name: string, estimatedSize?: number, defaultDirectory?: string): Promise<DirectoryDownload|null>
     abstract startUpload (options?: FileUploadOptions, paths?: string[]): Promise<FileUpload[]>
     abstract startUploadDirectory (paths?: string[]): Promise<DirectoryUpload>
 
@@ -289,7 +289,7 @@ export abstract class PlatformService {
     abstract setErrorHandler (handler: (_: any) => void): void
     abstract popupContextMenu (menu: MenuItemOptions[], event?: MouseEvent): void
     abstract showMessageBox (options: MessageBoxOptions): Promise<MessageBoxResult>
-    abstract pickDirectory (): Promise<string | null>
+    abstract pickDirectory (title?: string, buttonLabel?: string, defaultPath?: string): Promise<string | null>
     abstract quit (): void
 }
 

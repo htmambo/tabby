@@ -289,18 +289,27 @@ export class ElectronPlatformService extends PlatformService {
         return root
     }
 
-    async startDownload (name: string, mode: number, size: number, filePath?: string): Promise<FileDownload|null> {
+    async startDownload (name: string, mode: number, size: number, filePath?: string, defaultDirectory?: string): Promise<FileDownload|null> {
         if (!filePath) {
-            const result = await this.electron.dialog.showSaveDialog(
-                this.hostWindow.getWindow(),
-                {
-                    defaultPath: name,
-                },
-            )
-            if (!result.filePath) {
-                return null
+            if (defaultDirectory === undefined) {
+                const result = await this.electron.dialog.showSaveDialog(
+                    this.hostWindow.getWindow(),
+                    {
+                        defaultPath: name,
+                    },
+                )
+                if (!result.filePath) {
+                    return null
+                }
+                filePath = result.filePath
+            } else {
+                if (!this.isExistingDirectory(defaultDirectory)) {
+                    throw new Error(this.translate.instant('Local destination directory is unavailable: {path}', {
+                        path: defaultDirectory,
+                    }))
+                }
+                filePath = this.getAvailableDownloadFilePath(defaultDirectory, name)
             }
-            filePath = result.filePath
         }
         const transfer = new ElectronFileDownload(filePath, mode, size, this.electron)
         await wrapPromise(this.zone, transfer.open())
@@ -308,23 +317,61 @@ export class ElectronPlatformService extends PlatformService {
         return transfer
     }
 
-    async startDownloadDirectory (name: string, estimatedSize?: number): Promise<DirectoryDownload|null> {
-        const selectedFolder = await this.pickDirectory(this.translate.instant('Select destination folder for {name}', { name }), this.translate.instant('Download here'))
-        if (!selectedFolder) {
-            return null
+    async startDownloadDirectory (name: string, estimatedSize?: number, defaultDirectory?: string): Promise<DirectoryDownload|null> {
+        let selectedFolder = ''
+        if (defaultDirectory === undefined) {
+            const pickedFolder = await this.pickDirectory(
+                this.translate.instant('Select destination folder for {name}', { name }),
+                this.translate.instant('Download here'),
+            )
+            if (!pickedFolder) {
+                return null
+            }
+            selectedFolder = pickedFolder
+        } else {
+            if (!this.isExistingDirectory(defaultDirectory)) {
+                throw new Error(this.translate.instant('Local destination directory is unavailable: {path}', {
+                    path: defaultDirectory,
+                }))
+            }
+            selectedFolder = defaultDirectory
         }
 
-        let downloadPath = path.join(selectedFolder, name)
-        let counter = 1
-        while (fsSync.existsSync(downloadPath)) {
-            downloadPath = path.join(selectedFolder, `${name} (${counter})`)
-            counter++
-        }
+        const downloadPath = this.getAvailableDownloadDirectoryPath(selectedFolder, name)
 
         const transfer = new ElectronDirectoryDownload(downloadPath, name, estimatedSize ?? 0, this.electron, this.zone)
         await wrapPromise(this.zone, transfer.open())
         this.fileTransferStarted.next(transfer)
         return transfer
+    }
+
+    private getAvailableDownloadFilePath (directory: string, fileName: string): string {
+        const parsed = path.parse(fileName)
+        let result = path.join(directory, fileName)
+        let counter = 1
+        while (fsSync.existsSync(result)) {
+            result = path.join(directory, `${parsed.name} (${counter})${parsed.ext}`)
+            counter++
+        }
+        return result
+    }
+
+    private getAvailableDownloadDirectoryPath (directory: string, dirName: string): string {
+        let result = path.join(directory, dirName)
+        let counter = 1
+        while (fsSync.existsSync(result)) {
+            result = path.join(directory, `${dirName} (${counter})`)
+            counter++
+        }
+        return result
+    }
+
+    private isExistingDirectory (directory: string): boolean {
+        try {
+            return fsSync.lstatSync(directory).isDirectory()
+        } catch {
+            return false
+        }
     }
 
     _registerFileTransfer (transfer: FileTransfer): void {
@@ -337,12 +384,13 @@ export class ElectronPlatformService extends PlatformService {
         })
     }
 
-    async pickDirectory (title?: string, buttonLabel?: string): Promise<string | null> {
+    async pickDirectory (title?: string, buttonLabel?: string, defaultPath?: string): Promise<string | null> {
         const result = await this.electron.dialog.showOpenDialog(
             this.hostWindow.getWindow(),
             {
                 title,
                 buttonLabel,
+                defaultPath,
                 properties: ['openDirectory', 'showHiddenFiles'],
             },
         )

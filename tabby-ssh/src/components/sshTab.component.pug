@@ -27,7 +27,7 @@ terminal-toolbar([tab]='this')
 
     button.btn.btn-sm.btn-link.me-2((click)='openSFTP()', *ngIf='session && session.open')
         i.far.fa-folder-open
-        span SFTP
+        span(translate) SFTP
 
     button.btn.btn-sm.btn-link(
         *ngIf='session && session.open && hostApp.platform !== Platform.Web',
@@ -37,15 +37,20 @@ terminal-toolbar([tab]='this')
         span(translate) Ports
 
 
+.sftp-panel-resizer(
+    *ngIf='sftpPanelVisible && effectiveSFTPSession',
+    (mousedown)='startSFTPResize($event)',
+    [class.active]='sftpPanelResizing'
+)
+
 sftp-panel.bg-dark(
-    @panelSlide,
-    [@.disabled]='!config.store.accessibility.animations',
+    *ngIf='sftpPanelVisible && effectiveSFTPSession',
+    [style.height.px]='sftpPanelHeight',
     [(path)]='sftpPath',
-    *ngIf='sftpPanelVisible && sshSession',
     (click)='$event.stopPropagation()',
-    [session]='sshSession!',
+    [session]='effectiveSFTPSession!',
     [cwdDetectionAvailable]='session?.supportsWorkingDirectory() ?? false',
-    (closed)='sftpPanelVisible = false'
+    (closed)='closeSFTP()'
 )
 
 keyboard-interactive-auth-panel.bg-dark(

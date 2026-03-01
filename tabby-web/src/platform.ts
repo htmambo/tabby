@@ -108,13 +108,13 @@ export class WebPlatformService extends PlatformService {
         window.close()
     }
 
-    async startDownload (name: string, mode: number, size: number): Promise<FileDownload|null> {
+    async startDownload (name: string, mode: number, size: number, _filePath?: string, _defaultDirectory?: string): Promise<FileDownload|null> {
         const transfer = new HTMLFileDownload(name, mode, size)
         this.fileTransferStarted.next(transfer)
         return transfer
     }
 
-    async startDownloadDirectory (_name: string, _estimatedSize?: number): Promise<DirectoryDownload|null> {
+    async startDownloadDirectory (_name: string, _estimatedSize?: number, _defaultDirectory?: string): Promise<DirectoryDownload|null> {
         throw new Error('Unsupported')
     }
 
@@ -147,7 +147,7 @@ export class WebPlatformService extends PlatformService {
         window.addEventListener('error', handler)
     }
 
-    async pickDirectory (): Promise<string> {
+    async pickDirectory (_title?: string, _buttonLabel?: string, _defaultPath?: string): Promise<string> {
         throw new Error('Unsupported')
     }
 }

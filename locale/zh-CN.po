@@ -2566,9 +2566,64 @@ msgstr "放大"
 msgid "Zoom out"
 msgstr "缩小"
 
+#: tabby-ssh/src/components/sshTab.component.ts:243
+msgid "Cannot open SFTP panel: SSH session is unavailable"
+msgstr "无法打开 SFTP 面板：SSH 会话不可用"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:23
+msgid "Local files"
+msgstr "本地文件"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:27
+msgid "Select directory"
+msgstr "选择目录"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:71
+msgid "Download selected"
+msgstr "下载选中项"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:76
+msgid "Upload files"
+msgstr "上传文件"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:80
+msgid "Upload folder"
+msgstr "上传文件夹"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:62
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:98
+#: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:14
+msgid "SFTP"
+msgstr "文件传输"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:56
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:139
+msgid "No files match the filter \"{{filterText}}\""
+msgstr "没有匹配筛选条件的文件"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:686
+msgid "No files match the filter \"{filter}\""
+msgstr "没有匹配筛选条件 \"{filter}\" 的文件"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:562
+msgid "Download selected ({count})"
+msgstr "下载选中项 ({count})"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:571
+#: tabby-ssh/src/components/sftpPanel.component.ts:595
+msgid "Refresh current directory"
+msgstr "刷新当前目录"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:611
+msgid "Open directory"
+msgstr "打开目录"
+
+#: tabby-ssh/src/sftpContextMenu.ts:38
+msgid "Download directory"
+msgstr "下载目录"
+
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:43
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr "动态端口转发"
-

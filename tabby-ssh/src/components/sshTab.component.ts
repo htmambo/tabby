@@ -1,7 +1,7 @@
 import * as russh from 'russh'
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import colors from 'ansi-colors'
-import { Component, Injector, HostListener } from '@angular/core'
+import { Component, Injector, HostListener, HostBinding } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { Platform, ProfilesService } from 'tabby-core'
 import { BaseTerminalTabComponent, ConnectableTerminalTabComponent } from 'tabby-terminal'
@@ -28,8 +28,28 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     session: SSHShellSession|null = null
     sftpPanelVisible = false
     sftpPath = '/'
+    sftpPanelHeight = 320
+    sftpPanelResizing = false
     enableToolbar = true
     activeKIPrompt: KeyboardInteractivePrompt|null = null
+    readonly minSFTPPanelHeight = 160
+    private readonly minSSHPanelHeight = 120
+    private sftpResizeStartY = 0
+    private sftpResizeInitialHeight = this.sftpPanelHeight
+
+    @HostBinding('style.--sftp-panel-height.px')
+    get sftpPanelHeightCSSVar (): number {
+        return this.sftpPanelVisible && this.effectiveSFTPSession ? this.sftpPanelHeight : 0
+    }
+
+    @HostBinding('style.--sftp-panel-offset.px')
+    get sftpPanelOffsetCSSVar (): number {
+        return this.sftpPanelVisible && this.effectiveSFTPSession ? this.sftpPanelHeight + 10 : 0
+    }
+
+    get effectiveSFTPSession (): SSHSession|null {
+        return this.sshSession ?? (this.session as any)?.ssh ?? null
+    }
 
     constructor (
         injector: Injector,
@@ -214,9 +234,86 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
     async openSFTP (): Promise<void> {
         this.sftpPath = await this.session?.getWorkingDirectory() ?? this.sftpPath
+
+        if (!this.effectiveSFTPSession) {
+            this.sshSession = await this.sshMultiplexer.getSession(this.profile)
+        }
+
+        if (!this.effectiveSFTPSession) {
+            this.notifications.error(this.translate.instant(_('Cannot open SFTP panel: SSH session is unavailable')))
+            return
+        }
+
         setTimeout(() => {
+            if (!this.sshSession) {
+                this.sshSession = this.effectiveSFTPSession
+            }
             this.sftpPanelVisible = true
+            this.ensureSFTPPanelHeightInBounds()
+            setTimeout(() => this.ensureSFTPPanelHeightInBounds())
         }, 100)
+    }
+
+    closeSFTP (): void {
+        this.sftpPanelVisible = false
+        this.sftpPanelResizing = false
+    }
+
+    startSFTPResize (event: MouseEvent): void {
+        if (!this.sftpPanelVisible) {
+            return
+        }
+
+        this.sftpPanelResizing = true
+        this.sftpResizeStartY = event.clientY
+        this.sftpResizeInitialHeight = this.sftpPanelHeight
+        event.preventDefault()
+        event.stopPropagation()
+    }
+
+    @HostListener('document:mousemove', ['$event'])
+    onDocumentMouseMove (event: MouseEvent): void {
+        if (!this.sftpPanelResizing) {
+            return
+        }
+
+        const hostHeight = this.element.nativeElement.clientHeight
+        if (!hostHeight) {
+            return
+        }
+
+        const delta = this.sftpResizeStartY - event.clientY
+        const maxSFTPPanelHeight = Math.max(this.minSFTPPanelHeight, hostHeight - this.minSSHPanelHeight)
+        const targetHeight = this.sftpResizeInitialHeight + delta
+        this.sftpPanelHeight = Math.min(maxSFTPPanelHeight, Math.max(this.minSFTPPanelHeight, targetHeight))
+        event.preventDefault()
+    }
+
+    @HostListener('document:mouseup')
+    onDocumentMouseUp (): void {
+        if (!this.sftpPanelResizing) {
+            return
+        }
+        this.sftpPanelResizing = false
+    }
+
+    @HostListener('window:resize')
+    onWindowResize (): void {
+        this.ensureSFTPPanelHeightInBounds()
+    }
+
+    private ensureSFTPPanelHeightInBounds (): void {
+        if (!this.sftpPanelVisible) {
+            return
+        }
+
+        const hostHeight = this.element.nativeElement.clientHeight
+        if (!hostHeight) {
+            return
+        }
+
+        const maxSFTPPanelHeight = Math.max(this.minSFTPPanelHeight, hostHeight - this.minSSHPanelHeight)
+        this.sftpPanelHeight = Math.min(maxSFTPPanelHeight, Math.max(this.minSFTPPanelHeight, this.sftpPanelHeight))
     }
 
     @HostListener('document:keydown.escape', ['$event'])
@@ -224,7 +321,7 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         if (!this.sftpPanelVisible) {
             return
         }
-        this.sftpPanelVisible = false
+        this.closeSFTP()
         event.stopPropagation()
     }
 

@@ -22,7 +22,7 @@ profile-icon(
 ) {{tab.customTitle || tab.title}}
 
 .buttons
-    button(*ngIf='!config.store.terminal.hideTabOptionsButton',(click)='onContextMenu($event)') !{require('../icons/tab-options.svg')}
+    button(*ngIf='active && !config.store.terminal.hideTabOptionsButton',(click)='onContextMenu($event)') !{require('../icons/tab-options.svg')}
 
     button(*ngIf='!config.store.terminal.hideCloseButton',(click)='app.closeTab(tab, true)') &times;
 

@@ -2,7 +2,7 @@ import * as C from 'constants'
 import * as localPath from 'path'
 import { posix as path } from 'path'
 import { Component, Input, Output, EventEmitter, Inject, Optional } from '@angular/core'
-import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry } from 'tabby-core'
+import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry, TranslateService } from 'tabby-core'
 import { SFTPSession, SFTPFile } from '../session/sftp'
 import { SSHSession } from '../session/ssh'
 import { SFTPContextMenuItemProvider } from '../api'
@@ -36,16 +36,20 @@ export class SFTPPanelComponent {
     editingPath: string|null = null
     showFilter = false
     filterText = ''
+    initError: string|null = null
     selectedLocalItemPath: string|null = null
-    private localClickTimer: ReturnType<typeof setTimeout>|null = null
-    private readonly localSingleClickDelayMs = 300
+    selectedRemoteItemPaths = new Set<string>()
+    private remoteSelectionAnchorPath: string|null = null
+    protected contextMenuProviders: SFTPContextMenuItemProvider[] = []
 
     constructor (
         private ngbModal: NgbModal,
         private notifications: NotificationsService,
+        private translate: TranslateService,
         public platform: PlatformService,
-        @Optional() @Inject(SFTPContextMenuItemProvider) protected contextMenuProviders: SFTPContextMenuItemProvider[],
+        @Optional() @Inject(SFTPContextMenuItemProvider) contextMenuProviders: SFTPContextMenuItemProvider[]|null,
     ) {
+        this.contextMenuProviders = contextMenuProviders ? [...contextMenuProviders] : []
         this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
     }
 
@@ -61,7 +65,15 @@ export class SFTPPanelComponent {
     }
 
     async ngOnInit (): Promise<void> {
-        this.sftp = await this.session.openSFTP()
+        try {
+            this.sftp = await this.session.openSFTP()
+        } catch (error) {
+            const errorMessage = error?.message ?? `${error}`
+            this.initError = errorMessage
+            this.notifications.error(errorMessage)
+            return
+        }
+
         try {
             await this.navigate(this.path)
         } catch (error) {
@@ -87,6 +99,7 @@ export class SFTPPanelComponent {
         const previousPath = this.path
         this.path = newPath
         this.pathChange.next(this.path)
+        this.clearRemoteSelection()
 
         this.clearFilter()
 
@@ -233,14 +246,48 @@ export class SFTPPanelComponent {
         }
     }
 
+    get selectedRemoteItemsCount (): number {
+        return this.getSelectedRemoteItems().length
+    }
+
+    isRemoteItemSelected (item: SFTPFile): boolean {
+        return this.selectedRemoteItemPaths.has(item.fullPath)
+    }
+
+    onRemoteItemClick (item: SFTPFile, event: MouseEvent): void {
+        const itemPath = item.fullPath
+        const isRangeSelection = event.shiftKey
+        const isToggleSelection = event.ctrlKey || event.metaKey
+
+        if (isRangeSelection) {
+            this.selectRemoteRange(itemPath, isToggleSelection)
+            return
+        }
+
+        if (isToggleSelection) {
+            this.toggleRemoteSelection(itemPath)
+            this.remoteSelectionAnchorPath = itemPath
+            return
+        }
+
+        this.selectSingleRemoteItem(itemPath)
+    }
+
+    async onRemoteItemDoubleClick (item: SFTPFile): Promise<void> {
+        this.selectSingleRemoteItem(item.fullPath)
+        await this.open(item)
+    }
+
     onLocalItemClick (item: LocalFileEntry): void {
         this.selectedLocalItemPath = item.fullPath
-        this.scheduleLocalSingleClick(item)
     }
 
     async onLocalItemDoubleClick (item: LocalFileEntry): Promise<void> {
-        this.clearLocalClickTimer()
-        await this.uploadLocalItem(item)
+        if (item.isDirectory) {
+            await this.openLocal(item)
+            return
+        }
+        this.platform.openPath(item.fullPath)
     }
 
     async uploadLocalItem (item: LocalFileEntry): Promise<void> {
@@ -286,6 +333,12 @@ export class SFTPPanelComponent {
         }
 
         await this.download(item.fullPath, item.mode, item.size)
+    }
+
+    async downloadSelected (): Promise<void> {
+        for (const item of this.getSelectedRemoteItems()) {
+            await this.downloadItem(item)
+        }
     }
 
     async openCreateDirectoryModal (): Promise<void> {
@@ -339,16 +392,33 @@ export class SFTPPanelComponent {
     }
 
     async download (itemPath: string, mode: number, size: number): Promise<void> {
-        const transfer = await this.platform.startDownload(path.basename(itemPath), mode, size)
-        if (!transfer) {
-            return
+        try {
+            const transfer = await this.platform.startDownload(
+                path.basename(itemPath),
+                mode,
+                size,
+                undefined,
+                this.getPreferredLocalDownloadDirectory(),
+            )
+            if (!transfer) {
+                return
+            }
+            this.sftp.download(itemPath, transfer)
+        } catch (error) {
+            this.notifications.error(this.translate.instant('Failed to download {name}: {message}', {
+                name: path.basename(itemPath),
+                message: error.message,
+            }))
         }
-        this.sftp.download(itemPath, transfer)
     }
 
     async downloadFolder (folder: SFTPFile): Promise<void> {
         try {
-            const transfer = await this.platform.startDownloadDirectory(folder.name, 0)
+            const transfer = await this.platform.startDownloadDirectory(
+                folder.name,
+                0,
+                this.getPreferredLocalDownloadDirectory(),
+            )
             if (!transfer) {
                 return
             }
@@ -368,7 +438,9 @@ export class SFTPPanelComponent {
                 transfer.close()
             }
         } catch (error) {
-            this.notifications.error(`Failed to download folder: ${error.message}`)
+            this.notifications.error(this.translate.instant('Failed to download folder: {message}', {
+                message: error.message,
+            }))
             throw error
         }
     }
@@ -408,6 +480,75 @@ export class SFTPPanelComponent {
         }
     }
 
+    private getSelectedRemoteItems (): SFTPFile[] {
+        if (!this.fileList) {
+            return []
+        }
+        return this.fileList.filter(x => this.selectedRemoteItemPaths.has(x.fullPath))
+    }
+
+    private clearRemoteSelection (): void {
+        this.selectedRemoteItemPaths = new Set()
+        this.remoteSelectionAnchorPath = null
+    }
+
+    private selectSingleRemoteItem (itemPath: string): void {
+        this.selectedRemoteItemPaths = new Set([itemPath])
+        this.remoteSelectionAnchorPath = itemPath
+    }
+
+    private toggleRemoteSelection (itemPath: string): void {
+        const selection = new Set(this.selectedRemoteItemPaths)
+        if (selection.has(itemPath)) {
+            selection.delete(itemPath)
+        } else {
+            selection.add(itemPath)
+        }
+        this.selectedRemoteItemPaths = selection
+        if (!selection.size) {
+            this.remoteSelectionAnchorPath = null
+        }
+    }
+
+    private selectRemoteRange (itemPath: string, append = false): void {
+        const anchorPath = this.remoteSelectionAnchorPath ?? itemPath
+        const range = this.getRemoteRange(anchorPath, itemPath)
+        if (!range.length) {
+            this.selectSingleRemoteItem(itemPath)
+            return
+        }
+
+        if (append) {
+            const selection = new Set(this.selectedRemoteItemPaths)
+            for (const filePath of range) {
+                selection.add(filePath)
+            }
+            this.selectedRemoteItemPaths = selection
+            return
+        }
+
+        this.selectedRemoteItemPaths = new Set(range)
+    }
+
+    private getRemoteRange (anchorPath: string, itemPath: string): string[] {
+        const start = this.filteredFileList.findIndex(x => x.fullPath === anchorPath)
+        const end = this.filteredFileList.findIndex(x => x.fullPath === itemPath)
+        if (start === -1 || end === -1) {
+            return []
+        }
+
+        const from = Math.min(start, end)
+        const to = Math.max(start, end)
+        return this.filteredFileList.slice(from, to + 1).map(x => x.fullPath)
+    }
+
+    private getPreferredLocalDownloadDirectory (): string {
+        if (!this.showLocalPanel || !this.localPath) {
+            throw new Error(this.translate.instant('No local destination directory is available'))
+        }
+        return this.localPath
+    }
+
     getModeString (item: SFTPFile|LocalFileEntry): string {
         const s = 'SGdrwxrwxrwx'
         const e = '   ---------'
@@ -425,16 +566,33 @@ export class SFTPPanelComponent {
     }
 
     async buildContextMenu (item: SFTPFile): Promise<MenuItemOptions[]> {
-        let items: MenuItemOptions[] = []
-        for (const section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(item, this)))) {
-            items.push({ type: 'separator' })
-            items = items.concat(section)
+        const sections: MenuItemOptions[][] = []
+        if (this.selectedRemoteItemsCount > 1 && this.isRemoteItemSelected(item)) {
+            sections.push([{
+                click: () => this.downloadSelected(),
+                label: this.translate.instant('Download selected ({count})', {
+                    count: this.selectedRemoteItemsCount,
+                }),
+            }])
         }
-        return items.slice(1)
+
+        sections.push(...await Promise.all(this.contextMenuProviders.map(x => x.getItems(item, this))))
+        sections.push([{
+            click: () => this.navigate(this.path),
+            label: this.translate.instant('Refresh current directory'),
+        }])
+
+        return sections.flatMap((section, index) =>
+            index === 0 ? section : [{ type: 'separator' }, ...section],
+        )
     }
 
     async showContextMenu (item: SFTPFile, event: MouseEvent): Promise<void> {
         event.preventDefault()
+        event.stopPropagation()
+        if (!this.isRemoteItemSelected(item)) {
+            this.selectSingleRemoteItem(item.fullPath)
+        }
         this.platform.popupContextMenu(await this.buildContextMenu(item), event)
     }
 
@@ -442,20 +600,27 @@ export class SFTPPanelComponent {
         const items: MenuItemOptions[] = [
             {
                 click: () => this.uploadLocalItem(item),
-                label: 'Upload',
+                label: this.translate.instant('Upload'),
+            },
+            {
+                click: () => this.navigateLocal(this.localPath),
+                label: this.translate.instant('Refresh current directory'),
+            },
+            {
+                type: 'separator',
             },
             {
                 click: () => this.platform.setClipboard({
                     text: item.fullPath,
                 }),
-                label: 'Copy full path',
+                label: this.translate.instant('Copy full path'),
             },
         ]
 
         if (item.isDirectory) {
             items.unshift({
                 click: () => this.openLocal(item),
-                label: 'Open directory',
+                label: this.translate.instant('Open directory'),
             })
         }
 
@@ -464,28 +629,23 @@ export class SFTPPanelComponent {
 
     async showLocalContextMenu (item: LocalFileEntry, event: MouseEvent): Promise<void> {
         event.preventDefault()
-        this.clearLocalClickTimer()
+        event.stopPropagation()
         this.selectedLocalItemPath = item.fullPath
         this.platform.popupContextMenu(await this.buildLocalContextMenu(item), event)
     }
 
-    private scheduleLocalSingleClick (item: LocalFileEntry): void {
-        this.clearLocalClickTimer()
-        this.localClickTimer = setTimeout(() => {
-            this.localClickTimer = null
-            if (!item.isDirectory) {
-                return
-            }
-            void this.openLocal(item)
-        }, this.localSingleClickDelayMs)
-    }
-
-    private clearLocalClickTimer (): void {
-        if (this.localClickTimer === null) {
+    showPaneContextMenu (isRemotePane: boolean, event: MouseEvent): void {
+        if (event.target !== event.currentTarget) {
             return
         }
-        clearTimeout(this.localClickTimer)
-        this.localClickTimer = null
+        event.preventDefault()
+        event.stopPropagation()
+
+        const menu = this.buildPaneContextMenu(isRemotePane)
+        if (!menu.length) {
+            return
+        }
+        this.platform.popupContextMenu(menu, event)
     }
 
     get shouldShowCWDTip (): boolean {
@@ -520,6 +680,30 @@ export class SFTPPanelComponent {
 
     onFilterChange (): void {
         this.updateFilteredList()
+    }
+
+    getNoFilesMatchMessage (): string {
+        return this.translate.instant('No files match the filter "{filter}"', {
+            filter: this.filterText,
+        })
+    }
+
+    private buildPaneContextMenu (isRemotePane: boolean): MenuItemOptions[] {
+        if (isRemotePane) {
+            return [{
+                click: () => this.navigate(this.path),
+                label: this.translate.instant('Refresh current directory'),
+            }]
+        }
+
+        if (!this.localPath) {
+            return []
+        }
+
+        return [{
+            click: () => this.navigateLocal(this.localPath),
+            label: this.translate.instant('Refresh current directory'),
+        }]
     }
 
     private updateFilteredList (): void {
