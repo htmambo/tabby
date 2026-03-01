@@ -13,7 +13,7 @@ profile-icon(
 )
 
 .name(
-    [class.no-hover]='config.store.terminal.hideCloseButton && config.store.terminal.hideTabOptionsButton'
+    [class.no-hover]='config.store.terminal.hideCloseButton'
     cdkDrag,
     cdkDragRootElement='tab-header',
     [cdkDragData]='tab',
@@ -22,8 +22,6 @@ profile-icon(
 ) {{tab.customTitle || tab.title}}
 
 .buttons
-    button(*ngIf='active && !config.store.terminal.hideTabOptionsButton',(click)='onContextMenu($event)') !{require('../icons/tab-options.svg')}
-
     button(*ngIf='!config.store.terminal.hideCloseButton',(click)='app.closeTab(tab, true)') &times;
 
 ng-content

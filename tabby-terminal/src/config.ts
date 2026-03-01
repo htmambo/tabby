@@ -23,7 +23,6 @@ export class TerminalConfigProvider extends ConfigProvider {
             hideTabIndex: false,
             showTabProfileIcon: false,
             hideCloseButton: false,
-            hideTabOptionsButton: false,
             rightClick: 'menu',
             pasteOnMiddleClick: true,
             copyOnSelect: false,
