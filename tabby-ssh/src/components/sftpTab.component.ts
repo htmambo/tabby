@@ -25,10 +25,10 @@ export class SFTPTabComponent extends BaseTabComponent {
     }
 
     ngOnInit (): void {
-        const host = this.profile?.options.host
-        const title = host
-            ? `${this.translate.instant(_('SFTP'))}: ${host}`
-            : this.translate.instant(_('SFTP'))
+        const profileName = this.profile?.name.trim() ?? ''
+        const host = this.profile?.options.host.trim() ?? ''
+        const target = profileName !== '' ? profileName : host
+        const title = target !== '' ? `SFTP: ${target}` : 'SFTP'
         this.setTitle(title)
         this.icon = 'far fa-folder-open'
 

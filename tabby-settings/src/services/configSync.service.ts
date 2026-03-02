@@ -33,7 +33,8 @@ export class ConfigSyncService {
         config.ready$.toPromise().then(() => {
             this.autoSync()
             config.changed$.subscribe(() => {
-                if (this.isEnabled() && this.config.store.configSync.auto) {
+                if (this.isEnabled() && this.isAutoSyncEnabled()) {
+                    this.logger.debug('Local config changed, uploading (auto sync)')
                     this.upload()
                 }
             })
@@ -49,6 +50,10 @@ export class ConfigSyncService {
             !!this.config.store.configSync.host &&
             !!this.config.store.configSync.token &&
             !!this.config.store.configSync.configID
+    }
+
+    private isAutoSyncEnabled (): boolean {
+        return this.config.store.configSync.auto === true
     }
 
     async getConfigs (): Promise<Config[]> {
@@ -185,7 +190,7 @@ export class ConfigSyncService {
     private async autoSync () {
         while (true) {
             try {
-                if (this.isEnabled() && this.config.store.configSync.auto) {
+                if (this.isEnabled() && this.isAutoSyncEnabled()) {
                     const cfg = await this.getConfig(this.config.store.configSync.configID)
                     if (new Date(cfg.modified_at) > this.lastRemoteChange) {
                         this.logger.info('Remote config changed, downloading')
