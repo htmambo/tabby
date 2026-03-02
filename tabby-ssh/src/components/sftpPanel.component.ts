@@ -1,7 +1,7 @@
 import * as C from 'constants'
 import * as localPath from 'path'
 import { posix as path } from 'path'
-import { Component, Input, Output, EventEmitter, Inject, Optional } from '@angular/core'
+import { Component, Input, Output, EventEmitter, Inject, Optional, HostListener, ElementRef } from '@angular/core'
 import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry, TranslateService } from 'tabby-core'
 import { SFTPSession, SFTPFile } from '../session/sftp'
 import { SSHSession } from '../session/ssh'
@@ -37,15 +37,18 @@ export class SFTPPanelComponent {
     showFilter = false
     filterText = ''
     initError: string|null = null
-    selectedLocalItemPath: string|null = null
+    selectedLocalItemPaths = new Set<string>()
+    private localSelectionAnchorPath: string|null = null
     selectedRemoteItemPaths = new Set<string>()
     private remoteSelectionAnchorPath: string|null = null
+    private activePane: 'local'|'remote' = 'remote'
     protected contextMenuProviders: SFTPContextMenuItemProvider[] = []
 
     constructor (
         private ngbModal: NgbModal,
         private notifications: NotificationsService,
         private translate: TranslateService,
+        private host: ElementRef<HTMLElement>,
         public platform: PlatformService,
         @Optional() @Inject(SFTPContextMenuItemProvider) contextMenuProviders: SFTPContextMenuItemProvider[]|null,
     ) {
@@ -133,7 +136,7 @@ export class SFTPPanelComponent {
     async navigateLocal (newPath: string, fallbackOnError = true): Promise<void> {
         const previousPath = this.localPath
         this.localPath = localPath.resolve(newPath)
-        this.selectedLocalItemPath = null
+        this.clearLocalSelection()
         this.updateLocalPathSegments()
 
         this.localFileList = null
@@ -250,11 +253,28 @@ export class SFTPPanelComponent {
         return this.getSelectedRemoteItems().length
     }
 
+    get selectedLocalItemsCount (): number {
+        return this.getSelectedLocalItems().length
+    }
+
+    get areAllRemoteItemsSelected (): boolean {
+        return this.filteredFileList.length > 0 && this.filteredFileList.every(x => this.selectedRemoteItemPaths.has(x.fullPath))
+    }
+
+    get areAllLocalItemsSelected (): boolean {
+        return this.filteredLocalFileList.length > 0 && this.filteredLocalFileList.every(x => this.selectedLocalItemPaths.has(x.fullPath))
+    }
+
     isRemoteItemSelected (item: SFTPFile): boolean {
         return this.selectedRemoteItemPaths.has(item.fullPath)
     }
 
+    isLocalItemSelected (item: LocalFileEntry): boolean {
+        return this.selectedLocalItemPaths.has(item.fullPath)
+    }
+
     onRemoteItemClick (item: SFTPFile, event: MouseEvent): void {
+        this.setActivePane(true)
         const itemPath = item.fullPath
         const isRangeSelection = event.shiftKey
         const isToggleSelection = event.ctrlKey || event.metaKey
@@ -274,15 +294,34 @@ export class SFTPPanelComponent {
     }
 
     async onRemoteItemDoubleClick (item: SFTPFile): Promise<void> {
+        this.setActivePane(true)
         this.selectSingleRemoteItem(item.fullPath)
         await this.open(item)
     }
 
-    onLocalItemClick (item: LocalFileEntry): void {
-        this.selectedLocalItemPath = item.fullPath
+    onLocalItemClick (item: LocalFileEntry, event: MouseEvent): void {
+        this.setActivePane(false)
+        const itemPath = item.fullPath
+        const isRangeSelection = event.shiftKey
+        const isToggleSelection = event.ctrlKey || event.metaKey
+
+        if (isRangeSelection) {
+            this.selectLocalRange(itemPath, isToggleSelection)
+            return
+        }
+
+        if (isToggleSelection) {
+            this.toggleLocalSelection(itemPath)
+            this.localSelectionAnchorPath = itemPath
+            return
+        }
+
+        this.selectSingleLocalItem(itemPath)
     }
 
     async onLocalItemDoubleClick (item: LocalFileEntry): Promise<void> {
+        this.setActivePane(false)
+        this.selectSingleLocalItem(item.fullPath)
         if (item.isDirectory) {
             await this.openLocal(item)
             return
@@ -292,19 +331,34 @@ export class SFTPPanelComponent {
 
     async uploadLocalItem (item: LocalFileEntry): Promise<void> {
         try {
-            if (item.isDirectory) {
-                const transfer = await this.platform.startUploadDirectory([item.fullPath])
-                await this.uploadOneFolder(transfer)
-            } else {
-                const transfers = await this.platform.startUpload({ multiple: false }, [item.fullPath])
-                if (!transfers.length) {
-                    return
-                }
-                await this.uploadOne(transfers[0])
-            }
+            await this.uploadLocalItemInternal(item)
             this.notifications.notice(`Uploaded ${item.name}`)
         } catch (error) {
             this.notifications.error(`Failed to upload ${item.name}: ${error.message}`)
+        }
+    }
+
+    async uploadSelectedLocalItems (): Promise<void> {
+        const selectedItems = this.getSelectedLocalItems()
+        if (!selectedItems.length) {
+            return
+        }
+
+        let uploadedCount = 0
+        for (const item of selectedItems) {
+            try {
+                await this.uploadLocalItemInternal(item)
+                uploadedCount++
+            } catch (error) {
+                const message = error?.message ?? `${error}`
+                this.notifications.error(`Failed to upload ${item.name}: ${message}`)
+            }
+        }
+
+        if (uploadedCount > 0) {
+            this.notifications.notice(this.translate.instant('Uploaded {count} item(s)', {
+                count: uploadedCount,
+            }))
         }
     }
 
@@ -339,6 +393,48 @@ export class SFTPPanelComponent {
         for (const item of this.getSelectedRemoteItems()) {
             await this.downloadItem(item)
         }
+    }
+
+    selectAllRemoteItems (): void {
+        if (!this.filteredFileList.length) {
+            this.clearRemoteSelection()
+            return
+        }
+        this.selectedRemoteItemPaths = new Set(this.filteredFileList.map(x => x.fullPath))
+        this.remoteSelectionAnchorPath = this.filteredFileList[0].fullPath
+    }
+
+    toggleSelectAllRemoteItems (): void {
+        if (this.areAllRemoteItemsSelected) {
+            this.clearRemoteSelection()
+            return
+        }
+        this.selectAllRemoteItems()
+    }
+
+    selectAllLocalItems (): void {
+        if (!this.filteredLocalFileList.length) {
+            this.clearLocalSelection()
+            return
+        }
+        this.selectedLocalItemPaths = new Set(this.filteredLocalFileList.map(x => x.fullPath))
+        this.localSelectionAnchorPath = this.filteredLocalFileList[0].fullPath
+    }
+
+    toggleSelectAllLocalItems (): void {
+        if (this.areAllLocalItemsSelected) {
+            this.clearLocalSelection()
+            return
+        }
+        this.selectAllLocalItems()
+    }
+
+    clearRemoteSelectionAction (): void {
+        this.clearRemoteSelection()
+    }
+
+    clearLocalSelectionAction (): void {
+        this.clearLocalSelection()
     }
 
     async openCreateDirectoryModal (): Promise<void> {
@@ -487,14 +583,45 @@ export class SFTPPanelComponent {
         return this.fileList.filter(x => this.selectedRemoteItemPaths.has(x.fullPath))
     }
 
+    private getSelectedLocalItems (): LocalFileEntry[] {
+        if (!this.localFileList) {
+            return []
+        }
+        return this.localFileList.filter(x => this.selectedLocalItemPaths.has(x.fullPath))
+    }
+
+    private async uploadLocalItemInternal (item: LocalFileEntry): Promise<void> {
+        if (item.isDirectory) {
+            const transfer = await this.platform.startUploadDirectory([item.fullPath])
+            await this.uploadOneFolder(transfer)
+            return
+        }
+
+        const transfers = await this.platform.startUpload({ multiple: false }, [item.fullPath])
+        if (!transfers.length) {
+            return
+        }
+        await this.uploadOne(transfers[0])
+    }
+
     private clearRemoteSelection (): void {
         this.selectedRemoteItemPaths = new Set()
         this.remoteSelectionAnchorPath = null
     }
 
+    private clearLocalSelection (): void {
+        this.selectedLocalItemPaths = new Set()
+        this.localSelectionAnchorPath = null
+    }
+
     private selectSingleRemoteItem (itemPath: string): void {
         this.selectedRemoteItemPaths = new Set([itemPath])
         this.remoteSelectionAnchorPath = itemPath
+    }
+
+    private selectSingleLocalItem (itemPath: string): void {
+        this.selectedLocalItemPaths = new Set([itemPath])
+        this.localSelectionAnchorPath = itemPath
     }
 
     private toggleRemoteSelection (itemPath: string): void {
@@ -507,6 +634,19 @@ export class SFTPPanelComponent {
         this.selectedRemoteItemPaths = selection
         if (!selection.size) {
             this.remoteSelectionAnchorPath = null
+        }
+    }
+
+    private toggleLocalSelection (itemPath: string): void {
+        const selection = new Set(this.selectedLocalItemPaths)
+        if (selection.has(itemPath)) {
+            selection.delete(itemPath)
+        } else {
+            selection.add(itemPath)
+        }
+        this.selectedLocalItemPaths = selection
+        if (!selection.size) {
+            this.localSelectionAnchorPath = null
         }
     }
 
@@ -530,6 +670,26 @@ export class SFTPPanelComponent {
         this.selectedRemoteItemPaths = new Set(range)
     }
 
+    private selectLocalRange (itemPath: string, append = false): void {
+        const anchorPath = this.localSelectionAnchorPath ?? itemPath
+        const range = this.getLocalRange(anchorPath, itemPath)
+        if (!range.length) {
+            this.selectSingleLocalItem(itemPath)
+            return
+        }
+
+        if (append) {
+            const selection = new Set(this.selectedLocalItemPaths)
+            for (const filePath of range) {
+                selection.add(filePath)
+            }
+            this.selectedLocalItemPaths = selection
+            return
+        }
+
+        this.selectedLocalItemPaths = new Set(range)
+    }
+
     private getRemoteRange (anchorPath: string, itemPath: string): string[] {
         const start = this.filteredFileList.findIndex(x => x.fullPath === anchorPath)
         const end = this.filteredFileList.findIndex(x => x.fullPath === itemPath)
@@ -540,6 +700,18 @@ export class SFTPPanelComponent {
         const from = Math.min(start, end)
         const to = Math.max(start, end)
         return this.filteredFileList.slice(from, to + 1).map(x => x.fullPath)
+    }
+
+    private getLocalRange (anchorPath: string, itemPath: string): string[] {
+        const start = this.filteredLocalFileList.findIndex(x => x.fullPath === anchorPath)
+        const end = this.filteredLocalFileList.findIndex(x => x.fullPath === itemPath)
+        if (start === -1 || end === -1) {
+            return []
+        }
+
+        const from = Math.min(start, end)
+        const to = Math.max(start, end)
+        return this.filteredLocalFileList.slice(from, to + 1).map(x => x.fullPath)
     }
 
     private getPreferredLocalDownloadDirectory (): string {
@@ -590,6 +762,7 @@ export class SFTPPanelComponent {
     async showContextMenu (item: SFTPFile, event: MouseEvent): Promise<void> {
         event.preventDefault()
         event.stopPropagation()
+        this.setActivePane(true)
         if (!this.isRemoteItemSelected(item)) {
             this.selectSingleRemoteItem(item.fullPath)
         }
@@ -617,6 +790,15 @@ export class SFTPPanelComponent {
             },
         ]
 
+        if (this.selectedLocalItemsCount > 1 && this.isLocalItemSelected(item)) {
+            items.unshift({
+                click: () => this.uploadSelectedLocalItems(),
+                label: this.translate.instant('Upload selected ({count})', {
+                    count: this.selectedLocalItemsCount,
+                }),
+            })
+        }
+
         if (item.isDirectory) {
             items.unshift({
                 click: () => this.openLocal(item),
@@ -630,7 +812,10 @@ export class SFTPPanelComponent {
     async showLocalContextMenu (item: LocalFileEntry, event: MouseEvent): Promise<void> {
         event.preventDefault()
         event.stopPropagation()
-        this.selectedLocalItemPath = item.fullPath
+        this.setActivePane(false)
+        if (!this.isLocalItemSelected(item)) {
+            this.selectSingleLocalItem(item.fullPath)
+        }
         this.platform.popupContextMenu(await this.buildLocalContextMenu(item), event)
     }
 
@@ -640,6 +825,7 @@ export class SFTPPanelComponent {
         }
         event.preventDefault()
         event.stopPropagation()
+        this.setActivePane(isRemotePane)
 
         const menu = this.buildPaneContextMenu(isRemotePane)
         if (!menu.length) {
@@ -690,20 +876,80 @@ export class SFTPPanelComponent {
 
     private buildPaneContextMenu (isRemotePane: boolean): MenuItemOptions[] {
         if (isRemotePane) {
-            return [{
+            const items: MenuItemOptions[] = []
+            if (this.filteredFileList.length) {
+                items.push({
+                    click: () => this.selectAllRemoteItems(),
+                    label: this.translate.instant('Select all'),
+                })
+            }
+            if (this.selectedRemoteItemsCount > 0) {
+                items.push({
+                    click: () => this.clearRemoteSelectionAction(),
+                    label: this.translate.instant('Clear selection'),
+                })
+            }
+            items.push({
                 click: () => this.navigate(this.path),
                 label: this.translate.instant('Refresh current directory'),
-            }]
+            })
+            return items
         }
 
         if (!this.localPath) {
             return []
         }
 
-        return [{
+        const items: MenuItemOptions[] = []
+        if (this.filteredLocalFileList.length) {
+            items.push({
+                click: () => this.selectAllLocalItems(),
+                label: this.translate.instant('Select all'),
+            })
+        }
+        if (this.selectedLocalItemsCount > 0) {
+            items.push({
+                click: () => this.clearLocalSelectionAction(),
+                label: this.translate.instant('Clear selection'),
+            })
+            items.push({
+                click: () => this.uploadSelectedLocalItems(),
+                label: this.translate.instant('Upload selected ({count})', {
+                    count: this.selectedLocalItemsCount,
+                }),
+            })
+        }
+        items.push({
             click: () => this.navigateLocal(this.localPath),
             label: this.translate.instant('Refresh current directory'),
-        }]
+        })
+        return items
+    }
+
+    setActivePane (isRemotePane: boolean): void {
+        this.activePane = isRemotePane ? 'remote' : 'local'
+    }
+
+    @HostListener('document:keydown', ['$event'])
+    onGlobalKeyDown (event: KeyboardEvent): void {
+        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'a') {
+            return
+        }
+
+        const target = event.target as HTMLElement | null
+        if (!target || !this.host.nativeElement.contains(target)) {
+            return
+        }
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+            return
+        }
+
+        if (this.activePane === 'local' && this.showLocalPanel) {
+            this.selectAllLocalItems()
+        } else {
+            this.selectAllRemoteItems()
+        }
+        event.preventDefault()
     }
 
     private updateFilteredList (): void {

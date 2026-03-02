@@ -1,5 +1,5 @@
 .modal-header(*ngIf='defaultsMode === "disabled"')
-    h3.m-0 {{profile.name}}
+    h3.m-0 {{profileProxy.name}}
 
 .modal-header(*ngIf='defaultsMode !== "disabled"')
     h3.m-0(
@@ -15,7 +15,7 @@
                 input.form-control(
                     type='text',
                     autofocus,
-                    [(ngModel)]='profile.name',
+                    [(ngModel)]='profileProxy.name',
                 )
 
             .mb-3(*ngIf='defaultsMode === "disabled"')
@@ -37,14 +37,14 @@
                     input.form-control(
                         type='text',
                         alwaysVisibleTypeahead,
-                        [(ngModel)]='profile.icon',
+                        [(ngModel)]='profileProxy.icon',
                         [ngbTypeahead]='iconSearch',
                         [resultTemplate]='rt'
                     )
                     .input-group-text
                         profile-icon(
-                            [icon]='profile.icon',
-                            [color]='profile.color'
+                            [icon]='profileProxy.icon',
+                            [color]='profileProxy.color'
                         )
 
                 ng-template(#rt,let-r='result',let-t='term')
@@ -56,7 +56,7 @@
                     .title(translate) Color
                 input.form-control.w-50(
                     type='text',
-                    [(ngModel)]='profile.color',
+                    [(ngModel)]='profileProxy.color',
                     placeholder='#000000',
                     [ngbTypeahead]='colorsAutocomplete',
                     [resultFormatter]='colorsFormatter'
@@ -66,14 +66,14 @@
                 .header
                     .title(translate) Disable dynamic tab title
                     .description(translate) Connection name will be used instead
-                toggle([(ngModel)]='profile.disableDynamicTitle')
+                toggle([(ngModel)]='profileProxy.disableDynamicTitle')
 
             .form-line
                 .header
                     .title(translate) When a session ends
-                    .description(*ngIf='profile.behaviorOnSessionEnd == "auto"', translate) Only close the tab when session is explicitly terminated
+                    .description(*ngIf='profileProxy.behaviorOnSessionEnd == "auto"', translate) Only close the tab when session is explicitly terminated
                 select.form-control(
-                    [(ngModel)]='profile.behaviorOnSessionEnd',
+                    [(ngModel)]='profileProxy.behaviorOnSessionEnd',
                 )
                     option(ngValue='auto', translate) Auto
                     option(ngValue='keep', translate) Keep
@@ -84,7 +84,7 @@
                 .header
                     .title(translate) Clear terminal after connection
                 toggle(
-                    [(ngModel)]='profile.clearServiceMessagesOnConnect',
+                    [(ngModel)]='profileProxy.clearServiceMessagesOnConnect',
                 )
             .mb-4
 

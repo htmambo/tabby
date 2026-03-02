@@ -16,6 +16,16 @@
             .pane-header
                 .pane-title(translate) Local files
                 .pane-actions
+                    button.btn.btn-link.btn-sm.flex-shrink-0.d-flex(*ngIf='filteredLocalFileList.length > 0', (click)='toggleSelectAllLocalItems()')
+                        i.fas.me-1([class.fa-check-double]='!areAllLocalItemsSelected', [class.fa-xmark]='areAllLocalItemsSelected')
+                        div(*ngIf='!areAllLocalItemsSelected', translate) Select all
+                        div(*ngIf='areAllLocalItemsSelected', translate) Clear selection
+
+                    button.btn.btn-link.btn-sm.flex-shrink-0.d-flex(*ngIf='selectedLocalItemsCount > 0', (click)='uploadSelectedLocalItems()')
+                        i.fas.fa-upload.me-1
+                        div(translate) Upload selected
+                        span.ms-1 {{selectedLocalItemsCount}}
+
                     button.btn.btn-link.btn-sm.flex-shrink-0.d-flex((click)='selectLocalDirectory()')
                         i.fas.fa-folder-open.me-1
                         div(translate) Select directory
@@ -27,7 +37,7 @@
                             (click)='navigateLocal(segment.path)'
                         ) {{segment.name}}
                     .breadcrumb-spacer.flex-grow-1.h-100
-            .pane-body((contextmenu)='showPaneContextMenu(false, $event)')
+            .pane-body((click)='setActivePane(false)', (contextmenu)='showPaneContextMenu(false, $event)')
                 div(*ngIf='localFileList === null', translate) Loading
                 .list-group.list-group-light(*ngIf='localFileList !== null')
                     .list-group-item.list-group-item-action.d-flex.align-items-center(
@@ -39,9 +49,9 @@
                     .list-group-item.list-group-item-action.d-flex.align-items-center(
                         *ngFor='let item of filteredLocalFileList',
                         (contextmenu)='showLocalContextMenu(item, $event)',
-                        (click)='onLocalItemClick(item)',
+                        (click)='onLocalItemClick(item, $event)',
                         (dblclick)='onLocalItemDoubleClick(item)',
-                        [class.local-selected]='selectedLocalItemPath === item.fullPath'
+                        [class.local-selected]='isLocalItemSelected(item)'
                     )
                         i.fa-fw([class]='getIcon(item)')
                         div {{item.name}}
@@ -60,6 +70,11 @@
                     button.btn.btn-link.btn-sm.flex-shrink-0.d-flex(*ngIf='!showFilter', (click)='showFilter = true')
                         i.fas.fa-filter.me-1
                         div(translate) Filter
+
+                    button.btn.btn-link.btn-sm.flex-shrink-0.d-flex(*ngIf='filteredFileList.length > 0', (click)='toggleSelectAllRemoteItems()')
+                        i.fas.me-1([class.fa-check-double]='!areAllRemoteItemsSelected', [class.fa-xmark]='areAllRemoteItemsSelected')
+                        div(*ngIf='!areAllRemoteItemsSelected', translate) Select all
+                        div(*ngIf='areAllRemoteItemsSelected', translate) Clear selection
 
                     button.btn.btn-link.btn-sm.flex-shrink-0.d-flex(*ngIf='selectedRemoteItemsCount > 0', (click)='downloadSelected()')
                         i.fas.fa-download.me-1
@@ -110,7 +125,7 @@
                     )
                     button.btn.btn-secondary((click)='clearFilter()')
                         i.fas.fa-times
-            .pane-body((contextmenu)='showPaneContextMenu(true, $event)')
+            .pane-body((click)='setActivePane(true)', (contextmenu)='showPaneContextMenu(true, $event)')
                 div(*ngIf='fileList === null', translate) Loading
                 .list-group.list-group-light(*ngIf='fileList !== null')
                     .list-group-item.list-group-item-action.d-flex.align-items-center(

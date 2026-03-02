@@ -16,7 +16,7 @@ const iconsClassList = Object.keys(iconsData).map(
     templateUrl: './editProfileModal.component.pug',
 })
 export class EditProfileModalComponent<P extends Profile, PP extends ProfileProvider<P>> {
-    @Input('profile') _profile: P
+    @Input() profile: P
     @Input() profileProvider: PP
     @Input() settingsComponent: new () => ProfileSettingsComponent<P, PP>
     @Input() defaultsMode: 'enabled'|'group'|'disabled' = 'disabled'
@@ -24,22 +24,26 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     groups: PartialProfileGroup<ProfileGroup>[]
     @ViewChild('placeholder', { read: ViewContainerRef }) placeholder: ViewContainerRef
 
-    protected profile: FullyDefined<P> & ConfigProxy<FullyDefined<P>>
+    private sourceProfile: P
+    protected profileProxy: FullyDefined<P> & ConfigProxy<FullyDefined<P>>
     private settingsComponentInstance?: ProfileSettingsComponent<P, PP>
+
+    // Backward-compatible with existing imperative assignments:
+    // modal.componentInstance._profile = ...
+    set _profile (value: P) {
+        this.profile = value
+    }
+
+    get _profile (): P {
+        return this.profile
+    }
 
     constructor (
         private injector: Injector,
         private componentFactoryResolver: ComponentFactoryResolver,
         private profilesService: ProfilesService,
         private modalInstance: NgbActiveModal,
-    ) {
-        if (this.defaultsMode === 'disabled') {
-            this.profilesService.getProfileGroups().then(groups => {
-                this.groups = groups
-                this.profileGroup = groups.find(g => g.id === this.profile.group)
-            })
-        }
-    }
+    ) { }
 
     colorsAutocomplete = text$ => text$.pipe(
         debounceTime(200),
@@ -56,7 +60,24 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     }
 
     ngOnInit () {
-        this.profile = this.profilesService.getConfigProxyForProfile<P>(this._profile, { skipGlobalDefaults: this.defaultsMode === 'enabled', skipGroupDefaults: this.defaultsMode === 'group' })
+        if (!this.profile) {
+            console.error('EditProfileModalComponent opened without a profile input')
+            this.modalInstance.dismiss()
+            return
+        }
+
+        this.sourceProfile = this.profile
+        this.profileProxy = this.profilesService.getConfigProxyForProfile<P>(this.sourceProfile, {
+            skipGlobalDefaults: this.defaultsMode === 'enabled',
+            skipGroupDefaults: this.defaultsMode === 'group',
+        })
+
+        if (this.defaultsMode === 'disabled') {
+            this.profilesService.getProfileGroups().then(groups => {
+                this.groups = groups
+                this.profileGroup = groups.find(g => g.id === this.profileProxy?.group)
+            })
+        }
     }
 
     ngAfterViewInit () {
@@ -66,7 +87,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
                 const componentFactory = this.componentFactoryResolver.resolveComponentFactory(componentType)
                 const componentRef = componentFactory.create(this.injector)
                 this.settingsComponentInstance = componentRef.instance
-                this.settingsComponentInstance.profile = this.profile
+                this.settingsComponentInstance.profile = this.profileProxy
                 this.placeholder.insert(componentRef.hostView)
             })
         }
@@ -88,15 +109,20 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         )
 
     save () {
+        if (!this.profileProxy) {
+            this.modalInstance.dismiss()
+            return
+        }
+
         if (!this.profileGroup) {
-            this.profile.group = ''
+            this.profileProxy.group = ''
         } else {
-            this.profile.group = this.profileGroup.id
+            this.profileProxy.group = this.profileGroup.id
         }
 
         this.settingsComponentInstance?.save?.()
-        this.profile.__cleanup()
-        this.modalInstance.close(this._profile)
+        this.profileProxy.__cleanup?.()
+        this.modalInstance.close(this.sourceProfile)
     }
 
     cancel () {
