@@ -1460,6 +1460,11 @@ msgstr "打开设置标签页：{tab}"
 msgid "Open SFTP panel"
 msgstr "打开 SFTP 面板"
 
+#: tabby-ssh/src/tabContextMenu.ts:30
+#: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:36
+msgid "Open SFTP tab"
+msgstr "打开 SFTP 标签页"
+
 #: locale/tmp-html/tabby-terminal/src/components/loginScriptsSettings.component.html:10
 msgid "Optional"
 msgstr "选填"

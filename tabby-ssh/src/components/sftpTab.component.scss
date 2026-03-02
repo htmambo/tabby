@@ -1,0 +1,12 @@
+:host {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.sftp-tab {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+}

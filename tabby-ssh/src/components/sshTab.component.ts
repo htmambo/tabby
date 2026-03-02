@@ -11,6 +11,7 @@ import { SSHPortForwardingModalComponent } from './sshPortForwardingModal.compon
 import { SSHProfile } from '../api'
 import { SSHShellSession } from '../session/shell'
 import { SSHMultiplexerService } from '../services/sshMultiplexer.service'
+import { SFTPTabComponent } from './sftpTab.component'
 
 /** @hidden */
 @Component({
@@ -233,25 +234,36 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     }
 
     async openSFTP (): Promise<void> {
-        this.sftpPath = await this.session?.getWorkingDirectory() ?? this.sftpPath
-
-        if (!this.effectiveSFTPSession) {
-            this.sshSession = await this.sshMultiplexer.getSession(this.profile)
-        }
-
-        if (!this.effectiveSFTPSession) {
-            this.notifications.error(this.translate.instant(_('Cannot open SFTP panel: SSH session is unavailable')))
+        const sftpSession = await this.resolveSFTPSession()
+        if (!sftpSession) {
             return
         }
 
         setTimeout(() => {
             if (!this.sshSession) {
-                this.sshSession = this.effectiveSFTPSession
+                this.sshSession = sftpSession
             }
             this.sftpPanelVisible = true
             this.ensureSFTPPanelHeightInBounds()
             setTimeout(() => this.ensureSFTPPanelHeightInBounds())
         }, 100)
+    }
+
+    async openSFTPTab (): Promise<void> {
+        const sftpSession = await this.resolveSFTPSession()
+        if (!sftpSession) {
+            return
+        }
+
+        this.app.openNewTabRaw({
+            type: SFTPTabComponent,
+            inputs: {
+                profile: this.profile,
+                sshSession: sftpSession,
+                path: this.sftpPath,
+                cwdDetectionAvailable: this.session?.supportsWorkingDirectory() ?? false,
+            },
+        })
     }
 
     closeSFTP (): void {
@@ -314,6 +326,21 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
         const maxSFTPPanelHeight = Math.max(this.minSFTPPanelHeight, hostHeight - this.minSSHPanelHeight)
         this.sftpPanelHeight = Math.min(maxSFTPPanelHeight, Math.max(this.minSFTPPanelHeight, this.sftpPanelHeight))
+    }
+
+    private async resolveSFTPSession (): Promise<SSHSession|null> {
+        this.sftpPath = await this.session?.getWorkingDirectory() ?? this.sftpPath
+
+        if (!this.effectiveSFTPSession) {
+            this.sshSession = await this.sshMultiplexer.getSession(this.profile)
+        }
+
+        const sftpSession = this.effectiveSFTPSession
+        if (!sftpSession) {
+            this.notifications.error(this.translate.instant(_('Cannot open SFTP panel: SSH session is unavailable')))
+            return null
+        }
+        return sftpSession
     }
 
     @HostListener('document:keydown.escape', ['$event'])

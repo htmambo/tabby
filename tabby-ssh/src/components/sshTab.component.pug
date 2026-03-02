@@ -29,6 +29,10 @@ terminal-toolbar([tab]='this')
         i.far.fa-folder-open
         span(translate) SFTP
 
+    button.btn.btn-sm.btn-link.me-2((click)='openSFTPTab()', *ngIf='session && session.open')
+        i.fas.fa-up-right-from-square
+        span(translate) Open SFTP tab
+
     button.btn.btn-sm.btn-link(
         *ngIf='session && session.open && hostApp.platform !== Platform.Web',
         (click)='showPortForwarding()'

@@ -26,6 +26,11 @@ export class SFTPContextMenu extends TabContextMenuItemProvider {
             click: () => {
                 tab.openSFTP()
             },
+        }, {
+            label: this.translate.instant('Open SFTP tab'),
+            click: () => {
+                tab.openSFTPTab()
+            },
         }]
         if (this.hostApp.platform === Platform.Windows && this.ssh.getWinSCPPath()) {
             items.push({

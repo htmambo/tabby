@@ -1,0 +1,9 @@
+.sftp-tab
+    .alert.alert-danger.mx-3.mt-3(*ngIf='errorMessage') {{errorMessage}}
+    sftp-panel.bg-dark(
+        *ngIf='sshSession',
+        [session]='sshSession',
+        [(path)]='path',
+        [cwdDetectionAvailable]='cwdDetectionAvailable',
+        (closed)='close()'
+    )
