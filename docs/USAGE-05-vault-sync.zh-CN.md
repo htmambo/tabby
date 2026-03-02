@@ -1,0 +1,103 @@
+# Tabby 使用说明：Vault 与配置同步
+
+本页覆盖凭据管理、配置加密与配置同步行为（含自动同步逻辑）。
+
+- 返回索引：[INDEX.zh-CN.md](./INDEX.zh-CN.md)
+
+---
+
+## 9. Vault 与凭据管理
+
+Vault 是“始终加密”的密钥容器，可保存：
+- SSH 登录密码
+- 私钥口令
+- 其他文件型 secret（如私钥文件内容）
+
+## 9.1 基本操作
+
+- 初始化主密码（不可恢复）
+- 解锁查看内容
+- 修改主密码
+- 擦除 Vault
+
+## 9.2 记住主密码策略
+
+解锁弹窗支持设置“记住时长”（分钟/小时/天），超时后会再次要求输入。
+
+## 9.3 配置加密（Encrypt config file）
+
+开启后：
+- 大部分配置写入 Vault 加密区
+- `vault` / `encrypted` / `configSync` 仍保留在外层配置中
+- Config sync 的“部分同步”会受限（UI 会提示不可部分同步）
+
+---
+
+## 10. 配置同步（Config sync）深度说明
+
+该功能依赖 Tabby Web API（非 Web 客户端本身）。
+
+## 10.1 前置条件
+
+`configSync` 需要同时具备：
+- `host`
+- `token`
+- `configID`
+
+并且当前平台是桌面版（Web 版不可用）。
+
+## 10.2 同步页面功能
+
+Sync 页：
+- 设置 Sync host
+- 输入 Secret sync token
+- 连接测试与错误提示
+- 远程配置列表（显示 `modified_at`）
+- 对某条远程配置执行：
+  - Upload / Replace（本地覆盖远程并绑定同步）
+  - Download（远程覆盖本地并绑定同步）
+  - Delete
+  - Upload as a new config
+- 当本地绑定的 `configID` 在远端列表中存在时，可显示 `Sync automatically` 开关
+
+Advanced 页：
+- 当配置未加密时，可选择是否同步以下部分：
+  - hotkeys
+  - appearance
+  - vault
+
+## 10.3 自动同步的真实行为
+
+自动同步只有在 `configSync.auto === true` 时生效（严格布尔判断）。
+
+触发逻辑：
+- 本地配置变化时：自动执行上传
+- 后台每 60 秒轮询远端：
+  - 若远端 `modified_at` 更新，则自动下载
+
+## 10.4 上传/下载的数据合并规则
+
+上传时：
+- 读取本地配置并移除 `configSync` 字段
+- 对于关闭同步的可选部分，保留远端原值
+
+下载时：
+- 拉取远端配置
+- 强制保留本地 `configSync` 字段
+- 若远端配置不是加密模式：对关闭同步的可选部分，保留本地值
+
+## 10.5 关键澄清
+
+- 打开“配置同步”标签页本身不会直接调用上传。
+- 进入该页面会做连接测试和配置列表加载。
+- 如果你观察到“连上服务器后远端被覆盖”，通常需要检查：
+  - `configSync.auto` 是否真的为布尔 `true`
+  - 是否有外部配置变更触发了 `config.changed$`
+  - 当前是否已绑定 `configID`
+
+建议：
+- 多机共用时，先手动执行 Download 对齐，再决定是否开启自动同步。
+- 要求“完全人工同步”时，确保 `configSync.auto: false`。
+
+---
+
