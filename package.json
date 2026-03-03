@@ -94,6 +94,7 @@
   },
   "resolutions": {
     "*/pug": "^3",
+    "@types/minimatch": "5.1.2",
     "lzma-native": "^8.0.6",
     "**/graceful-fs": "^4.2.4",
     "nan": "2.22.2",
@@ -101,6 +102,7 @@
     "node-gyp": "^10.0.0"
   },
   "overrides": {
+    "@types/minimatch": "5.1.2",
     "pug-loader": {
       "pug": "$pug"
     }
@@ -109,6 +111,7 @@
     "build": "npm run build:typings && node scripts/build-modules.mjs",
     "build:typings": "node scripts/build-typings.mjs",
     "build:linux:deb": "npm run build && node scripts/prepackage-plugins.mjs && LINUX_TARGETS=deb node scripts/build-linux.mjs",
+    "build:macos:intel": "ARCH=x86_64 npm run build && ARCH=x86_64 node scripts/prepackage-plugins.mjs && ARCH=x86_64 node scripts/build-macos.mjs",
     "watch": "cross-env TABBY_DEV=1 webpack --progress --color --watch",
     "start": "cross-env TABBY_DEV=1 electron app -d --inspect",
     "start:prod": "electron app --debug",
