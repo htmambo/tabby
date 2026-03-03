@@ -13,6 +13,7 @@ export class SSHShellSession extends BaseSession {
     get serviceMessage$ (): Observable<string> { return this.serviceMessage }
     private serviceMessage = new Subject<string>()
     private ssh: SSHSession|null
+    private shellEnded = false
 
     constructor (
         injector: Injector,
@@ -32,6 +33,7 @@ export class SSHShellSession extends BaseSession {
             throw new Error('SSH session not set')
         }
 
+        this.shellEnded = false
         this.ssh.ref()
         this.ssh.willDestroy$.subscribe(() => {
             this.destroy()
@@ -53,15 +55,22 @@ export class SSHShellSession extends BaseSession {
 
         this.loginScriptProcessor?.executeUnconditionalScripts()
 
-        this.shell.data$.subscribe(data => {
-            this.emitOutput(Buffer.from(data))
+        this.shell.data$.subscribe({
+            next: data => {
+                this.emitOutput(Buffer.from(data))
+            },
+            error: err => {
+                this.logger.warn('Shell stream error:', err)
+                this.handleShellEnd('stream error')
+            },
         })
 
         this.shell.eof$.subscribe(() => {
-            this.logger.info('Shell session ended')
-            if (this.open) {
-                this.destroy()
-            }
+            this.handleShellEnd('EOF')
+        })
+
+        this.shell.closed$.subscribe(() => {
+            this.handleShellEnd('close')
         })
     }
 
@@ -76,12 +85,18 @@ export class SSHShellSession extends BaseSession {
             rows,
             pixHeight: 0,
             pixWidth: 0,
+        }).catch(err => {
+            this.logger.warn('Shell resize failed:', err)
+            this.handleShellEnd('resize failure')
         })
     }
 
     write (data: Buffer): void {
         if (this.shell) {
-            this.shell.write(new Uint8Array(data))
+            this.shell.write(new Uint8Array(data)).catch(err => {
+                this.logger.warn('Shell write failed:', err)
+                this.handleShellEnd('write failure')
+            })
         }
     }
 
@@ -91,6 +106,7 @@ export class SSHShellSession extends BaseSession {
 
     async destroy (): Promise<void> {
         this.logger.debug('Closing shell')
+        this.shellEnded = true
         this.serviceMessage.complete()
         this.kill()
         this.ssh?.unref()
@@ -112,5 +128,14 @@ export class SSHShellSession extends BaseSession {
 
     async getWorkingDirectory (): Promise<string|null> {
         return this.reportedCWD ?? null
+    }
+
+    private handleShellEnd (reason: string): void {
+        if (!this.open || this.shellEnded) {
+            return
+        }
+        this.shellEnded = true
+        this.logger.info(`Shell session ended (${reason})`)
+        void this.destroy()
     }
 }

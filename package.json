@@ -108,7 +108,7 @@
   "scripts": {
     "build": "npm run build:typings && node scripts/build-modules.mjs",
     "build:typings": "node scripts/build-typings.mjs",
-    "build:linux:deb": "npm run build && node scripts/prepackage-plugins.mjs && ARCH=x64 npx electron-builder --linux deb --x64 --publish never",
+    "build:linux:deb": "npm run build && node scripts/prepackage-plugins.mjs && LINUX_TARGETS=deb node scripts/build-linux.mjs",
     "watch": "cross-env TABBY_DEV=1 webpack --progress --color --watch",
     "start": "cross-env TABBY_DEV=1 electron app -d --inspect",
     "start:prod": "electron app --debug",

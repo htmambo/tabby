@@ -6,10 +6,14 @@ import * as vars from './vars.mjs'
 const isTag = (process.env.GITHUB_REF || '').startsWith('refs/tags/')
 
 process.env.ARCH = (process.env.ARCH || process.arch) === 'arm' ? 'armv7l' : process.env.ARCH || process.arch
+const linuxTargets = (process.env.LINUX_TARGETS ?? 'deb,tar.gz,rpm,pacman,appimage')
+    .split(',')
+    .map(x => x.trim())
+    .filter(Boolean)
 
 builder({
     dir: true,
-    linux: ['deb', 'tar.gz', 'rpm', 'pacman', 'appimage'],
+    linux: linuxTargets,
     armv7l: process.env.ARCH === 'armv7l',
     arm64: process.env.ARCH === 'arm64',
     config: {
