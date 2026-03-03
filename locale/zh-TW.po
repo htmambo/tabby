@@ -1501,6 +1501,10 @@ msgstr "換行輸出"
 msgid "Override X11 display"
 msgstr "覆蓋 X11 顯示"
 
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:107
+msgid "Download remote and sync"
+msgstr "下載遠端並同步"
+
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:98
 msgid "Overwrite local and sync"
 msgstr "覆寫本機並同步"
@@ -1516,6 +1520,22 @@ msgstr "覆寫遠端設定檔並開始同步？"
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:96
 msgid "Overwrite the local config and start syncing?"
 msgstr "覆寫本機設定檔並開始同步？"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:100
+msgid "Remote config \"{name}\" (ID: {id}) was modified on {remoteDate}.\nLocal sync checkpoint: {localDate}.\n\nChoose how to proceed:\n- Overwrite remote and sync local config\n- Download remote and sync local config\n- Cancel"
+msgstr "遠端設定檔「{name}」（ID: {id}）已於 {remoteDate} 修改。\n本機同步檢查點：{localDate}。\n\n請選擇後續操作：\n- 覆寫遠端並同步本機設定\n- 下載遠端並同步到本機\n- 取消"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:99
+msgid "Sync conflict detected"
+msgstr "偵測到同步衝突"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:138
+msgid "Unknown date"
+msgstr "未知時間"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:101
+msgid "Unnamed config"
+msgstr "未命名設定檔"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:189
 msgid "Pane resize step"
@@ -2571,4 +2591,3 @@ msgstr "縮小"
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr "動態通訊埠轉發"
-

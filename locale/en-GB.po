@@ -1501,6 +1501,10 @@ msgstr ""
 msgid "Override X11 display"
 msgstr ""
 
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:107
+msgid "Download remote and sync"
+msgstr ""
+
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:98
 msgid "Overwrite local and sync"
 msgstr ""
@@ -1515,6 +1519,22 @@ msgstr ""
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:96
 msgid "Overwrite the local config and start syncing?"
+msgstr ""
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:100
+msgid "Remote config \"{name}\" (ID: {id}) was modified on {remoteDate}.\nLocal sync checkpoint: {localDate}.\n\nChoose how to proceed:\n- Overwrite remote and sync local config\n- Download remote and sync local config\n- Cancel"
+msgstr ""
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:99
+msgid "Sync conflict detected"
+msgstr ""
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:138
+msgid "Unknown date"
+msgstr ""
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:101
+msgid "Unnamed config"
 msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:189
@@ -2571,4 +2591,3 @@ msgstr ""
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr "Dynamic"
-

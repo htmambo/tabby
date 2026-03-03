@@ -17,6 +17,9 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
 
     protected reconnectOffered = false
     protected isDisconnectedByHand = false
+    reconnectInProgress = false
+    private lastInputAt = 0
+    private readonly immediateReconnectInputWindow = 2000
 
     constructor (protected injector: Injector) {
         super(injector)
@@ -59,6 +62,7 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     async initializeSession (): Promise<void> {
         this.reconnectOffered = false
         this.isDisconnectedByHand = false
+        this.lastInputAt = 0
     }
 
     /**
@@ -66,12 +70,17 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     */
     protected onSessionDestroyed (): void {
         super.onSessionDestroyed()
+        if (this.reconnectInProgress) {
+            return
+        }
+        const shouldReconnectImmediately = this.shouldReconnectImmediately()
+        this.lastInputAt = 0
 
         if (this.frontend) {
             if (this.profile.behaviorOnSessionEnd === 'reconnect' && !this.isDisconnectedByHand) {
                 this.reconnect()
             } else if (this.profile.behaviorOnSessionEnd === 'keep' || !this.shouldTabBeDestroyedOnSessionClose()) {
-                this.offerReconnection()
+                this.offerReconnection(shouldReconnectImmediately)
             }
         }
     }
@@ -80,9 +89,13 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     * Offering reconnection to the user if it hasn't been done yet.
     * Set reconnectOffered to true
     */
-    offerReconnection (): void {
+    offerReconnection (reconnectImmediately = false): void {
         if (!this.reconnectOffered) {
             this.reconnectOffered = true
+            if (reconnectImmediately) {
+                this.reconnect()
+                return
+            }
             this.write(this.translate.instant(_('Press any key to reconnect')) + '\r\n')
             this.input$.pipe(first()).subscribe(() => {
                 if (!this.session?.open && this.reconnectOffered) {
@@ -116,16 +129,49 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     }
 
     async reconnect (): Promise<void> {
-        this.session?.destroy()
-        await this.initializeSession()
-        this.clearServiceMessagesOnConnect()
-        this.session?.releaseInitialDataBuffer()
+        if (this.reconnectInProgress) {
+            return
+        }
+        this.reconnectInProgress = true
+        void this.write(this.translate.instant(_('Reconnecting...')) + '\r\n')
+        try {
+            await this.session?.destroy()
+            await this.initializeSession()
+            this.clearServiceMessagesOnConnect()
+            this.session?.releaseInitialDataBuffer()
+            if (this.session?.open) {
+                void this.write(this.translate.instant(_('Reconnected')) + '\r\n')
+            } else {
+                void this.write(this.translate.instant(_('Reconnect failed')) + '\r\n')
+                this.offerReconnection()
+            }
+        } catch (error) {
+            this.logger.error('Reconnect failed:', error)
+            void this.write(this.translate.instant(_('Reconnect failed')) + '\r\n')
+            this.offerReconnection()
+        } finally {
+            this.reconnectInProgress = false
+        }
+    }
+
+    sendInput (data: string|Buffer): void {
+        if (this.session?.open) {
+            this.lastInputAt = Date.now()
+        }
+        super.sendInput(data)
     }
 
     private clearServiceMessagesOnConnect (): void {
         if (this.profile.clearServiceMessagesOnConnect && this.session?.open) {
             this.frontend?.clear()
         }
+    }
+
+    private shouldReconnectImmediately (): boolean {
+        if (this.isDisconnectedByHand || !this.lastInputAt) {
+            return false
+        }
+        return Date.now() - this.lastInputAt <= this.immediateReconnectInputWindow
     }
 
 }

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import { formatDate } from '@angular/common'
 import { Component, HostBinding } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { BaseComponent, ConfigService, PromptModalComponent, HostAppService, PlatformService, NotificationsService, TranslateService } from 'tabby-core'
+import { BaseComponent, ConfigService, PromptModalComponent, HostAppService, PlatformService, NotificationsService, TranslateService, LocaleService } from 'tabby-core'
 import { Config, ConfigSyncService } from '../services/configSync.service'
 
 
@@ -25,6 +26,7 @@ export class ConfigSyncSettingsTabComponent extends BaseComponent {
         private ngbModal: NgbModal,
         private notifications: NotificationsService,
         private translate: TranslateService,
+        private locale: LocaleService,
     ) {
         super()
     }
@@ -85,9 +87,59 @@ export class ConfigSyncSettingsTabComponent extends BaseComponent {
             }
         }
         this.configSync.setConfig(cfg)
-        await this.configSync.upload()
-        this.loadConfigs()
-        this.notifications.info(this.translate.instant('Config uploaded'))
+        try {
+            await this.configSync.upload()
+            this.loadConfigs()
+            this.notifications.info(this.translate.instant('Config uploaded'))
+        } catch (error) {
+            if (this.configSync.isSyncConflictError(error)) {
+                const remoteModifiedAt = this.formatConflictDate(error.actualRemoteModifiedAt)
+                const localCheckpointAt = this.formatConflictDate(error.expectedRemoteModifiedAt)
+                const response = (await this.platform.showMessageBox({
+                    type: 'warning',
+                    message: this.translate.instant('Sync conflict detected'),
+                    detail: this.translate.instant('Remote config "{name}" (ID: {id}) was modified on {remoteDate}.\nLocal sync checkpoint: {localDate}.\n\nChoose how to proceed:\n- Overwrite remote and sync local config\n- Download remote and sync local config\n- Cancel', {
+                        name: error.remoteConfig.name || this.translate.instant('Unnamed config'),
+                        id: error.remoteConfig.id,
+                        remoteDate: remoteModifiedAt,
+                        localDate: localCheckpointAt,
+                    }),
+                    buttons: [
+                        this.translate.instant('Overwrite remote and sync'),
+                        this.translate.instant('Download remote and sync'),
+                        this.translate.instant('Cancel'),
+                    ],
+                    defaultId: 2,
+                    cancelId: 2,
+                })).response
+                if (response === 0) {
+                    await this.configSync.upload(error.remoteConfig, {
+                        expectedRemoteModifiedAt: error.actualRemoteModifiedAt,
+                    })
+                    this.loadConfigs()
+                    this.notifications.info(this.translate.instant('Config uploaded'))
+                    return
+                }
+                if (response === 1) {
+                    await this.configSync.download(error.remoteConfig)
+                    this.loadConfigs()
+                    this.notifications.info(this.translate.instant('Config downloaded'))
+                    return
+                }
+                this.loadConfigs()
+                return
+            }
+            const details = error instanceof Error ? error.message : undefined
+            this.notifications.error(this.translate.instant('Config upload failed'), details)
+        }
+    }
+
+    private formatConflictDate (value: Date|string): string {
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) {
+            return this.translate.instant('Unknown date')
+        }
+        return formatDate(date, 'medium', this.locale.getLocale())
     }
 
     async downloadAndSync (cfg: Config) {

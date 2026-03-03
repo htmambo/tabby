@@ -16,12 +16,40 @@ export interface Config {
     modified_at: Date
 }
 
+interface UploadOptions {
+    expectedRemoteModifiedAt?: Date
+    onConflict?: 'throw' | 'download'
+    localData?: any
+    localFingerprint?: string
+}
+
+export class SyncConflictError extends Error {
+    remoteConfig: Config
+    expectedRemoteModifiedAt: Date
+    actualRemoteModifiedAt: Date
+
+    constructor (remoteConfig: Config, expectedRemoteModifiedAt: Date) {
+        const parsedActualRemoteModifiedAt = new Date(remoteConfig.modified_at)
+        const actualRemoteModifiedAt = Number.isNaN(parsedActualRemoteModifiedAt.getTime()) ? new Date(0) : parsedActualRemoteModifiedAt
+        const parsedExpectedRemoteModifiedAt = new Date(expectedRemoteModifiedAt)
+        const safeExpectedRemoteModifiedAt = Number.isNaN(parsedExpectedRemoteModifiedAt.getTime()) ? new Date(0) : parsedExpectedRemoteModifiedAt
+        super(`Remote config changed (${actualRemoteModifiedAt.toISOString()}) after local checkpoint (${safeExpectedRemoteModifiedAt.toISOString()})`)
+        this.name = 'SyncConflictError'
+        this.remoteConfig = remoteConfig
+        this.expectedRemoteModifiedAt = safeExpectedRemoteModifiedAt
+        this.actualRemoteModifiedAt = actualRemoteModifiedAt
+    }
+}
+
 const OPTIONAL_CONFIG_PARTS = ['hotkeys', 'appearance', 'vault']
 
 @Injectable({ providedIn: 'root' })
 export class ConfigSyncService {
     private logger: Logger
     private lastRemoteChange = new Date(0)
+    private lastSyncedLocalFingerprint: string|null = null
+    private internalConfigWriteInProgress = false
+    private autoSyncLocalChangeInProgress = false
 
     constructor (
         log: LogService,
@@ -30,12 +58,19 @@ export class ConfigSyncService {
         private config: ConfigService,
     ) {
         this.logger = log.create('configSync')
-        config.ready$.toPromise().then(() => {
+        config.ready$.toPromise().then(async () => {
+            try {
+                this.lastSyncedLocalFingerprint = await this.readLocalSyncFingerprint()
+            } catch (error) {
+                this.logger.debug('Failed to initialize local sync fingerprint', error)
+            }
             this.autoSync()
             config.changed$.subscribe(() => {
+                if (this.internalConfigWriteInProgress) {
+                    return
+                }
                 if (this.isEnabled() && this.isAutoSyncEnabled()) {
-                    this.logger.debug('Local config changed, uploading (auto sync)')
-                    this.upload()
+                    void this.handleLocalConfigChanged()
                 }
             })
         })
@@ -86,17 +121,32 @@ export class ConfigSyncService {
 
     setConfig (config: Config): void {
         this.config.store.configSync.configID = config.id
-        this.config.save()
-        this.lastRemoteChange = new Date(config.modified_at)
+        void this.config.save()
+        this.lastRemoteChange = this.parseModifiedAt(config.modified_at)
     }
 
-    async upload (): Promise<void> {
+    isSyncConflictError (error: unknown): error is SyncConflictError {
+        return error instanceof SyncConflictError
+    }
+
+    async upload (remoteConfig?: Config, options: UploadOptions = {}): Promise<void> {
         if (!this.isEnabled()) {
             return
         }
         try {
-            const data = await this.readConfigDataForSync()
-            const remoteData = yaml.load((await this.getConfig(this.config.store.configSync.configID)).content) as any
+            const data = options.localData ?? await this.readConfigDataForSync()
+            const localFingerprint = options.localFingerprint ?? this.serializeForSyncFingerprint(data)
+            const currentRemoteConfig = remoteConfig ?? await this.getConfig(this.config.store.configSync.configID)
+            const expectedRemoteModifiedAt = options.expectedRemoteModifiedAt ?? this.lastRemoteChange
+            if (this.parseModifiedAt(currentRemoteConfig.modified_at) > expectedRemoteModifiedAt) {
+                this.logger.warn('Remote config is newer than local checkpoint, rejecting upload to avoid overwrite')
+                if (options.onConflict === 'download') {
+                    await this.download(currentRemoteConfig)
+                    return
+                }
+                throw new SyncConflictError(currentRemoteConfig, expectedRemoteModifiedAt)
+            }
+            const remoteData = yaml.load(currentRemoteConfig.content) as any
             for (const part of OPTIONAL_CONFIG_PARTS) {
                 if (!this.config.store.configSync.parts[part]) {
                     data[part] = remoteData[part]
@@ -107,7 +157,8 @@ export class ConfigSyncService {
                 content,
                 last_used_with_version: this.platform.getAppVersion(),
             })
-            this.lastRemoteChange = new Date(result.modified_at)
+            this.lastRemoteChange = this.parseModifiedAt(result.modified_at)
+            this.lastSyncedLocalFingerprint = localFingerprint
             this.logger.debug('Config uploaded')
         } catch (error) {
             this.logger.error('Upload failed:', error)
@@ -115,12 +166,12 @@ export class ConfigSyncService {
         }
     }
 
-    async download (): Promise<void> {
+    async download (remoteConfig?: Config): Promise<void> {
         if (!this.isEnabled()) {
             return
         }
         try {
-            const config = await this.getConfig(this.config.store.configSync.configID)
+            const config = remoteConfig ?? await this.getConfig(this.config.store.configSync.configID)
             const data = yaml.load(config.content) as any
 
             const localData = yaml.load(this.config.readRaw()) as any
@@ -135,6 +186,8 @@ export class ConfigSyncService {
             }
 
             await this.writeConfigDataFromSync(data)
+            this.lastRemoteChange = this.parseModifiedAt(config.modified_at)
+            this.lastSyncedLocalFingerprint = await this.readLocalSyncFingerprint()
             this.logger.debug('Config downloaded')
         } catch (error) {
             this.logger.error('Download failed:', error)
@@ -159,9 +212,14 @@ export class ConfigSyncService {
     }
 
     private async writeConfigDataFromSync (data: any) {
-        await this.platform.saveConfig(yaml.dump(data))
-        await this.config.load()
-        await this.config.save()
+        this.internalConfigWriteInProgress = true
+        try {
+            await this.platform.saveConfig(yaml.dump(data))
+            await this.config.load()
+            await this.config.save()
+        } finally {
+            this.internalConfigWriteInProgress = false
+        }
     }
 
     private async request (method: 'GET'|'POST'|'PATCH'|'DELETE', url: string, params = {}) {
@@ -190,12 +248,11 @@ export class ConfigSyncService {
     private async autoSync () {
         while (true) {
             try {
-                if (this.isEnabled() && this.isAutoSyncEnabled()) {
+                if (this.isEnabled() && this.isAutoSyncEnabled() && !this.autoSyncLocalChangeInProgress) {
                     const cfg = await this.getConfig(this.config.store.configSync.configID)
-                    if (new Date(cfg.modified_at) > this.lastRemoteChange) {
+                    if (this.parseModifiedAt(cfg.modified_at) > this.lastRemoteChange) {
                         this.logger.info('Remote config changed, downloading')
-                        this.download()
-                        this.lastRemoteChange = new Date(cfg.modified_at)
+                        await this.download(cfg)
                     }
                 }
             } catch (error) {
@@ -203,5 +260,68 @@ export class ConfigSyncService {
             }
             await new Promise(resolve => setTimeout(resolve, 60000))
         }
+    }
+
+    private async handleLocalConfigChanged (): Promise<void> {
+        if (this.autoSyncLocalChangeInProgress) {
+            return
+        }
+        this.autoSyncLocalChangeInProgress = true
+        try {
+            const localData = await this.readConfigDataForSync()
+            const localFingerprint = this.serializeForSyncFingerprint(localData)
+            if (localFingerprint === this.lastSyncedLocalFingerprint) {
+                this.logger.debug('Local config changed event does not affect sync payload, skipping auto-sync upload')
+                return
+            }
+            const cfg = await this.getConfig(this.config.store.configSync.configID)
+            const remoteModifiedAt = this.parseModifiedAt(cfg.modified_at)
+            if (remoteModifiedAt > this.lastRemoteChange) {
+                this.logger.info('Remote config is newer than local sync checkpoint, downloading instead of uploading')
+                await this.download(cfg)
+                return
+            }
+            this.logger.debug('Local config changed, uploading (auto sync)')
+            await this.upload(cfg, {
+                expectedRemoteModifiedAt: this.lastRemoteChange,
+                onConflict: 'download',
+                localData,
+                localFingerprint,
+            })
+        } catch (error) {
+            this.logger.debug('Recovering from local autoSync trigger error')
+        } finally {
+            this.autoSyncLocalChangeInProgress = false
+        }
+    }
+
+    private parseModifiedAt (value: Date|string): Date {
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) {
+            return new Date(0)
+        }
+        return date
+    }
+
+    private async readLocalSyncFingerprint (): Promise<string> {
+        const data = await this.readConfigDataForSync()
+        return this.serializeForSyncFingerprint(data)
+    }
+
+    private serializeForSyncFingerprint (value: any): string {
+        if (value === null) {
+            return 'null'
+        }
+        if (typeof value !== 'object') {
+            return JSON.stringify(value)
+        }
+        if (value instanceof Date) {
+            return `date:${value.toISOString()}`
+        }
+        if (value instanceof Array) {
+            return `[${value.map(x => this.serializeForSyncFingerprint(x)).join(',')}]`
+        }
+        const keys = Object.keys(value).sort()
+        return `{${keys.map(key => `${JSON.stringify(key)}:${this.serializeForSyncFingerprint(value[key])}`).join(',')}}`
     }
 }

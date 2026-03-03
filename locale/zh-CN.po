@@ -1506,6 +1506,10 @@ msgstr "输出换行符"
 msgid "Override X11 display"
 msgstr "覆盖 X11 显示"
 
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:107
+msgid "Download remote and sync"
+msgstr "下载远程并同步"
+
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:98
 msgid "Overwrite local and sync"
 msgstr "覆盖本地并同步"
@@ -1521,6 +1525,22 @@ msgstr "覆盖远程的配置并开始同步？"
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:96
 msgid "Overwrite the local config and start syncing?"
 msgstr "覆盖本地配置并开始同步？"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:100
+msgid "Remote config \"{name}\" (ID: {id}) was modified on {remoteDate}.\nLocal sync checkpoint: {localDate}.\n\nChoose how to proceed:\n- Overwrite remote and sync local config\n- Download remote and sync local config\n- Cancel"
+msgstr "远程配置“{name}”（ID: {id}）在 {remoteDate} 被修改。\n本地同步检查点：{localDate}。\n\n请选择后续操作：\n- 覆盖远程并同步本地配置\n- 下载远程并同步到本地\n- 取消"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:99
+msgid "Sync conflict detected"
+msgstr "检测到同步冲突"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:138
+msgid "Unknown date"
+msgstr "未知时间"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:101
+msgid "Unnamed config"
+msgstr "未命名配置"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:189
 msgid "Pane resize step"
