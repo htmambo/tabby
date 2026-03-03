@@ -66,6 +66,103 @@ app-root {
                 }
             }
         }
+
+        &.tabs-on-top:not(.tabs-on-left):not(.tabs-on-right) {
+            .tab-bar {
+                background: linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, rgba(0, 0, 0, .2) 100%), #1a1b20;
+                border-bottom: 1px solid rgba(255, 255, 255, .12);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+                height: calc(var(--tabs-height) + 6px);
+
+                .btn-tab-bar {
+                    background: rgba(0, 0, 0, .16);
+                    border-right: 1px solid rgba(255, 255, 255, .12);
+                    height: calc(var(--tabs-height) + 6px);
+                    line-height: calc(var(--tabs-height) + 8px);
+                    color: rgba(255, 255, 255, .72);
+
+                    &:hover {
+                        background: rgba(255, 255, 255, .06) !important;
+                    }
+
+                    &:active {
+                        background: rgba(255, 255, 255, .12) !important;
+                    }
+                }
+
+                > .tabs {
+                    tab-header {
+                        background: rgba(0, 0, 0, .16);
+                        border-left: none;
+                        border-right: 1px solid rgba(255, 255, 255, .12);
+                        color: rgba(255, 255, 255, .72);
+
+                        &:first-child {
+                            border-left: 1px solid rgba(255, 255, 255, .12);
+                        }
+
+                        &:hover {
+                            background: rgba(255, 255, 255, .06);
+                        }
+
+                        .name {
+                            font-weight: 600;
+                            letter-spacing: .2px;
+                            padding-right: 28px;
+                        }
+
+                        &:hover .name:not(.no-hover) {
+                            -webkit-mask-image: none;
+                            -webkit-mask-size: auto;
+                        }
+
+                        .buttons {
+                            opacity: 1;
+                            top: 0;
+                            right: 4px;
+                        }
+
+                        .buttons button {
+                            width: 20px;
+                            height: 20px;
+                            line-height: 20px;
+                            border-radius: 4px;
+                            font-size: 18px;
+                            color: inherit;
+                            opacity: .7;
+                        }
+
+                        .buttons button:hover {
+                            opacity: 1;
+                            background: rgba(255, 255, 255, .14) !important;
+                        }
+
+                        .buttons button:active {
+                            background: rgba(255, 255, 255, .2) !important;
+                        }
+
+                        .current-tab-indicator,
+                        .activity-indicator,
+                        .colorbar {
+                            display: none;
+                        }
+
+                        &.active {
+                            color: #fff;
+                            background: rgba(0, 0, 0, .44);
+                        }
+                    }
+                }
+
+                > .btn-space,
+                > .inset,
+                > .window-controls-spacer,
+                window-controls {
+                    background: rgba(0, 0, 0, .16);
+                    border-left: 1px solid rgba(255, 255, 255, .12);
+                }
+            }
+        }
     }
 }
 
