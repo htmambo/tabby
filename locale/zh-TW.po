@@ -2586,6 +2586,54 @@ msgstr "放大"
 msgid "Zoom out"
 msgstr "縮小"
 
+#: tabby-core/src/components/appRoot.component.ts:324
+msgid "All Connections"
+msgstr "所有連線"
+
+#: tabby-core/src/components/appRoot.component.ts:328
+msgid "Active Sessions"
+msgstr "作用中工作階段"
+
+#: tabby-core/src/components/appRoot.component.ts:308
+msgid "Explorer"
+msgstr "總管"
+
+#: tabby-core/src/components/appRoot.component.ts:320
+msgid "Filter connections and sessions"
+msgstr "篩選連線與工作階段"
+
+#: tabby-core/src/components/appRoot.component.ts:313
+msgid "Expand navigation panel"
+msgstr "展開導覽面板"
+
+#: tabby-core/src/components/appRoot.component.ts:315
+msgid "Collapse navigation panel"
+msgstr "摺疊導覽面板"
+
+#: tabby-core/src/components/appRoot.component.ts:394
+msgid "Production"
+msgstr "正式環境"
+
+#: tabby-core/src/components/appRoot.component.ts:400
+msgid "Lab / Stage"
+msgstr "實驗 / 預備"
+
+#: tabby-core/src/components/appRoot.component.ts:406
+msgid "Dev / Test"
+msgstr "開發 / 測試"
+
+#: tabby-core/src/components/appRoot.component.ts:412
+msgid "Other"
+msgstr "其他"
+
+#: tabby-core/src/components/appRoot.component.ts:439
+msgid "Untitled session"
+msgstr "未命名工作階段"
+
+#: tabby-core/src/components/appRoot.component.ts:449
+msgid "Session"
+msgstr "工作階段"
+
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:43
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgctxt "[Dynamic] port forwarding"

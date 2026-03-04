@@ -24,6 +24,9 @@ export class WindowSettingsTabComponent extends BaseComponent {
     screens: Screen[]
     Platform = Platform
     isFluentVibrancySupported = false
+    readonly minFixedTabWidth = 84
+    readonly maxFixedTabWidth = 600
+    readonly defaultFixedTabWidth = 200
 
     @HostBinding('class.content-box') true
 
@@ -50,11 +53,28 @@ export class WindowSettingsTabComponent extends BaseComponent {
         this.isFluentVibrancySupported = isWindowsBuild(WIN_BUILD_FLUENT_BG_SUPPORTED)
     }
 
+    get fixedTabWidth (): number {
+        return this.normalizeFixedTabWidth(this.config.store?.appearance?.fixedTabWidth)
+    }
+
+    onFixedTabWidthChange (value: unknown): void {
+        this.config.store.appearance.fixedTabWidth = this.normalizeFixedTabWidth(value)
+        this.saveConfiguration()
+    }
+
     @debounce(500)
     saveConfiguration (requireRestart?: boolean) {
         this.config.save()
         if (requireRestart) {
             this.config.requestRestart()
         }
+    }
+
+    private normalizeFixedTabWidth (value: unknown): number {
+        const numericValue = Number(value)
+        if (!Number.isFinite(numericValue)) {
+            return this.defaultFixedTabWidth
+        }
+        return Math.max(this.minFixedTabWidth, Math.min(this.maxFixedTabWidth, Math.round(numericValue)))
     }
 }

@@ -11,6 +11,7 @@ title-bar(
     [class.tabs-on-left]='hasVerticalTabs() && config.store.appearance.tabsLocation == "left"',
     [class.tabs-titlebar-enabled]='isTitleBarNeeded()',
     [class.tabs-on-right]='hasVerticalTabs() && config.store.appearance.tabsLocation == "right"',
+    [style.--tab-fixed-width.px]='fixedTabWidth'
 )
     .tab-bar(
         *ngIf='!hostWindow.isFullscreen || config.store.appearance.tabsInFullscreen',
@@ -97,8 +98,85 @@ title-bar(
         div.window-controls-spacer(
             *ngIf='config.store.appearance.frame == "thin" && (hostApp.platform == Platform.Windows) && (config.store.appearance.tabsLocation == "top")',
         )
-    .content
-        start-page.content-tab.content-tab-active(*ngIf='ready && app.tabs.length == 0')
+
+    .content.royal-workspace(
+        [class.with-royal-sidebar]='shouldShowRoyalSidebar()',
+        [class.royal-sidebar-collapsed]='royalSidebarCollapsed',
+        [style.--royal-sidebar-expanded-width.px]='royalSidebarWidth'
+    )
+        aside.royal-sidebar(
+            *ngIf='shouldShowRoyalSidebar()',
+            [class.collapsed]='royalSidebarCollapsed'
+        )
+            .royal-sidebar-header
+                .royal-sidebar-title(*ngIf='!royalSidebarCollapsed') {{royalSidebarTitle}}
+                button.btn.btn-link.royal-sidebar-toggle(
+                    type='button',
+                    (click)='toggleRoyalSidebar()',
+                    [attr.aria-label]='royalSidebarToggleAriaLabel'
+                ) {{royalSidebarCollapsed ? "›" : "‹"}}
+            .royal-sidebar-content(*ngIf='!royalSidebarCollapsed')
+                .royal-sidebar-search
+                    input.form-control.form-control-sm(
+                        type='search',
+                        [placeholder]='royalSidebarFilterPlaceholder',
+                        [ngModel]='sidebarFilter',
+                        (ngModelChange)='sidebarFilter = $event'
+                    )
+                .royal-nav-sections
+                    ng-container(*ngIf='filteredRoyalConnectionGroups as connectionGroups')
+                        .royal-nav-section(*ngIf='connectionGroups.length > 0')
+                            .royal-nav-section-title {{allConnectionsSectionTitle}}
+                            .royal-nav-groups
+                                .royal-nav-group(*ngFor='let group of connectionGroups; trackBy: connectionGroupTrackBy')
+                                    button.royal-nav-group-header(
+                                        type='button',
+                                        (click)='toggleRoyalGroup(royalConnectionGroupKey(group.id))'
+                                    )
+                                        span.royal-group-toggle-icon {{royalGroupToggleIcon(royalConnectionGroupKey(group.id))}}
+                                        span.royal-group-name {{group.label}}
+                                        span.royal-group-count {{group.items.length}}
+                                    .royal-nav-items(*ngIf='!isRoyalGroupCollapsed(royalConnectionGroupKey(group.id))')
+                                        button.royal-nav-item.connection-item(
+                                            type='button',
+                                            *ngFor='let item of group.items; trackBy: connectionItemTrackBy',
+                                            (click)='launchRoyalConnection(item)'
+                                        )
+                                            profile-icon.royal-nav-item-icon(
+                                                *ngIf='item.profile.icon',
+                                                [icon]='item.profile.icon',
+                                                [color]='item.profile.color ?? undefined'
+                                            )
+                                            span.royal-nav-item-title([ngbTooltip]='item.title') {{item.title}}
+                                            span.royal-nav-item-meta {{item.kind}}
+                    ng-container(*ngIf='royalSessionGroups as sessionGroups')
+                        .royal-nav-section(*ngIf='sessionGroups.length > 0')
+                            .royal-nav-section-title {{activeSessionsSectionTitle}}
+                            .royal-nav-groups
+                                .royal-nav-group(*ngFor='let group of sessionGroups; trackBy: navGroupTrackBy')
+                                    button.royal-nav-group-header(
+                                        type='button',
+                                        (click)='toggleRoyalGroup(royalSessionGroupKey(group.id))'
+                                    )
+                                        span.royal-group-toggle-icon {{royalGroupToggleIcon(royalSessionGroupKey(group.id))}}
+                                        span.royal-group-name {{group.label}}
+                                        span.royal-group-count {{group.items.length}}
+                                    .royal-nav-items(*ngIf='!isRoyalGroupCollapsed(royalSessionGroupKey(group.id))')
+                                        button.royal-nav-item(
+                                            type='button',
+                                            *ngFor='let item of group.items; trackBy: navItemTrackBy',
+                                            [class.active]='item.tab == app.activeTab',
+                                            (click)='app.selectTab(item.tab)'
+                                        )
+                                            span.royal-nav-item-title([ngbTooltip]='item.title') {{item.title}}
+                                            span.royal-nav-item-meta {{item.kind}}
+            button.royal-sidebar-resizer(
+                *ngIf='!royalSidebarCollapsed',
+                type='button',
+                (mousedown)='onRoyalSidebarResizeStart($event)'
+            )
+
+        start-page.content-tab.content-tab-active(*ngIf='app.tabs.length == 0')
 
         tab-body.content-tab(
             #tabBodies,

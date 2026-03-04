@@ -2647,6 +2647,54 @@ msgstr "打开目录"
 msgid "Download directory"
 msgstr "下载目录"
 
+#: tabby-core/src/components/appRoot.component.ts:324
+msgid "All Connections"
+msgstr "所有连接"
+
+#: tabby-core/src/components/appRoot.component.ts:328
+msgid "Active Sessions"
+msgstr "活动会话"
+
+#: tabby-core/src/components/appRoot.component.ts:308
+msgid "Explorer"
+msgstr "资源管理器"
+
+#: tabby-core/src/components/appRoot.component.ts:320
+msgid "Filter connections and sessions"
+msgstr "筛选连接和会话"
+
+#: tabby-core/src/components/appRoot.component.ts:313
+msgid "Expand navigation panel"
+msgstr "展开导航面板"
+
+#: tabby-core/src/components/appRoot.component.ts:315
+msgid "Collapse navigation panel"
+msgstr "折叠导航面板"
+
+#: tabby-core/src/components/appRoot.component.ts:394
+msgid "Production"
+msgstr "生产环境"
+
+#: tabby-core/src/components/appRoot.component.ts:400
+msgid "Lab / Stage"
+msgstr "实验 / 预发布"
+
+#: tabby-core/src/components/appRoot.component.ts:406
+msgid "Dev / Test"
+msgstr "开发 / 测试"
+
+#: tabby-core/src/components/appRoot.component.ts:412
+msgid "Other"
+msgstr "其他"
+
+#: tabby-core/src/components/appRoot.component.ts:439
+msgid "Untitled session"
+msgstr "未命名会话"
+
+#: tabby-core/src/components/appRoot.component.ts:449
+msgid "Session"
+msgstr "会话"
+
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:43
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgctxt "[Dynamic] port forwarding"

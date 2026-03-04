@@ -2556,6 +2556,54 @@ msgstr ""
 msgid "Zoom out"
 msgstr ""
 
+#: tabby-core/src/components/appRoot.component.ts:324
+msgid "All Connections"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:328
+msgid "Active Sessions"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:308
+msgid "Explorer"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:320
+msgid "Filter connections and sessions"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:313
+msgid "Expand navigation panel"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:315
+msgid "Collapse navigation panel"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:394
+msgid "Production"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:400
+msgid "Lab / Stage"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:406
+msgid "Dev / Test"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:412
+msgid "Other"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:439
+msgid "Untitled session"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.ts:449
+msgid "Session"
+msgstr ""
+
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:43
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgctxt "[Dynamic] port forwarding"
