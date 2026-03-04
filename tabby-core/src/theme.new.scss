@@ -140,9 +140,13 @@ app-root {
                             transition: background .15s ease, color .15s ease, transform .15s ease;
                         }
 
+                        &:hover .buttons button,
                         .buttons button:hover {
                             color: #fff;
                             background: #e11d48 !important;
+                        }
+
+                        .buttons button:hover {
                             transform: scale(1.03);
                         }
 
