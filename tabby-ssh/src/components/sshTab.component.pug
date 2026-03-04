@@ -49,7 +49,7 @@ terminal-toolbar([tab]='this')
     [class.active]='sftpPanelResizing'
 )
 
-sftp-panel.bg-dark(
+sftp-panel(
     *ngIf='sftpPanelVisible && effectiveSFTPSession',
     [style.height.px]='sftpPanelHeight',
     [(path)]='sftpPath',
