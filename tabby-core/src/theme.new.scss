@@ -108,7 +108,7 @@ app-root {
                         .name {
                             font-weight: 600;
                             letter-spacing: .2px;
-                            padding-right: 28px;
+                            padding-right: 0;
                         }
 
                         &:hover .name:not(.no-hover) {
@@ -117,9 +117,14 @@ app-root {
                         }
 
                         .buttons {
+                            position: static;
                             opacity: 1;
-                            top: 0;
-                            right: 4px;
+                            top: auto;
+                            right: auto;
+                            height: auto;
+                            margin-left: 8px;
+                            align-self: center;
+                            flex: none;
                         }
 
                         .buttons button {
@@ -128,17 +133,23 @@ app-root {
                             line-height: 20px;
                             border-radius: 4px;
                             font-size: 18px;
-                            color: inherit;
-                            opacity: .7;
+                            font-weight: 700;
+                            color: rgba(255, 255, 255, .9);
+                            opacity: 1;
+                            background: rgba(255, 255, 255, .09);
+                            transition: background .15s ease, color .15s ease, transform .15s ease;
                         }
 
                         .buttons button:hover {
-                            opacity: 1;
-                            background: rgba(255, 255, 255, .14) !important;
+                            color: #fff;
+                            background: #e11d48 !important;
+                            transform: scale(1.03);
                         }
 
                         .buttons button:active {
-                            background: rgba(255, 255, 255, .2) !important;
+                            color: #fff;
+                            background: #be123c !important;
+                            transform: scale(.98);
                         }
 
                         .current-tab-indicator,
