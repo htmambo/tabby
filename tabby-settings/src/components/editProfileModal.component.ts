@@ -60,12 +60,6 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     }
 
     ngOnInit () {
-        if (!this.profile) {
-            console.error('EditProfileModalComponent opened without a profile input')
-            this.modalInstance.dismiss()
-            return
-        }
-
         this.sourceProfile = this.profile
         this.profileProxy = this.profilesService.getConfigProxyForProfile<P>(this.sourceProfile, {
             skipGlobalDefaults: this.defaultsMode === 'enabled',
@@ -75,7 +69,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         if (this.defaultsMode === 'disabled') {
             this.profilesService.getProfileGroups().then(groups => {
                 this.groups = groups
-                this.profileGroup = groups.find(g => g.id === this.profileProxy?.group)
+                this.profileGroup = groups.find(g => g.id === this.profileProxy.group)
             })
         }
     }
@@ -109,11 +103,6 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         )
 
     save () {
-        if (!this.profileProxy) {
-            this.modalInstance.dismiss()
-            return
-        }
-
         if (!this.profileGroup) {
             this.profileProxy.group = ''
         } else {
@@ -121,7 +110,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         }
 
         this.settingsComponentInstance?.save?.()
-        this.profileProxy.__cleanup?.()
+        this.profileProxy.__cleanup()
         this.modalInstance.close(this.sourceProfile)
     }
 

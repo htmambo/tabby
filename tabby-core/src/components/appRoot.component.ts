@@ -508,12 +508,12 @@ export class AppRootComponent {
     }
 
     private getRoyalTabLabel (tab: BaseTabComponent): string {
-        const title = tab.customTitle?.trim() || tab.title?.trim()
+        const title = tab.customTitle.trim() || tab.title.trim()
         return title || this.translate.instant('Untitled session')
     }
 
     private getRoyalTabKind (tab: BaseTabComponent): string {
-        const constructorName = tab.constructor?.name || 'Session'
+        const constructorName = tab.constructor.name || 'Session'
         return constructorName
             .replace(/Component$/, '')
             .replace(/Tab$/, '')
@@ -567,7 +567,7 @@ export class AppRootComponent {
     }
 
     private intoRoyalConnectionGroup (group: PartialProfileGroup<ProfileGroup>): RoyalConnectionGroup {
-        const environment = this.detectRoyalEnvironment(group.name ?? '')
+        const environment = this.detectRoyalEnvironment(group.name)
         return {
             id: group.id,
             label: group.name || this.translate.instant('Ungrouped'),
