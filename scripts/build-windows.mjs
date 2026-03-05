@@ -6,10 +6,18 @@ import { execSync } from 'child_process'
 
 const isTag = (process.env.GITHUB_REF || process.env.BUILD_SOURCEBRANCH || '').startsWith('refs/tags/')
 const keypair = process.env.SM_KEYPAIR_ALIAS
+const signingEnabled = !!keypair
 
 process.env.ARCH = process.env.ARCH || process.arch
 
-console.log('Signing enabled:', !!keypair)
+if (!signingEnabled) {
+    // Prevent electron-builder from trying certificate auto-discovery on unsigned builds.
+    process.env.CSC_IDENTITY_AUTO_DISCOVERY = 'false'
+    delete process.env.WIN_CSC_LINK
+    delete process.env.WIN_CSC_KEY_PASSWORD
+}
+
+console.log('Signing enabled:', signingEnabled)
 
 builder({
     dir: true,
@@ -26,13 +34,13 @@ builder({
                 channel: `latest-${process.env.ARCH}`,
             },
         ] : undefined,
-        forceCodeSigning: !!keypair,
-        win: {
+        forceCodeSigning: signingEnabled,
+        win: signingEnabled ? {
             signtoolOptions: {
                 certificateSha1: process.env.SM_CODE_SIGNING_CERT_SHA1_HASH,
                 publisherName: process.env.SM_PUBLISHER_NAME,
                 signingHashAlgorithms: ['sha256'],
-                sign: keypair ? async function (configuration) {
+                sign: async function (configuration) {
                     console.log('Signing', configuration)
                     if (configuration.path) {
                         try {
@@ -55,8 +63,11 @@ builder({
                             process.exit(1)
                         }
                     }
-                } : undefined,
+                },
             },
+        } : {
+            signAndEditExecutable: false,
+            verifyUpdateCodeSignature: false,
         },
     },
 
