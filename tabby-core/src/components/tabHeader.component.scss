@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $tabs-height: 38px;
 
 :host {
@@ -83,7 +85,7 @@ $tabs-height: 38px;
             $button-size: 26px;
             width: $button-size;
             height: $button-size;
-            border-radius: $button-size / 6;
+            border-radius: math.div($button-size, 6);
             line-height: $button-size;
             align-self: center;
 

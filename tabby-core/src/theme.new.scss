@@ -1,5 +1,7 @@
+@use "sass:math";
+
 $font-family-sans-serif: "Source Sans Pro";
-$font-size-base: 14rem / 16;
+$font-size-base: math.div(14rem, 16);
 
 app-root {
     background: transparent;
@@ -164,7 +166,7 @@ app-root {
 
                         &.active {
                             color: #fff;
-                            background: var(--theme-fg-more-2);
+                            background: var(--bs-primary-bg);
                         }
                     }
                 }

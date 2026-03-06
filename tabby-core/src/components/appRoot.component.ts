@@ -412,10 +412,6 @@ export class AppRootComponent {
         return this.royalCollapsedGroups.has(groupKey)
     }
 
-    royalGroupToggleIcon (groupKey: string): string {
-        return this.isRoyalGroupCollapsed(groupKey) ? '▸' : '▾'
-    }
-
     navGroupTrackBy (_index: number, group: RoyalNavigationGroup): RoyalEnvironment {
         return group.id
     }
@@ -508,8 +504,9 @@ export class AppRootComponent {
     }
 
     private getRoyalTabLabel (tab: BaseTabComponent): string {
-        const title = tab.customTitle.trim() || tab.title.trim()
-        return title || this.translate.instant('Untitled session')
+        const customTitle = typeof tab.customTitle === 'string' ? tab.customTitle.trim() : ''
+        const title = typeof tab.title === 'string' ? tab.title.trim() : ''
+        return customTitle || title || this.translate.instant('Untitled session')
     }
 
     private getRoyalTabKind (tab: BaseTabComponent): string {
