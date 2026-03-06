@@ -164,7 +164,7 @@ app-root {
 
                         &.active {
                             color: #fff;
-                            background: rgba(0, 0, 0, .44);
+                            background: var(--theme-fg-more-2);
                         }
                     }
                 }
