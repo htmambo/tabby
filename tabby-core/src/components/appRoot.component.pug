@@ -124,6 +124,21 @@ title-bar(
                     .royal-sidebar-title-icon(aria-hidden='true')
                         i.fas.fa-folder-tree
                     .royal-sidebar-title {{royalSidebarTitle}}
+                .d-flex(ngbDropdown, *ngIf='!royalSidebarCollapsed')
+                    button.btn.btn-link.royal-sidebar-menu(
+                        type='button',
+                        ngbDropdownToggle,
+                        [ngbTooltip]='royalSidebarOptionsAriaLabel',
+                        tooltipClass='royal-sidebar-tooltip',
+                        container='body',
+                        placement='bottom',
+                        [attr.aria-label]='royalSidebarOptionsAriaLabel'
+                    )
+                        i.fas.fa-sliders-h(aria-hidden='true')
+                    div(ngbDropdownMenu)
+                        button(ngbDropdownItem, (click)='toggleRoyalSingleExpandMode()')
+                            i.fas.fa-fw([class.fa-check]='royalSingleExpandMode', [class.fa-empty-set]='!royalSingleExpandMode')
+                            span(translate) Single expand mode
                 button.btn.btn-link.royal-sidebar-toggle(
                     type='button',
                     [ngbTooltip]='royalSidebarToggleAriaLabel',
@@ -195,7 +210,8 @@ title-bar(
                                             type='button',
                                             *ngFor='let item of group.items; trackBy: navItemTrackBy',
                                             [class.active]='isRoyalSessionActive(item)',
-                                            (click)='activateRoyalSession(item)'
+                                            (click)='activateRoyalSession(item)',
+                                            (contextmenu)='showRoyalSessionContextMenu(item, $event)'
                                         )
                                             span.royal-nav-item-title([ngbTooltip]='item.title', tooltipClass='royal-sidebar-tooltip', container='body') {{item.title}}
                                             span.royal-nav-item-meta {{item.kind}}

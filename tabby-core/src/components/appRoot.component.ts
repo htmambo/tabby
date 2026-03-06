@@ -13,6 +13,7 @@ import { ThemesService } from '../services/themes.service'
 import { UpdaterService } from '../services/updater.service'
 import { CommandService } from '../services/commands.service'
 import { ProfilesService } from '../services/profiles.service'
+import { TabsService } from '../services/tabs.service'
 
 import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
@@ -116,6 +117,7 @@ export class AppRootComponent {
     sidebarFilter = ''
     royalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
+    royalSingleExpandMode = false
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
     private readonly maxFixedTabWidth = 600
@@ -127,6 +129,7 @@ export class AppRootComponent {
     private readonly royalSidebarCollapsedStorageKey = 'tabby.royal.sidebar-collapsed'
     private readonly royalSidebarWidthStorageKey = 'tabby.royal.sidebar-width'
     private readonly royalCollapsedGroupsStorageKey = 'tabby.royal.collapsed-items'
+    private readonly royalSingleExpandModeStorageKey = 'tabby.royal.single-expand-mode'
     private royalCollapsedGroups = new Set<string>()
     private royalConnectionsRefreshToken = 0
     private royalSidebarResizing = false
@@ -145,6 +148,7 @@ export class AppRootComponent {
         private hotkeys: HotkeysService,
         private commands: CommandService,
         private profilesService: ProfilesService,
+        private tabsService: TabsService,
         private translate: TranslateService,
         public updater: UpdaterService,
         public hostWindow: HostWindowService,
@@ -364,6 +368,10 @@ export class AppRootComponent {
         return this.translate.instant('Filter connections and sessions')
     }
 
+    get royalSidebarOptionsAriaLabel (): string {
+        return this.translate.instant('Options')
+    }
+
     get allConnectionsSectionTitle (): string {
         return this.translate.instant('All Connections')
     }
@@ -425,11 +433,19 @@ export class AppRootComponent {
 
     toggleRoyalGroup (groupKey: string): void {
         if (this.royalCollapsedGroups.has(groupKey)) {
-            this.royalCollapsedGroups.delete(groupKey)
+            this.expandRoyalGroup(groupKey)
         } else {
             this.royalCollapsedGroups.add(groupKey)
+            this.saveRoyalCollapsedGroups()
         }
-        this.saveRoyalCollapsedGroups()
+    }
+
+    toggleRoyalSingleExpandMode (): void {
+        this.royalSingleExpandMode = !this.royalSingleExpandMode
+        this.saveRoyalFlag(this.royalSingleExpandModeStorageKey, this.royalSingleExpandMode)
+        if (this.royalSingleExpandMode) {
+            this.normalizeRoyalExpandedGroups()
+        }
     }
 
     isRoyalGroupCollapsed (groupKey: string): boolean {
@@ -473,7 +489,9 @@ export class AppRootComponent {
         event.preventDefault()
         event.stopPropagation()
 
-        const hasOpenConnections = !!item.profile.id && this.getRoyalSessionTargets().some(target => this.getRoyalTabProfileID(target.targetTab) === item.profile.id)
+        const profileID = item.profile.id
+        const boundTab = profileID ? this.getRoyalConnectionBinding(profileID) : null
+        const hasOpenConnections = !!profileID && this.getRoyalSessionTargets().some(target => this.getRoyalTabProfileID(target.targetTab) === profileID)
         const menu: MenuItemOptions[] = [
             {
                 label: this.translate.instant('Connect'),
@@ -495,6 +513,27 @@ export class AppRootComponent {
         menu.push(
             { type: 'separator' },
             {
+                label: this.translate.instant('Rename'),
+                commandLabel: this.translate.instant('Rename tab'),
+                enabled: !!boundTab,
+                click: () => {
+                    if (boundTab) {
+                        this.app.renameTab(boundTab)
+                    }
+                },
+            },
+            {
+                label: this.translate.instant('Duplicate'),
+                commandLabel: this.translate.instant('Duplicate tab'),
+                enabled: !!boundTab,
+                click: () => {
+                    if (boundTab) {
+                        void this.duplicateRoyalTab(boundTab)
+                    }
+                },
+            },
+            { type: 'separator' },
+            {
                 label: this.translate.instant('Close all connections'),
                 enabled: hasOpenConnections,
                 click: () => {
@@ -508,6 +547,23 @@ export class AppRootComponent {
 
     activateRoyalSession (item: RoyalNavigationItem): void {
         this.activateRoyalTabTarget(item)
+    }
+
+    showRoyalSessionContextMenu (item: RoyalNavigationItem, event: MouseEvent): void {
+        event.preventDefault()
+        event.stopPropagation()
+
+        const menu: MenuItemOptions[] = [
+            {
+                label: this.translate.instant('Close'),
+                commandLabel: this.translate.instant('Close tab'),
+                click: () => {
+                    void this.closeRoyalSession(item)
+                },
+            },
+        ]
+
+        this.platform.popupContextMenu(menu, event)
     }
 
     isRoyalConnectionActive (item: RoyalConnectionItem): boolean {
@@ -874,6 +930,7 @@ export class AppRootComponent {
     private syncRoyalActiveConnection (): void {
         this.cleanupRoyalConnectionBindings()
         this.activeRoyalTab = this.getRoyalResolvedActiveTab()
+        this.ensureRoyalActiveGroupExpanded()
     }
 
     private getRoyalProfileTypeKind (tab: BaseTabComponent): string|null {
@@ -923,6 +980,123 @@ export class AppRootComponent {
         }[environment]
     }
 
+    private ensureRoyalActiveGroupExpanded (): void {
+        const activeGroupKey = this.getRoyalActiveGroupKey()
+        if (!activeGroupKey) {
+            return
+        }
+        this.expandRoyalGroup(activeGroupKey)
+    }
+
+    private getRoyalActiveGroupKey (): string|null {
+        const activeTab = this.activeRoyalTab
+        if (!activeTab) {
+            return null
+        }
+
+        const profileID = this.getRoyalTabProfileID(activeTab)
+        if (profileID && this.getRoyalConnectionBinding(profileID) === activeTab) {
+            for (const group of this.royalConnectionGroups) {
+                if (group.items.some(item => item.profile.id === profileID)) {
+                    return this.royalConnectionGroupKey(group.id)
+                }
+            }
+        }
+
+        for (const group of this.royalSessionGroups) {
+            if (group.items.some(item => item.targetTab === activeTab)) {
+                return this.royalSessionGroupKey(group.id)
+            }
+        }
+
+        return null
+    }
+
+    private expandRoyalGroup (groupKey: string): void {
+        let changed = false
+
+        if (this.royalSingleExpandMode) {
+            changed = this.collapseRoyalSiblingGroups(groupKey) || changed
+        }
+
+        if (this.royalCollapsedGroups.delete(groupKey)) {
+            changed = true
+        }
+
+        if (changed) {
+            this.saveRoyalCollapsedGroups()
+        }
+    }
+
+    private collapseRoyalSiblingGroups (groupKey: string): boolean {
+        let changed = false
+        for (const key of this.getRoyalSectionGroupKeys(groupKey)) {
+            if (key === groupKey) {
+                continue
+            }
+            if (!this.royalCollapsedGroups.has(key)) {
+                this.royalCollapsedGroups.add(key)
+                changed = true
+            }
+        }
+        return changed
+    }
+
+    private normalizeRoyalExpandedGroups (): void {
+        const activeGroupKey = this.getRoyalActiveGroupKey()
+        const connectionChanged = this.normalizeRoyalExpandedSection(this.getRoyalConnectionGroupKeys(), activeGroupKey)
+        const sessionChanged = this.normalizeRoyalExpandedSection(this.getRoyalSessionGroupKeys(), activeGroupKey)
+
+        if (connectionChanged || sessionChanged) {
+            this.saveRoyalCollapsedGroups()
+        }
+    }
+
+    private normalizeRoyalExpandedSection (groupKeys: string[], preferredGroupKey: string|null): boolean {
+        const expandedGroupKeys = groupKeys.filter(key => !this.royalCollapsedGroups.has(key))
+        if (expandedGroupKeys.length <= 1) {
+            return false
+        }
+
+        const keepGroupKey = preferredGroupKey && groupKeys.includes(preferredGroupKey) ? preferredGroupKey : expandedGroupKeys[0]
+        let changed = false
+
+        if (this.royalCollapsedGroups.delete(keepGroupKey)) {
+            changed = true
+        }
+
+        for (const key of groupKeys) {
+            if (key === keepGroupKey) {
+                continue
+            }
+            if (!this.royalCollapsedGroups.has(key)) {
+                this.royalCollapsedGroups.add(key)
+                changed = true
+            }
+        }
+
+        return changed
+    }
+
+    private getRoyalSectionGroupKeys (groupKey: string): string[] {
+        if (groupKey.startsWith('connections:')) {
+            return this.getRoyalConnectionGroupKeys()
+        }
+        if (groupKey.startsWith('sessions:')) {
+            return this.getRoyalSessionGroupKeys()
+        }
+        return []
+    }
+
+    private getRoyalConnectionGroupKeys (): string[] {
+        return this.royalConnectionGroups.map(group => this.royalConnectionGroupKey(group.id))
+    }
+
+    private getRoyalSessionGroupKeys (): string[] {
+        return (['prod', 'lab', 'dev', 'other'] as RoyalEnvironment[])
+            .map(groupID => this.royalSessionGroupKey(groupID))
+    }
+
     private async refreshRoyalConnections (): Promise<void> {
         const refreshToken = ++this.royalConnectionsRefreshToken
         try {
@@ -940,6 +1114,7 @@ export class AppRootComponent {
             }
 
             this.royalConnectionGroups = mapped
+            this.ensureRoyalActiveGroupExpanded()
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }
@@ -987,15 +1162,34 @@ export class AppRootComponent {
         )]
 
         for (const tab of tabs) {
-            if (tab.parent instanceof SplitTabComponent) {
-                if (!await tab.canClose()) {
-                    continue
-                }
-                tab.destroy()
-                continue
-            }
-            await this.app.closeTab(tab, true)
+            await this.closeRoyalTab(tab)
         }
+    }
+
+    private async duplicateRoyalTab (tab: BaseTabComponent): Promise<void> {
+        const duplicate = await this.tabsService.duplicate(tab)
+        if (!duplicate) {
+            return
+        }
+
+        const target = this.getRoyalTabTarget(tab)
+        const hostTabIndex = target ? this.app.tabs.indexOf(target.hostTab) : -1
+        this.app.addTabRaw(duplicate, hostTabIndex >= 0 ? hostTabIndex + 1 : null)
+    }
+
+    private async closeRoyalSession (item: RoyalNavigationItem): Promise<void> {
+        await this.closeRoyalTab(item.targetTab)
+    }
+
+    private async closeRoyalTab (tab: BaseTabComponent): Promise<void> {
+        if (tab.parent instanceof SplitTabComponent) {
+            if (!await tab.canClose()) {
+                return
+            }
+            tab.destroy()
+            return
+        }
+        await this.app.closeTab(tab, true)
     }
 
     private isRoyalConnectionVisible (profile: PartialProfile<Profile>): boolean {
@@ -1022,6 +1216,7 @@ export class AppRootComponent {
         this.royalSidebarCollapsed = this.readRoyalFlag(this.royalSidebarCollapsedStorageKey, false)
         this.royalSidebarWidth = this.readRoyalSidebarWidth()
         this.royalCollapsedGroups = new Set(this.readRoyalCollapsedGroups())
+        this.royalSingleExpandMode = this.readRoyalFlag(this.royalSingleExpandModeStorageKey, false)
     }
 
     private readRoyalFlag (key: string, fallback: boolean): boolean {

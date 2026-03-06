@@ -1469,6 +1469,9 @@ msgstr "選用"
 msgid "Options"
 msgstr "選項"
 
+msgid "Single expand mode"
+msgstr "單展開模式"
+
 #: tabby-core/src/utils.ts:62
 msgid "Orange"
 msgstr "橘色"

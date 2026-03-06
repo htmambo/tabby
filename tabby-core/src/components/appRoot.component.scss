@@ -128,7 +128,8 @@ $tab-border-radius: 4px;
 }
 
 .royal-sidebar-toggle,
-.royal-sidebar-badge {
+.royal-sidebar-badge,
+.royal-sidebar-menu {
     flex: none;
     min-width: 32px;
     height: 32px;
@@ -180,6 +181,19 @@ $tab-border-radius: 4px;
 
     &:active {
         background: var(--royal-sidebar-surface-emphasis-bg);
+    }
+}
+
+.royal-sidebar-menu {
+    background: var(--royal-sidebar-surface-bg);
+
+    &:hover,
+    &:focus-visible {
+        background: var(--royal-sidebar-surface-emphasis-bg);
+    }
+
+    &:active {
+        background: var(--royal-sidebar-surface-bg);
     }
 }
 
