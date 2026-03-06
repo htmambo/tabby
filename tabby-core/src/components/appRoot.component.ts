@@ -510,12 +510,69 @@ export class AppRootComponent {
     }
 
     private getRoyalTabKind (tab: BaseTabComponent): string {
+        const kinds = this.getRoyalTabKinds(tab)
+        if (kinds.length === 0) {
+            return this.translate.instant('Session')
+        }
+        if (kinds.length === 1) {
+            return kinds[0]
+        }
+        if (kinds.length === 2) {
+            return `${kinds[0]} · ${kinds[1]}`
+        }
+        return `${kinds[0]} · ${kinds[1]} +${kinds.length - 2}`
+    }
+
+    private getRoyalTabKinds (tab: BaseTabComponent): string[] {
+        if (tab instanceof SplitTabComponent) {
+            const kinds: string[] = []
+            for (const childTab of tab.getAllTabs()) {
+                for (const kind of this.getRoyalTabKinds(childTab)) {
+                    if (!kinds.includes(kind)) {
+                        kinds.push(kind)
+                    }
+                }
+            }
+            return kinds
+        }
+
+        const constructorKind = this.getRoyalConstructorKind(tab)
+        const profileKind = this.getRoyalProfileTypeKind(tab)
+
+        if (profileKind && (!constructorKind || this.isGenericRoyalTabKind(constructorKind))) {
+            return [profileKind]
+        }
+        if (constructorKind) {
+            return [constructorKind]
+        }
+        if (profileKind) {
+            return [profileKind]
+        }
+        return []
+    }
+
+    private getRoyalProfileTypeKind (tab: BaseTabComponent): string|null {
+        const profile = (tab as BaseTabComponent & { profile?: PartialProfile<Profile>|null }).profile
+        if (!profile?.type) {
+            return null
+        }
+        return profile.type
+            .replace(/[-_]+/g, ' ')
+            .trim()
+            .toUpperCase()
+    }
+
+    private getRoyalConstructorKind (tab: BaseTabComponent): string {
         const constructorName = tab.constructor.name || 'Session'
         return constructorName
             .replace(/Component$/, '')
             .replace(/Tab$/, '')
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-            .trim() || this.translate.instant('Session')
+            .trim()
+    }
+
+    private isGenericRoyalTabKind (kind: string): boolean {
+        return ['Session', 'Tab', 'Terminal'].includes(kind)
     }
 
     private detectRoyalEnvironment (name: string): RoyalEnvironment {

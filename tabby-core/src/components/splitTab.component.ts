@@ -826,7 +826,8 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
             ...this.getAllTabs()
                 .filter(x => x !== this.getFocusedTab())
                 .map(x => x.title),
-        ]
+        ].filter((title): title is string => !!title?.trim())
+
         this.setTitle([...new Set(titles)].join(' | '))
     }
 
