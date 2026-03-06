@@ -186,8 +186,8 @@ export class ProfilesService {
         return params
     }
 
-    async launchProfile (profile: PartialProfile<Profile>): Promise<void> {
-        await this.openNewTabForProfile(profile)
+    async launchProfile (profile: PartialProfile<Profile>): Promise<BaseTabComponent|null> {
+        const tab = await this.openNewTabForProfile(profile)
 
         let recentProfiles: PartialProfile<Profile>[] = JSON.parse(window.localStorage['recentProfiles'] ?? '[]')
         if (this.config.store.terminal.showRecentProfiles > 0) {
@@ -198,6 +198,7 @@ export class ProfilesService {
             recentProfiles = []
         }
         window.localStorage['recentProfiles'] = JSON.stringify(recentProfiles)
+        return tab
     }
 
     static getProfileHotkeyName (profile: PartialProfile<Profile>): string {

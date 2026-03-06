@@ -70,3 +70,4 @@ export * from './api'
 export { SFTPFile, SFTPSession } from './session/sftp'
 export { SFTPPanelComponent, SSHTabComponent, SFTPTabComponent }
 export { PasswordStorageService } from './services/passwordStorage.service'
+export { SFTPTabLauncherService } from './services/sftpTabLauncher.service'

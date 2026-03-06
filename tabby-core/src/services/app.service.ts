@@ -60,6 +60,7 @@ export class AppService {
     private tabClosed = new Subject<BaseTabComponent>()
     private tabDragActive = new Subject<BaseTabComponent|null>()
     private ready = new AsyncSubject<void>()
+    private tabsRestored = new AsyncSubject<void>()
     private recoveryStateChangedHint = new Subject<void>()
 
     private completionObservers = new Map<BaseTabComponent, CompletionObserver>()
@@ -70,6 +71,9 @@ export class AppService {
     get tabRemoved$ (): Observable<BaseTabComponent> { return this.tabRemoved }
     get tabClosed$ (): Observable<BaseTabComponent> { return this.tabClosed }
     get tabDragActive$ (): Observable<BaseTabComponent|null> { return this.tabDragActive }
+
+    /** Fires once when saved tabs are restored */
+    get tabsRestored$ (): Observable<void> { return this.tabsRestored }
 
     /** Fires once when the app is ready */
     get ready$ (): Observable<void> { return this.ready }
@@ -108,6 +112,8 @@ export class AppService {
                 /** Continue to store the tabs even if the setting is currently off */
                 this.tabRecovery.enabled = true
             }
+            this.tabsRestored.next()
+            this.tabsRestored.complete()
         })
 
         this.tabClosed$.subscribe(() => {

@@ -17,12 +17,19 @@ const CRYPT_ALG = 'aes-256-cbc'
 const CRYPT_KEY_LENGTH = 256 / 8
 const CRYPT_IV_LENGTH = 128 / 8
 
-export interface StoredVault {
+export interface EncryptedStoredVault {
     version: number
     contents: string
     keySalt: string
     iv: string
 }
+
+export interface PlainStoredVault {
+    version: number
+    plaintext: Vault
+}
+
+export type StoredVault = EncryptedStoredVault|PlainStoredVault
 
 export interface VaultSecret {
     type: string
@@ -52,6 +59,24 @@ function migrateVaultContent (content: any): Vault {
     }
 }
 
+function isEncryptedStoredVault (store: StoredVault|null|undefined): store is EncryptedStoredVault {
+    return !!store
+        && typeof (store as EncryptedStoredVault).contents === 'string'
+        && typeof (store as EncryptedStoredVault).keySalt === 'string'
+        && typeof (store as EncryptedStoredVault).iv === 'string'
+}
+
+function isPlainStoredVault (store: StoredVault|null|undefined): store is PlainStoredVault {
+    return !!store && typeof (store as PlainStoredVault).plaintext === 'object'
+}
+
+function createPlainStoredVault (content: Vault): PlainStoredVault {
+    return {
+        version: 1,
+        plaintext: content,
+    }
+}
+
 function deriveVaultKey (passphrase: string, salt: Buffer): Promise<Buffer> {
     return promisify(crypto.pbkdf2)(
         Buffer.from(passphrase),
@@ -62,7 +87,7 @@ function deriveVaultKey (passphrase: string, salt: Buffer): Promise<Buffer> {
     )
 }
 
-async function encryptVault (content: Vault, passphrase: string): Promise<StoredVault> {
+async function encryptVault (content: Vault, passphrase: string): Promise<EncryptedStoredVault> {
     const keySalt = await promisify(crypto.randomBytes)(PBKDF_SALT_LENGTH)
     const iv = await promisify(crypto.randomBytes)(CRYPT_IV_LENGTH)
     const key = await deriveVaultKey(passphrase, keySalt)
@@ -79,7 +104,7 @@ async function encryptVault (content: Vault, passphrase: string): Promise<Stored
     }
 }
 
-async function decryptVault (vault: StoredVault, passphrase: string): Promise<Vault> {
+async function decryptVault (vault: EncryptedStoredVault, passphrase: string): Promise<Vault> {
     if (vault.version !== 1) {
         throw new Error(`Unsupported vault format version ${vault.version}`)
     }
@@ -125,12 +150,21 @@ export class VaultService {
             }
         } else {
             this.store = null
+            this.forgetPassphrase()
             this.contentChanged.next()
         }
     }
 
+    isEnabled (): boolean {
+        return !!this.store
+    }
+
+    isProtected (): boolean {
+        return isEncryptedStoredVault(this.store)
+    }
+
     isOpen (): boolean {
-        return !!_rememberedPassphrase
+        return this.isEnabled() && (!this.isProtected() || !!_rememberedPassphrase)
     }
 
     forgetPassphrase (): void {
@@ -138,6 +172,10 @@ export class VaultService {
     }
 
     async decrypt (storage: StoredVault, passphrase?: string): Promise<Vault> {
+        if (!isEncryptedStoredVault(storage)) {
+            return migrateVaultContent(storage.plaintext)
+        }
+
         if (!passphrase) {
             passphrase = await this.getPassphrase()
         }
@@ -156,29 +194,61 @@ export class VaultService {
         if (!this.store) {
             return null
         }
+        if (isPlainStoredVault(this.store)) {
+            return migrateVaultContent(this.store.plaintext)
+        }
         return this.decrypt(this.store, passphrase)
     }
 
-    async encrypt (vault: Vault, passphrase?: string): Promise<StoredVault|null> {
+    async encrypt (vault: Vault, passphrase?: string): Promise<EncryptedStoredVault> {
         if (!passphrase) {
             passphrase = await this.getPassphrase()
         }
-        if (_rememberedPassphrase) {
-            _rememberedPassphrase = passphrase
-        }
+        _rememberedPassphrase = passphrase
         return wrapPromise(this.zone, encryptVault(vault, passphrase))
     }
 
     async save (vault: Vault, passphrase?: string): Promise<void> {
         await this.ready$.toPromise()
+        if (passphrase !== undefined) {
+            this.store = passphrase ? await this.encrypt(vault, passphrase) : createPlainStoredVault(vault)
+        } else if (this.isProtected()) {
+            this.store = await this.encrypt(vault)
+        } else {
+            this.store = createPlainStoredVault(vault)
+        }
+        this.contentChanged.next()
+    }
+
+    async setPassphrase (passphrase: string, vault?: Vault|null): Promise<void> {
+        await this.ready$.toPromise()
+        vault ??= await this.load()
+        if (!vault) {
+            return
+        }
         this.store = await this.encrypt(vault, passphrase)
+        this.contentChanged.next()
+    }
+
+    async clearPassphrase (vault?: Vault|null): Promise<void> {
+        await this.ready$.toPromise()
+        vault ??= await this.load()
+        if (!vault) {
+            return
+        }
+        this.store = createPlainStoredVault(vault)
+        this.forgetPassphrase()
         this.contentChanged.next()
     }
 
     async getPassphrase (): Promise<string> {
         if (!_rememberedPassphrase) {
             const modal = this.ngbModal.open(UnlockVaultModalComponent)
-            const { passphrase, rememberFor } = await modal.result
+            const result = await modal.result
+            if (!result?.passphrase) {
+                throw new Error('Vault unlock cancelled')
+            }
+            const { passphrase, rememberFor } = result
             setTimeout(() => {
                 _rememberedPassphrase = null
                 // avoid multiple consequent prompts
@@ -243,14 +313,10 @@ export class VaultService {
         return Object.keys(key).every(k => secret.key[k] === key[k])
     }
 
-    setStore (store: StoredVault): void {
+    setStore (store: StoredVault|null): void {
         this.store = store
         this.ready.next(true)
         this.ready.complete()
-    }
-
-    isEnabled (): boolean {
-        return !!this.store
     }
 }
 

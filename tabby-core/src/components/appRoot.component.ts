@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild } from '@angular/core'
+import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Injector } from '@angular/core'
 import { trigger, style, animate, transition, state } from '@angular/animations'
 import { NgbDropdown, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
@@ -18,12 +18,13 @@ import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
 import { TabBodyComponent } from './tabBody.component'
 import { SplitTabComponent } from './splitTab.component'
-import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup } from '../api'
+import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup } from '../api'
 
 type RoyalEnvironment = 'prod'|'lab'|'dev'|'other'
 
 interface RoyalNavigationItem {
-    tab: BaseTabComponent
+    hostTab: BaseTabComponent
+    targetTab: BaseTabComponent
     title: string
     kind: string
 }
@@ -47,6 +48,11 @@ interface RoyalConnectionGroup {
     label: string
     toneClass: string
     items: RoyalConnectionItem[]
+}
+
+interface RoyalTabTarget {
+    hostTab: BaseTabComponent
+    targetTab: BaseTabComponent
 }
 
 function makeTabAnimation (dimension: string, size: number) {
@@ -109,6 +115,7 @@ export class AppRootComponent {
     royalSidebarCollapsed = false
     sidebarFilter = ''
     royalConnectionGroups: RoyalConnectionGroup[] = []
+    activeRoyalTab: BaseTabComponent|null = null
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
     private readonly maxFixedTabWidth = 600
@@ -125,8 +132,16 @@ export class AppRootComponent {
     private royalSidebarResizing = false
     private royalSidebarResizeStartX = 0
     private royalSidebarResizeStartWidth = this.royalSidebarDefaultWidth
+    private observedRoyalSplitTabs = new WeakSet<SplitTabComponent>()
+    private royalConnectionBindings = new Map<string, BaseTabComponent>()
+    private royalRestoredBindingCandidates = new Set<BaseTabComponent>()
+    private royalRestoreBindingsRetryHandle: ReturnType<typeof setTimeout>|null = null
+    private royalRestoreBindingsAttempt = 0
+    private readonly royalRestoreBindingsRetryDelay = 500
+    private readonly royalRestoreBindingsMaxAttempts = 20
 
     constructor (
+        private injector: Injector,
         private hotkeys: HotkeysService,
         private commands: CommandService,
         private profilesService: ProfilesService,
@@ -136,7 +151,7 @@ export class AppRootComponent {
         public hostApp: HostAppService,
         public config: ConfigService,
         public app: AppService,
-        platform: PlatformService,
+        private platform: PlatformService,
         log: LogService,
         ngbModal: NgbModal,
         _themes: ThemesService,
@@ -145,7 +160,12 @@ export class AppRootComponent {
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
-        this.logger.info('v', platform.getAppVersion())
+        this.logger.info('v', this.platform.getAppVersion())
+
+        this.app.activeTabChange$.subscribe(() => this.syncRoyalActiveConnection())
+        this.app.tabsChanged$.subscribe(() => this.syncRoyalActiveConnection())
+        this.app.tabsRestored$.subscribe(() => this.startRoyalRestoredBindingsRecovery())
+        this.app.tabs.forEach(tab => this.observeRoyalTab(tab))
 
         this.hotkeys.hotkey$.subscribe((hotkey: string) => {
             if (hotkey.startsWith('tab-')) {
@@ -206,6 +226,8 @@ export class AppRootComponent {
         this.app.tabOpened$.subscribe(tab => {
             this.unsortedTabs.push(tab)
             this.noTabs = false
+            this.observeRoyalTab(tab)
+            this.syncRoyalActiveConnection()
             this.app.emitTabDragEnded()
         })
 
@@ -217,6 +239,7 @@ export class AppRootComponent {
             }
             this.unsortedTabs = this.unsortedTabs.filter(x => x !== tab)
             this.noTabs = app.tabs.length === 0
+            this.syncRoyalActiveConnection()
             this.app.emitTabDragEnded()
         })
 
@@ -246,11 +269,12 @@ export class AppRootComponent {
     }
 
     async ngOnInit () {
-        this.config.ready$.toPromise().then(() => {
-            this.ready = true
-            this.syncWindowOpacity()
-            this.app.emitReady()
-        })
+            this.config.ready$.toPromise().then(() => {
+                this.ready = true
+                this.syncWindowOpacity()
+                this.syncRoyalActiveConnection()
+                this.app.emitReady()
+            })
     }
 
     @HostListener('dragover')
@@ -417,7 +441,7 @@ export class AppRootComponent {
     }
 
     navItemTrackBy (_index: number, item: RoyalNavigationItem): BaseTabComponent {
-        return item.tab
+        return item.targetTab
     }
 
     connectionGroupTrackBy (_index: number, group: RoyalConnectionGroup): string {
@@ -428,8 +452,71 @@ export class AppRootComponent {
         return item.profile.id ?? `${item.profile.type}:${item.title}`
     }
 
-    launchRoyalConnection (item: RoyalConnectionItem): void {
-        this.profilesService.launchProfile(item.profile)
+    async activateRoyalConnection (item: RoyalConnectionItem): Promise<void> {
+        const profileID = item.profile.id
+        const boundTab = profileID ? this.getRoyalConnectionBinding(profileID) : null
+        if (boundTab) {
+            this.activateRoyalTab(boundTab)
+            return
+        }
+
+        const tab = await this.profilesService.launchProfile(item.profile)
+        if (!profileID || !tab) {
+            return
+        }
+
+        this.setRoyalConnectionBinding(profileID, tab)
+        this.activateRoyalTab(tab)
+    }
+
+    async showRoyalConnectionContextMenu (item: RoyalConnectionItem, event: MouseEvent): Promise<void> {
+        event.preventDefault()
+        event.stopPropagation()
+
+        const hasOpenConnections = !!item.profile.id && this.getRoyalSessionTargets().some(target => this.getRoyalTabProfileID(target.targetTab) === item.profile.id)
+        const menu: MenuItemOptions[] = [
+            {
+                label: this.translate.instant('Connect'),
+                click: () => {
+                    void this.profilesService.launchProfile(item.profile)
+                },
+            },
+        ]
+
+        if (item.profile.type === 'ssh') {
+            menu.push({
+                label: this.translate.instant('Connect SFTP'),
+                click: () => {
+                    void this.openRoyalSFTPConnection(item.profile)
+                },
+            })
+        }
+
+        menu.push(
+            { type: 'separator' },
+            {
+                label: this.translate.instant('Close all connections'),
+                enabled: hasOpenConnections,
+                click: () => {
+                    void this.closeRoyalConnections(item.profile)
+                },
+            },
+        )
+
+        this.platform.popupContextMenu(menu, event)
+    }
+
+    activateRoyalSession (item: RoyalNavigationItem): void {
+        this.activateRoyalTabTarget(item)
+    }
+
+    isRoyalConnectionActive (item: RoyalConnectionItem): boolean {
+        const boundTab = item.profile.id ? this.getRoyalConnectionBinding(item.profile.id) : null
+        return !!boundTab && this.activeRoyalTab === boundTab
+    }
+
+    isRoyalSessionActive (item: RoyalNavigationItem): boolean {
+        return this.activeRoyalTab === item.targetTab
     }
 
     royalSessionGroupKey (groupID: RoyalEnvironment): string {
@@ -485,17 +572,34 @@ export class AppRootComponent {
         }
 
         const normalizedFilter = this.sidebarFilter.trim().toLowerCase()
-        for (const tab of this.app.tabs) {
+        const primaryTabs = new Set([...this.getRoyalPrimaryConnectionTargets().values()].map(target => target.targetTab))
+        for (const target of this.getRoyalSessionTargets()) {
+            const tab = target.targetTab
+            if (primaryTabs.has(tab)) {
+                continue
+            }
+
             const title = this.getRoyalTabLabel(tab)
             const kind = this.getRoyalTabKind(tab)
-            const environment = this.detectRoyalEnvironment(title)
+            const profileID = this.getRoyalTabProfileID(tab)
+            const isSFTPTab = this.isRoyalSFTPTab(tab)
+
+            let environment = this.detectRoyalEnvironment(title)
+            if (profileID || isSFTPTab) {
+                environment = 'other'
+            }
             const searchText = `${title} ${kind} ${environment}`.toLowerCase()
 
             if (normalizedFilter.length > 0 && !searchText.includes(normalizedFilter)) {
                 continue
             }
 
-            groups[environment].items.push({ tab, title, kind })
+            groups[environment].items.push({
+                hostTab: target.hostTab,
+                targetTab: tab,
+                title,
+                kind,
+            })
         }
 
         return (['prod', 'lab', 'dev', 'other'] as RoyalEnvironment[])
@@ -549,6 +653,227 @@ export class AppRootComponent {
             return [profileKind]
         }
         return []
+    }
+
+    private getRoyalResolvedActiveTab (): BaseTabComponent|null {
+        const activeTab = this.app.activeTab
+        if (!activeTab) {
+            return null
+        }
+        if (activeTab instanceof SplitTabComponent) {
+            return activeTab.getFocusedTab() ?? activeTab
+        }
+        return activeTab
+    }
+
+    private getRoyalSessionTargets (): RoyalTabTarget[] {
+        const result: RoyalTabTarget[] = []
+
+        for (const hostTab of this.app.tabs) {
+            if (hostTab instanceof SplitTabComponent) {
+                const childTabs = hostTab.getAllTabs()
+                if (childTabs.length === 0) {
+                    result.push({ hostTab, targetTab: hostTab })
+                    continue
+                }
+                for (const childTab of childTabs) {
+                    result.push({ hostTab, targetTab: childTab })
+                }
+                continue
+            }
+            result.push({ hostTab, targetTab: hostTab })
+        }
+
+        return result
+    }
+
+    private getRoyalPrimaryConnectionTargets (): Map<string, RoyalTabTarget> {
+        this.cleanupRoyalConnectionBindings()
+
+        const result = new Map<string, RoyalTabTarget>()
+        for (const [profileID, tab] of this.royalConnectionBindings.entries()) {
+            const target = this.getRoyalTabTarget(tab)
+            if (!target) {
+                continue
+            }
+            result.set(profileID, target)
+        }
+
+        return result
+    }
+
+    private getRoyalConnectionBinding (profileID: string|null|undefined): BaseTabComponent|null {
+        if (!profileID) {
+            return null
+        }
+
+        const tab = this.royalConnectionBindings.get(profileID) ?? null
+        if (!tab) {
+            return null
+        }
+
+        if (this.getRoyalTabProfileID(tab) !== profileID || !this.getRoyalTabTarget(tab)) {
+            this.royalConnectionBindings.delete(profileID)
+            return null
+        }
+
+        return tab
+    }
+
+    private setRoyalConnectionBinding (profileID: string, tab: BaseTabComponent): void {
+        if (this.getRoyalTabProfileID(tab) !== profileID || this.isRoyalSFTPTab(tab) || !this.getRoyalTabTarget(tab)) {
+            return
+        }
+
+        this.royalConnectionBindings.set(profileID, tab)
+    }
+
+    private cleanupRoyalConnectionBindings (): void {
+        for (const [profileID, tab] of [...this.royalConnectionBindings.entries()]) {
+            if (this.getRoyalTabProfileID(tab) !== profileID || !this.getRoyalTabTarget(tab)) {
+                this.royalConnectionBindings.delete(profileID)
+            }
+        }
+    }
+
+    private restoreRoyalConnectionBindingsFromTabs (): void {
+        for (const target of this.getRoyalSessionTargets()) {
+            const profileID = this.getRoyalTabProfileID(target.targetTab)
+            if (!profileID || this.getRoyalConnectionBinding(profileID) || this.isRoyalSFTPTab(target.targetTab)) {
+                continue
+            }
+            this.setRoyalConnectionBinding(profileID, target.targetTab)
+        }
+        this.syncRoyalActiveConnection()
+    }
+
+    private startRoyalRestoredBindingsRecovery (): void {
+        this.restoreRoyalConnectionBindingsFromTabs()
+        this.royalRestoredBindingCandidates = new Set(this.app.tabs)
+        this.royalRestoreBindingsAttempt = 0
+        this.stopRoyalRestoredBindingsRecovery()
+        this.restoreRoyalConnectionBindingsFromRestoredCandidates()
+    }
+
+    private stopRoyalRestoredBindingsRecovery (): void {
+        if (this.royalRestoreBindingsRetryHandle) {
+            clearTimeout(this.royalRestoreBindingsRetryHandle)
+            this.royalRestoreBindingsRetryHandle = null
+        }
+    }
+
+    private restoreRoyalConnectionBindingsFromRestoredCandidates (): void {
+        this.cleanupRoyalConnectionBindings()
+
+        for (const hostTab of [...this.royalRestoredBindingCandidates]) {
+            if (!this.app.tabs.includes(hostTab)) {
+                this.royalRestoredBindingCandidates.delete(hostTab)
+                continue
+            }
+
+            const targetTabs = this.getRoyalRestoredBindingTargets(hostTab)
+            if (hostTab instanceof SplitTabComponent && targetTabs.length === 0) {
+                continue
+            }
+
+            for (const targetTab of targetTabs) {
+                if (this.isRoyalSFTPTab(targetTab)) {
+                    continue
+                }
+
+                const profileID = this.getRoyalTabProfileID(targetTab)
+                if (!profileID || this.getRoyalConnectionBinding(profileID)) {
+                    continue
+                }
+
+                this.setRoyalConnectionBinding(profileID, targetTab)
+            }
+
+            this.royalRestoredBindingCandidates.delete(hostTab)
+        }
+
+        this.syncRoyalActiveConnection()
+
+        if (!this.royalRestoredBindingCandidates.size) {
+            this.stopRoyalRestoredBindingsRecovery()
+            return
+        }
+
+        this.royalRestoreBindingsAttempt++
+        if (this.royalRestoreBindingsAttempt >= this.royalRestoreBindingsMaxAttempts) {
+            this.royalRestoredBindingCandidates.clear()
+            this.stopRoyalRestoredBindingsRecovery()
+            return
+        }
+
+        this.royalRestoreBindingsRetryHandle = setTimeout(() => {
+            this.restoreRoyalConnectionBindingsFromRestoredCandidates()
+        }, this.royalRestoreBindingsRetryDelay)
+    }
+
+    private getRoyalRestoredBindingTargets (hostTab: BaseTabComponent): BaseTabComponent[] {
+        if (hostTab instanceof SplitTabComponent) {
+            return hostTab.getAllTabs()
+        }
+        return [hostTab]
+    }
+
+    private getRoyalTabProfileID (tab: BaseTabComponent|null): string|null {
+        const profile = (tab as BaseTabComponent & { profile?: PartialProfile<Profile>|null })?.profile
+        return profile?.id ?? null
+    }
+
+    private isRoyalSFTPTab (tab: BaseTabComponent): boolean {
+        return this.getRoyalConstructorKind(tab) === 'SFTP'
+    }
+
+    private getRoyalTabTarget (tab: BaseTabComponent|null): RoyalTabTarget|null {
+        if (!tab) {
+            return null
+        }
+
+        const hostTab = tab.topmostParent ?? tab
+        if (!this.app.tabs.includes(hostTab)) {
+            return null
+        }
+
+        if (hostTab instanceof SplitTabComponent && !hostTab.getAllTabs().includes(tab)) {
+            return null
+        }
+
+        return {
+            hostTab,
+            targetTab: tab,
+        }
+    }
+
+    private activateRoyalTab (tab: BaseTabComponent): void {
+        const target = this.getRoyalTabTarget(tab)
+        if (!target) {
+            return
+        }
+        this.activateRoyalTabTarget(target)
+    }
+
+    private activateRoyalTabTarget (target: RoyalTabTarget): void {
+        this.app.selectTab(target.hostTab)
+        if (target.hostTab instanceof SplitTabComponent && target.targetTab !== target.hostTab) {
+            target.hostTab.focus(target.targetTab)
+        }
+        this.syncRoyalActiveConnection()
+    }
+
+    private observeRoyalTab (tab: BaseTabComponent): void {
+        if (!(tab instanceof SplitTabComponent) || this.observedRoyalSplitTabs.has(tab)) {
+            return
+        }
+        this.observedRoyalSplitTabs.add(tab)
+        tab.focusChanged$.subscribe(() => this.syncRoyalActiveConnection())
+    }
+
+    private syncRoyalActiveConnection (): void {
+        this.cleanupRoyalConnectionBindings()
+        this.activeRoyalTab = this.getRoyalResolvedActiveTab()
     }
 
     private getRoyalProfileTypeKind (tab: BaseTabComponent): string|null {
@@ -639,6 +964,38 @@ export class AppRootComponent {
 
     private getRoyalConnectionKind (profile: PartialProfile<Profile>): string {
         return this.profilesService.providerForProfile(profile)?.name ?? profile.type.toUpperCase()
+    }
+
+    private async openRoyalSFTPConnection (profile: PartialProfile<Profile>): Promise<void> {
+        try {
+            const { SFTPTabLauncherService } = window['nodeRequire']('tabby-ssh')
+            await this.injector.get(SFTPTabLauncherService).openForProfile(profile)
+        } catch (error) {
+            this.logger.warn('Failed to open SFTP tab from connection sidebar', error)
+        }
+    }
+
+    private async closeRoyalConnections (profile: PartialProfile<Profile>): Promise<void> {
+        if (!profile.id) {
+            return
+        }
+
+        const tabs = [...new Set(
+            this.getRoyalSessionTargets()
+                .filter(target => this.getRoyalTabProfileID(target.targetTab) === profile.id)
+                .map(target => target.targetTab),
+        )]
+
+        for (const tab of tabs) {
+            if (tab.parent instanceof SplitTabComponent) {
+                if (!await tab.canClose()) {
+                    continue
+                }
+                tab.destroy()
+                continue
+            }
+            await this.app.closeTab(tab, true)
+        }
     }
 
     private isRoyalConnectionVisible (profile: PartialProfile<Profile>): boolean {

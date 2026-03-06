@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef } from '@angular/core'
+import { Component, ViewChild, ElementRef, Input } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 
 /** @hidden */
@@ -6,6 +6,8 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
     templateUrl: './setVaultPassphraseModal.component.pug',
 })
 export class SetVaultPassphraseModalComponent {
+    @Input() title = 'Set master passphrase'
+    @Input() buttonLabel = 'Set passphrase'
     passphrase: string
     showPassphrase = false
     @ViewChild('input') input: ElementRef
@@ -21,10 +23,17 @@ export class SetVaultPassphraseModalComponent {
     }
 
     ok (): void {
+        if (!this.canSubmit) {
+            return
+        }
         this.modalInstance.close(this.passphrase)
     }
 
     cancel (): void {
         this.modalInstance.close(null)
+    }
+
+    get canSubmit (): boolean {
+        return !!this.passphrase?.trim()
     }
 }

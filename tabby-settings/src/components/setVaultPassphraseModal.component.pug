@@ -1,4 +1,4 @@
-h3.modal-header.m-0.pb-0(translate) Set master passphrase
+h3.modal-header.m-0.pb-0 {{title|translate}}
 .modal-body
     .mb-2(translate) You can change it later, but it's unrecoverable if forgotten.
     .input-group
@@ -15,5 +15,5 @@ h3.modal-header.m-0.pb-0(translate) Set master passphrase
             i.fas.fa-eye
 
 .modal-footer
-    button.btn.btn-primary((click)='ok()', translate) Set passphrase
+    button.btn.btn-primary((click)='ok()', [disabled]='!canSubmit') {{buttonLabel|translate}}
     button.btn.btn-danger((click)='cancel()', translate) Cancel

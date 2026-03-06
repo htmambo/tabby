@@ -2587,6 +2587,19 @@ msgid "Zoom out"
 msgstr "縮小"
 
 #: tabby-core/src/components/appRoot.component.ts:324
+#: tabby-core/src/components/appRoot.component.ts:465
+msgid "Connect"
+msgstr "連線"
+
+#: tabby-core/src/components/appRoot.component.ts:474
+msgid "Connect SFTP"
+msgstr "連線 SFTP"
+
+#: tabby-core/src/components/appRoot.component.ts:484
+msgid "Close all connections"
+msgstr "關閉所有連線"
+
+#: tabby-core/src/components/appRoot.component.ts:347
 msgid "All Connections"
 msgstr "所有連線"
 
@@ -2639,3 +2652,39 @@ msgstr "工作階段"
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr "動態通訊埠轉發"
+
+msgid "Erase the Vault and all stored secrets"
+msgstr "徹底刪除金鑰庫及其中所有機密"
+
+msgid "Erase the Vault and all stored secrets?"
+msgstr "徹底刪除金鑰庫及其中所有機密？"
+
+msgid "All Vault secrets will be permanently deleted and cannot be recovered. Saved SSH passwords stored only in the Vault will also be deleted. Config file encryption, if enabled, will also be disabled."
+msgstr "金鑰庫中的所有機密都會被永久刪除且無法復原。僅保存在金鑰庫中的 SSH 密碼也會被刪除。如果已啟用設定檔加密，也會一併停用。"
+
+msgid "Synced secrets are not configured"
+msgstr "尚未設定同步機密"
+
+msgid "Vault stores synced secrets such as SSH passwords and private key passphrases. A master passphrase is optional."
+msgstr "金鑰庫會存放可同步的機密，例如 SSH 密碼與私鑰密碼。主密碼是可選的。"
+
+msgid "Enable synced secrets"
+msgstr "啟用同步機密"
+
+msgid "Set a master passphrase"
+msgstr "設定主密碼"
+
+msgid "Clear the master passphrase and keep synced secrets"
+msgstr "清除主密碼並保留同步機密"
+
+msgid "Clear the master passphrase and keep synced secrets?"
+msgstr "清除主密碼並保留同步機密？"
+
+msgid "SSH passwords and private key passphrases will stay in the synced Vault, but Tabby will stop asking for the master passphrase on startup. Config file encryption, if enabled, will also be disabled."
+msgstr "SSH 密碼與私鑰密碼會繼續保存在可同步的金鑰庫中，但 Tabby 啟動時將不再要求輸入主密碼。如果已啟用設定檔加密，也會一併停用。"
+
+msgid "Set a master passphrase to encrypt the config file"
+msgstr "設定主密碼以加密設定檔"
+
+msgid "Change passphrase"
+msgstr "變更密碼"

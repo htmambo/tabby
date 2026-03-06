@@ -1,8 +1,8 @@
 .text-center(*ngIf='!vault.isEnabled()')
     i.fas.fa-key.fa-3x.m-3
-    h3.m-3(translate) Vault is not configured
-    .m-3(translate) Vault is an always-encrypted container for secrets such as SSH passwords and private key passphrases.
-    button.btn.btn-primary.m-2((click)='enableVault()', translate) Set master passphrase
+    h3.m-3(translate) Synced secrets are not configured
+    .m-3(translate) Vault stores synced secrets such as SSH passwords and private key passphrases. A master passphrase is optional.
+    button.btn.btn-primary.m-2((click)='enableVault()', translate) Enable synced secrets
 
 
 div(*ngIf='vault.isEnabled()')
@@ -11,12 +11,16 @@ div(*ngIf='vault.isEnabled()')
         .d-flex.ms-auto(ngbDropdown, *ngIf='vault.isEnabled()')
             button.btn.btn-secondary(ngbDropdownToggle, translate) Options
             div(ngbDropdownMenu)
-                a(ngbDropdownItem, (click)='changePassphrase()')
+                a(ngbDropdownItem, (click)='setOrChangePassphrase()')
                     i.fas.fa-fw.fa-key
-                    span(translate) Change the master passphrase
-                a(ngbDropdownItem, (click)='disableVault()')
+                    span(*ngIf='vault.isProtected()', translate) Change the master passphrase
+                    span(*ngIf='!vault.isProtected()', translate) Set a master passphrase
+                a(ngbDropdownItem, *ngIf='vault.isProtected()', (click)='clearPassphrase()')
+                    i.fas.fa-fw.fa-unlock
+                    span(translate) Clear the master passphrase and keep synced secrets
+                a(ngbDropdownItem, (click)='eraseVault()')
                     i.fas.fa-fw.fa-radiation-alt
-                    span(translate) Erase the Vault
+                    span(translate) Erase the Vault and all stored secrets
 
     div(*ngIf='vaultContents')
         .text-center(*ngIf='!vaultContents.secrets.length')
