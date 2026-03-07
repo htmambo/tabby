@@ -1,4 +1,5 @@
 {
+  "packageManager": "yarn@1.22.19",
   "devDependencies": {
     "@angular/animations": "^15.2.6",
     "@angular/cdk": "^15.2.6",

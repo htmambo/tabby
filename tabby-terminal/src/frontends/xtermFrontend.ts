@@ -265,22 +265,46 @@ export class XTermFrontend extends Frontend {
         // Just configure the colors to avoid a flash
         this.configureColors(profile.terminalColorScheme)
 
-        if (this.enableWebGL) {
-            this.webGLAddon = new WebglAddon()
-            this.xterm.loadAddon(this.webGLAddon)
+        const subscribeTextureAtlasClear = (clear: () => void): void => {
             this.platformService.displayMetricsChanged$.pipe(
                 takeUntil(this.destroyed$),
             ).subscribe(() => {
-                this.webGLAddon?.clearTextureAtlas()
+                clear()
             })
-        } else {
+        }
+
+        const tryLoadCanvasAddon = (): void => {
             this.canvasAddon = new CanvasAddon()
             this.xterm.loadAddon(this.canvasAddon)
-            this.platformService.displayMetricsChanged$.pipe(
-                takeUntil(this.destroyed$),
-            ).subscribe(() => {
-                this.canvasAddon?.clearTextureAtlas()
-            })
+            subscribeTextureAtlasClear(() => this.canvasAddon?.clearTextureAtlas())
+        }
+
+        if (this.enableWebGL) {
+            try {
+                this.webGLAddon = new WebglAddon()
+                this.xterm.loadAddon(this.webGLAddon)
+                subscribeTextureAtlasClear(() => this.webGLAddon?.clearTextureAtlas())
+            } catch (error) {
+                console.warn('Could not enable xterm WebGL renderer, falling back to canvas renderer', error)
+                this.webGLAddon?.dispose()
+                this.webGLAddon = undefined
+                this.enableWebGL = false
+                try {
+                    tryLoadCanvasAddon()
+                } catch (canvasError) {
+                    console.warn('Could not enable xterm canvas renderer, using default renderer', canvasError)
+                    this.canvasAddon?.dispose()
+                    this.canvasAddon = undefined
+                }
+            }
+        } else {
+            try {
+                tryLoadCanvasAddon()
+            } catch (error) {
+                console.warn('Could not enable xterm canvas renderer, using default renderer', error)
+                this.canvasAddon?.dispose()
+                this.canvasAddon = undefined
+            }
         }
 
         // Allow an animation frame

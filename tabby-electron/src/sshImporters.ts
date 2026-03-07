@@ -103,8 +103,15 @@ async function parseSSHConfigFile (
 
     let raw = ''
     try {
+        const stat = await fs.stat(filePath)
+        if (!stat.isFile()) {
+            return SSHConfig.parse('')
+        }
         raw = await fs.readFile(filePath, 'utf8')
     } catch (err) {
+        if (err.code === 'ENOENT' || err.code === 'ENOTDIR') {
+            return SSHConfig.parse('')
+        }
         console.error(`Error reading SSH config file: ${filePath}`, err)
         return SSHConfig.parse('')
     }
