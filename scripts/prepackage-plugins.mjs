@@ -9,6 +9,18 @@ import log from 'npmlog'
 import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
+function execQuietly (command, context) {
+    const result = sh.exec(command, { silent: true, fatal: false })
+    if (result.code === 0) {
+        return
+    }
+
+    const output = [result.stdout, result.stderr]
+        .map(x => x?.trim())
+        .filter(Boolean)
+        .join('\n')
+    throw new Error(output ? `${context} failed\n${output}` : `${context} failed`)
+}
 
 let target = path.resolve(__dirname, '../builtin-plugins')
 sh.mkdir('-p', target)
@@ -19,7 +31,7 @@ vars.builtinPlugins.forEach(plugin => {
     sh.cp('-r', path.join('..', plugin), '.')
     sh.rm('-rf', path.join(plugin, 'node_modules'))
     sh.cd(plugin)
-    sh.exec(`yarn install --force --production`, { fatal: true })
+    execQuietly('yarn install --force --production', `install ${plugin}`)
 
 
     log.info('rebuild', 'native')
