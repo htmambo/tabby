@@ -9,13 +9,58 @@ import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 const electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
+const appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))
 
-export let version = childProcess.execSync('git describe --tags', { encoding:'utf-8' })
-version = version.substring(1).trim()
-version = version.replace('-', '-c')
+function safeExec (cmd) {
+    try {
+        return childProcess.execSync(cmd, { encoding: 'utf-8' }).trim()
+    } catch {
+        return null
+    }
+}
 
-if (version.includes('-c')) {
-    version = semver.inc(version, 'prepatch').replace('-0', `-nightly.${process.env.REV ?? 0}`)
+function normalizeVersionTag (tag) {
+    return tag?.startsWith('v') ? tag.substring(1) : tag
+}
+
+const exactTag = safeExec('git describe --tags --exact-match HEAD')
+const nearestTag = safeExec('git describe --tags --abbrev=0')
+
+export let version = normalizeVersionTag(exactTag)
+
+if (!version) {
+    const baseVersion = normalizeVersionTag(nearestTag) ?? '0.0.0'
+    version = semver.inc(baseVersion, 'prepatch').replace('-0', `-nightly.${process.env.REV ?? 0}`)
+}
+
+function parseGitHubRepository (value) {
+    if (!value) {
+        return null
+    }
+
+    const directMatch = value.match(/^([^/]+)\/([^/]+)$/)
+    if (directMatch) {
+        return {
+            owner: directMatch[1],
+            repo: directMatch[2],
+        }
+    }
+
+    const urlMatch = value.match(/github\.com[:/]([^/]+)\/([^/.]+?)(?:\.git)?$/)
+    if (urlMatch) {
+        return {
+            owner: urlMatch[1],
+            repo: urlMatch[2],
+        }
+    }
+
+    return null
+}
+
+function getCurrentGitHubRepository () {
+    return parseGitHubRepository(process.env.GITHUB_REPOSITORY)
+        ?? parseGitHubRepository(safeExec('git config --get remote.origin.url'))
+        ?? parseGitHubRepository(appPackageInfo.repository)
 }
 
 export const builtinPlugins = [
@@ -88,10 +133,15 @@ export function getPublishConfigs () {
     }
 
     if (process.env.GITHUB_TOKEN || process.env.GH_TOKEN) {
-        configs.push({
-            provider: 'github',
-            channel: `latest-${process.env.ARCH}`,
-        })
+        const githubRepository = getCurrentGitHubRepository()
+        if (githubRepository) {
+            configs.push({
+                provider: 'github',
+                owner: githubRepository.owner,
+                repo: githubRepository.repo,
+                channel: `latest-${process.env.ARCH}`,
+            })
+        }
     }
 
     return configs.length ? configs : undefined
