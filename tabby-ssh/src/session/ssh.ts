@@ -19,6 +19,12 @@ import { supportedAlgorithms } from '../algorithms'
 import * as russh from 'russh'
 
 const WINDOWS_OPENSSH_AGENT_PIPE = '\\\\.\\pipe\\openssh-ssh-agent'
+const REMOTE_COMMAND_EXIT_SENTINEL = '__TABBY_REMOTE_EXIT__'
+
+function escapePOSIXShellArgument (value: string): string {
+    return `'${value.replace(/'/g, `'\"'\"'`)}'`
+}
+
 
 export interface Prompt {
     prompt: string
@@ -822,6 +828,49 @@ export class SSHSession {
         this.willDestroy.complete()
         this.serviceMessage.complete()
         this.ssh.disconnect()
+    }
+
+    async executePOSIXCommand (command: string): Promise<string> {
+        if (!(this.ssh instanceof russh.AuthenticatedSSHClient)) {
+            throw new Error('Cannot execute a remote command before auth')
+        }
+
+        const wrappedCommand = `sh -lc ${escapePOSIXShellArgument(`${command}
+exit_code=$?
+printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
+        const channel = await this.ssh.activateChannel(await this.ssh.openSessionChannel())
+        const stdoutBuffers: Buffer[] = []
+        const stderrBuffers: Buffer[] = []
+        const subscriptions = [
+            channel.data$.subscribe(data => stdoutBuffers.push(Buffer.from(data))),
+            channel.extendedData$.subscribe(([_, data]) => stderrBuffers.push(Buffer.from(data))),
+        ]
+
+        try {
+            const closed = new Promise<void>(resolve => {
+                channel.closed$.subscribe(() => resolve())
+            })
+            await channel.requestExec(wrappedCommand)
+            await closed
+        } finally {
+            subscriptions.forEach(x => x.unsubscribe())
+            await channel.close().catch(() => null)
+        }
+
+        const stdout = Buffer.concat(stdoutBuffers).toString('utf8')
+        const stderr = Buffer.concat(stderrBuffers).toString('utf8')
+        const exitMarker = new RegExp(`\\n?${REMOTE_COMMAND_EXIT_SENTINEL}:(\\d+)\\s*$`)
+        const match = stdout.match(exitMarker)
+        if (!match) {
+            throw new Error(stderr.trim() || stdout.trim() || 'Remote command did not report an exit status')
+        }
+
+        const exitCode = Number(match[1])
+        const cleanedStdout = stdout.replace(exitMarker, '').trimEnd()
+        if (exitCode !== 0) {
+            throw new Error(stderr.trim() || cleanedStdout || `Remote command failed with exit code ${exitCode}`)
+        }
+        return cleanedStdout
     }
 
     async openShellChannel (options: { x11: boolean }): Promise<russh.Channel> {

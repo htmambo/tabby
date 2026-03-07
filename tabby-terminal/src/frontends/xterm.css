@@ -13,3 +13,53 @@
 .xterm-viewport {
     background: none !important;
 }
+
+
+.xterm .xterm-viewport {
+    background: transparent !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-scrollbar-thumb) transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+    width: var(--theme-scrollbar-size);
+    height: var(--theme-scrollbar-size);
+    background: transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+    background: var(--theme-scrollbar-thumb);
+    border-radius: var(--theme-scrollbar-radius);
+    border: var(--theme-scrollbar-border-width) solid transparent;
+    background-clip: padding-box;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-scrollbar-thumb-hover);
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:active {
+    background: var(--theme-scrollbar-thumb-active);
+}
+
+.xterm .xterm-scrollable-element > .visible {
+    background: transparent !important;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar {
+    background: transparent !important;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar > .slider {
+    border-radius: var(--theme-scrollbar-radius);
+}
+
+.xterm .xterm-scrollable-element > .shadow.top,
+.xterm .xterm-scrollable-element > .shadow.left,
+.xterm .xterm-scrollable-element > .shadow.top.left {
+    box-shadow: none !important;
+}

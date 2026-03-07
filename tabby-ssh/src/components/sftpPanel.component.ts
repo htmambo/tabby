@@ -1,17 +1,90 @@
 import * as C from 'constants'
 import * as localPath from 'path'
 import { posix as path } from 'path'
-import { Component, Input, Output, EventEmitter, Inject, Optional, HostListener, ElementRef } from '@angular/core'
-import { FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry, TranslateService } from 'tabby-core'
+import { Component, Input, Output, EventEmitter, Inject, Optional, HostListener, ElementRef, ViewChild } from '@angular/core'
+import { FileTransfer, FileUpload, DirectoryUpload, DirectoryDownload, MenuItemOptions, NotificationsService, PlatformService, LocalFileEntry, TranslateService } from 'tabby-core'
 import { SFTPSession, SFTPFile } from '../session/sftp'
 import { SSHSession } from '../session/ssh'
 import { SFTPContextMenuItemProvider } from '../api'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
+import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import { SFTPCreateDirectoryModalComponent } from './sftpCreateDirectoryModal.component'
 
 interface PathSegment {
     name: string
     path: string
+}
+
+interface DirectoryUploadStats {
+    totalSize: number
+}
+
+class DirectoryUploadTransfer extends FileTransfer {
+    private name: string
+
+    constructor (name: string) {
+        super()
+        this.name = name
+    }
+
+    getName (): string {
+        return this.name
+    }
+
+    setName (name: string): void {
+        this.name = name
+    }
+
+    getSize (): number {
+        return this.getTotalSize()
+    }
+
+    advance (bytes: number): void {
+        this.increaseProgress(bytes)
+    }
+
+    close (): void { }
+}
+
+class ProgressTrackingFileUpload extends FileUpload {
+    constructor (
+        private inner: FileUpload,
+        private progress: DirectoryUploadTransfer,
+    ) {
+        super()
+    }
+
+    getName (): string {
+        return this.inner.getName()
+    }
+
+    getMode (): number {
+        return this.inner.getMode()
+    }
+
+    getSize (): number {
+        return this.inner.getSize()
+    }
+
+    async read (): Promise<Uint8Array> {
+        if (this.progress.isCancelled()) {
+            throw new Error('Upload cancelled')
+        }
+        const chunk = await this.inner.read()
+        if (chunk.length) {
+            this.progress.advance(chunk.length)
+        }
+        return chunk
+    }
+
+    close (): void {
+        this.inner.close()
+    }
+
+    cancel (): void {
+        this.inner.cancel()
+        super.cancel()
+    }
 }
 
 @Component({
@@ -44,6 +117,9 @@ export class SFTPPanelComponent {
     private remoteSelectionAnchorPath: string|null = null
     private activePane: 'local'|'remote' = 'remote'
     protected contextMenuProviders: SFTPContextMenuItemProvider[] = []
+    @ViewChild('panes') panes?: ElementRef<HTMLElement>
+    localPaneWidthPercent = 50
+    private paneResizeActive = false
 
     constructor (
         private ngbModal: NgbModal,
@@ -461,22 +537,62 @@ export class SFTPPanelComponent {
         await this.uploadOneFolder(transfer)
     }
 
-    async uploadOneFolder (transfer: DirectoryUpload, accumPath = ''): Promise<void> {
+    async uploadOneFolder (transfer: DirectoryUpload): Promise<void> {
+        if (!transfer.getChildrens().length) {
+            return
+        }
+
         const savedPath = this.path
-        for(const t of transfer.getChildrens()) {
+        const progress = this.createDirectoryUploadTransfer(transfer)
+        this.platform.registerFileTransfer(progress)
+
+        try {
+            progress.setStatus(this.translate.instant(_('Reading folder structure')))
+            progress.setTotalSize(this.getDirectoryUploadStats(transfer).totalSize)
+            await this.uploadOneFolderInternal(transfer, '', progress)
+            if (!progress.isCancelled()) {
+                progress.setStatus('')
+                progress.setCompleted(true)
+            }
+        } catch (error) {
+            if (progress.isCancelled() || error?.message === 'Upload cancelled') {
+                return
+            }
+            progress.cancel()
+            this.notifications.error(this.translate.instant(_('Failed to upload folder: {message}'), {
+                message: error?.message ?? `${error}`,
+            }))
+        } finally {
+            progress.close()
+            if (this.path === savedPath) {
+                await this.navigate(this.path)
+            }
+        }
+    }
+
+    private async uploadOneFolderInternal (transfer: DirectoryUpload, accumPath = '', progress?: DirectoryUploadTransfer): Promise<void> {
+        for (const t of transfer.getChildrens()) {
+            if (progress?.isCancelled()) {
+                throw new Error('Upload cancelled')
+            }
+
             if (t instanceof DirectoryUpload) {
+                const relativePath = path.posix.join(accumPath, t.getName())
+                progress?.setStatus(this.translate.instant(_('Creating directory {path}'), { path: relativePath || t.getName() }))
                 try {
-                    await this.sftp.mkdir(path.posix.join(this.path, accumPath, t.getName()))
+                    await this.sftp.mkdir(path.posix.join(this.path, relativePath))
                 } catch {
                     // Intentionally ignoring errors from making duplicate dirs.
                 }
-                await this.uploadOneFolder(t, path.posix.join(accumPath, t.getName()))
+                await this.uploadOneFolderInternal(t, relativePath, progress)
             } else {
-                await this.sftp.upload(path.posix.join(this.path, accumPath, t.getName()), t)
+                const relativePath = path.posix.join(accumPath, t.getName())
+                progress?.setStatus(this.translate.instant(_('Uploading {path}'), { path: relativePath }))
+                await this.sftp.upload(
+                    path.posix.join(this.path, relativePath),
+                    progress ? new ProgressTrackingFileUpload(t, progress) : t,
+                )
             }
-        }
-        if (this.path === savedPath) {
-            await this.navigate(this.path)
         }
     }
 
@@ -931,6 +1047,36 @@ export class SFTPPanelComponent {
         this.activePane = isRemotePane ? 'remote' : 'local'
     }
 
+    startPaneResize (event: MouseEvent): void {
+        if (!this.showLocalPanel || window.innerWidth <= 960) {
+            return
+        }
+        this.paneResizeActive = true
+        this.host.nativeElement.classList.add('pane-resizing')
+        this.updatePaneSplit(event.clientX)
+        event.preventDefault()
+        event.stopPropagation()
+    }
+
+    @HostListener('document:mousemove', ['$event'])
+    onDocumentMouseMove (event: MouseEvent): void {
+        if (!this.paneResizeActive) {
+            return
+        }
+        this.updatePaneSplit(event.clientX)
+        event.preventDefault()
+    }
+
+    @HostListener('document:mouseup')
+    @HostListener('window:blur')
+    onDocumentMouseUp (): void {
+        if (!this.paneResizeActive) {
+            return
+        }
+        this.paneResizeActive = false
+        this.host.nativeElement.classList.remove('pane-resizing')
+    }
+
     @HostListener('document:keydown', ['$event'])
     onGlobalKeyDown (event: KeyboardEvent): void {
         if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'a') {
@@ -951,6 +1097,57 @@ export class SFTPPanelComponent {
             this.selectAllRemoteItems()
         }
         event.preventDefault()
+    }
+
+    private updatePaneSplit (clientX: number): void {
+        const panesElement = this.panes?.nativeElement
+        if (!panesElement) {
+            return
+        }
+
+        const rect = panesElement.getBoundingClientRect()
+        if (!rect.width) {
+            return
+        }
+
+        const nextWidth = (clientX - rect.left) / rect.width * 100
+        this.localPaneWidthPercent = Math.max(24, Math.min(76, nextWidth))
+    }
+
+    private createDirectoryUploadTransfer (transfer: DirectoryUpload): DirectoryUploadTransfer {
+        const progress = new DirectoryUploadTransfer(this.getDirectoryUploadTransferName(transfer))
+        progress.setStatus(this.translate.instant(_('Reading folder structure')))
+        return progress
+    }
+
+    private getDirectoryUploadTransferName (transfer: DirectoryUpload): string {
+        if (transfer.getName()) {
+            return transfer.getName()
+        }
+
+        const children = transfer.getChildrens()
+        if (children.length === 1) {
+            return children[0].getName()
+        }
+
+        return this.translate.instant(_('Folder upload'))
+    }
+
+    private getDirectoryUploadStats (transfer: DirectoryUpload): DirectoryUploadStats {
+        const stats: DirectoryUploadStats = {
+            totalSize: 0,
+        }
+
+        const visit = (entry: DirectoryUpload | FileUpload): void => {
+            if (entry instanceof DirectoryUpload) {
+                entry.getChildrens().forEach(child => visit(child))
+                return
+            }
+            stats.totalSize += entry.getSize()
+        }
+
+        transfer.getChildrens().forEach(child => visit(child))
+        return stats
     }
 
     private updateFilteredList (): void {

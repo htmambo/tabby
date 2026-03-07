@@ -110,6 +110,15 @@ export class ThemesService {
             vars['--theme-bg-more'] = backgroundMore
             vars['--theme-bg-more-2'] = more(backgroundMore, 0.25).string()
 
+            vars['--theme-scrollbar-size'] = '8px'
+            vars['--theme-scrollbar-size-thin'] = '4px'
+            vars['--theme-scrollbar-radius'] = '999px'
+            vars['--theme-scrollbar-border-width'] = '1px'
+            vars['--theme-scrollbar-track'] = Color(backgroundMore).alpha(0).string()
+            vars['--theme-scrollbar-thumb'] = Color(theme.foreground).alpha(0.18).string()
+            vars['--theme-scrollbar-thumb-hover'] = Color(theme.foreground).alpha(0.28).string()
+            vars['--theme-scrollbar-thumb-active'] = Color(theme.foreground).alpha(0.4).string()
+
             contrastPairs.push(['--theme-bg', '--theme-fg'])
             contrastPairs.push(['--theme-bg-less', '--theme-fg-less'])
             contrastPairs.push(['--theme-bg-less-2', '--theme-fg-less-2'])

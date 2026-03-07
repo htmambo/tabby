@@ -52,6 +52,11 @@ button {
     flex: none;
 }
 
+.transfer-action {
+    white-space: nowrap;
+    padding-inline: 8px;
+}
+
 svg {
     height: 14px;
 }

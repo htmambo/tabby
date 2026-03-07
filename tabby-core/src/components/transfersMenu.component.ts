@@ -22,7 +22,11 @@ export class TransfersMenuComponent {
     }
 
     getProgress (transfer: FileTransfer): number {
-        return Math.round(100 * transfer.getCompletedBytes() / transfer.getSize())
+        const totalSize = transfer.getSize() || transfer.getTotalSize()
+        if (!totalSize) {
+            return transfer.isComplete() ? 100 : 0
+        }
+        return Math.min(100, Math.round(100 * transfer.getCompletedBytes() / totalSize))
     }
 
     showTransfer (transfer: FileTransfer): void {

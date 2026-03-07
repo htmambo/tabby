@@ -47,16 +47,18 @@ export class ElectronPlatformService extends PlatformService {
         })
     }
 
-    async getAllFiles (dir: string, root: DirectoryUpload): Promise<DirectoryUpload> {
+    async getAllFiles (dir: string, root: DirectoryUpload, registerTransfers = true): Promise<DirectoryUpload> {
         const items = await fs.readdir(dir, { withFileTypes: true })
         for (const item of items) {
             if (item.isDirectory()) {
-                root.pushChildren(await this.getAllFiles(path.join(dir, item.name), new DirectoryUpload(item.name)))
+                root.pushChildren(await this.getAllFiles(path.join(dir, item.name), new DirectoryUpload(item.name), registerTransfers))
             } else {
                 const file = new ElectronFileUpload(path.join(dir, item.name), this.electron)
                 root.pushChildren(file)
                 await wrapPromise(this.zone, file.open())
-                this.fileTransferStarted.next(file)
+                if (registerTransfers) {
+                    this.fileTransferStarted.next(file)
+                }
             }
         }
         return root
@@ -285,7 +287,11 @@ export class ElectronPlatformService extends PlatformService {
         }
 
         const root = new DirectoryUpload()
-        root.pushChildren(await this.getAllFiles(paths[0].split(path.sep).join(path.posix.sep), new DirectoryUpload(path.basename(paths[0]))))
+        root.pushChildren(await this.getAllFiles(
+            paths[0].split(path.sep).join(path.posix.sep),
+            new DirectoryUpload(path.basename(paths[0])),
+            false,
+        ))
         return root
     }
 

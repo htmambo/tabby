@@ -10,13 +10,16 @@
             span.ms-2.text-muted(*ngIf='transfer.getStatus()') ({{transfer.getStatus()}})
         ngb-progressbar([type]='transfer.isComplete() ? "success" : transfer.isCancelled() ? "danger" : "info"', [value]='getProgress(transfer)')
         .metadata
-            .size {{transfer.getSize()|filesize}}
+            .size {{transfer.getCompletedBytes()|filesize}} / {{transfer.getSize()|filesize}}
             .speed(*ngIf='transfer.getSpeed()') {{transfer.getSpeed()|filesize}}/s
 
-    button.btn.btn-link(
+    button.btn.btn-link.btn-sm.text-danger.transfer-action(
         *ngIf='!transfer.isComplete()',
+        [attr.aria-label]='"Abort transfer" | translate',
+        [title]='"Abort transfer" | translate',
         (click)='removeTransfer(transfer); $event.stopPropagation()'
-    ) !{require('../icons/times.svg')}
+    )
+        span(translate) Abort
     button.btn.btn-link(
         *ngIf='transfer.isComplete()',
         (click)='removeTransfer(transfer); $event.stopPropagation()'

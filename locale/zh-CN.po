@@ -2776,3 +2776,24 @@ msgstr "设置主密码以加密配置文件"
 
 msgid "Change passphrase"
 msgstr "更改密码"
+
+msgid "Abort transfer"
+msgstr "终止传输"
+
+msgid "Abort"
+msgstr "终止"
+
+msgid "Folder upload"
+msgstr "文件夹上传"
+
+msgid "Reading folder structure"
+msgstr "正在读取文件结构"
+
+msgid "Creating directory {path}"
+msgstr "正在创建目录 {path}"
+
+msgid "Uploading {path}"
+msgstr "正在上传 {path}"
+
+msgid "Failed to upload folder: {message}"
+msgstr "上传文件夹失败：{message}"

@@ -230,6 +230,10 @@ export abstract class PlatformService {
         return Promise.all(promises).then(() => result)
     }
 
+    registerFileTransfer (transfer: FileTransfer): void {
+        this.fileTransferStarted.next(transfer)
+    }
+
     getConfigPath (): string|null {
         return null
     }

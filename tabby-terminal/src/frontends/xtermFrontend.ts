@@ -24,6 +24,15 @@ const COLOR_NAMES = [
 const DEFAULT_RECOVERY_SCROLLBACK_LINES = 2000
 const MAX_RECOVERY_SCROLLBACK_LINES = 5000
 
+function getRootCSSVariable (name: string): string | undefined {
+    if (typeof window === 'undefined') {
+        return undefined
+    }
+
+    const value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return value || undefined
+}
+
 class FlowControl {
     private blocked = false
     private blocked$ = new BehaviorSubject<boolean>(false)
@@ -406,9 +415,9 @@ export class XTermFrontend extends Frontend {
             theme[COLOR_NAMES[i]] = scheme.colors[i]
         }
 
-        theme.scrollbarSliderBackground = theme.brightBlack
-        theme.scrollbarSliderHoverBackground = theme.brightBlack
-        theme.scrollbarSliderHoverBackground = theme.brightBlack
+        theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') ?? theme.brightBlack
+        theme.scrollbarSliderHoverBackground = getRootCSSVariable('--theme-scrollbar-thumb-hover') ?? theme.brightBlack
+        theme.scrollbarSliderActiveBackground = getRootCSSVariable('--theme-scrollbar-thumb-active') ?? theme.brightBlack
 
         if (!deepEqual(this.configuredTheme, theme)) {
             this.xterm.options.theme = theme

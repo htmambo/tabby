@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { MenuItemOptions, PlatformService, TranslateService, HostAppService, Platform } from 'tabby-core'
 import { SFTPSession, SFTPFile } from './session/sftp'
+import { SSHSession } from './session/ssh'
 import { SFTPContextMenuItemProvider } from './api'
 import { SFTPDeleteModalComponent } from './components/sftpDeleteModal.component'
 import { SFTPPanelComponent } from './components/sftpPanel.component'
@@ -31,7 +32,6 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
             },
         ]
 
-        // Add download folder option for directories (only in electron)
         if (item.isDirectory && this.hostApp.platform !== Platform.Web) {
             items.push({
                 click: () => panel.downloadFolder(item),
@@ -58,7 +58,7 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
                         this.translate.instant('Cancel'),
                     ],
                 })).response === 0) {
-                    await this.deleteItem(item, panel.sftp)
+                    await this.deleteItem(item, panel.sftp, panel.session)
                     panel.navigate(panel.path)
                 }
             },
@@ -68,10 +68,11 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
         return items
     }
 
-    async deleteItem (item: SFTPFile, session: SFTPSession): Promise<void> {
+    async deleteItem (item: SFTPFile, session: SFTPSession, sshSession: SSHSession): Promise<void> {
         const modal = this.ngbModal.open(SFTPDeleteModalComponent)
         modal.componentInstance.item = item
         modal.componentInstance.sftp = session
+        modal.componentInstance.sshSession = sshSession
         await modal.result.catch(() => null)
     }
 }
