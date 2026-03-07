@@ -33,7 +33,7 @@ ssh:
   agentType: auto
 
 configSync:
-  host: https://your-tabby-web.example.com
+  host: https://your-config-sync.example.com
   token: "<token>"
   configID: 12
   auto: false
@@ -117,5 +117,5 @@ pluginBlacklist: []
 - Provider：Profile 类型提供器（SSH/Telnet/Serial/Local）
 - Split layout：分屏布局配置
 - Vault：加密密钥容器
-- Config sync：与 Tabby Web 服务同步配置
+- Config sync：与远程同步服务同步配置
 - Command selector：命令选择器（聚合按钮/菜单动作）

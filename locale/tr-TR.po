@@ -120,7 +120,6 @@ msgstr "Uygulama"
 msgid "Application settings"
 msgstr "Uygulama ayarları"
 
-#: tabby-web/src/services/hostWindow.service.ts:19
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
 msgstr "Tabby'i kapatmak istediğinizden emin misiniz? \n"
 "Bu işlemi Ayarlar -> Pencere'den devre dışı bırakabilirsiniz."
@@ -969,8 +968,8 @@ msgid "Get"
 msgstr "Yükle"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:18
-msgid "Get it from the Tabby Web settings window"
-msgstr "Tabby Web ayarları penceresinden alın"
+msgid "Get it from your sync service settings"
+msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:29
 msgid "Gives the window a blurred transparent background"

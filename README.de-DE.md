@@ -39,7 +39,7 @@ Diese README ist auch verfügbar in: <a  href="./README.md">:gb: English</a> · 
 * Kein Abbruch bei schnell ablaufenden Ausgaben
 * Richtiges Shell-Erlebnis unter Windows, einschließlich Tabulator-Vervollständigung (über Clink)
 * Integrierter verschlüsselter Container für SSH-Secrets und Konfiguration
-* SSH-, SFTP- und Telnet-Client verfügbar als [Web-App](https://tabby.sh/app) (auch [selbstgehostet](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Inhaltsverzeichnis <!-- omit in toc -->
 

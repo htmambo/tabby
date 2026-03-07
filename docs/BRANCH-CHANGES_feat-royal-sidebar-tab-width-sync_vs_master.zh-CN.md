@@ -450,7 +450,6 @@
 - `tabby-terminal/src/components/terminalSettingsTab.component.pug`
 - `tabby-terminal/src/config.ts`
 - `tabby-terminal/src/frontends/xtermFrontend.ts`
-- `tabby-web/src/platform.ts`
 
 ### 5.7 开发过程文件
 

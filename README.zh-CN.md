@@ -40,7 +40,7 @@
 * 不会因快速的输出而卡住
 * Windows 上舒适的 shell 体验，包括 tab 自动补全（通过 Clink）
 * 为 SSH secrets 和设置集成了加密容器
-* SSH、SFTP 和 Telnet 客户端可用作 [Web 应用](https://tabby.sh/app)（也可[托管](https://github.com/Eugeny/tabby-web)）
+undefined
 
 # 目录 <!-- omit in toc -->
 

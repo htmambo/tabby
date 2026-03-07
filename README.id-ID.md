@@ -40,7 +40,7 @@ This README is also available in: <a  href="./README.md">:gb: English</a> · <a 
 * Tidak tersendat dengan output yang tampil dengan cepat
 * Pengalaman shell yang tepat di Windows termasuk penyelesaian tab (melalui Clink)
 * Terintegrasi dengan wadah terenkripsi untuk rahasia dan konfigurasi SSH
-* SSH, SFTP dan klien Telnet tersedia sebagai [aplikasi web](https://tabby.sh/app) (dan juga [self-hosted](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Contents <!-- omit in toc -->
 

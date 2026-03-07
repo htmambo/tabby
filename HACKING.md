@@ -69,7 +69,6 @@ tabby
 ├─ tabby-plugin-manager              # Plugin that installs other plugins
 ├─ tabby-settings                    # Plugin that provides the settings tab
 ├─ tabby-terminal                    # Plugin that provides terminal tabs
-└─ tabby-web                         # Plugin that provides web-specific functions
 ```
 
 # Plugin layout

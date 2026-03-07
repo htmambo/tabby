@@ -120,7 +120,6 @@ msgstr "应用"
 msgid "Application settings"
 msgstr "应用程序设置"
 
-#: tabby-web/src/services/hostWindow.service.ts:19
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
 msgstr "您确定要关闭 Tabby 吗？您可以在 设置 -> 窗口 中关闭此提示。"
 
@@ -968,8 +967,8 @@ msgid "Get"
 msgstr "获取"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:18
-msgid "Get it from the Tabby Web settings window"
-msgstr "从 Tabby 网页设置窗口获取"
+msgid "Get it from your sync service settings"
+msgstr "从同步服务设置中获取"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:29
 msgid "Gives the window a blurred transparent background"

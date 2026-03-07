@@ -120,7 +120,6 @@ msgstr "응용 프로그램"
 msgid "Application settings"
 msgstr "응용 프로그램 설정"
 
-#: tabby-web/src/services/hostWindow.service.ts:19
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
 msgstr "Tabby를 정말로 닫으시겠습니까? 더 이상 이 질문을 보지 않으려면 설정 -> 창 에서 변경할 수 있습니다."
 
@@ -968,8 +967,8 @@ msgid "Get"
 msgstr "받기"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:18
-msgid "Get it from the Tabby Web settings window"
-msgstr "Tabby 웹 설정 창에서 받기"
+msgid "Get it from your sync service settings"
+msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:29
 msgid "Gives the window a blurred transparent background"

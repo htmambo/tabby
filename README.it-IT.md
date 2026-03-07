@@ -41,7 +41,7 @@ Questo README Ã¨ disponibile anche in: <a  href="./README.md">:gb: English</a> Â
 * Integrated encrypted container for SSH secrets and configuration
 * Esperienza shell studiaat per Windows incluso il completamento delle schede (tramite Clink)
 * Contenitore crittografato integrato per chiavi SSH e file di configurazione
-* Client SSH, SFTP e Telnet disponibile come [web app](https://tabby.sh/app) (anche [self-hosted](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Contenuti <!-- omit in toc -->
 

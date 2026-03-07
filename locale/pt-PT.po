@@ -120,7 +120,6 @@ msgstr "Aplicação"
 msgid "Application settings"
 msgstr "Definições da aplicação"
 
-#: tabby-web/src/services/hostWindow.service.ts:19
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
 msgstr "Tem a certeza que quer fechar o Tabby? Pode desativar este aviso em Configurações -> Janela."
 
@@ -968,8 +967,8 @@ msgid "Get"
 msgstr "Obter"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:18
-msgid "Get it from the Tabby Web settings window"
-msgstr "Obtenha-o da janela de configurações da Tabby Web"
+msgid "Get it from your sync service settings"
+msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:29
 msgid "Gives the window a blurred transparent background"

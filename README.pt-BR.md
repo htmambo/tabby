@@ -40,7 +40,7 @@ Esse README também está disponível em: <a  href="./README.md">:gb: English</a
 * Não trava com saídas de fluxo rápido
 * Experiência de shell adequada no Windows, incluindo preenchimento de guia (via Clink)
 * Contêiner criptografado integrado para as chaves SSH e configurações
-* SSH, SFTP e Cliente Telnet disponível como [aplicação web](https://tabby.sh/app) (também em [hospedagem local](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Conteúdo <!-- omit in toc -->
 

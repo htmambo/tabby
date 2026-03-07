@@ -13,7 +13,10 @@ const appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../ap
 
 function safeExec (cmd) {
     try {
-        return childProcess.execSync(cmd, { encoding: 'utf-8' }).trim()
+        return childProcess.execSync(cmd, {
+            encoding: 'utf-8',
+            stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim()
     } catch {
         return null
     }
@@ -67,7 +70,6 @@ export const builtinPlugins = [
     'tabby-core',
     'tabby-settings',
     'tabby-terminal',
-    'tabby-web',
     'tabby-community-color-schemes',
     'tabby-ssh',
     'tabby-serial',
@@ -88,8 +90,6 @@ export const packagesWithDocs = [
 
 export const allPackages = [
     ...builtinPlugins,
-    'web',
-    'tabby-web-demo',
 ]
 
 export const bundledModules = [

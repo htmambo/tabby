@@ -47,7 +47,7 @@
 * 大量の出力にも止まることはありません
 * タブキーによる補完機能にも対応したWindows上での快適なシェル (Clink使用)
 * SSHの機密性の高い情報と設定を保存する暗号化コンテナの搭載
-* SSH、SFTP、Telnetクライアントが[Webアプリ](https://tabby.sh/app)としても利用できます ([セルフホスティング](https://github.com/Eugeny/tabby-web)も可能)
+undefined
 
 # コンテンツ <!-- omit in toc -->
 

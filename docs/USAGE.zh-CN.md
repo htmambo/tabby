@@ -8,7 +8,6 @@
 
 说明：
 - 文中“桌面版”指 Electron 版本（Windows/macOS/Linux）。
-- 文中“Web 版”指 `tabby-web`（浏览器访问）。
 - 某些功能只在桌面版可用（例如本地 shell、部分 SFTP 本地文件操作、插件安装到本机目录、系统集成）。
 
 ---
@@ -21,7 +20,7 @@ Tabby 是一个高度可配置的终端工作台，核心能力包括：
 - 标签页 + 分屏（可保存布局）
 - SFTP 文件管理（与 SSH 深度联动）
 - Vault 密钥库与配置加密
-- 配置同步（Tabby Web API）
+- 配置同步（远程同步 API）
 - 插件系统（NPM 生态）
 - 丰富热键、命令选择器、右键菜单和自动化入口
 
@@ -290,7 +289,7 @@ SFTP 有两种打开方式：
 - 桌面版：双栏
   - 左：本地文件
   - 右：远程 SFTP
-- Web 版：通常只可用远程侧（本地目录枚举能力受限）
+- 浏览器环境：通常只可用远程侧（本地目录枚举能力受限）
 
 ## 7.2 远程侧功能
 
@@ -490,7 +489,7 @@ Vault 是“始终加密”的密钥容器，可保存：
 
 ## 10. 配置同步（Config sync）深度说明
 
-该功能依赖 Tabby Web API（非 Web 客户端本身）。
+该功能依赖远程同步 API。
 
 ## 10.1 前置条件
 
@@ -499,7 +498,7 @@ Vault 是“始终加密”的密钥容器，可保存：
 - `token`
 - `configID`
 
-并且当前平台是桌面版（Web 版不可用）。
+并且当前平台是桌面版。
 
 ## 10.2 同步页面功能
 
@@ -668,9 +667,9 @@ config.yaml.backup
 <Tabby 可执行文件目录>/data/config.yaml
 ```
 
-## 14.3 Web 版配置
+## 14.3 远程同步服务配置
 
-Web 版通过后端连接器加载/保存配置，不使用本地桌面文件路径。
+远程同步服务通过其后端接口加载/保存配置，不使用本地桌面文件路径。
 
 ## 14.4 YAML 直接编辑建议
 
@@ -715,7 +714,7 @@ Web 版通过后端连接器加载/保存配置，不使用本地桌面文件路
 ## 16.3 SFTP 下载失败或无本地目录
 
 - 桌面版需有可用本地目录（本地 pane）
-- Web 版本地文件系统能力有限
+- 浏览器环境下本地文件系统能力有限
 - 检查目标目录权限与磁盘空间
 
 ## 16.4 SSH 连接卡在认证阶段
@@ -764,7 +763,7 @@ ssh:
   agentType: auto
 
 configSync:
-  host: https://your-tabby-web.example.com
+  host: https://your-config-sync.example.com
   token: "<token>"
   configID: 12
   auto: false
@@ -848,5 +847,5 @@ pluginBlacklist: []
 - Provider：Profile 类型提供器（SSH/Telnet/Serial/Local）
 - Split layout：分屏布局配置
 - Vault：加密密钥容器
-- Config sync：与 Tabby Web 服务同步配置
+- Config sync：与远程同步服务同步配置
 - Command selector：命令选择器（聚合按钮/菜单动作）

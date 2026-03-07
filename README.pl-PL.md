@@ -16,7 +16,6 @@
 
 > 👋 Zarządzasz zdalnymi środowiskami? Rzuć okiem na [WarpGate, inteligentny serwer typu bastion SSH/HTTP/MySQL](https://github.com/warp-tech/warpgate), świetnie współdziała z Tabby, pokochasz go!
 
-> 👋 [Tabby-Web](https://github.com/Eugeny/tabby-web) poszukuje sponsorów. Nie jestem w stanie pokryć kosztów hostowania całej infrastruktury, jeśli jesteś zainteresowany wsparciem, proszę [skontakuj się ze mną!](https://twitter.com/eugeeeeny)
 
 
 ----
@@ -48,7 +47,7 @@ Ten plik README jest również dostępny w językach: <a  href="./README.md">:gb
 * Nie zawieszanie się przy szybko wyświetlanych wynikach
 * Pełne doświadczenie powłoki na systemie Windows zawierającej podpowiedzi (przez Clink)
 * Zintegrowany zaszyfrowany kontener na klucze SSH i jego konfigurację
-* Klient SSH, SFTP oraz Telnet dostępny jako [aplikacja webowa](https://tabby.sh/app) (również jako [własna instacja](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Spis treści <!-- omit in toc -->
 

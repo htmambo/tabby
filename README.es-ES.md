@@ -40,7 +40,7 @@ Este fichero README está disponible en: <a  href="./README.md">:gb: English</a>
 * No se bloquea con las salidas rápidas
 * Experiencia adecuada del shell en Windows, incluyendo la finalización de pestañas (via Clink)
 * Contenedor encriptado integrado para los secretos SSH y la configuración
-* Cliente SSH, SFTP y Telnet disponible como [aplicación web](https://tabby.sh/app) (incluso [auto-alojada](https://github.com/Eugeny/tabby-web)).
+undefined
 
 # Contenidos <!-- omit in toc -->
 

@@ -5,6 +5,13 @@ import { Logger, LogService } from './log.service'
 import { ConfigService } from './config.service'
 import { NewTabParameters } from './tabs.service'
 
+const ACTIVE_TOP_LEVEL_MARKER = '__tabbyActiveTopLevel'
+
+interface RecoveredTabsState {
+    tabs: NewTabParameters<BaseTabComponent>[]
+    activeTabIndex: number|null
+}
+
 /** @hidden */
 @Injectable({ providedIn: 'root' })
 export class TabRecoveryService {
@@ -19,15 +26,24 @@ export class TabRecoveryService {
         this.logger = log.create('tabRecovery')
     }
 
-    async saveTabs (tabs: BaseTabComponent[]): Promise<void> {
+    async saveTabs (tabs: BaseTabComponent[], activeTab: BaseTabComponent|null = null): Promise<void> {
         if (!this.enabled || !this.config.store.recoverTabs) {
             return
         }
-        window.localStorage.tabsRecovery = JSON.stringify(
-            (await Promise.all(
-                tabs.map(async tab => this.getFullRecoveryToken(tab, { includeState: true })),
-            )).filter(token => !!token),
-        )
+
+        const serializedTabs: RecoveryToken[] = []
+        for (const tab of tabs) {
+            const token = await this.getFullRecoveryToken(tab, { includeState: true })
+            if (!token) {
+                continue
+            }
+            if (tab === activeTab) {
+                token[ACTIVE_TOP_LEVEL_MARKER] = true
+            }
+            serializedTabs.push(token)
+        }
+
+        window.localStorage.tabsRecovery = JSON.stringify(serializedTabs)
     }
 
     async getFullRecoveryToken (tab: BaseTabComponent, options?: GetRecoveryTokenOptions): Promise<RecoveryToken|null> {
@@ -67,17 +83,24 @@ export class TabRecoveryService {
         return null
     }
 
-    async recoverTabs (): Promise<NewTabParameters<BaseTabComponent>[]> {
+    async recoverTabs (): Promise<RecoveredTabsState> {
         if (window.localStorage.tabsRecovery) {
             const tabs: NewTabParameters<BaseTabComponent>[] = []
-            for (const token of JSON.parse(window.localStorage.tabsRecovery)) {
+            let activeTabIndex: number|null = null
+            const savedState = JSON.parse(window.localStorage.tabsRecovery)
+            const savedTabs = Array.isArray(savedState) ? savedState : savedState?.tabs ?? []
+            for (const token of savedTabs) {
                 const tab = await this.recoverTab(token)
-                if (tab) {
-                    tabs.push(tab)
+                if (!tab) {
+                    continue
                 }
+                if (token?.[ACTIVE_TOP_LEVEL_MARKER]) {
+                    activeTabIndex = tabs.length
+                }
+                tabs.push(tab)
             }
-            return tabs
+            return { tabs, activeTabIndex }
         }
-        return []
+        return { tabs: [], activeTabIndex: null }
     }
 }

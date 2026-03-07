@@ -10,6 +10,8 @@ export type SplitOrientation = 'v' | 'h'
 export type SplitDirection = 'r' | 't' | 'b' | 'l'
 export type ResizeDirection = 'v' | 'h' | 'dv' | 'dh'
 
+const SPLIT_FOCUSED_CHILD_MARKER = '__tabbySplitFocusedChild'
+
 /**
  * Describes a horizontal or vertical split row or column
  */
@@ -106,13 +108,19 @@ export class SplitContainer {
         return s
     }
 
-    async serialize (tabsRecovery: TabRecoveryService, options?: GetRecoveryTokenOptions): Promise<RecoveryToken> {
-        const children: any[] = []
+    async serialize (tabsRecovery: TabRecoveryService, options?: GetRecoveryTokenOptions, focusedTab?: BaseTabComponent|null): Promise<RecoveryToken> {
+        const children: RecoveryToken[] = []
         for (const child of this.children) {
             if (child instanceof SplitContainer) {
-                children.push(await child.serialize(tabsRecovery, options))
+                children.push(await child.serialize(tabsRecovery, options, focusedTab))
             } else {
-                children.push(await tabsRecovery.getFullRecoveryToken(child, options))
+                const token = await tabsRecovery.getFullRecoveryToken(child, options)
+                if (token) {
+                    if (child === focusedTab) {
+                        token[SPLIT_FOCUSED_CHILD_MARKER] = true
+                    }
+                    children.push(token)
+                }
             }
         }
         return {
@@ -371,11 +379,19 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
     /** @hidden */
     async ngAfterViewInit (): Promise<void> {
         if (this._recoveredState) {
-            await this.recoverContainer(this.root, this._recoveredState)
+            const recoveredFocusedTab = await this.recoverContainer(this.root, this._recoveredState)
+            if (recoveredFocusedTab) {
+                this.focusedTab = recoveredFocusedTab
+            }
             this.updateTitle()
             this.layout()
             setTimeout(() => {
-                if (this.hasFocus) {
+                if (!this.hasFocus) {
+                    return
+                }
+                if (recoveredFocusedTab) {
+                    this.focus(recoveredFocusedTab)
+                } else {
                     for (const tab of this.getAllTabs()) {
                         this.focus(tab)
                     }
@@ -410,6 +426,7 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
     }
 
     focus (tab: BaseTabComponent): void {
+        const focusChanged = this.focusedTab !== tab
         this.focusedTab = tab
         for (const x of this.getAllTabs()) {
             if (x !== tab) {
@@ -418,6 +435,9 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         }
         tab.emitFocused()
         this.focusChanged.next(tab)
+        if (focusChanged) {
+            this.recoveryStateChangedHint.next()
+        }
 
         if (this.maximizedTab !== tab) {
             this.maximizedTab = null
@@ -738,7 +758,7 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
 
     /** @hidden */
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<any> {
-        return this.root.serialize(this.tabRecovery, options)
+        return this.root.serialize(this.tabRecovery, options, this.focusedTab)
     }
 
     /** @hidden */
@@ -1028,8 +1048,9 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         })
     }
 
-    private async recoverContainer (root: SplitContainer, state: any) {
+    private async recoverContainer (root: SplitContainer, state: any): Promise<BaseTabComponent|null> {
         const children: (SplitContainer | BaseTabComponent)[] = []
+        let focusedTab: BaseTabComponent|null = null
         root.orientation = state.orientation
         root.ratios = state.ratios
         root.children = children
@@ -1039,8 +1060,9 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
             }
             if (childState.type === 'app:split-tab') {
                 const child = new SplitContainer()
-                await this.recoverContainer(child, childState)
+                const recoveredFocusedTab = await this.recoverContainer(child, childState)
                 children.push(child)
+                focusedTab = focusedTab ?? recoveredFocusedTab
             } else {
                 const recovered = await this.tabRecovery.recoverTab(childState)
                 if (recovered) {
@@ -1048,6 +1070,9 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
                     children.push(tab)
                     tab.parent = this
                     this.attachTabView(tab)
+                    if (childState[SPLIT_FOCUSED_CHILD_MARKER]) {
+                        focusedTab = focusedTab ?? tab
+                    }
                 } else {
                     state.ratios.splice(state.children.indexOf(childState), 0)
                 }
@@ -1057,6 +1082,7 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
             root.ratios.push(1)
         }
         root.normalize()
+        return focusedTab
     }
 }
 
