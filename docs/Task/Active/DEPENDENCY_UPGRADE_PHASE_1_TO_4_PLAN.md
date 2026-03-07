@@ -112,27 +112,22 @@
 2. 本地构建验证
 3. CI 流程验证（如需要）
 
-### Phase 4: lru-cache 重构升级 ⏳
+### Phase 4: lru-cache 重构升级 ❌
 
 **包列表**：
 - `lru-cache`: 6.0.0 → 11.2.6
 
-**风险评估**: 中高
-**原因**: API 变更，需要修改代码
-**关联文件**: app/lib/lru.ts:1
+**状态**: 已放弃
+**原因**: lru-cache 11.x 的 ESM/CommonJS 导出方式与当前 webpack 配置不兼容，导致运行时错误。需要更深入的 webpack 配置调整或等待更好的解决方案。
 
-**API 变更**：
-- 旧: `LRU` / `maxAge`
-- 新: `LRUCache` / `ttl`
+**尝试过的方法**：
+1. 使用命名导入 `{ LRUCache }` - 失败
+2. 使用默认导入 - 失败
+3. 添加到 webpack externals - 失败
+4. 使用 require 语法 - TypeScript 不允许
+5. 使用动态导入回退 - 仍然失败
 
-**代码改动**：
-需要修改 app/lib/lru.ts 的导入和使用方式
-
-**验证步骤**：
-1. 升级依赖
-2. 修改 app/lib/lru.ts 代码
-3. 启动应用验证文件路径解析
-4. 测试缓存相关功能
+**建议**: 暂时保持 lru-cache 6.0.0，等待 lru-cache 或 webpack 生态改进后再升级。
 
 ## 明确冻结的包（Phase 5）
 
