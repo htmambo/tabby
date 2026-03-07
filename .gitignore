@@ -40,4 +40,5 @@ crowdin.yml
 **/.omc/
 **/.codex/
 **/.claude/
+**/plan/
 

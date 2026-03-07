@@ -225,6 +225,19 @@ div.mt-4
             (ngModelChange)='config.save()',
         )
 
+    .form-line
+        .header
+            .title(translate) Recovered terminal scrollback
+            .description(translate) Number of lines saved for terminal recovery on app restart
+        input.form-control(
+            type='number',
+            min='0',
+            max='5000',
+            [disabled]='!config.store.recoverTabs',
+            [(ngModel)]='config.store.terminal.recoveryScrollbackLines',
+            (ngModelChange)='config.save()',
+        )
+
 div.mt-4(*ngIf='hostApp.platform === Platform.Windows')
     h3(translate) Windows
 

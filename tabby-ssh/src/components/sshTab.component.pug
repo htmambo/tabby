@@ -53,6 +53,7 @@ sftp-panel(
     *ngIf='sftpPanelVisible && effectiveSFTPSession',
     [style.height.px]='sftpPanelHeight',
     [(path)]='sftpPath',
+    [initialLocalPath]='sftpInitialLocalPath',
     (click)='$event.stopPropagation()',
     [session]='effectiveSFTPSession!',
     [cwdDetectionAvailable]='session?.supportsWorkingDirectory() ?? false',

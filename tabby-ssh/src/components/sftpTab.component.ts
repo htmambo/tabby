@@ -14,6 +14,7 @@ export class SFTPTabComponent extends BaseTabComponent {
     @Input() profile: SSHProfile|null = null
     @Input() sshSession: SSHSession|null = null
     @Input() path = '/'
+    @Input() initialLocalPath: string|null = null
     @Input() cwdDetectionAvailable = false
     errorMessage: string|null = null
 

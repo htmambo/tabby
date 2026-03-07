@@ -1,12 +1,13 @@
 import * as russh from 'russh'
 import colors from 'ansi-colors'
 import { Injectable, Injector } from '@angular/core'
-import { AppService, NotificationsService, PartialProfile, ProfilesService } from 'tabby-core'
+import { AppService, NotificationsService, PartialProfile, PlatformService, ProfilesService } from 'tabby-core'
 
 import { SSHProfile } from '../api'
 import { SFTPTabComponent } from '../components/sftpTab.component'
 import { SSHSession } from '../session/ssh'
 import { SSHMultiplexerService } from './sshMultiplexer.service'
+import { resolveSFTPLocalStartPath, resolveSFTPRemoteStartPath } from '../sftpPathSettings'
 
 @Injectable({ providedIn: 'root' })
 export class SFTPTabLauncherService {
@@ -16,19 +17,22 @@ export class SFTPTabLauncherService {
         private notifications: NotificationsService,
         private profilesService: ProfilesService,
         private sshMultiplexer: SSHMultiplexerService,
+        private platform: PlatformService,
     ) { }
 
     async openForProfile (profile: PartialProfile<SSHProfile>): Promise<void> {
         try {
             const fullProfile = this.profilesService.getConfigProxyForProfile(profile)
             const sshSession = await this.createSession(fullProfile)
+            const initialLocalPath = await resolveSFTPLocalStartPath(this.platform, fullProfile)
 
             this.app.openNewTabRaw({
                 type: SFTPTabComponent,
                 inputs: {
                     profile: fullProfile,
                     sshSession,
-                    path: '/',
+                    path: resolveSFTPRemoteStartPath(fullProfile, '/'),
+                    initialLocalPath,
                     cwdDetectionAvailable: false,
                 },
             })

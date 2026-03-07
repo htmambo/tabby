@@ -19,6 +19,7 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     protected isDisconnectedByHand = false
     reconnectInProgress = false
     private lastInputAt = 0
+    private skipInitialClearServiceMessagesOnConnect = false
     private readonly immediateReconnectInputWindow = 2000
 
     constructor (protected injector: Injector) {
@@ -44,13 +45,14 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
 
     ngOnInit (): void {
         this.logger = this.log.create(`${this.profile.type}Tab`)
+        this.skipInitialClearServiceMessagesOnConnect = !!this.savedState
 
         super.ngOnInit()
     }
 
     protected onFrontendReady (): void {
         this.initializeSession().then(() => {
-            this.clearServiceMessagesOnConnect()
+            this.clearServiceMessagesOnConnect(true)
         })
         super.onFrontendReady()
     }
@@ -161,10 +163,15 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
         super.sendInput(data)
     }
 
-    private clearServiceMessagesOnConnect (): void {
-        if (this.profile.clearServiceMessagesOnConnect && this.session?.open) {
-            this.frontend?.clear()
+    private clearServiceMessagesOnConnect (initialConnect = false): void {
+        const shouldSkipClear = initialConnect && this.skipInitialClearServiceMessagesOnConnect
+        if (initialConnect) {
+            this.skipInitialClearServiceMessagesOnConnect = false
         }
+        if (!this.profile.clearServiceMessagesOnConnect || !this.session?.open || shouldSkipClear) {
+            return
+        }
+        this.frontend?.clear()
     }
 
     private shouldReconnectImmediately (): boolean {

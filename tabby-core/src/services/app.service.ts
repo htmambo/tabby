@@ -383,13 +383,22 @@ export class AppService {
     }
 
     async closeWindow (): Promise<void> {
-        this.tabRecovery.enabled = false
+        await this.prepareTabsForRecoverySave(this.tabs)
         await this.tabRecovery.saveTabs(this.tabs)
+        this.tabRecovery.enabled = false
         if (await this.closeAllTabs()) {
             this.hostWindow.close()
         } else {
             this.tabRecovery.enabled = true
         }
+    }
+
+    private async prepareTabsForRecoverySave (tabs: BaseTabComponent[]): Promise<void> {
+        const flattenedTabs = tabs.flatMap(tab => tab instanceof SplitTabComponent ? tab.getAllTabs() : [tab])
+        await Promise.all(flattenedTabs.map(async tab => {
+            const recoveryAwareTab = tab as BaseTabComponent & { prepareForRecoverySave?: () => Promise<void> }
+            await recoveryAwareTab.prepareForRecoverySave?.()
+        }))
     }
 
     /** @hidden */

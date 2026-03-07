@@ -1815,9 +1815,33 @@ msgstr "將設定還原為繼承的預設值 ?"
 msgid "Restore terminal tabs on app start"
 msgstr "應用程式啟動時回復先前的終端機分頁"
 
+#: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:168
+msgid "Recovered terminal scrollback"
+msgstr "回復時的終端捲回緩衝"
+
+#: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:169
+msgid "Number of lines saved for terminal recovery on app restart"
+msgstr "應用程式重新啟動時為終端回復儲存的行數"
+
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:147
 msgid "Reuse session for multiple tabs"
 msgstr "回復多個分頁的狀態"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:156
+msgid "SFTP remote default path"
+msgstr "SFTP 遠端預設路徑"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:157
+msgid "Used when opening a new SFTP session. Empty uses the current shell directory or /"
+msgstr "新建 SFTP 工作階段時使用。留空則使用目前 Shell 目錄或 /"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:165
+msgid "SFTP local default path"
+msgstr "SFTP 本機預設路徑"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:166
+msgid "Used when opening a new SFTP session. Supports ~ or ${home}. Empty uses the system home directory"
+msgstr "新建 SFTP 工作階段時使用。支援 ~ 或 ${home}。留空則使用系統主目錄"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:136
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:78

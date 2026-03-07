@@ -21,6 +21,8 @@ const COLOR_NAMES = [
     'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white',
     'brightBlack', 'brightRed', 'brightGreen', 'brightYellow', 'brightBlue', 'brightMagenta', 'brightCyan', 'brightWhite',
 ]
+const DEFAULT_RECOVERY_SCROLLBACK_LINES = 2000
+const MAX_RECOVERY_SCROLLBACK_LINES = 5000
 
 class FlowControl {
     private blocked = false
@@ -510,11 +512,19 @@ export class XTermFrontend extends Frontend {
         this.focus()
     }
 
+    private getRecoveryScrollbackLines (): number {
+        const configured = Number(this.configService.store.terminal.recoveryScrollbackLines)
+        if (!Number.isFinite(configured)) {
+            return DEFAULT_RECOVERY_SCROLLBACK_LINES
+        }
+        return Math.min(MAX_RECOVERY_SCROLLBACK_LINES, Math.max(0, Math.round(configured)))
+    }
+
     saveState (): any {
         return this.serializeAddon.serialize({
             excludeAltBuffer: true,
             excludeModes: true,
-            scrollback: 1000,
+            scrollback: this.getRecoveryScrollbackLines(),
         })
     }
 

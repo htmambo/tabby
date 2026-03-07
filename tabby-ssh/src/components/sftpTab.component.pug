@@ -4,6 +4,7 @@
         *ngIf='sshSession',
         [session]='sshSession',
         [(path)]='path',
+        [initialLocalPath]='initialLocalPath',
         [cwdDetectionAvailable]='cwdDetectionAvailable',
         (closed)='close()'
     )

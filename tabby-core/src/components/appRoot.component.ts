@@ -795,7 +795,7 @@ export class AppRootComponent {
     private restoreRoyalConnectionBindingsFromTabs (): void {
         for (const target of this.getRoyalSessionTargets()) {
             const profileID = this.getRoyalTabProfileID(target.targetTab)
-            if (!(profileID ?? false) || (this.getRoyalConnectionBinding(profileID) ?? false) || this.isRoyalSFTPTab(target.targetTab)) {
+            if (!profileID || this.getRoyalConnectionBinding(profileID) !== null || this.isRoyalSFTPTab(target.targetTab)) {
                 continue
             }
             this.setRoyalConnectionBinding(profileID, target.targetTab)

@@ -230,6 +230,26 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
 
             .form-line
                 .header
+                    .title(translate) SFTP remote default path
+                    .description(translate) Used when opening a new SFTP session. Empty uses the current shell directory or /
+                input.form-control(
+                    type='text',
+                    placeholder='/home/user',
+                    [(ngModel)]='profile.options.sftpDefaultPath',
+                )
+
+            .form-line
+                .header
+                    .title(translate) SFTP local default path
+                    .description {{ 'Used when opening a new SFTP session. Supports ~ or ${home}. Empty uses the system home directory' | translate }}
+                input.form-control(
+                    type='text',
+                    placeholder='~/Downloads',
+                    [(ngModel)]='profile.options.sftpLocalDefaultPath',
+                )
+
+            .form-line
+                .header
                     .title(translate) Keep Alive Interval (Milliseconds)
                 input.form-control(
                     type='number',
