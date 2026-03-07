@@ -6,6 +6,7 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 import { AngularWebpackPlugin } from '@ngtools/webpack'
 import { createEs2015LinkerPlugin } from '@angular/compiler-cli/linker/babel'
+import * as sass from 'sass'
 const linkerPlugin = createEs2015LinkerPlugin({
     linkerJitMode: true,
     fileSystem: {
@@ -62,8 +63,20 @@ export default () => ({
                     loader: '@ngtools/webpack',
                 },
             },
-            { test: /\.scss$/, use: ['style-loader', 'css-loader', 'sass-loader'] },
-            { test: /\.css$/, use: ['style-loader', 'css-loader', 'sass-loader'] },
+            {
+                test: /\.scss$/,
+                use: [
+                    'style-loader',
+                    'css-loader',
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            implementation: sass,
+                        },
+                    },
+                ],
+            },
+            { test: /\.css$/, use: ['style-loader', 'css-loader'] },
             {
                 test: /\.(png|svg|ttf|eot|otf|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 type: 'asset',
