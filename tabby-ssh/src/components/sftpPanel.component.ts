@@ -28,6 +28,7 @@ export class SFTPPanelComponent {
     localFileList: LocalFileEntry[]|null = null
     filteredLocalFileList: LocalFileEntry[] = []
     @Input() path = '/'
+    @Input() initialLocalPath: string|null = null
     @Output() pathChange = new EventEmitter<string>()
     pathSegments: PathSegment[] = []
     localPath = ''
@@ -87,7 +88,7 @@ export class SFTPPanelComponent {
 
         if (this.showLocalPanel) {
             try {
-                const defaultLocalDirectory = await this.platform.getDefaultLocalDirectory()
+                const defaultLocalDirectory = this.initialLocalPath ?? await this.platform.getDefaultLocalDirectory()
                 if (defaultLocalDirectory) {
                     await this.navigateLocal(defaultLocalDirectory)
                 }

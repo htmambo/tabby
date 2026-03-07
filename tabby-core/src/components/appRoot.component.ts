@@ -273,12 +273,12 @@ export class AppRootComponent {
     }
 
     async ngOnInit () {
-            this.config.ready$.toPromise().then(() => {
-                this.ready = true
-                this.syncWindowOpacity()
-                this.syncRoyalActiveConnection()
-                this.app.emitReady()
-            })
+        this.config.ready$.toPromise().then(() => {
+            this.ready = true
+            this.syncWindowOpacity()
+            this.syncRoyalActiveConnection()
+            this.app.emitReady()
+        })
     }
 
     @HostListener('dragover')
@@ -641,7 +641,7 @@ export class AppRootComponent {
             const isSFTPTab = this.isRoyalSFTPTab(tab)
 
             let environment = this.detectRoyalEnvironment(title)
-            if (profileID || isSFTPTab) {
+            if ((profileID ?? false) || isSFTPTab) {
                 environment = 'other'
             }
             const searchText = `${title} ${kind} ${environment}`.toLowerCase()
@@ -795,7 +795,7 @@ export class AppRootComponent {
     private restoreRoyalConnectionBindingsFromTabs (): void {
         for (const target of this.getRoyalSessionTargets()) {
             const profileID = this.getRoyalTabProfileID(target.targetTab)
-            if (!profileID || this.getRoyalConnectionBinding(profileID) || this.isRoyalSFTPTab(target.targetTab)) {
+            if (!(profileID ?? false) || (this.getRoyalConnectionBinding(profileID) ?? false) || this.isRoyalSFTPTab(target.targetTab)) {
                 continue
             }
             this.setRoyalConnectionBinding(profileID, target.targetTab)
@@ -875,7 +875,7 @@ export class AppRootComponent {
     }
 
     private getRoyalTabProfileID (tab: BaseTabComponent|null): string|null {
-        const profile = (tab as BaseTabComponent & { profile?: PartialProfile<Profile>|null })?.profile
+        const profile = (tab as BaseTabComponent & { profile?: PartialProfile<Profile>|null }).profile
         return profile?.id ?? null
     }
 

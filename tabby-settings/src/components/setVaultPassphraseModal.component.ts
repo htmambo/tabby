@@ -34,6 +34,6 @@ export class SetVaultPassphraseModalComponent {
     }
 
     get canSubmit (): boolean {
-        return !!this.passphrase?.trim()
+        return !!this.passphrase.trim()
     }
 }
