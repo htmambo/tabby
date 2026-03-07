@@ -79,3 +79,24 @@ export const keygenConfig = {
 if (!keygenConfig.product) {
     throw new Error(`Unrecognized platform ${process.platform}/${process.env.ARCH}`)
 }
+
+export function getPublishConfigs () {
+    const configs = []
+
+    if (process.env.KEYGEN_TOKEN) {
+        configs.push(keygenConfig)
+    }
+
+    if (process.env.GITHUB_TOKEN || process.env.GH_TOKEN) {
+        configs.push({
+            provider: 'github',
+            channel: `latest-${process.env.ARCH}`,
+        })
+    }
+
+    return configs.length ? configs : undefined
+}
+
+export function shouldPublishBuild (isTag) {
+    return !!(isTag && getPublishConfigs()?.length)
+}

@@ -7,6 +7,7 @@ import { execSync } from 'child_process'
 const isTag = (process.env.GITHUB_REF || process.env.BUILD_SOURCEBRANCH || '').startsWith('refs/tags/')
 const keypair = process.env.SM_KEYPAIR_ALIAS
 const signingEnabled = !!keypair
+const publishConfigs = vars.getPublishConfigs()
 
 process.env.ARCH = process.env.ARCH || process.arch
 
@@ -27,13 +28,7 @@ builder({
         extraMetadata: {
             version: vars.version,
         },
-        publish: process.env.KEYGEN_TOKEN ? [
-            vars.keygenConfig,
-            {
-                provider: 'github',
-                channel: `latest-${process.env.ARCH}`,
-            },
-        ] : undefined,
+        publish: publishConfigs,
         forceCodeSigning: signingEnabled,
         win: signingEnabled ? {
             signtoolOptions: {
@@ -71,7 +66,7 @@ builder({
         },
     },
 
-    publish: (process.env.KEYGEN_TOKEN && isTag) ? 'always' : 'never',
+    publish: vars.shouldPublishBuild(isTag) ? 'always' : 'never',
 }).catch(e => {
     console.error(e)
     process.exit(1)
