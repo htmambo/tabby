@@ -158,6 +158,7 @@ jobs:
       npm_config_arch: ${{matrix.build-arch}}
       npm_config_target_arch: ${{matrix.build-arch}}
       RUST_TARGET_TRIPLE: ${{matrix.rust_triple}}
+      HAS_PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN != '' }}
 
     steps:
     - name: Checkout
@@ -251,7 +252,7 @@ jobs:
 
     - name: Upload packages to packagecloud.io
       uses: TykTechnologies/packagecloud-action@main
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.repository == 'Eugeny/tabby' && secrets.PACKAGECLOUD_TOKEN != ''
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.repository == 'Eugeny/tabby' && env.HAS_PACKAGECLOUD_TOKEN == 'true'
       env:
         PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
       with:
@@ -312,6 +313,7 @@ jobs:
     env:
       RUST_TARGET_TRIPLE: ${{matrix.rust_triple}}
       ARCH: ${{matrix.arch}}
+      HAS_WINDOWS_SIGNING_SECRETS: ${{ secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' }}
 
     steps:
     - name: Checkout
@@ -321,7 +323,7 @@ jobs:
 
     - name: Code signing with Software Trust Manager
       uses: digicert/ssm-code-signing@v1.1.1
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.HAS_WINDOWS_SIGNING_SECRETS == 'true' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
       env:
         FORCE_DOWNLOAD_TOOLS: 'true'
 
@@ -349,7 +351,7 @@ jobs:
         ARCH: ${{matrix.arch}}
 
     - name: Decode certificate
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.HAS_WINDOWS_SIGNING_SECRETS == 'true' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
       env:
         SM_CLIENT_CERT_FILE_B64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
       run: |
@@ -359,7 +361,7 @@ jobs:
       shell: bash
 
     - name: Build and sign packages
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.HAS_WINDOWS_SIGNING_SECRETS == 'true' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
       shell: powershell
       run: |
         Get-FileHash $env:SM_CLIENT_CERT_FILE -Algorithm MD5
@@ -390,7 +392,7 @@ jobs:
 
     - name: Build packages without signing
       run: node scripts/build-windows.mjs
-      if: "! (github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != '')"
+      if: "! (github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.HAS_WINDOWS_SIGNING_SECRETS == 'true' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != '')"
       env:
         ARCH: ${{matrix.arch}}
 
