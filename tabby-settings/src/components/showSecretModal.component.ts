@@ -19,9 +19,12 @@ export class ShowSecretModalComponent {
         this.modalInstance.dismiss()
     }
 
-    copySecret (): void {
-        navigator.clipboard.writeText(this.secret.value)
-        // Show a notification
-        this.notifications.info('Copied to clipboard')
+    async copySecret (): Promise<void> {
+        try {
+            await navigator.clipboard.writeText(this.secret.value)
+            this.notifications.info('Copied to clipboard')
+        } catch {
+            this.notifications.error('Failed to copy to clipboard')
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { app, ipcMain, Menu, Tray, shell, screen, globalShortcut, MenuItemConstructorOptions, WebContents } from 'electron'
+import { app, ipcMain, Menu, Tray, shell, screen, globalShortcut, MenuItemConstructorOptions, WebContents, clipboard } from 'electron'
 import promiseIpc from 'electron-promise-ipc'
 import * as remote from '@electron/remote/main'
 import { exec } from 'mz/child_process'
@@ -34,6 +34,17 @@ export class Application {
         ipcMain.handle('app:save-config', async (event, config) => {
             await saveConfig(config)
             this.broadcastExcept('host:config-change', event.sender, config)
+        })
+
+        ipcMain.on('clipboard:read-text', event => {
+            event.returnValue = clipboard.readText()
+        })
+
+        ipcMain.on('clipboard:write', (_event, content: { text?: string, html?: string }) => {
+            clipboard.write({
+                text: content?.text ?? '',
+                html: content?.html,
+            })
         })
 
         ipcMain.on('app:register-global-hotkey', (_event, specs) => {

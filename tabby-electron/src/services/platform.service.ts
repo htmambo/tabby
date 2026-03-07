@@ -65,11 +65,11 @@ export class ElectronPlatformService extends PlatformService {
     }
 
     readClipboard (): string {
-        return this.electron.clipboard.readText()
+        return this.electron.ipcRenderer.sendSync('clipboard:read-text')
     }
 
     setClipboard (content: ClipboardContent): void {
-        require('@electron/remote').clipboard.write(content)
+        this.electron.ipcRenderer.send('clipboard:write', content)
     }
 
     async installPlugin (name: string, version: string): Promise<void> {
