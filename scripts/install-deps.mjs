@@ -2,24 +2,31 @@
 import sh from 'shelljs'
 import * as vars from './vars.mjs'
 import log from 'npmlog'
+import path from 'node:path'
+import { runYarnInstallWithRetry } from './yarn-install-retry.mjs'
 
 log.info('patch')
 sh.exec(`yarn patch-package`, { fatal: true })
 
 log.info('deps', 'app')
-
+await runYarnInstallWithRetry({
+    cwd: path.join(process.cwd(), 'app'),
+    args: ['install', '--force', '--network-timeout', '1000000'],
+    label: 'install app deps',
+})
 sh.cd('app')
-sh.exec(`yarn install --force --network-timeout 1000000`, { fatal: true })
 // Some native packages might fail to build before patch-package gets a chance to run via postinstall
 sh.exec(`yarn postinstall`, { fatal: false })
 sh.cd('..')
 
-vars.allPackages.forEach(plugin => {
+for (let plugin of vars.allPackages) {
     log.info('deps', plugin)
-    sh.cd(plugin)
-    sh.exec(`yarn install --force --network-timeout 1000000`, { fatal: true })
-    sh.cd('..')
-})
+    await runYarnInstallWithRetry({
+        cwd: path.join(process.cwd(), plugin),
+        args: ['install', '--force', '--network-timeout', '1000000'],
+        label: `install ${plugin} deps`,
+    })
+}
 
 if (['darwin', 'linux'].includes(process.platform)) {
     sh.cd('node_modules')

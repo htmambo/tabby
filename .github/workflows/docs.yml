@@ -29,16 +29,17 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
+        cache: yarn
+        cache-dependency-path: yarn.lock
 
     - name: Build
       run: |
         sudo apt update && sudo apt install libfontconfig1-dev
+        npm i -g yarn
         yarn cache clean
-        cd app
-        yarn
-        cd ..
+        node scripts/yarn-install-retry.mjs --cwd app
         rm app/node_modules/.yarn-integrity
-        yarn
+        node scripts/yarn-install-retry.mjs
         yarn run build:typings
         yarn run docs
 

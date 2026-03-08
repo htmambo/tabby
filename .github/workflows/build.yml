@@ -20,16 +20,16 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
+        cache: yarn
+        cache-dependency-path: yarn.lock
 
     - name: Install deps
       run: |
         sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
         npm i -g yarn
-        cd app
-        yarn
-        cd ..
+        node scripts/yarn-install-retry.mjs --cwd app
         rm app/node_modules/.yarn-integrity
-        yarn
+        node scripts/yarn-install-retry.mjs
 
     - name: Build typings
       run: yarn run build:typings
@@ -63,12 +63,14 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
+        cache: yarn
+        cache-dependency-path: yarn.lock
 
     - run: rustup target add ${{matrix.rust_triple}}
 
     - name: Install deps
       run: |
-        yarn --network-timeout 1000000
+        node scripts/yarn-install-retry.mjs --network-timeout 1000000
       env:
         ARCH: ${{matrix.arch}}
 
@@ -178,6 +180,8 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
+        cache: yarn
+        cache-dependency-path: yarn.lock
 
     - name: Install FPM
       run: |
@@ -227,7 +231,7 @@ jobs:
     - name: Install npm_modules (native)
       run: |
         npm i -g yarn node-gyp
-        yarn --network-timeout 1000000 --arch=${{matrix.build-arch}} --target-arch=${{matrix.build-arch}}
+        node scripts/yarn-install-retry.mjs --network-timeout 1000000 --arch=${{matrix.build-arch}} --target-arch=${{matrix.build-arch}}
 
     - name: Webpack (${{matrix.arch}})
       run: yarn run build --arch=${{matrix.build-arch}} --target_arch=${{matrix.build-arch}}
@@ -339,6 +343,8 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
+        cache: yarn
+        cache-dependency-path: yarn.lock
 
     - run: npm i -g npx
     - run: rustup target add ${{matrix.rust_triple}}
@@ -351,8 +357,8 @@ jobs:
     - name: Build
       shell: powershell
       run: |
-        npm i -g yar node-gyp
-        yarn --network-timeout 1000000
+        npm i -g yarn node-gyp
+        node scripts/yarn-install-retry.mjs --network-timeout 1000000
         yarn run build
         node scripts/prepackage-plugins.mjs
       env:
