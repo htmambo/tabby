@@ -1,5 +1,8 @@
 name: Package-Build
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v*'
 jobs:
   Lint:
     runs-on: ubuntu-24.04
