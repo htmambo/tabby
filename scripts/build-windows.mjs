@@ -10,6 +10,10 @@ const signingEnabled = !!keypair
 const publishConfigs = vars.getPublishConfigs()
 
 process.env.ARCH = process.env.ARCH || process.arch
+const windowsTargets = (process.env.WINDOWS_TARGETS ?? 'nsis,zip')
+    .split(',')
+    .map(x => x.trim())
+    .filter(Boolean)
 
 if (!signingEnabled) {
     // Prevent electron-builder from trying certificate auto-discovery on unsigned builds.
@@ -20,10 +24,10 @@ if (!signingEnabled) {
 
 console.log('Signing enabled:', signingEnabled)
 
-builder({
-    dir: true,
-    win: ['nsis', 'zip'],
-    arm64: process.env.ARCH === 'arm64',
+    builder({
+        dir: true,
+        win: windowsTargets,
+        arm64: process.env.ARCH === 'arm64',
     config: {
         extraMetadata: {
             version: vars.version,

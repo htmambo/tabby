@@ -1,5 +1,16 @@
 name: Docs
-on: push
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types:
+      - published
+
+concurrency:
+  group: docs-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

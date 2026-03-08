@@ -1,10 +1,177 @@
 name: Package-Build
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: '手动多选请用逗号、空格或换行分隔。示例: x86_deb, arm_deb, x86_dmg。也支持完整名称如 linux_x64_deb、linux_arm64_deb、macos_x64_dmg。填 all 构建全部产物。'
+        required: false
+        default: 'all'
+        type: string
 permissions:
   contents: write
 
 jobs:
+  resolve_targets:
+    name: Resolve Targets
+    runs-on: ubuntu-24.04
+    outputs:
+      requested_targets: ${{ steps.resolve.outputs.requested_targets }}
+      run_all: ${{ steps.resolve.outputs.run_all }}
+      run_linux_x64: ${{ steps.resolve.outputs.run_linux_x64 }}
+      linux_x64_targets: ${{ steps.resolve.outputs.linux_x64_targets }}
+      run_linux_arm64: ${{ steps.resolve.outputs.run_linux_arm64 }}
+      linux_arm64_targets: ${{ steps.resolve.outputs.linux_arm64_targets }}
+      run_linux_armhf: ${{ steps.resolve.outputs.run_linux_armhf }}
+      linux_armhf_targets: ${{ steps.resolve.outputs.linux_armhf_targets }}
+      run_linux_x64_web_tarball: ${{ steps.resolve.outputs.run_linux_x64_web_tarball }}
+      run_macos_x64: ${{ steps.resolve.outputs.run_macos_x64 }}
+      macos_x64_targets: ${{ steps.resolve.outputs.macos_x64_targets }}
+      run_macos_arm64: ${{ steps.resolve.outputs.run_macos_arm64 }}
+      macos_arm64_targets: ${{ steps.resolve.outputs.macos_arm64_targets }}
+      run_windows_x64: ${{ steps.resolve.outputs.run_windows_x64 }}
+      windows_x64_targets: ${{ steps.resolve.outputs.windows_x64_targets }}
+      run_windows_arm64: ${{ steps.resolve.outputs.run_windows_arm64 }}
+      windows_arm64_targets: ${{ steps.resolve.outputs.windows_arm64_targets }}
+    steps:
+    - name: Resolve manual targets
+      id: resolve
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        TARGET_INPUT: ${{ github.event.inputs.targets }}
+      run: |
+        node <<'EOF'
+        const fs = require('node:fs')
+
+        const eventName = process.env.EVENT_NAME
+        const rawInput = eventName === 'workflow_dispatch' ? (process.env.TARGET_INPUT || 'all') : 'all'
+        const normalized = rawInput
+          .toLowerCase()
+          .split(/[\s,;，；]+/)
+          .map(x => x.trim())
+          .filter(Boolean)
+        const tokens = new Set(normalized.length ? normalized : ['all'])
+        const runAll = tokens.has('all')
+
+        const linuxOrder = ['deb', 'tar.gz', 'rpm', 'pacman', 'appimage']
+        const macosOrder = ['dmg', 'zip']
+        const windowsOrder = ['nsis', 'zip']
+        const resolved = {
+          linux_x64: new Set(),
+          linux_arm64: new Set(),
+          linux_armhf: new Set(),
+          macos_x64: new Set(),
+          macos_arm64: new Set(),
+          windows_x64: new Set(),
+          windows_arm64: new Set(),
+        }
+
+        const addTargets = (key, values) => values.forEach(value => resolved[key].add(value))
+        const hasToken = (...aliases) => aliases.some(alias => tokens.has(alias))
+
+        if (runAll || hasToken('linux_x64', 'linux_amd64', 'x64_linux')) {
+          addTargets('linux_x64', linuxOrder)
+        }
+        if (runAll || hasToken('linux_arm64', 'arm64_linux', 'arm_linux64')) {
+          addTargets('linux_arm64', linuxOrder)
+        }
+        if (runAll || hasToken('linux_armhf', 'linux_arm', 'armhf_linux', 'armv7_linux')) {
+          addTargets('linux_armhf', linuxOrder)
+        }
+        if (runAll || hasToken('macos_x64', 'mac_x64', 'x64_macos')) {
+          addTargets('macos_x64', macosOrder)
+        }
+        if (runAll || hasToken('macos_arm64', 'mac_arm64', 'arm64_macos')) {
+          addTargets('macos_arm64', macosOrder)
+        }
+        if (runAll || hasToken('windows_x64', 'win_x64', 'x64_windows')) {
+          addTargets('windows_x64', windowsOrder)
+        }
+        if (runAll || hasToken('windows_arm64', 'win_arm64', 'arm64_windows')) {
+          addTargets('windows_arm64', windowsOrder)
+        }
+
+        const specificAliases = [
+          ['linux_x64', 'deb', ['linux_x64_deb', 'linux_amd64_deb', 'x64_deb', 'x86_deb']],
+          ['linux_x64', 'tar.gz', ['linux_x64_targz', 'linux_x64_tar', 'x64_targz', 'x86_targz']],
+          ['linux_x64', 'rpm', ['linux_x64_rpm', 'x64_rpm', 'x86_rpm']],
+          ['linux_x64', 'pacman', ['linux_x64_pacman', 'x64_pacman', 'x86_pacman']],
+          ['linux_x64', 'appimage', ['linux_x64_appimage', 'x64_appimage', 'x86_appimage']],
+          ['linux_arm64', 'deb', ['linux_arm64_deb', 'arm64_deb', 'arm_deb']],
+          ['linux_arm64', 'tar.gz', ['linux_arm64_targz', 'linux_arm64_tar', 'arm64_targz', 'arm_targz']],
+          ['linux_arm64', 'rpm', ['linux_arm64_rpm', 'arm64_rpm', 'arm_rpm']],
+          ['linux_arm64', 'pacman', ['linux_arm64_pacman', 'arm64_pacman', 'arm_pacman']],
+          ['linux_arm64', 'appimage', ['linux_arm64_appimage', 'arm64_appimage', 'arm_appimage']],
+          ['linux_armhf', 'deb', ['linux_armhf_deb', 'armhf_deb', 'armv7_deb']],
+          ['linux_armhf', 'tar.gz', ['linux_armhf_targz', 'linux_armhf_tar', 'armhf_targz', 'armv7_targz']],
+          ['linux_armhf', 'rpm', ['linux_armhf_rpm', 'armhf_rpm', 'armv7_rpm']],
+          ['linux_armhf', 'pacman', ['linux_armhf_pacman', 'armhf_pacman', 'armv7_pacman']],
+          ['linux_armhf', 'appimage', ['linux_armhf_appimage', 'armhf_appimage', 'armv7_appimage']],
+          ['macos_x64', 'dmg', ['macos_x64_dmg', 'mac_x64_dmg', 'x64_dmg', 'x86_dmg']],
+          ['macos_x64', 'zip', ['macos_x64_zip', 'mac_x64_zip', 'x64_mac_zip', 'x86_mac_zip']],
+          ['macos_arm64', 'dmg', ['macos_arm64_dmg', 'mac_arm64_dmg', 'arm64_dmg', 'arm_dmg']],
+          ['macos_arm64', 'zip', ['macos_arm64_zip', 'mac_arm64_zip', 'arm64_mac_zip', 'arm_mac_zip']],
+          ['windows_x64', 'nsis', ['windows_x64_nsis', 'windows_x64_installer', 'x64_nsis', 'x86_nsis', 'x64_installer', 'x86_installer']],
+          ['windows_x64', 'zip', ['windows_x64_zip', 'windows_x64_portable', 'x64_portable', 'x86_portable']],
+          ['windows_arm64', 'nsis', ['windows_arm64_nsis', 'windows_arm64_installer', 'arm64_nsis', 'arm64_installer']],
+          ['windows_arm64', 'zip', ['windows_arm64_zip', 'windows_arm64_portable', 'arm64_portable']],
+        ]
+
+        for (const [key, target, aliases] of specificAliases) {
+          if (hasToken(...aliases)) {
+            resolved[key].add(target)
+          }
+        }
+
+        const runLinuxX64WebTarball = runAll || hasToken('web_tarball', 'linux_x64_web_tarball', 'linux_x64_web', 'x64_web_tarball')
+        const outputs = {
+          requested_targets: Array.from(tokens).join(','),
+          run_all: runAll ? 'true' : 'false',
+          run_linux_x64_web_tarball: runLinuxX64WebTarball ? 'true' : 'false',
+        }
+
+        const targetOrders = {
+          linux_x64: linuxOrder,
+          linux_arm64: linuxOrder,
+          linux_armhf: linuxOrder,
+          macos_x64: macosOrder,
+          macos_arm64: macosOrder,
+          windows_x64: windowsOrder,
+          windows_arm64: windowsOrder,
+        }
+
+        for (const [key, order] of Object.entries(targetOrders)) {
+          const value = order.filter(item => resolved[key].has(item)).join(',')
+          outputs[`${key}_targets`] = value
+          outputs[`run_${key}`] = value ? 'true' : 'false'
+        }
+
+        const anyBuild = outputs.run_linux_x64 === 'true'
+          || outputs.run_linux_arm64 === 'true'
+          || outputs.run_linux_armhf === 'true'
+          || outputs.run_macos_x64 === 'true'
+          || outputs.run_macos_arm64 === 'true'
+          || outputs.run_windows_x64 === 'true'
+          || outputs.run_windows_arm64 === 'true'
+          || outputs.run_linux_x64_web_tarball === 'true'
+
+        if (!anyBuild) {
+          console.error(`No build targets resolved from: ${rawInput}`)
+          process.exit(1)
+        }
+
+        for (const [key, value] of Object.entries(outputs)) {
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`)
+        }
+
+        console.log('Resolved targets:', outputs)
+        EOF
+
   Lint:
+    needs: resolve_targets
     runs-on: ubuntu-24.04
 
     steps:
@@ -35,20 +202,26 @@ jobs:
       run: yarn run lint
 
   macOS-Build:
+    if: ${{ needs.Lint.result == 'success' && needs.resolve_targets.outputs[matrix.enabled_output] == 'true' }}
     runs-on: macos-15
-    needs: Lint
+    needs: [resolve_targets, Lint]
     strategy:
       matrix:
         include:
           - arch: x86_64
             rust_triple: x86_64-apple-darwin
+            enabled_output: run_macos_x64
+            targets_output: macos_x64_targets
           - arch: arm64
             rust_triple: aarch64-apple-darwin
+            enabled_output: run_macos_arm64
+            targets_output: macos_arm64_targets
       fail-fast: false
 
     env:
       ARCH: ${{matrix.arch}}
       RUST_TARGET_TRIPLE: ${{matrix.rust_triple}}
+      MACOS_TARGETS: ${{ needs.resolve_targets.outputs[matrix.targets_output] }}
 
     steps:
     - name: Checkout
@@ -115,28 +288,24 @@ jobs:
         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
         SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
-    - name: Package artifacts
-      run: |
-        mkdir artifact-dmg
-        mv dist/*.dmg artifact-dmg/
-        mkdir artifact-zip
-        mv dist/*.zip artifact-zip/
-
     - uses: actions/upload-artifact@master
       name: Upload DMG
+      if: contains(env.MACOS_TARGETS, 'dmg')
       with:
         name: macOS .dmg (${{matrix.arch}})
-        path: artifact-dmg
+        path: dist/*.dmg
 
     - uses: actions/upload-artifact@master
       name: Upload ZIP
+      if: contains(env.MACOS_TARGETS, 'zip')
       with:
         name: macOS .zip (${{matrix.arch}})
-        path: artifact-zip
+        path: dist/*.zip
 
   Linux-Build:
+    if: ${{ needs.Lint.result == 'success' && (needs.resolve_targets.outputs[matrix.enabled_output] == 'true' || (matrix.supports_web_tarball && needs.resolve_targets.outputs.run_linux_x64_web_tarball == 'true')) }}
     runs-on: ${{matrix.os}}
-    needs: Lint
+    needs: [resolve_targets, Lint]
     strategy:
       matrix:
         include:
@@ -144,16 +313,25 @@ jobs:
             arch: amd64
             rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-24.04
+            enabled_output: run_linux_x64
+            targets_output: linux_x64_targets
+            supports_web_tarball: true
           - build-arch: arm64
             arch: arm64
             rust_triple: aarch64-unknown-linux-gnu
             triplet: aarch64-linux-gnu-
             os: ubuntu-24.04-arm
+            enabled_output: run_linux_arm64
+            targets_output: linux_arm64_targets
+            supports_web_tarball: false
           - build-arch: arm
             arch: armhf
             rust_triple: arm-unknown-linux-gnueabihf
             triplet: arm-linux-gnueabihf-
             os: ubuntu-24.04
+            enabled_output: run_linux_armhf
+            targets_output: linux_armhf_targets
+            supports_web_tarball: false
       fail-fast: false
 
     env:
@@ -164,6 +342,7 @@ jobs:
       npm_config_target_arch: ${{matrix.build-arch}}
       RUST_TARGET_TRIPLE: ${{matrix.rust_triple}}
       HAS_PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN != '' }}
+      LINUX_TARGETS: ${{ needs.resolve_targets.outputs[matrix.targets_output] }}
 
     steps:
     - name: Checkout
@@ -231,9 +410,11 @@ jobs:
 
     - name: Prepackage plugins (${{matrix.arch}})
       run: scripts/prepackage-plugins.mjs
+      if: env.LINUX_TARGETS != ''
 
     - name: Build packages (${{matrix.arch}})
       run: scripts/build-linux.mjs
+      if: env.LINUX_TARGETS != ''
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         KEYGEN_TOKEN: ${{ secrets.KEYGEN_TOKEN }}
@@ -243,7 +424,7 @@ jobs:
 
     - name: Build web resources (amd64 only)
       run: zsh -c 'tar czf tabby-web.tar.gz (tabby-*|web)/dist'
-      if: matrix.build-arch == 'x64'
+      if: matrix.build-arch == 'x64' && needs.resolve_targets.outputs.run_linux_x64_web_tarball == 'true'
 
     - name: Upload symbols (amd64 only)
       run: |
@@ -268,57 +449,68 @@ jobs:
 
     - uses: actions/upload-artifact@master
       name: Upload AppImage (${{matrix.arch}})
+      if: contains(env.LINUX_TARGETS, 'appimage')
       with:
         name: Linux AppImage (${{matrix.arch}})
         path: dist/*.AppImage
 
     - uses: actions/upload-artifact@master
       name: Upload DEB (${{matrix.arch}})
+      if: contains(env.LINUX_TARGETS, 'deb')
       with:
         name: Linux DEB (${{matrix.arch}})
         path: dist/*.deb
 
     - uses: actions/upload-artifact@master
       name: Upload RPM (${{matrix.arch}})
+      if: contains(env.LINUX_TARGETS, 'rpm')
       with:
         name: Linux RPM (${{matrix.arch}})
         path: dist/*.rpm
 
     - uses: actions/upload-artifact@master
       name: Upload Pacman Package (${{matrix.arch}})
+      if: contains(env.LINUX_TARGETS, 'pacman')
       with:
         name: Linux Pacman (${{matrix.arch}})
         path: dist/*.pacman
 
     - uses: actions/upload-artifact@master
       name: Upload Linux tarball (${{matrix.arch}})
+      if: contains(env.LINUX_TARGETS, 'tar.gz')
       with:
         name: Linux tarball (${{matrix.arch}})
         path: dist/*.tar.gz
 
     - uses: actions/upload-artifact@master
       name: Upload web tarball (amd64 only)
+      if: matrix.build-arch == 'x64' && needs.resolve_targets.outputs.run_linux_x64_web_tarball == 'true'
       with:
         name: Web tarball
         path: tabby-web.tar.gz
-      if: matrix.build-arch == 'x64'
 
   Windows-Build:
+    if: ${{ needs.Lint.result == 'success' && needs.resolve_targets.outputs[matrix.enabled_output] == 'true' }}
     runs-on: windows-latest
-    needs: Lint
+    needs: [resolve_targets, Lint]
     strategy:
       matrix:
         include:
           - arch: x64
             rust_triple: x86_64-pc-windows-msvc
+            enabled_output: run_windows_x64
+            targets_output: windows_x64_targets
           - arch: arm64
             rust_triple: aarch64-pc-windows-msvc
+            enabled_output: run_windows_arm64
+            targets_output: windows_arm64_targets
       fail-fast: false
 
     env:
       RUST_TARGET_TRIPLE: ${{matrix.rust_triple}}
       ARCH: ${{matrix.arch}}
       HAS_WINDOWS_SIGNING_SECRETS: ${{ secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_FILE_B64 != '' && secrets.SM_CLIENT_CERT_PASSWORD != '' && secrets.SM_PUBLISHER_NAME != '' }}
+      WINDOWS_TARGETS: ${{ needs.resolve_targets.outputs[matrix.targets_output] }}
 
     steps:
     - name: Checkout
@@ -412,21 +604,16 @@ jobs:
         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
         SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
-    - name: Package artifacts
-      run: |
-        mkdir artifact-setup
-        mv dist/*-setup-*.exe artifact-setup/
-        mkdir artifact-portable
-        mv dist/*-portable-*.zip artifact-portable/
-
     - uses: actions/upload-artifact@master
       name: Upload installer
+      if: contains(env.WINDOWS_TARGETS, 'nsis')
       with:
         name: Windows installer (${{matrix.arch}})
-        path: artifact-setup
+        path: dist/*-setup-*.exe
 
     - uses: actions/upload-artifact@master
       name: Upload portable build
+      if: contains(env.WINDOWS_TARGETS, 'zip')
       with:
         name: Windows portable build (${{matrix.arch}})
-        path: artifact-portable
+        path: dist/*-portable-*.zip
