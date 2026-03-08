@@ -76,6 +76,7 @@ export class Application {
 
         if (process.platform === 'linux') {
             app.commandLine.appendSwitch('no-sandbox')
+            app.commandLine.appendSwitch('disable-dev-shm-usage')
             if ((this.configStore.appearance?.opacity || 1) !== 1) {
                 app.commandLine.appendSwitch('enable-transparent-visuals')
                 app.disableHardwareAcceleration()

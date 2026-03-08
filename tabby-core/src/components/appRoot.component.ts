@@ -143,6 +143,10 @@ export class AppRootComponent {
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
 
+    private hidePreloadLogo (): void {
+        document.querySelector('app-root .preload-logo')?.remove()
+    }
+
     constructor (
         private injector: Injector,
         private hotkeys: HotkeysService,
@@ -275,6 +279,7 @@ export class AppRootComponent {
     async ngOnInit () {
         this.config.ready$.toPromise().then(() => {
             this.ready = true
+            this.hidePreloadLogo()
             this.syncWindowOpacity()
             this.syncRoyalActiveConnection()
             this.app.emitReady()

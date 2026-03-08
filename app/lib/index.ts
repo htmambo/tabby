@@ -104,7 +104,7 @@ app.on('ready', async () => {
 
     application.init()
 
-    const window = await application.newWindow({ hidden: argv.hidden })
+    const window = await application.newWindow({ hidden: argv.hidden, debug: argv.d })
     await window.ready
     window.passCliArguments(process.argv, process.cwd(), false)
     window.focus()

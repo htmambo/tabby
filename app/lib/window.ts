@@ -20,6 +20,7 @@ if (process.platform === 'win32') {
 
 export interface WindowOptions {
     hidden?: boolean
+    debug?: boolean
 }
 
 abstract class GlasstronWindow extends BrowserWindow {
@@ -49,6 +50,31 @@ export class Window {
 
     get visible$ (): Observable<boolean> { return this.visible }
     get closed$ (): Observable<void> { return this.closed }
+
+    private openDevTools (): void {
+        if (!this.window?.isDestroyed() && !this.webContents.isDevToolsOpened()) {
+            this.webContents.openDevTools({ mode: 'undocked' })
+        }
+    }
+
+    private toggleDevTools (): void {
+        if (this.window?.isDestroyed()) {
+            return
+        }
+        if (this.webContents.isDevToolsOpened()) {
+            this.webContents.closeDevTools()
+        } else {
+            this.openDevTools()
+        }
+    }
+
+    private isDevToolsShortcut (input: Electron.Input): boolean {
+        const key = input.key?.toLowerCase()
+        const code = input.code?.toLowerCase()
+        return key === 'f12'
+            || code === 'f12'
+            || !!((input.control || input.meta) && input.shift && (key === 'i' || code === 'keyi'))
+    }
 
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     constructor (private application: Application, private configStore: any, options?: WindowOptions) {
@@ -113,7 +139,58 @@ export class Window {
 
         this.webContents = this.window.webContents
 
+        if (options.debug) {
+            this.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+                console.log(`[renderer:${level}] ${sourceId}:${line} ${message}`)
+            })
+            this.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+                console.error('[renderer] did-fail-load', { errorCode, errorDescription, validatedURL, isMainFrame })
+            })
+            this.webContents.on('render-process-gone', (_event, details) => {
+                console.error('[renderer] render-process-gone', details)
+            })
+            this.webContents.on('unresponsive', () => {
+                console.error('[renderer] window became unresponsive')
+            })
+            this.webContents.on('devtools-opened', () => {
+                console.log('[renderer] DevTools opened')
+            })
+        }
+
+        this.webContents.on('before-input-event', (event, input) => {
+            if (input.type !== 'keyDown' && input.type !== 'rawKeyDown') {
+                return
+            }
+            if (!this.isDevToolsShortcut(input)) {
+                return
+            }
+            event.preventDefault()
+            this.toggleDevTools()
+        })
+
+        const scheduleDebugOpen = () => {
+            if (!options.debug) {
+                return
+            }
+            let attempts = 0
+            const maxAttempts = 10
+            const tryOpen = () => {
+                attempts++
+                this.openDevTools()
+                if (attempts < maxAttempts && !this.window?.isDestroyed() && !this.webContents.isDevToolsOpened()) {
+                    setTimeout(tryOpen, 500)
+                }
+            }
+            setTimeout(tryOpen, 250)
+        }
+
+        this.webContents.once('dom-ready', () => {
+            scheduleDebugOpen()
+        })
+
         this.window.webContents.once('did-finish-load', () => {
+            scheduleDebugOpen()
+
             if (process.platform === 'darwin') {
                 this.window.setVibrancy(macOSVibrancyType)
             } else if (process.platform === 'win32' && this.configStore.appearance?.vibrancy) {

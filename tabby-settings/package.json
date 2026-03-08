@@ -20,15 +20,15 @@
   "devDependencies": {
     "@types/marked": "^5.0.1",
     "marked": "^5.1.2",
-    "ngx-infinite-scroll": "^16"
+    "ngx-infinite-scroll": "^17.0.1"
   },
   "peerDependencies": {
-    "@angular/animations": "^16",
-    "@angular/common": "^16",
-    "@angular/core": "^16",
-    "@angular/forms": "^16",
-    "@angular/platform-browser": "^16",
-    "@ng-bootstrap/ng-bootstrap": "^15",
+    "@angular/animations": "^17",
+    "@angular/common": "^17",
+    "@angular/core": "^17",
+    "@angular/forms": "^17",
+    "@angular/platform-browser": "^17",
+    "@ng-bootstrap/ng-bootstrap": "^16",
     "rxjs": "^7",
     "tabby-core": "*"
   }

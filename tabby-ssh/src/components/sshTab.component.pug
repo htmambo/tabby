@@ -4,7 +4,10 @@ terminal-toolbar([tab]='this')
     strong.me-auto(
         style='user-select: text; cursor: text;'
         onclick='event.stopPropagation()'
-    ) {{profile.options.user}}@{{profile.options.host}}:{{profile.options.port}}
+    )
+        span {{profile.options.user}}
+        span([textContent]='"@"')
+        span {{profile.options.host}}:{{profile.options.port}}
 
     .me-2(
         ngbDropdown,

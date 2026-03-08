@@ -22,11 +22,11 @@
     "semver": "^7.1.1"
   },
   "peerDependencies": {
-    "@angular/common": "^16",
-    "@angular/core": "^16",
-    "@angular/forms": "^16",
-    "@angular/platform-browser": "^16",
-    "@ng-bootstrap/ng-bootstrap": "^15",
+    "@angular/common": "^17",
+    "@angular/core": "^17",
+    "@angular/forms": "^17",
+    "@angular/platform-browser": "^17",
+    "@ng-bootstrap/ng-bootstrap": "^16",
     "rxjs": "^7",
     "tabby-core": "*",
     "tabby-settings": "*"
