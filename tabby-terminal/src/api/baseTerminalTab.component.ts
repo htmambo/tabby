@@ -470,7 +470,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             this.frontend!.restoreState(this.savedState)
             if (!this.savedStateIsLive) {
                 this.frontend!.write('\r\n\r\n')
-                this.frontend!.write(colors.bgWhite.black(' * ') + colors.bgBlackBright.white(' History restored '))
+                this.frontend!.write(colors.bgWhite.black(' * ') + colors.bgBlackBright.white(` ${this.translate.instant('History restored')} `))
                 this.frontend!.write('\r\n\r\n')
             }
         }

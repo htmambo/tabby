@@ -18,9 +18,7 @@ export class RecoveryProvider extends TabRecoveryProvider<SSHTabComponent> {
             inputs: {
                 profile: this.injector.get(ProfilesService).getConfigProxyForProfile(recoveryToken.profile),
                 savedState: recoveryToken.savedState,
-                restoreWorkingDirectory: recoveryToken.restoreWorkingDirectory ?? null,
                 sftpPanelVisible: !!recoveryToken.sftpPanelVisible,
-                sftpPath: recoveryToken.sftpPath ?? '/',
                 sftpPanelHeight: recoveryToken.sftpPanelHeight ?? 320,
             },
         }
