@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "module": "es2015",
-    "target": "es2016",
-    "moduleResolution": "node",
+    "module": "es2022",
+    "target": "es2022",
+    "moduleResolution": "bundler",
     "noImplicitAny": false,
     "removeComments": false,
     "emitDeclarationOnly": false,
@@ -13,6 +13,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "skipLibCheck": true,
+    "useDefineForClassFields": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
@@ -25,7 +26,7 @@
       "ES2015",
       "ES2017",
       "ES2019",
-      "ES2021"
+      "ES2022"
     ],
     "paths": {
       "*": [

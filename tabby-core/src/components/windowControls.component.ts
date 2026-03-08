@@ -5,6 +5,7 @@ import { AppService } from '../services/app.service'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'window-controls',
     templateUrl: './windowControls.component.pug',
     styleUrls: ['./windowControls.component.scss'],

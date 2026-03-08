@@ -8,6 +8,7 @@ import { ShowSecretModalComponent } from './showSecretModal.component'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'vault-settings-tab',
     templateUrl: './vaultSettingsTab.component.pug',
 })
@@ -215,7 +216,7 @@ export class VaultSettingsTabComponent extends BaseComponent {
         const download = await this.platform.startDownload(secret.key.description, 0o600, content.length)
 
         if (download) {
-            await download.write(content)
+            await download.write(content as Uint8Array)
             download.close()
         }
     }

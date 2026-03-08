@@ -30,6 +30,7 @@ export default () => ({
     mode: process.env.TABBY_DEV ? 'development' : 'production',
     optimization:{
         minimize: false,
+        concatenateModules: false,
     },
     context: __dirname,
     devtool: 'source-map',
@@ -94,7 +95,6 @@ export default () => ({
         path: 'commonjs path',
     },
     plugins: [
-        new wp.optimize.ModuleConcatenationPlugin(),
         new wp.DefinePlugin({
             'process.type': '"renderer"',
         }),

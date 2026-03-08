@@ -8,6 +8,7 @@ import { TelnetProfile, TelnetSession } from '../session'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'telnet-tab',
     template: `${BaseTerminalTabComponent.template} ${require('./telnetTab.component.pug')}`,
     styleUrls: ['./telnetTab.component.scss', ...BaseTerminalTabComponent.styles],

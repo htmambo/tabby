@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
         "baseUrl": "./src",
-        "module": "commonjs",
-        "target": "es2015",
+        "module": "es2022",
+        "target": "es2022",
+        "moduleResolution": "bundler",
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": false,
@@ -15,17 +16,23 @@
         "noUnusedParameters": true,
         "noUnusedLocals": true,
         "skipLibCheck": true,
+        "useDefineForClassFields": false,
         "lib": [
            "dom",
            "es2015",
            "es2015.iterable",
            "es2017",
            "es2019",
+           "es2022",
            "es7",
            "dom.iterable"
         ]
     },
     "compileOnSave": false,
+    "include": [
+        "src/**/*.ts",
+        "lib/sentry.ts"
+    ],
     "exclude": [
         "dist",
         "node_modules",

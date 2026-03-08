@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Injector } from '@angular/core'
+import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Injector, NgZone, ChangeDetectorRef } from '@angular/core'
 import { trigger, style, animate, transition, state } from '@angular/animations'
 import { NgbDropdown, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
 import { TranslateService } from '@ngx-translate/core'
+import { firstValueFrom } from 'rxjs'
 
 import { HostAppService, Platform } from '../api/hostApp'
 import { HotkeysService } from '../services/hotkeys.service'
@@ -92,6 +93,7 @@ function makeTabAnimation (dimension: string, size: number) {
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'app-root',
     templateUrl: './appRoot.component.pug',
     styleUrls: ['./appRoot.component.scss'],
@@ -107,7 +109,6 @@ export class AppRootComponent {
     @HostBinding('class.platform-win32') platformClassWindows = process.platform === 'win32'
     @HostBinding('class.platform-darwin') platformClassMacOS = process.platform === 'darwin'
     @HostBinding('class.platform-linux') platformClassLinux = process.platform === 'linux'
-    @HostBinding('class.no-tabs') noTabs = true
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
     unsortedTabs: BaseTabComponent[] = []
@@ -142,9 +143,75 @@ export class AppRootComponent {
     private royalRestoreBindingsAttempt = 0
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
+    private pendingVibrancySync: number|null = null
+    private pendingPreloadHideCheck: number|null = null
+    private pendingRoyalActiveSync: number|null = null
+    private pendingViewRefresh: number|null = null
+    private readonly preloadHideRetryDelay = 50
+    private preloadLogoHidden = false
 
     private hidePreloadLogo (): void {
+        if (this.preloadLogoHidden) {
+            return
+        }
+        this.preloadLogoHidden = true
+        if (this.pendingPreloadHideCheck !== null) {
+            window.clearTimeout(this.pendingPreloadHideCheck)
+            this.pendingPreloadHideCheck = null
+        }
         document.querySelector('app-root .preload-logo')?.remove()
+    }
+
+    private isStartupSurfaceReady (): boolean {
+        if (!this.ready) {
+            return false
+        }
+        const root = document.querySelector('app-root')
+        if (!root) {
+            return false
+        }
+        const shouldWaitForTabSurface = !!this.config.store?.enableWelcomeTab || this.app.tabs.length > 0 || this.unsortedTabs.length > 0
+        if (shouldWaitForTabSurface) {
+            return !!root.querySelector('.tab-bar tab-header, tab-body.content-tab-active')
+        }
+        return !!root.querySelector('start-page.content-tab-active')
+    }
+
+    private schedulePreloadHideCheck (delay = 0): void {
+        if (this.preloadLogoHidden || this.pendingPreloadHideCheck !== null) {
+            return
+        }
+        this.pendingPreloadHideCheck = window.setTimeout(() => {
+            this.pendingPreloadHideCheck = null
+            if (this.isStartupSurfaceReady()) {
+                this.hidePreloadLogo()
+                return
+            }
+            this.schedulePreloadHideCheck(this.preloadHideRetryDelay)
+        }, delay)
+    }
+
+    private scheduleRoyalActiveSync (delay = 0): void {
+        if (this.pendingRoyalActiveSync !== null) {
+            return
+        }
+        this.pendingRoyalActiveSync = window.setTimeout(() => {
+            this.pendingRoyalActiveSync = null
+            this.runInAngular(() => {
+                this.syncRoyalActiveConnection()
+                this.scheduleViewRefresh()
+            })
+        }, delay)
+    }
+
+    private scheduleViewRefresh (delay = 0): void {
+        if (this.pendingViewRefresh !== null) {
+            return
+        }
+        this.pendingViewRefresh = window.setTimeout(() => {
+            this.pendingViewRefresh = null
+            this.changeDetector.detectChanges()
+        }, delay)
     }
 
     constructor (
@@ -163,6 +230,8 @@ export class AppRootComponent {
         log: LogService,
         ngbModal: NgbModal,
         _themes: ThemesService,
+        private ngZone: NgZone,
+        private changeDetector: ChangeDetectorRef,
     ) {
         this.restoreRoyalPreferences()
 
@@ -170,9 +239,12 @@ export class AppRootComponent {
         this.logger = log.create('main')
         this.logger.info('v', this.platform.getAppVersion())
 
-        this.app.activeTabChange$.subscribe(() => this.syncRoyalActiveConnection())
-        this.app.tabsChanged$.subscribe(() => this.syncRoyalActiveConnection())
-        this.app.tabsRestored$.subscribe(() => this.startRoyalRestoredBindingsRecovery())
+        this.app.activeTabChange$.subscribe(() => this.scheduleRoyalActiveSync())
+        this.app.tabsChanged$.subscribe(() => this.scheduleRoyalActiveSync())
+        this.app.tabsRestored$.subscribe(() => {
+            this.scheduleRoyalActiveSync()
+            this.runInAngular(() => this.startRoyalRestoredBindingsRecovery())
+        })
         this.app.tabs.forEach(tab => this.observeRoyalTab(tab))
 
         this.hotkeys.hotkey$.subscribe((hotkey: string) => {
@@ -232,44 +304,64 @@ export class AppRootComponent {
         }
 
         this.app.tabOpened$.subscribe(tab => {
-            this.unsortedTabs.push(tab)
-            this.noTabs = false
-            this.observeRoyalTab(tab)
-            this.syncRoyalActiveConnection()
-            this.app.emitTabDragEnded()
+            this.runInAngular(() => {
+                this.unsortedTabs.push(tab)
+                this.observeRoyalTab(tab)
+                this.scheduleRoyalActiveSync()
+                this.app.emitTabDragEnded()
+                this.schedulePreloadHideCheck()
+                this.scheduleViewRefresh()
+            })
         })
 
         this.app.tabRemoved$.subscribe(tab => {
-            for (const tabBody of this.tabBodies) {
-                if (tabBody.tab === tab) {
-                    tabBody.detach()
+            this.runInAngular(() => {
+                for (const tabBody of this.tabBodies) {
+                    if (tabBody.tab === tab) {
+                        tabBody.detach()
+                    }
                 }
-            }
-            this.unsortedTabs = this.unsortedTabs.filter(x => x !== tab)
-            this.noTabs = app.tabs.length === 0
-            this.syncRoyalActiveConnection()
-            this.app.emitTabDragEnded()
+                this.unsortedTabs = this.unsortedTabs.filter(x => x !== tab)
+                this.scheduleRoyalActiveSync()
+                this.app.emitTabDragEnded()
+                this.scheduleViewRefresh()
+            })
         })
 
         platform.fileTransferStarted$.subscribe(transfer => {
-            this.activeTransfers.push(transfer)
-            this.activeTransfersDropdown.open()
+            this.runInAngular(() => {
+                this.activeTransfers.push(transfer)
+                this.activeTransfersDropdown.open()
+            })
         })
 
-        config.ready$.toPromise().then(async () => {
-            this.leftToolbarButtons = await this.getToolbarButtons(false)
-            this.rightToolbarButtons = await this.getToolbarButtons(true)
-            await this.refreshRoyalConnections()
-            this.syncWindowOpacity()
-            this.config.changed$.subscribe(() => {
+        void firstValueFrom(config.ready$).then(async () => {
+            const [leftToolbarButtons, rightToolbarButtons] = await Promise.all([
+                this.getToolbarButtons(false),
+                this.getToolbarButtons(true),
+            ])
+            this.runInAngular(() => {
+                this.leftToolbarButtons = leftToolbarButtons
+                this.rightToolbarButtons = rightToolbarButtons
                 this.syncWindowOpacity()
-                void this.refreshRoyalConnections()
+                this.scheduleViewRefresh()
+            })
+            window.setTimeout(() => {
+                void this.refreshRoyalConnections().then(() => this.scheduleRoyalActiveSync())
+            })
+            this.config.changed$.subscribe(() => {
+                this.runInAngular(() => {
+                    this.syncWindowOpacity()
+                    void this.refreshRoyalConnections()
+                })
             })
 
             setInterval(() => {
                 if (this.config.store.enableAutomaticUpdates) {
                     this.updater.check().then(available => {
-                        this.updatesAvailable = available
+                        this.runInAngular(() => {
+                            this.updatesAvailable = available
+                        })
                     })
                 }
             }, 3600 * 12 * 1000)
@@ -277,13 +369,22 @@ export class AppRootComponent {
     }
 
     async ngOnInit () {
-        this.config.ready$.toPromise().then(() => {
-            this.ready = true
-            this.hidePreloadLogo()
-            this.syncWindowOpacity()
-            this.syncRoyalActiveConnection()
-            this.app.emitReady()
-        })
+        void firstValueFrom(this.config.ready$)
+            .then(() => {
+                setTimeout(() => {
+                    this.runInAngular(() => {
+                        this.ready = true
+                        this.syncWindowOpacity()
+                        this.scheduleRoyalActiveSync()
+                        this.app.emitReady()
+                        this.schedulePreloadHideCheck()
+                        this.scheduleViewRefresh()
+                    })
+                })
+            })
+            .catch(error => {
+                console.error('AppRoot waiting for config.ready failed:', error)
+            })
     }
 
     @HostListener('dragover')
@@ -329,13 +430,17 @@ export class AppRootComponent {
         }
     }
 
-    @HostBinding('class.vibrant') get isVibrant () {
-        return this.config.store?.appearance.vibrancy
-    }
-
     private async getToolbarButtons (aboveZero: boolean): Promise<Command[]> {
         return (await this.commands.getCommands({ tab: this.app.activeTab ?? undefined }))
             .filter(x => x.locations?.includes(aboveZero ? CommandLocation.RightToolbar : CommandLocation.LeftToolbar))
+    }
+
+    private runInAngular (callback: () => void): void {
+        if (NgZone.isInAngularZone()) {
+            callback()
+            return
+        }
+        this.ngZone.run(callback)
     }
 
     toggleMaximize (): void {
@@ -929,7 +1034,7 @@ export class AppRootComponent {
             return
         }
         this.observedRoyalSplitTabs.add(tab)
-        tab.focusChanged$.subscribe(() => this.syncRoyalActiveConnection())
+        tab.focusChanged$.subscribe(() => this.scheduleRoyalActiveSync())
     }
 
     private syncRoyalActiveConnection (): void {
@@ -1120,6 +1225,7 @@ export class AppRootComponent {
 
             this.royalConnectionGroups = mapped
             this.ensureRoyalActiveGroupExpanded()
+            this.scheduleViewRefresh()
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }
@@ -1149,7 +1255,8 @@ export class AppRootComponent {
     private async openRoyalSFTPConnection (profile: PartialProfile<Profile>): Promise<void> {
         try {
             const { SFTPTabLauncherService } = window['nodeRequire']('tabby-ssh')
-            await this.injector.get(SFTPTabLauncherService).openForProfile(profile)
+            const launcher = this.injector.get<{ openForProfile: (profile: PartialProfile<Profile>) => Promise<void> }>(SFTPTabLauncherService as any)
+            await launcher.openForProfile(profile)
         } catch (error) {
             this.logger.warn('Failed to open SFTP tab from connection sidebar', error)
         }
@@ -1298,6 +1405,14 @@ export class AppRootComponent {
 
     private syncWindowOpacity (): void {
         const hostWindowWithOpacity = this.hostWindow as HostWindowService & { setOpacity?: (opacity: number) => void }
+        const shouldBeVibrant = this.ready && !!this.config.store?.appearance?.vibrancy
+        if (this.pendingVibrancySync) {
+            window.clearTimeout(this.pendingVibrancySync)
+        }
+        this.pendingVibrancySync = window.setTimeout(() => {
+            document.querySelector('app-root')?.classList.toggle('vibrant', shouldBeVibrant)
+            this.pendingVibrancySync = null
+        })
         const opacity = this.config.store?.appearance?.opacity
         if (typeof hostWindowWithOpacity.setOpacity === 'function' && typeof opacity === 'number') {
             hostWindowWithOpacity.setOpacity(opacity)

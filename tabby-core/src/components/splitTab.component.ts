@@ -168,6 +168,7 @@ export type SplitDropZoneInfo = {
  * You'll mainly encounter it inside [[AppService]].tabs
  */
 @Component({
+    standalone: false,
     selector: 'split-tab',
     template: `
         <ng-container #vc></ng-container>
@@ -552,9 +553,15 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         if (!parent) {
             return
         }
+        const removedFocusedTab = this.focusedTab === tab
+        const allTabsBeforeRemoval = removedFocusedTab ? this.getAllTabs() : null
+        const removedTabIndex = allTabsBeforeRemoval?.indexOf(tab) ?? -1
         const index = parent.children.indexOf(tab)
         parent.ratios.splice(index, 1)
         parent.children.splice(index, 1)
+        const nextFocusedTab = removedTabIndex >= 0 && allTabsBeforeRemoval
+            ? allTabsBeforeRemoval[removedTabIndex + 1] ?? allTabsBeforeRemoval[removedTabIndex - 1] ?? null
+            : null
 
         tab.removeFromContainer()
         tab.parent = null
@@ -565,8 +572,15 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         this.tabRemoved.next(tab)
         if (this.root.children.length === 0) {
             this.destroy()
-        } else {
-            this.focusAnyIn(parent)
+        } else if (removedFocusedTab) {
+            const remainingTabs = this.getAllTabs()
+            const targetTab = nextFocusedTab && remainingTabs.includes(nextFocusedTab)
+                ? nextFocusedTab
+                : remainingTabs[0] ?? null
+
+            if (targetTab) {
+                this.focus(targetTab)
+            }
         }
     }
 

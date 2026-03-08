@@ -8,6 +8,7 @@ import { Config, ConfigSyncService } from '../services/configSync.service'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'config-sync-settings-tab',
     templateUrl: './configSyncSettingsTab.component.pug',
 })

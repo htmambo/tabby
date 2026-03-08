@@ -239,13 +239,25 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
     progress(0, 1)
     for (const foundPlugin of foundPlugins) {
         pluginsPromises.push(new Promise(x => {
-            console.info(`Loading ${foundPlugin.name}: ${nodeRequire.resolve(foundPlugin.path)}`)
             try {
+                let resolvedPath = foundPlugin.path
+                try {
+                    if (foundPlugin.path) {
+                        resolvedPath = nodeRequire.resolve(foundPlugin.path)
+                    }
+                } catch {
+                    // Ignore resolution errors here; the actual load attempt below will report them if needed.
+                }
+                console.info(`Loading ${foundPlugin.name}: ${resolvedPath}`)
                 const packageModule = nodeRequire(foundPlugin.path)
                 if (foundPlugin.packageName.startsWith('tabby-')) {
                     cachedBuiltinModules[foundPlugin.packageName.replace('tabby-', 'terminus-')] = packageModule
                 }
-                const pluginModule = packageModule.default.forRoot ? packageModule.default.forRoot() : packageModule.default
+                const pluginRootModule = packageModule.default
+                if (!pluginRootModule) {
+                    throw new Error(`Plugin ${foundPlugin.name} has no default export`)
+                }
+                const pluginModule = pluginRootModule.forRoot ? pluginRootModule.forRoot() : pluginRootModule
                 pluginModule.pluginName = foundPlugin.name
                 pluginModule.bootstrap = packageModule.bootstrap
                 plugins.push(pluginModule)

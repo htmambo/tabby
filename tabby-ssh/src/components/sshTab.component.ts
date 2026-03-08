@@ -16,6 +16,7 @@ import { resolveSFTPLocalStartPath, resolveSFTPRemoteStartPath } from '../sftpPa
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'ssh-tab',
     template: `${BaseTerminalTabComponent.template} ${require('./sshTab.component.pug')}`,
     styles: [

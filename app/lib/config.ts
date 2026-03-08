@@ -13,7 +13,7 @@ export function migrateConfig (): void {
         !fs.existsSync(configPath) ||
         fs.statSync(configPath).mtime < fs.statSync(legacyConfigPath).mtime
     )) {
-        fs.writeFileSync(configPath, fs.readFileSync(legacyConfigPath))
+        fs.writeFileSync(configPath, fs.readFileSync(legacyConfigPath, 'utf8'), 'utf8')
     }
 }
 

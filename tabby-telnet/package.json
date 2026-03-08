@@ -22,12 +22,12 @@
     "@types/node": "14.14.31"
   },
   "peerDependencies": {
-    "@angular/animations": "^17",
-    "@angular/common": "^17",
-    "@angular/core": "^17",
-    "@angular/forms": "^17",
-    "@angular/platform-browser": "^17",
-    "@ng-bootstrap/ng-bootstrap": "^16",
+    "@angular/animations": "^21",
+    "@angular/common": "^21",
+    "@angular/core": "^21",
+    "@angular/forms": "^21",
+    "@angular/platform-browser": "^21",
+    "@ng-bootstrap/ng-bootstrap": "^20",
     "rxjs": "^7",
     "tabby-core": "*",
     "tabby-settings": "*",

@@ -4,6 +4,7 @@ import { SSHProfile } from '../api'
 import { PasswordStorageService } from '../services/passwordStorage.service'
 
 @Component({
+    standalone: false,
     selector: 'keyboard-interactive-auth-panel',
     templateUrl: './keyboardInteractiveAuthPanel.component.pug',
     styleUrls: ['./keyboardInteractiveAuthPanel.component.scss'],

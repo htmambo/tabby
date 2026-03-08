@@ -10,6 +10,7 @@ function escapePOSIXShellArgument (value: string): string {
 
 /** @hidden */
 @Component({
+    standalone: false,
     templateUrl: './sftpDeleteModal.component.pug',
 })
 export class SFTPDeleteModalComponent extends BaseComponent {

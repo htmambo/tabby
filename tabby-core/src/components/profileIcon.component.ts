@@ -4,6 +4,7 @@ import { BaseComponent } from './base.component'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'profile-icon',
     templateUrl: './profileIcon.component.pug',
     styleUrls: ['./profileIcon.component.scss'],

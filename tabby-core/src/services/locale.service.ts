@@ -25,7 +25,7 @@ import localeSV from '@angular/common/locales/sv'
 import localeTR from '@angular/common/locales/tr'
 import localeUK from '@angular/common/locales/uk'
 import localeZH from '@angular/common/locales/zh'
-import { Observable, Subject } from 'rxjs'
+import { Observable, Subject, firstValueFrom } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import { ConfigService } from './config.service'
 import { LogService, Logger } from './log.service'
@@ -65,8 +65,7 @@ function flattenMessageFormatTranslation (po: any) {
 export class CustomMissingTranslationHandler extends MissingTranslationHandler {
     compiler = new TranslateMessageFormatCompiler()
 
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    handle (params: { key: string, translateService: TranslateService, interpolateParams?: Object }): any {
+    handle (params: { key: string, translateService: TranslateService, interpolateParams?: Record<string, unknown>|unknown[] }): any {
         const v = this.compiler.compile(params.key, params.translateService.currentLang)
         if (typeof v === 'string') {
             return v
@@ -211,16 +210,21 @@ export class LocaleService {
         const oldGetParsedResult = translate.getParsedResult.bind(translate)
 
         // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-        translate.getParsedResult = function (translations: any, key: any, interpolateParams?: any): any {
+        translate.getParsedResult = function (key: any, interpolateParams?: any): any {
+            if (typeof key !== 'string') {
+                return oldGetParsedResult(key, interpolateParams ?? {})
+            }
             if (!this._defaultTranslation) {
                 const po = require(`../../../locale/en-US.po`)
                 this._defaultTranslation = flattenMessageFormatTranslation(po)
             }
-            this.translations[this.defaultLang][key] ??= this.compiler.compile(
+            const fallbackLang = this.defaultLang || 'en-US'
+            this.store.translations[fallbackLang] ??= {}
+            this.store.translations[fallbackLang][key] ??= this.compiler.compile(
                 this._defaultTranslation[key] || key,
-                this.defaultLang,
+                fallbackLang,
             )
-            return oldGetParsedResult(translations, key, interpolateParams ?? {})
+            return oldGetParsedResult(key, interpolateParams ?? {})
         }.bind(translate)
     }
 
@@ -246,7 +250,8 @@ export class LocaleService {
             this.translate.setTranslation(lang, translation)
         }
 
-        this.translate.setDefaultLang(lang)
+        this.translate.setDefaultLang('en-US')
+        await firstValueFrom(this.translate.use(lang))
 
         this.locale = lang
         this.localeChanged.next(lang)
@@ -259,6 +264,7 @@ export class LocaleService {
 }
 
 @Pipe({
+    standalone: false,
     name: 'tabbyDate',
 })
 export class TabbyFormatedDatePipe implements PipeTransform {

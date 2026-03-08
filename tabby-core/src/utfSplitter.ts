@@ -5,10 +5,10 @@ const partials = [
 ]
 
 export class UTF8Splitter {
-    private internal = Buffer.alloc(0)
+    private internal: Buffer = Buffer.alloc(0)
 
     write (data: Buffer): Buffer {
-        this.internal = Buffer.concat([this.internal, data])
+        this.internal = Buffer.concat([this.internal, data] as readonly Uint8Array[]) as Buffer
 
         let keep = 0
         for (const [pattern, shift, maxOffset] of partials) {

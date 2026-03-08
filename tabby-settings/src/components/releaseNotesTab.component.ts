@@ -14,6 +14,7 @@ export interface Release {
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'release-notes-tab',
     templateUrl: './releaseNotesTab.component.pug',
     styleUrls: ['./releaseNotesTab.component.scss'],

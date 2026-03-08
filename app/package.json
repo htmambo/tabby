@@ -48,7 +48,7 @@
     "windows-native-registry": "^3.2.1"
   },
   "devDependencies": {
-    "@ngx-translate/core": "^14.0.0",
+    "@ngx-translate/core": "^17.0.0",
     "@types/mz": "2.7.4",
     "@types/node": "20.3.1"
   },

@@ -18,7 +18,7 @@ export abstract class BaseSession {
     protected destroyed = new Subject<void>()
     protected loginScriptProcessor: LoginScriptProcessor | null = null
     protected reportedCWD?: string
-    private initialDataBuffer = Buffer.from('')
+    private initialDataBuffer: Buffer = Buffer.from('')
     private initialDataBufferReleased = false
 
     get output$ (): Observable<string> { return this.output }
@@ -34,7 +34,7 @@ export abstract class BaseSession {
 
         this.middleware.outputToTerminal$.subscribe(data => {
             if (!this.initialDataBufferReleased) {
-                this.initialDataBuffer = Buffer.concat([this.initialDataBuffer, data])
+                this.initialDataBuffer = Buffer.concat([this.initialDataBuffer, data] as readonly Uint8Array[]) as Buffer
             } else {
                 this.output.next(data.toString())
                 this.binaryOutput.next(data)

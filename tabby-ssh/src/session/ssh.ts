@@ -857,8 +857,8 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
             await channel.close().catch(() => null)
         }
 
-        const stdout = Buffer.concat(stdoutBuffers).toString('utf8')
-        const stderr = Buffer.concat(stderrBuffers).toString('utf8')
+        const stdout = Buffer.concat(stdoutBuffers as readonly Uint8Array[]).toString('utf8')
+        const stderr = Buffer.concat(stderrBuffers as readonly Uint8Array[]).toString('utf8')
         const exitMarker = new RegExp(`\\n?${REMOTE_COMMAND_EXIT_SENTINEL}:(\\d+)\\s*$`)
         const match = stdout.match(exitMarker)
         if (!match) {

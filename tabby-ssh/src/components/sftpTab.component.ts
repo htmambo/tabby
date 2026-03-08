@@ -6,6 +6,7 @@ import { SSHSession } from '../session/ssh'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'sftp-tab',
     templateUrl: './sftpTab.component.pug',
     styleUrls: ['./sftpTab.component.scss'],

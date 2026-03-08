@@ -5,6 +5,7 @@ import { KnownHost, KnownHostSelector, SSHKnownHostsService } from '../services/
 
 /** @hidden */
 @Component({
+    standalone: false,
     templateUrl: './hostKeyPromptModal.component.pug',
 })
 export class HostKeyPromptModalComponent {

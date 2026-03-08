@@ -133,14 +133,17 @@ export class AppService {
         hostWindow.windowFocused$.subscribe(() => this._activeTab?.emitFocused())
     }
 
-    addTabRaw (tab: BaseTabComponent, index: number|null = null): void {
+    addTabRaw (tab: BaseTabComponent, index: number|null = null, options: { select?: boolean } = {}): void {
+        const shouldSelect = options.select ?? true
         if (index !== null) {
             this.tabs.splice(index, 0, tab)
         } else {
             this.tabs.push(tab)
         }
 
-        this.selectTab(tab)
+        if (shouldSelect) {
+            this.selectTab(tab)
+        }
         this.tabsChanged.next()
         this.tabOpened.next(tab)
 
@@ -173,10 +176,13 @@ export class AppService {
     }
 
     removeTab (tab: BaseTabComponent): void {
-        const newIndex = Math.min(this.tabs.length - 2, this.tabs.indexOf(tab))
+        const tabIndex = this.tabs.indexOf(tab)
+        const nextActiveTab = tabIndex >= 0
+            ? this.tabs[tabIndex + 1] ?? this.tabs[tabIndex - 1] ?? null
+            : null
         this.tabs = this.tabs.filter((x) => x !== tab)
         if (tab === this._activeTab) {
-            this.selectTab(this.tabs[newIndex])
+            this.selectTab(nextActiveTab && this.tabs.includes(nextActiveTab) ? nextActiveTab : null)
         }
         this.tabsChanged.next()
     }
@@ -185,9 +191,9 @@ export class AppService {
      * Adds a new tab **without** wrapping it in a SplitTabComponent
      * @param inputs  Properties to be assigned on the new tab component instance
      */
-    openNewTabRaw <T extends BaseTabComponent> (params: NewTabParameters<T>): T {
+    openNewTabRaw <T extends BaseTabComponent> (params: NewTabParameters<T>, index: number|null = null, options: { select?: boolean } = {}): T {
         const tab = this.tabsService.create(params)
-        this.addTabRaw(tab)
+        this.addTabRaw(tab, index, options)
         return tab
     }
 

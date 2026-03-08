@@ -77,10 +77,14 @@ function createPlainStoredVault (content: Vault): PlainStoredVault {
     }
 }
 
+function asUint8Array (buffer: Buffer): Uint8Array {
+    return buffer as Uint8Array
+}
+
 function deriveVaultKey (passphrase: string, salt: Buffer): Promise<Buffer> {
     return promisify(crypto.pbkdf2)(
-        Buffer.from(passphrase),
-        salt,
+        passphrase,
+        asUint8Array(salt),
         PBKDF_ITERATIONS,
         CRYPT_KEY_LENGTH,
         PBKDF_DIGEST,
@@ -93,8 +97,8 @@ async function encryptVault (content: Vault, passphrase: string): Promise<Encryp
     const key = await deriveVaultKey(passphrase, keySalt)
 
     const plaintext = JSON.stringify(content)
-    const cipher = crypto.createCipheriv(CRYPT_ALG, key, iv)
-    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf-8'), cipher.final()])
+    const cipher = crypto.createCipheriv(CRYPT_ALG, asUint8Array(key), asUint8Array(iv))
+    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf-8'), cipher.final()] as readonly Uint8Array[]) as Buffer
 
     return {
         version: 1,
@@ -113,8 +117,8 @@ async function decryptVault (vault: EncryptedStoredVault, passphrase: string): P
     const iv = Buffer.from(vault.iv, 'hex')
     const encrypted = Buffer.from(vault.contents, 'base64')
 
-    const decipher = crypto.createDecipheriv(CRYPT_ALG, key, iv)
-    const plaintext = decipher.update(encrypted, undefined, 'utf-8') + decipher.final('utf-8')
+    const decipher = crypto.createDecipheriv(CRYPT_ALG, asUint8Array(key), asUint8Array(iv))
+    const plaintext = decipher.update(asUint8Array(encrypted), undefined, 'utf-8') + decipher.final('utf-8')
     return migrateVaultContent(JSON.parse(plaintext))
 }
 

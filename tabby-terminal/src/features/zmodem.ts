@@ -143,7 +143,7 @@ class ZModemMiddleware extends SessionMiddleware {
                         if (canceled) {
                             return
                         }
-                        transfer.write(Buffer.from(chunk))
+                        transfer.write(Buffer.from(chunk) as Uint8Array)
                         this.showMessage(colors.bgYellow.black(' ' + Math.round(100 * transfer.getCompletedBytes() / details.size).toString().padStart(3, ' ') + '% ') + ' ' + details.name, true)
                     },
                 }),

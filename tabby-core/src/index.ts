@@ -1,4 +1,4 @@
-import { NgModule, ModuleWithProviders, LOCALE_ID } from '@angular/core'
+import { NgModule, ModuleWithProviders, LOCALE_ID, NgZone } from '@angular/core'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
@@ -7,6 +7,7 @@ import { NgxFilesizeModule } from 'ngx-filesize'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { TranslateModule, TranslateCompiler, TranslateService, MissingTranslationHandler } from '@ngx-translate/core'
 import { TranslateMessageFormatCompiler, MESSAGE_FORMAT_CONFIG } from 'ngx-translate-messageformat-compiler'
+import { firstValueFrom } from 'rxjs'
 
 import '@angular/localize/init'
 
@@ -93,7 +94,7 @@ const PROVIDERS = [
         NgxFilesizeModule,
         DragDropModule,
         TranslateModule.forRoot({
-            defaultLanguage: 'en',
+            fallbackLang: 'en-US',
             compiler: {
                 provide: TranslateCompiler,
                 useFactory: TranslateMessageFormatCompilerFactory,
@@ -160,12 +161,21 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         private translate: TranslateService,
         private profilesService: ProfilesService,
         private selector: SelectorService,
+        private ngZone: NgZone,
     ) {
         app.ready$.subscribe(() => {
-            config.ready$.toPromise().then(() => {
-                if (config.store.enableWelcomeTab) {
-                    app.openNewTabRaw({ type: WelcomeTabComponent })
-                }
+            void firstValueFrom(config.ready$).then(() => {
+                setTimeout(() => {
+                    this.ngZone.run(() => {
+                        if (config.store.enableWelcomeTab) {
+                            app.openNewTabRaw(
+                                { type: WelcomeTabComponent },
+                                0,
+                                { select: !app.activeTab },
+                            )
+                        }
+                    })
+                })
             })
         })
 

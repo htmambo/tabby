@@ -2,8 +2,8 @@ import * as os from 'os'
 import { Subject, Observable } from 'rxjs'
 import { SessionMiddleware } from '../api/middleware'
 
-const OSCPrefix = Buffer.from('\x1b]')
-const OSCSuffixes = [Buffer.from('\x07'), Buffer.from('\x1b\\')]
+const OSCPrefix = '\x1b]'
+const OSCSuffixes = ['\x07', '\x1b\\']
 
 export class OSCProcessor extends SessionMiddleware {
     get cwdReported$ (): Observable<string> { return this.cwdReported }
@@ -21,7 +21,7 @@ export class OSCProcessor extends SessionMiddleware {
             const params = data.subarray(data.indexOf(OSCPrefix, startIndex) + OSCPrefix.length)
 
             const [closesSuffix, closestSuffixIndex] = OSCSuffixes
-                .map((suffix): [Buffer, number] => [suffix, params.indexOf(suffix)])
+                .map((suffix): [string, number] => [suffix, params.indexOf(suffix)])
                 .filter(([_, index]) => index !== -1)
                 .sort(([_, a], [__, b]) => a - b)[0]
 

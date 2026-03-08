@@ -4,6 +4,7 @@ import { BaseTabComponent } from '../components/baseTab.component'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'tab-body',
     template: `
         <ng-template #placeholder></ng-template>
@@ -23,6 +24,7 @@ export class TabBodyComponent implements OnChanges {
             this.placeholder?.detach()
             setImmediate(() => {
                 this.placeholder?.insert(this.tab.hostView)
+                this.tab.hostView.detectChanges()
             })
         }
     }

@@ -22,6 +22,6 @@ profile-icon(
 ) {{tab.customTitle || tab.title}}
 
 .buttons
-    button(*ngIf='!config.store.terminal.hideCloseButton',(click)='app.closeTab(tab, true)') &times;
+    button(*ngIf='!config.store.terminal.hideCloseButton',(click)='$event.stopPropagation(); app.closeTab(tab, true)') &times;
 
 ng-content

@@ -6,6 +6,7 @@ import deepEqual from 'deep-equal'
 
 /** @hidden */
 @Component({
+    standalone: false,
     selector: 'multi-hotkey-input',
     templateUrl: './multiHotkeyInput.component.pug',
     styleUrls: ['./multiHotkeyInput.component.scss'],

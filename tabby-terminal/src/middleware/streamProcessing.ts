@@ -75,7 +75,7 @@ export class TerminalStreamProcessor extends SessionMiddleware {
                     emptyHuman: colors.gray('╳'),
                 }).replaceAll('\n', '\r\n')),
                 Buffer.from('\r\n\n'),
-            ]))
+            ] as readonly Uint8Array[]) as Buffer)
         } else {
             this.outputToTerminal.next(data)
         }
@@ -86,7 +86,7 @@ export class TerminalStreamProcessor extends SessionMiddleware {
             this.outputToTerminal.next(this.replaceNewlines(data, 'crlf'))
         }
         if (this.options.inputMode?.startsWith('readline')) {
-            this.inputReadlineInStream.write(data)
+            this.inputReadlineInStream.write(data as Uint8Array)
         } else {
             this.onTerminalInput(data)
         }
@@ -111,7 +111,7 @@ export class TerminalStreamProcessor extends SessionMiddleware {
                     t = t.substring(2)
                 }
                 return binstring(t, { 'in': 'hex' })
-            }))
+            }) as readonly Uint8Array[]) as Buffer
         }
 
         data = this.replaceNewlines(data, this.options.inputNewlines)

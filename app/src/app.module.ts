@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { ApplicationRef, NgModule } from '@angular/core'
+import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
 
@@ -25,12 +25,10 @@ export function getRootModule (plugins: any[]) {
 
     @NgModule({
         imports,
+        bootstrap,
     }) class RootModule {
-        ngDoBootstrap (appRef: ApplicationRef) {
+        constructor () {
             (window as any)['requestAnimationFrame'] = window[window['Zone'].__symbol__('requestAnimationFrame')]
-
-            const componentDef = bootstrap[0]
-            appRef.bootstrap(componentDef)
         }
     }
 
