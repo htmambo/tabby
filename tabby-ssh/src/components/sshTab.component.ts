@@ -29,7 +29,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     Platform = Platform
     sshSession: SSHSession|null = null
     session: SSHShellSession|null = null
-    restoreWorkingDirectory: string|null = null
     sftpPanelVisible = false
     sftpPath = '/'
     sftpInitialLocalPath: string|null = null
@@ -38,7 +37,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     enableToolbar = true
     activeKIPrompt: KeyboardInteractivePrompt|null = null
     readonly minSFTPPanelHeight = 160
-    private lastReportedWorkingDirectory: string|null = null
     private readonly minSSHPanelHeight = 120
     private sftpResizeStartY = 0
     private sftpResizeInitialHeight = this.sftpPanelHeight
@@ -137,7 +135,9 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
                         originatorPort: 0,
                     })
                 } catch (err) {
-                    jumpSession.emitServiceMessage(colors.bgRed.black(' X ') + ` Could not set up port forward on ${jumpConnection.name}`)
+                    jumpSession.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Could not set up port forward on {name}', {
+                        name: jumpConnection.name,
+                    }))
                     throw err
                 }
             }
@@ -160,7 +160,7 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         })
 
         if (!session.open) {
-            this.write('\r\n' + colors.black.bgWhite(' SSH ') + ` Connecting to ${session.profile.name}\r\n`)
+            this.write('\r\n' + colors.black.bgWhite(' SSH ') + ` ` + this.translate.instant(_('Connecting to')) + ` ${session.profile.name}\r\n`)
 
             this.startSpinner(this.translate.instant(_('Connecting')))
 
@@ -179,7 +179,9 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     protected onSessionDestroyed (): void {
         if (this.frontend) {
             // Session was closed abruptly
-            this.write('\r\n' + colors.black.bgWhite(' SSH ') + ` ${this.sshSession?.profile.options.host}: session closed\r\n`)
+            this.write('\r\n' + colors.black.bgWhite(' SSH ') + ` ${this.translate.instant('{host}: session closed', {
+                host: this.sshSession?.profile.options.host ?? '',
+            })}\r\n`)
 
             super.onSessionDestroyed()
         }
@@ -187,14 +189,11 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
     private async initializeSessionMaybeMultiplex (multiplex = true): Promise<void> {
         this.sshSession = await this.setupOneSession(this.injector, this.profile, multiplex)
-        const pendingRestoreWorkingDirectory = this.sanitizeRestoreWorkingDirectory(this.restoreWorkingDirectory)
         const session = new SSHShellSession(
             this.injector,
             this.sshSession,
             this.profile,
         )
-
-        this.lastReportedWorkingDirectory = null
 
         this.setSession(session)
         this.attachSessionHandler(session.serviceMessage$, msg => {
@@ -202,20 +201,8 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
             this.write(`\r${colors.black.bgWhite(' SSH ')} ${msg}\r\n`)
             session.resize(this.size.columns, this.size.rows)
         })
-        this.attachSessionHandler(session.oscProcessor.cwdReported$, cwd => {
-            if (cwd === this.lastReportedWorkingDirectory) {
-                return
-            }
-            this.lastReportedWorkingDirectory = cwd
-            this.recoveryStateChangedHint.next()
-        })
 
         await session.start()
-        if (pendingRestoreWorkingDirectory) {
-            this.scheduleWorkingDirectoryRestore(session, pendingRestoreWorkingDirectory)
-            this.restoreWorkingDirectory = null
-        }
-
         this.session?.resize(this.size.columns, this.size.rows)
     }
 
@@ -234,24 +221,10 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         }
     }
 
-    async prepareForRecoverySave (): Promise<void> {
-        if (!this.session?.open) {
-            return
-        }
-        const reportedCWD = await this.requestWorkingDirectoryReport(this.session)
-        if (reportedCWD) {
-            this.lastReportedWorkingDirectory = reportedCWD
-        }
-    }
-
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<RecoveryToken> {
         const token = await super.getRecoveryToken(options)
         if (options?.includeState) {
-            if (this.session?.supportsWorkingDirectory()) {
-                token.restoreWorkingDirectory = await this.session.getWorkingDirectory()
-            }
             token.sftpPanelVisible = this.sftpPanelVisible
-            token.sftpPath = this.sftpPath
             token.sftpPanelHeight = this.normalizeSFTPPanelHeight(this.sftpPanelHeight)
         }
         return token
@@ -387,103 +360,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
             return 320
         }
         return Math.max(this.minSFTPPanelHeight, Math.round(normalizedHeight))
-    }
-
-    private sanitizeRestoreWorkingDirectory (workingDirectory: string|null): string|null {
-        return workingDirectory?.replace(/[\r\n]/g, '') ?? null
-    }
-
-    private scheduleWorkingDirectoryRestore (session: SSHShellSession, workingDirectory: string): void {
-        let restoreHandle: ReturnType<typeof setTimeout>|null = null
-        let closedSubscription: { unsubscribe: () => void } = { unsubscribe: () => null }
-        let restoreCompleted = false
-
-        const finish = () => {
-            if (restoreCompleted) {
-                return
-            }
-            restoreCompleted = true
-            closedSubscription.unsubscribe()
-            if (restoreHandle) {
-                clearTimeout(restoreHandle)
-                restoreHandle = null
-            }
-        }
-
-        const restore = () => {
-            if (restoreCompleted) {
-                return
-            }
-            if (this.session !== session || !session.open) {
-                finish()
-                return
-            }
-            session.write(Buffer.from(`${this.buildRestoreWorkingDirectoryCommand(workingDirectory)}\n`, 'utf-8'))
-            this.scheduleWorkingDirectoryRestoreConcealment(session)
-            finish()
-        }
-
-        closedSubscription = session.closed$.subscribe(() => {
-            finish()
-        })
-
-        restoreHandle = setTimeout(() => {
-            restoreHandle = null
-            restore()
-        }, 1000)
-    }
-
-    private async requestWorkingDirectoryReport (session: SSHShellSession): Promise<string|null> {
-        if (!session.open) {
-            return session.getWorkingDirectory()
-        }
-
-        let cwdSubscription: { unsubscribe: () => void } = { unsubscribe: () => null }
-        return new Promise(resolve => {
-            let resolved = false
-            let finish: (cwd: string|null) => void = () => null
-            const timeoutHandle = setTimeout(async () => {
-                finish(await session.getWorkingDirectory())
-            }, 800)
-
-            finish = (cwd: string|null) => {
-                if (resolved) {
-                    return
-                }
-                resolved = true
-                clearTimeout(timeoutHandle)
-                cwdSubscription.unsubscribe()
-                resolve(cwd)
-            }
-
-            cwdSubscription = session.oscProcessor.cwdReported$.subscribe(cwd => {
-                finish(cwd)
-            })
-
-            session.write(Buffer.from(`${this.buildReportWorkingDirectoryCommand()}\n`, 'utf-8'))
-        })
-    }
-
-    private buildReportWorkingDirectoryCommand (): string {
-        return ' printf \'\\033]1337;CurrentDir=%s\\007\' \"$PWD\"'
-    }
-
-    private scheduleWorkingDirectoryRestoreConcealment (session: SSHShellSession): void {
-        setTimeout(() => {
-            if (this.session !== session || !session.open || !this.frontend) {
-                return
-            }
-            void this.write('\x1b[1A\x1b[2K\x1b[1B')
-        }, 250)
-    }
-
-    private buildRestoreWorkingDirectoryCommand (workingDirectory: string): string {
-        return `cd ${this.quotePOSIXShellArgument(workingDirectory)}`
-    }
-
-    private quotePOSIXShellArgument (value: string): string {
-        const escapedValue = value.split(`'`).join(`'"'"'`)
-        return `'${escapedValue}'`
     }
 
     private syncSFTPPanelAfterSessionChange (): void {

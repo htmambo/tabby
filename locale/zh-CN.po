@@ -409,9 +409,177 @@ msgstr "首先连接至另一主机，并将其作为代理"
 msgid "Connecting"
 msgstr "正在连接"
 
+#: tabby-ssh/src/components/sshTab.component.ts:161
+#: tabby-telnet/src/session.ts:88
+
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:7
 msgid "Connection"
 msgstr "连接"
+
+#: tabby-ssh/src/session/ssh.ts:654
+msgid "Using saved password"
+msgstr "正在使用已保存的密码"
+
+#: tabby-ssh/src/session/ssh.ts:562
+msgid "Host key fingerprint"
+msgstr "主机密钥指纹"
+
+#: tabby-telnet/src/session.ts:93
+msgid "Socket error: {error}"
+msgstr "套接字错误：{error}"
+
+#: tabby-telnet/src/session.ts:98
+msgid "Connection closed"
+msgstr "连接已关闭"
+
+#: tabby-telnet/src/session.ts:103
+msgid "Connected"
+msgstr "已连接"
+
+#: tabby-ssh/src/components/sshTab.component.ts:182
+#: tabby-telnet/src/components/telnetTab.component.ts:42
+msgid "{host}: session closed"
+msgstr "{host}：会话已关闭"
+
+#: tabby-ssh/src/session/ssh.ts:179
+msgid "Could not load private key {name}: {error}"
+msgstr "无法加载私钥 {name}：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:194
+msgid "Expected a private key, but {path} appears to be a public key. Skipping it for private key authentication."
+msgstr "需要私钥，但 {path} 看起来是公钥。已跳过该项，不用于私钥认证。"
+
+#: tabby-ssh/src/session/ssh.ts:217
+#: tabby-ssh/src/session/ssh.ts:332
+msgid "Agent auth selected, but no running Agent process is found"
+msgstr "已选择 Agent 认证，但未找到正在运行的 Agent 进程"
+
+#: tabby-ssh/src/session/ssh.ts:240
+msgid "Loaded public key for agent auth: {path}"
+msgstr "已为 Agent 认证加载公钥：{path}"
+
+#: tabby-ssh/src/session/ssh.ts:244
+msgid "Could not load public key for agent auth from {path}: {error}. Agent-identity authentication will not be attempted for this key."
+msgstr "无法从 {path} 加载用于 Agent 认证的公钥：{error}。将不会对此密钥尝试 Agent 身份认证。"
+
+#: tabby-ssh/src/session/ssh.ts:446
+msgid "Username for {host}"
+msgstr "请输入 {host} 的用户名"
+
+#: tabby-ssh/src/session/ssh.ts:472
+msgid "Authentication rejected"
+msgstr "认证被拒绝"
+
+#: tabby-ssh/src/session/ssh.ts:498
+msgid "Rejected incoming forwarded connection for unrecognized port {host}:{port}"
+msgstr "已拒绝发往未识别端口 {host}:{port} 的传入转发连接"
+
+#: tabby-ssh/src/session/ssh.ts:510
+msgid "Could not forward the remote connection to {host}:{port}: {error}"
+msgstr "无法将远程连接转发到 {host}:{port}：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:543
+msgid "Could not connect to the X server: {error}"
+msgstr "无法连接到 X 服务器：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:544
+msgid "Tabby tried to connect to {display} based on the DISPLAY environment var ({displaySpec})"
+msgstr "Tabby 已根据 DISPLAY 环境变量（{displaySpec}）尝试连接到 {display}"
+
+#: tabby-ssh/src/session/ssh.ts:549
+msgid "To use X forwarding, you need a local X server, e.g.:"
+msgstr "要使用 X 转发，你需要本地 X 服务器，例如："
+
+#: tabby-ssh/src/session/ssh.ts:608
+msgid "Keyboard-interactive auth requested: {name}"
+msgstr "需要键盘交互式认证：{name}"
+
+#: tabby-ssh/src/session/ssh.ts:621
+msgid "The server has disconnected during authentication."
+msgstr "服务器在认证过程中断开了连接。"
+
+#: tabby-ssh/src/session/ssh.ts:622
+msgid "This may happen if too many private key authentication attemps are made."
+msgstr "如果进行了过多次私钥认证尝试，就可能发生这种情况。"
+
+#: tabby-ssh/src/session/ssh.ts:623
+msgid "You can set the specific private key for authentication in the profile settings."
+msgstr "你可以在配置设置中指定用于认证的私钥。"
+
+#: tabby-ssh/src/components/sshProfileSettings.component.ts:75
+#: tabby-ssh/src/session/ssh.ts:679
+msgid "Password for {user}@{host}"
+msgstr "请输入 {user}@{host} 的密码"
+
+#: tabby-ssh/src/session/ssh.ts:707
+msgid "Trying private key: {name}"
+msgstr "正在尝试私钥：{name}"
+
+#: tabby-ssh/src/session/ssh.ts:714
+msgid "Failed to load private key {name}: {error}"
+msgstr "加载私钥 {name} 失败：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:778
+msgid " with identity {identity}"
+msgstr "（身份 {identity}）"
+
+#: tabby-ssh/src/session/ssh.ts:780
+msgid "Failed to authenticate using agent{suffix}: {error}"
+msgstr "使用 Agent{suffix} 认证失败：{error}"
+
+#: tabby-ssh/src/components/sshTab.component.ts:138
+#: tabby-ssh/src/services/sftpTabLauncher.service.ts:81
+msgid "Could not set up port forward on {name}"
+msgstr "无法在 {name} 上建立端口转发"
+
+#: tabby-ssh/src/session/ssh.ts:806
+msgid "Remote has rejected the forwarded connection to {targetAddress}:{targetPort} via {forward}: {error}"
+msgstr "远程端已拒绝通过 {forward} 转发到 {targetAddress}:{targetPort} 的连接：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:817
+#: tabby-ssh/src/session/ssh.ts:841
+msgid "Forwarded {forward}"
+msgstr "已转发 {forward}"
+
+#: tabby-ssh/src/session/ssh.ts:820
+msgid "Failed to forward port {forward}: {error}"
+msgstr "端口转发 {forward} 失败：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:835
+msgid "Remote rejected port forwarding for {forward}: {error}"
+msgstr "远程端拒绝了 {forward} 的端口转发：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:858
+msgid "Stopped forwarding {forward}"
+msgstr "已停止转发 {forward}"
+
+#: tabby-ssh/src/session/shell.ts:50
+msgid "Make sure `xauth` is installed on the remote side"
+msgstr "请确认远程端已安装 `xauth`"
+
+#: tabby-ssh/src/session/shell.ts:52
+msgid "Remote rejected opening a shell channel: {error}"
+msgstr "远程端拒绝打开 shell 通道：{error}"
+
+#: tabby-ssh/src/session/ssh.ts:1019
+msgid "Private key passphrase"
+msgstr "请输入私钥口令"
+
+#: tabby-ssh/src/session/ssh.ts:1032
+msgid "Could not read the private key"
+msgstr "无法读取私钥"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:523
+msgid "The directory was created successfully"
+msgstr "目录创建成功"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:526
+msgid "The directory could not be created"
+msgstr "无法创建目录"
+
+#: tabby-ssh/src/services/sftpTabLauncher.service.ts:41
+msgid "Unable to connect SFTP"
+msgstr "无法连接 SFTP"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:26
 msgid "Connection failed: {error}"
@@ -1002,6 +1170,10 @@ msgstr "帮助翻译Tabby"
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:45
 msgid "Hexadecimal"
 msgstr "十六进制"
+
+#: tabby-terminal/src/api/baseTerminalTab.component.ts:473
+msgid "History restored"
+msgstr "历史记录已恢复"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:49
 msgid "Hide"
@@ -2796,3 +2968,6 @@ msgstr "正在上传 {path}"
 
 msgid "Failed to upload folder: {message}"
 msgstr "上传文件夹失败：{message}"
+
+msgid "Connecting to"
+msgstr "正在连接到"

@@ -1,7 +1,7 @@
 import * as russh from 'russh'
 import colors from 'ansi-colors'
 import { Injectable, Injector } from '@angular/core'
-import { AppService, NotificationsService, PartialProfile, PlatformService, ProfilesService } from 'tabby-core'
+import { AppService, NotificationsService, PartialProfile, PlatformService, ProfilesService, TranslateService } from 'tabby-core'
 
 import { SSHProfile } from '../api'
 import { SFTPTabComponent } from '../components/sftpTab.component'
@@ -18,6 +18,7 @@ export class SFTPTabLauncherService {
         private profilesService: ProfilesService,
         private sshMultiplexer: SSHMultiplexerService,
         private platform: PlatformService,
+        private translate: TranslateService,
     ) { }
 
     async openForProfile (profile: PartialProfile<SSHProfile>): Promise<void> {
@@ -37,7 +38,7 @@ export class SFTPTabLauncherService {
                 },
             })
         } catch (error) {
-            this.notifications.error(error instanceof Error ? error.message : 'Unable to connect SFTP')
+            this.notifications.error(error instanceof Error ? error.message : this.translate.instant('Unable to connect SFTP'))
         }
     }
 
@@ -77,7 +78,9 @@ export class SFTPTabLauncherService {
                         originatorPort: 0,
                     })
                 } catch (error) {
-                    jumpSession.emitServiceMessage(colors.bgRed.black(' X ') + ` Could not set up port forward on ${jumpConnection.name}`)
+                    jumpSession.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Could not set up port forward on {name}', {
+                        name: jumpConnection.name,
+                    }))
                     throw error
                 }
             }

@@ -39,7 +39,9 @@ export class TelnetTabComponent extends ConnectableTerminalTabComponent<TelnetPr
     protected onSessionDestroyed (): void {
         if (this.frontend) {
             // Session was closed abruptly
-            this.write('\r\n' + colors.black.bgWhite(' TELNET ') + ` ${this.session?.profile.options.host}: session closed\r\n`)
+            this.write('\r\n' + colors.black.bgWhite(' TELNET ') + ` ${this.translate.instant('{host}: session closed', {
+                host: this.session?.profile.options.host ?? '',
+            })}\r\n`)
 
             super.onSessionDestroyed()
         }

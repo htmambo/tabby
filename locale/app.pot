@@ -399,8 +399,178 @@ msgstr ""
 msgid "Connecting"
 msgstr ""
 
+#: tabby-ssh/src/components/sshTab.component.ts:161
+#: tabby-telnet/src/session.ts:88
+msgid "Connecting to"
+msgstr ""
+
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:7
 msgid "Connection"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:654
+msgid "Using saved password"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:562
+msgid "Host key fingerprint"
+msgstr ""
+
+#: tabby-telnet/src/session.ts:93
+msgid "Socket error: {error}"
+msgstr ""
+
+#: tabby-telnet/src/session.ts:98
+msgid "Connection closed"
+msgstr ""
+
+#: tabby-telnet/src/session.ts:103
+msgid "Connected"
+msgstr ""
+
+#: tabby-ssh/src/components/sshTab.component.ts:182
+#: tabby-telnet/src/components/telnetTab.component.ts:42
+msgid "{host}: session closed"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:179
+msgid "Could not load private key {name}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:194
+msgid "Expected a private key, but {path} appears to be a public key. Skipping it for private key authentication."
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:217
+#: tabby-ssh/src/session/ssh.ts:332
+msgid "Agent auth selected, but no running Agent process is found"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:240
+msgid "Loaded public key for agent auth: {path}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:244
+msgid "Could not load public key for agent auth from {path}: {error}. Agent-identity authentication will not be attempted for this key."
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:446
+msgid "Username for {host}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:472
+msgid "Authentication rejected"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:498
+msgid "Rejected incoming forwarded connection for unrecognized port {host}:{port}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:510
+msgid "Could not forward the remote connection to {host}:{port}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:543
+msgid "Could not connect to the X server: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:544
+msgid "Tabby tried to connect to {display} based on the DISPLAY environment var ({displaySpec})"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:549
+msgid "To use X forwarding, you need a local X server, e.g.:"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:608
+msgid "Keyboard-interactive auth requested: {name}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:621
+msgid "The server has disconnected during authentication."
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:622
+msgid "This may happen if too many private key authentication attemps are made."
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:623
+msgid "You can set the specific private key for authentication in the profile settings."
+msgstr ""
+
+#: tabby-ssh/src/components/sshProfileSettings.component.ts:75
+#: tabby-ssh/src/session/ssh.ts:679
+msgid "Password for {user}@{host}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:707
+msgid "Trying private key: {name}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:714
+msgid "Failed to load private key {name}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:778
+msgid " with identity {identity}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:780
+msgid "Failed to authenticate using agent{suffix}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/components/sshTab.component.ts:138
+#: tabby-ssh/src/services/sftpTabLauncher.service.ts:81
+msgid "Could not set up port forward on {name}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:806
+msgid "Remote has rejected the forwarded connection to {targetAddress}:{targetPort} via {forward}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:817
+#: tabby-ssh/src/session/ssh.ts:841
+msgid "Forwarded {forward}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:820
+msgid "Failed to forward port {forward}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:835
+msgid "Remote rejected port forwarding for {forward}: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:858
+msgid "Stopped forwarding {forward}"
+msgstr ""
+
+#: tabby-ssh/src/session/shell.ts:50
+msgid "Make sure `xauth` is installed on the remote side"
+msgstr ""
+
+#: tabby-ssh/src/session/shell.ts:52
+msgid "Remote rejected opening a shell channel: {error}"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:1019
+msgid "Private key passphrase"
+msgstr ""
+
+#: tabby-ssh/src/session/ssh.ts:1032
+msgid "Could not read the private key"
+msgstr ""
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:523
+msgid "The directory was created successfully"
+msgstr ""
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:526
+msgid "The directory could not be created"
+msgstr ""
+
+#: tabby-ssh/src/services/sftpTabLauncher.service.ts:41
+msgid "Unable to connect SFTP"
 msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:26
@@ -991,6 +1161,10 @@ msgstr ""
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:32
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:45
 msgid "Hexadecimal"
+msgstr ""
+
+#: tabby-terminal/src/api/baseTerminalTab.component.ts:473
+msgid "History restored"
 msgstr ""
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:49

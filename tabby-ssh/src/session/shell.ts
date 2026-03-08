@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs'
 import stripAnsi from 'strip-ansi'
 import { Injector } from '@angular/core'
-import { LogService } from 'tabby-core'
+import { LogService, TranslateService } from 'tabby-core'
 import { BaseSession, UTF8SplitterMiddleware, InputProcessor } from 'tabby-terminal'
 import { SSHSession } from './ssh'
 import { SSHProfile } from '../api'
@@ -14,6 +14,7 @@ export class SSHShellSession extends BaseSession {
     private serviceMessage = new Subject<string>()
     private ssh: SSHSession|null
     private shellEnded = false
+    private translate: TranslateService
 
     constructor (
         injector: Injector,
@@ -21,6 +22,7 @@ export class SSHShellSession extends BaseSession {
         private profile: SSHProfile,
     ) {
         super(injector.get(LogService).create(`ssh-shell-${profile.options.host}-${profile.options.port}`))
+        this.translate = injector.get(TranslateService)
         this.ssh = ssh
         this.setLoginScriptsOptions(this.profile.options)
         this.ssh.serviceMessage$.subscribe(m => this.serviceMessage.next(m))
@@ -45,9 +47,9 @@ export class SSHShellSession extends BaseSession {
             this.shell = await this.ssh.openShellChannel({ x11: this.profile.options.x11 })
         } catch (err) {
             if (err.toString().includes('Unable to request X11')) {
-                this.emitServiceMessage('    Make sure `xauth` is installed on the remote side')
+                this.emitServiceMessage('    ' + this.translate.instant('Make sure `xauth` is installed on the remote side'))
             }
-            throw new Error(`Remote rejected opening a shell channel: ${err}`)
+            throw new Error(this.translate.instant('Remote rejected opening a shell channel: {error}', { error: `${err}` }))
         }
 
         this.open = true

@@ -176,7 +176,10 @@ export class SSHSession {
                     try {
                         contents = await this.fileProviders.retrieveFile(pk)
                     } catch (error) {
-                        this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Could not load private key ${pk}: ${error}`)
+                        this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Could not load private key {name}: {error}', {
+                            name: pk,
+                            error: `${error}`,
+                        }))
                         continue
                     }
 
@@ -188,7 +191,9 @@ export class SSHSession {
                         russh.parsePublicKey(contents.toString('utf-8'))
                         this.emitServiceMessage(
                             colors.bgYellow.yellow.black(' ! ') +
-                            ` Expected a private key, but ${pk} appears to be a public key. Skipping it for private key authentication.`,
+                            this.translate.instant('Expected a private key, but {path} appears to be a public key. Skipping it for private key authentication.', {
+                                path: pk,
+                            }),
                         )
                         continue
                     } catch {
@@ -209,7 +214,7 @@ export class SSHSession {
         if (!this.profile.options.auth || this.profile.options.auth === 'agent') {
             const spec = await this.getAgentConnectionSpec()
             if (!spec) {
-                this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Agent auth selected, but no running Agent process is found`)
+                this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Agent auth selected, but no running Agent process is found'))
             } else {
                 // If user configured specific private keys, try to load their corresponding
                 // .pub files and use them first for agent-identity authentication
@@ -232,12 +237,14 @@ export class SSHSession {
                                 ...spec,
                                 publicKey,
                             } as AuthMethod)
-                            this.emitServiceMessage(`Loaded public key for agent auth: ${pubKeyPath}`)
+                            this.emitServiceMessage(this.translate.instant('Loaded public key for agent auth: {path}', { path: pubKeyPath }))
                         } catch (error) {
                             // Not a public key file or doesn't exist, skip
                             this.emitServiceMessage(
-                                `Could not load public key for agent auth from ${pubKeyPath}: ${error}. ` +
-                                `Agent-identity authentication will not be attempted for this key.`,
+                                this.translate.instant('Could not load public key for agent auth from {path}: {error}. Agent-identity authentication will not be attempted for this key.', {
+                                    path: pubKeyPath,
+                                    error: `${error}`,
+                                }),
                             )
                         }
                     }
@@ -322,7 +329,7 @@ export class SSHSession {
                         kind: 'pageant',
                     }
                 } else {
-                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Agent auth selected, but no running Agent process is found`)
+                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Agent auth selected, but no running Agent process is found'))
                 }
             } else if (this.config.store.ssh.agentType === 'pageant') {
                 return {
@@ -436,7 +443,7 @@ export class SSHSession {
         this.authUsername ??= this.profile.options.user
         if (!this.authUsername) {
             const modal = this.ngbModal.open(PromptModalComponent)
-            modal.componentInstance.prompt = `Username for ${this.profile.options.host}`
+            modal.componentInstance.prompt = this.translate.instant('Username for {host}', { host: this.profile.options.host })
             try {
                 const result = await modal.result.catch(() => null)
                 this.authUsername = result?.value ?? null
@@ -462,8 +469,7 @@ export class SSHSession {
         } else {
             this.ssh.disconnect()
             this.passwordStorage.deletePassword(this.profile, this.authUsername ?? undefined)
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
-            throw new Error('Authentication rejected')
+            throw new Error(this.translate.instant('Authentication rejected'))
         }
 
         // auth success
@@ -489,7 +495,10 @@ export class SSHSession {
 
             const forward = this.forwardedPorts.find(x => x.port === event.targetPort && x.host === event.targetAddress)
             if (!forward) {
-                this.emitServiceMessage(colors.bgRed.black(' X ') + ` Rejected incoming forwarded connection for unrecognized port ${event.targetAddress}:${event.targetPort}`)
+                this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Rejected incoming forwarded connection for unrecognized port {host}:{port}', {
+                    host: event.targetAddress,
+                    port: event.targetPort,
+                }))
                 channel.close()
                 return
             }
@@ -498,7 +507,11 @@ export class SSHSession {
             socket.connect(forward.targetPort, forward.targetAddress)
             socket.on('error', e => {
                 // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                this.emitServiceMessage(colors.bgRed.black(' X ') + ` Could not forward the remote connection to ${forward.targetAddress}:${forward.targetPort}: ${e}`)
+                this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Could not forward the remote connection to {host}:{port}: {error}', {
+                    host: forward.targetAddress,
+                    port: forward.targetPort,
+                    error: `${e}`,
+                }))
                 channel.close()
             })
 
@@ -527,10 +540,13 @@ export class SSHSession {
                 this.setupSocketChannelEvents(channel, x11Stream, 'X11 forward')
             } catch (e) {
                 // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                this.emitServiceMessage(colors.bgRed.black(' X ') + ` Could not connect to the X server: ${e}`)
-                this.emitServiceMessage(`    Tabby tried to connect to ${JSON.stringify(X11Socket.resolveDisplaySpec(displaySpec))} based on the DISPLAY environment var (${displaySpec})`)
+                this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Could not connect to the X server: {error}', { error: `${e}` }))
+                this.emitServiceMessage('    ' + this.translate.instant('Tabby tried to connect to {display} based on the DISPLAY environment var ({displaySpec})', {
+                    display: JSON.stringify(X11Socket.resolveDisplaySpec(displaySpec)),
+                    displaySpec,
+                }))
                 if (process.platform === 'win32') {
-                    this.emitServiceMessage('    To use X forwarding, you need a local X server, e.g.:')
+                    this.emitServiceMessage('    ' + this.translate.instant('To use X forwarding, you need a local X server, e.g.:'))
                     this.emitServiceMessage('    * VcXsrv: https://sourceforge.net/projects/vcxsrv/')
                     this.emitServiceMessage('    * Xming: https://sourceforge.net/projects/xming/')
                 }
@@ -559,7 +575,7 @@ export class SSHSession {
     }
 
     private async verifyHostKey (key: russh.SshPublicKey): Promise<boolean> {
-        this.emitServiceMessage('Host key fingerprint:')
+        this.emitServiceMessage(this.translate.instant('Host key fingerprint'))
         this.emitServiceMessage(colors.white.bgBlack(` ${key.algorithm()} `) + colors.bgBlackBright(' ' + key.fingerprint() + ' '))
         if (!this.config.store.ssh.verifyHostKeys) {
             return true
@@ -589,7 +605,7 @@ export class SSHSession {
 
     emitKeyboardInteractivePrompt (prompt: KeyboardInteractivePrompt): void {
         this.logger.info('Keyboard-interactive auth:', prompt.name, prompt.instruction)
-        this.emitServiceMessage(colors.bgBlackBright(' ') + ` Keyboard-interactive auth requested: ${prompt.name}`)
+        this.emitServiceMessage(colors.bgBlackBright(' ') + ' ' + this.translate.instant('Keyboard-interactive auth requested: {name}', { name: prompt.name }))
         if (prompt.instruction) {
             for (const line of prompt.instruction.split('\n')) {
                 this.emitServiceMessage(line)
@@ -602,9 +618,9 @@ export class SSHSession {
         const subscription = this.ssh.disconnect$.subscribe(() => {
             // Auto auth and >=3 keys found
             if (!this.profile.options.auth && this.allAuthMethods.filter(x => x.type === 'publickey').length >= 3) {
-                this.emitServiceMessage('The server has disconnected during authentication.')
-                this.emitServiceMessage('This may happen if too many private key authentication attemps are made.')
-                this.emitServiceMessage('You can set the specific private key for authentication in the profile settings.')
+                this.emitServiceMessage(this.translate.instant('The server has disconnected during authentication.'))
+                this.emitServiceMessage(this.translate.instant('This may happen if too many private key authentication attemps are made.'))
+                this.emitServiceMessage(this.translate.instant('You can set the specific private key for authentication in the profile settings.'))
             }
         })
         try {
@@ -660,7 +676,10 @@ export class SSHSession {
             }
             if (method.type === 'prompt-password') {
                 const modal = this.ngbModal.open(PromptModalComponent)
-                modal.componentInstance.prompt = `Password for ${this.authUsername}@${this.profile.options.host}`
+                modal.componentInstance.prompt = this.translate.instant('Password for {user}@{host}', {
+                    user: this.authUsername,
+                    host: this.profile.options.host,
+                })
                 modal.componentInstance.password = true
                 modal.componentInstance.showRememberCheckbox = true
 
@@ -685,14 +704,17 @@ export class SSHSession {
             if (method.type === 'publickey') {
                 try {
                     const key = await this.loadPrivateKey(method.name, method.contents)
-                    this.emitServiceMessage(`Trying private key: ${method.name}`)
+                    this.emitServiceMessage(this.translate.instant('Trying private key: {name}', { name: method.name }))
                     const result = await this.ssh.authenticateWithKeyPair(this.authUsername, key, null)
                     if (result instanceof russh.AuthenticatedSSHClient) {
                         return result
                     }
                     maybeSetRemainingMethods(result)
                 } catch (e) {
-                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Failed to load private key ${method.name}: ${e}`)
+                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Failed to load private key {name}: {error}', {
+                        name: method.name,
+                        error: `${e}`,
+                    }))
                     continue
                 }
             }
@@ -752,8 +774,13 @@ export class SSHSession {
                     }
                     maybeSetRemainingMethods(result)
                 } catch (e) {
-                    const identitySuffix = method.publicKey ? ` with identity ${method.publicKey.fingerprint()}` : ''
-                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Failed to authenticate using agent${identitySuffix}: ${e}`)
+                    const identitySuffix = method.publicKey ? this.translate.instant(' with identity {identity}', {
+                        identity: method.publicKey.fingerprint(),
+                    }) : ''
+                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Failed to authenticate using agent{suffix}: {error}', {
+                        suffix: identitySuffix,
+                        error: `${e}`,
+                    }))
                     continue
                 }
             }
@@ -776,7 +803,12 @@ export class SSHSession {
                     originatorAddress: sourceAddress ?? '127.0.0.1',
                     originatorPort: sourcePort ?? 0,
                 }).catch(err => {
-                    this.emitServiceMessage(colors.bgRed.black(' X ') + ` Remote has rejected the forwarded connection to ${targetAddress}:${targetPort} via ${fw}: ${err}`)
+                    this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Remote has rejected the forwarded connection to {targetAddress}:{targetPort} via {forward}: {error}', {
+                        targetAddress,
+                        targetPort,
+                        forward: `${fw}`,
+                        error: `${err}`,
+                    }))
                     reject()
                     throw err
                 }))
@@ -784,10 +816,13 @@ export class SSHSession {
 
                 this.setupSocketChannelEvents(channel, socket, 'Local forward')
             }).then(() => {
-                this.emitServiceMessage(colors.bgGreen.black(' -> ') + ` Forwarded ${fw}`)
+                this.emitServiceMessage(colors.bgGreen.black(' -> ') + this.translate.instant('Forwarded {forward}', { forward: `${fw}` }))
                 this.forwardedPorts.push(fw)
             }).catch(e => {
-                this.emitServiceMessage(colors.bgRed.black(' X ') + ` Failed to forward port ${fw}: ${e}`)
+                this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Failed to forward port {forward}: {error}', {
+                    forward: `${fw}`,
+                    error: `${e}`,
+                }))
                 throw e
             })
         }
@@ -799,10 +834,13 @@ export class SSHSession {
                 await this.ssh.forwardTCPPort(fw.host, fw.port)
             } catch (err) {
                 // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                this.emitServiceMessage(colors.bgRed.black(' X ') + ` Remote rejected port forwarding for ${fw}: ${err}`)
+                this.emitServiceMessage(colors.bgRed.black(' X ') + this.translate.instant('Remote rejected port forwarding for {forward}: {error}', {
+                    forward: `${fw}`,
+                    error: `${err}`,
+                }))
                 return
             }
-            this.emitServiceMessage(colors.bgGreen.black(' <- ') + ` Forwarded ${fw}`)
+            this.emitServiceMessage(colors.bgGreen.black(' <- ') + this.translate.instant('Forwarded {forward}', { forward: `${fw}` }))
             this.forwardedPorts.push(fw)
         }
     }
@@ -819,7 +857,7 @@ export class SSHSession {
             this.ssh.stopForwardingTCPPort(fw.host, fw.port)
             this.forwardedPorts = this.forwardedPorts.filter(x => x !== fw)
         }
-        this.emitServiceMessage(`Stopped forwarding ${fw}`)
+        this.emitServiceMessage(this.translate.instant('Stopped forwarding {forward}', { forward: `${fw}` }))
     }
 
     async destroy (): Promise<void> {
@@ -980,7 +1018,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                     await this.passwordStorage.deletePrivateKeyPassword(keyHash)
 
                     const modal = this.ngbModal.open(PromptModalComponent)
-                    modal.componentInstance.prompt = 'Private key passphrase'
+                    modal.componentInstance.prompt = this.translate.instant('Private key passphrase')
                     modal.componentInstance.password = true
                     modal.componentInstance.showRememberCheckbox = true
 
@@ -993,7 +1031,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                         this.passwordStorage.savePrivateKeyPassword(keyHash, passphrase)
                     }
                 } else {
-                    this.notifications.error('Could not read the private key', e.toString())
+                    this.notifications.error(this.translate.instant('Could not read the private key'), e.toString())
                     throw e
                 }
             }

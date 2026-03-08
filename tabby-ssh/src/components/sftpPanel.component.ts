@@ -520,10 +520,10 @@ export class SFTPPanelComponent {
         const directoryName = await modal.result.catch(() => null)
         if (directoryName?.trim()) {
             this.sftp.mkdir(path.join(this.path, directoryName)).then(() => {
-                this.notifications.notice('The directory was created successfully')
+                this.notifications.notice(this.translate.instant('The directory was created successfully'))
                 this.navigate(path.join(this.path, directoryName))
             }).catch(() => {
-                this.notifications.error('The directory could not be created')
+                this.notifications.error(this.translate.instant('The directory could not be created'))
             })
         }
     }
