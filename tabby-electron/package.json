@@ -24,9 +24,9 @@
   "devDependencies": {
     "electron-promise-ipc": "^2.2.4",
     "ps-node": "^0.1.6",
-    "ssh-config": "^5.0.0",
-    "tmp-promise": "^3.0.2",
+    "ssh-config": "^5.1.0",
+    "tmp-promise": "^3.0.3",
     "which": "^3.0.0",
-    "winston": "^3.3.3"
+    "winston": "^3.19.0"
   }
 }
