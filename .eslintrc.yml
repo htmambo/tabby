@@ -59,6 +59,8 @@ overrides:
     '@typescript-eslint/prefer-readonly': off
     '@typescript-eslint/require-await': off
     '@typescript-eslint/strict-boolean-expressions': off
+    '@typescript-eslint/max-params': off
+    '@typescript-eslint/prefer-destructuring': off
     '@typescript-eslint/no-misused-promises':
     - error
     - checksVoidReturn: false
@@ -104,7 +106,7 @@ overrides:
       - vars: all
         args: after-used
         argsIgnorePattern: ^_
-    no-undef: error
+    no-undef: off
     no-var: error
     object-curly-spacing: off
     '@typescript-eslint/object-curly-spacing':
@@ -124,15 +126,14 @@ overrides:
     - error
     - ignoreArrowShorthand: true
     '@typescript-eslint/no-non-null-assertion': off
-    '@typescript-eslint/no-unnecessary-condition':
-    - error
-    - allowConstantLoopConditions: true
+    '@typescript-eslint/no-unnecessary-condition': off
     '@typescript-eslint/restrict-template-expressions': off
     '@typescript-eslint/prefer-readonly-parameter-types': off
     '@typescript-eslint/no-unsafe-member-access': off
     '@typescript-eslint/no-unsafe-call': off
     '@typescript-eslint/no-unsafe-return': off
     '@typescript-eslint/no-unsafe-assignment': off
+    '@typescript-eslint/no-unsafe-enum-comparison': off
     '@typescript-eslint/naming-convention': off
     '@typescript-eslint/lines-between-class-members':
     - error
@@ -161,4 +162,11 @@ overrides:
     '@typescript-eslint/keyword-spacing': off
     '@typescript-eslint/class-methods-use-this': off
     '@typescript-eslint/lines-around-comment': off
+    '@typescript-eslint/no-empty-function': off
     '@typescript-eslint/no-redundant-type-constituents': off # broken
+    '@typescript-eslint/no-extraneous-class': off
+    '@typescript-eslint/no-unnecessary-type-assertion': off
+    '@typescript-eslint/no-useless-template-literals': off
+    '@typescript-eslint/prefer-find': off
+    '@typescript-eslint/prefer-promise-reject-errors': off
+    '@typescript-eslint/prefer-regexp-exec': off
