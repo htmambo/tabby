@@ -191,10 +191,10 @@
   dependencies:
     node-addon-api "7.1.0"
 
-"@types/mz@2.7.9":
-  version "2.7.9"
-  resolved "https://registry.yarnpkg.com/@types/mz/-/mz-2.7.9.tgz#f97c13aea704d806809d7c21ee490982503e7e7d"
-  integrity sha512-BqcaQb+0i5O5FzYLYwRVfSR5DpKK11vP4CSwjujGt9VdN+5xHMWE0f/OuM8r7Y30KO4evLMptd2+2w5GkuKjtg==
+"@types/mz@2.7.4":
+  version "2.7.4"
+  resolved "https://registry.yarnpkg.com/@types/mz/-/mz-2.7.4.tgz#f9d1535cb5171199b28ae6abd6ec29e856551401"
+  integrity sha512-Zs0imXxyWT20j3Z2NwKpr0IO2LmLactBblNyLua5Az4UHuqOQ02V3jPTgyKwDkuc33/ahw+C3O1PIZdrhFMuQA==
   dependencies:
     "@types/node" "*"
 
@@ -436,10 +436,10 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
-atomically@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/atomically/-/atomically-2.1.1.tgz#c54efb605ecc92e1e8b752638806d2c14c31e78d"
-  integrity sha512-P4w9o2dqARji6P7MHprklbfiArZAWvo07yW7qs3pdljb3BWr12FIB7W+p0zJiuiVsUpRO0iZn1kFFcpPegg0tQ==
+atomically@^2.0.2:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/atomically/-/atomically-2.1.0.tgz#5a3ce8ea5ab57b65df589a3b63ef7b753cc0af07"
+  integrity sha512-+gDffFXRW6sl/HCwbta7zK4uNqbPjv4YJEAdz7Vu+FLQHe77eZ4bvbJGi4hE0QPeJlMYMA3piXEr1UL3dAwx7Q==
   dependencies:
     stubborn-fs "^2.0.0"
     when-exit "^2.1.4"
@@ -2333,7 +2333,14 @@ jackspeak@^3.1.2:
   optionalDependencies:
     "@pkgjs/parseargs" "^0.11.0"
 
-js-yaml@4.1.1, js-yaml@^4.1.0:
+js-yaml@4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.1.0.tgz#c1fb65f8f5017901cdd2c951864ba18458a10602"
+  integrity sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==
+  dependencies:
+    argparse "^2.0.1"
+
+js-yaml@^4.1.0:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.1.1.tgz#854c292467705b699476e1a2decc0c8a3458806b"
   integrity sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==
@@ -3975,7 +3982,7 @@ russh@0.1.35:
   dependencies:
     "@napi-rs/cli" "^2.18.3"
 
-rxjs@^7.5.2, rxjs@^7.8.2:
+rxjs@^7.5.2, rxjs@^7.5.7:
   version "7.8.2"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.8.2.tgz#955bc473ed8af11a002a2be52071bf475638607b"
   integrity sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==
@@ -4279,7 +4286,7 @@ sorted-union-stream@~2.1.3:
     from2 "^1.3.0"
     stream-iterate "^1.1.0"
 
-source-map-support@^0.5.21:
+source-map-support@^0.5.20:
   version "0.5.21"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.21.tgz#04fe7c7f9e1ed2d662233c28cb2b35b9f63f6e4f"
   integrity sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==
@@ -4880,7 +4887,7 @@ uuid@^3.0.1, uuid@^3.3.2, uuid@^3.4.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
 
-v8-compile-cache@^2.4.0:
+v8-compile-cache@^2.3.0:
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/v8-compile-cache/-/v8-compile-cache-2.4.0.tgz#cdada8bec61e15865f05d097c5f4fd30e94dc128"
   integrity sha512-ocyWc3bAHBB/guyqJQVI5o4BZkPhznPYUG2ea80Gond/BgNWpap8TOmLSeeQG7bnh2KMISxskdADG59j7zruhw==
@@ -5014,12 +5021,12 @@ widest-line@^2.0.0:
   dependencies:
     string-width "^2.1.1"
 
-windows-native-registry@^3.2.2:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/windows-native-registry/-/windows-native-registry-3.2.2.tgz#2398dc0d0d8fe14f06295e56488b8ff3f371c284"
-  integrity sha512-yg1ZnuzUExn+Uq3cODB23Ju15URw0F/sRrSpjavVhHMi46s6Pcukp4+PtumoELmefoeHarCgci0XV34COpuYkw==
+windows-native-registry@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/windows-native-registry/-/windows-native-registry-3.2.1.tgz#8a60feb456398992677a1f8cad1eecb6b4f0d5f4"
+  integrity sha512-LUHzDUyabwcKNJNlIBVAmg/gdvzOWbuPPyeGmMGSYMAh+m4ZqmafrtyRuyWaviJ1lTzGT/MmhTVb5t8IO3Nlkg==
   dependencies:
-    node-addon-api "^4.3.0"
+    node-addon-api "^3.1.0"
 
 worker-farm@^1.6.0, worker-farm@^1.7.0:
   version "1.7.0"
