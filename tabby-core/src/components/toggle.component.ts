@@ -7,10 +7,17 @@ import { CheckboxComponent } from './checkbox.component'
     standalone: false,
     selector: 'toggle',
     template: `
-    <div class="form-check form-switch">
-      <input type="checkbox" class="form-check-input" [(ngModel)]='model'>
-      <label class="cform-check-label"></label>
-    </div>
+    <label class="form-check form-switch">
+      <input
+        type="checkbox"
+        class="form-check-input"
+        [checked]="!!model"
+        [disabled]="disabled"
+        (change)="onInputChange($event)"
+        (blur)="markTouched()"
+      >
+      <span class="form-check-label"></span>
+    </label>
     `,
     styleUrls: ['./toggle.component.scss'],
     providers: [
