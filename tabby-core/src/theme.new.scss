@@ -7,7 +7,7 @@ app-root {
     background: transparent;
 
     &.vibrant {
-        background: rgba(var(--bs-dark-rgb),.65);
+        background: rgba(var(--bs-dark-rgb), var(--vibrancy-overlay-alpha, .65));
     }
 
     &> .content {

@@ -8,6 +8,8 @@ import { NewTheme } from '../theme'
 
 @Injectable({ providedIn: 'root' })
 export class ThemesService {
+    private readonly linuxMinWindowOpacity = 0.4
+    private readonly defaultVibrancyOverlayAlpha = 0.65
     get themeChanged$ (): Observable<Theme> { return this.themeChanged }
     private themeChanged = new Subject<Theme>()
 
@@ -48,6 +50,7 @@ export class ThemesService {
             document.documentElement.style.cssText = this.rootElementStyleBackup
         }
 
+        const configStore = this.getConfigStoreOrDefaults()
         const theme = this._getActiveColorScheme()
         const isDark = Color(theme.background).luminosity() < Color(theme.foreground).luminosity()
 
@@ -65,10 +68,7 @@ export class ThemesService {
             return Color(some).lighten(factor)
         }
 
-        let background = Color(theme.background)
-        if (this.getConfigStoreOrDefaults().appearance.vibrancy) {
-            background = background.fade(0.6)
-        }
+        const background = this.getVibrancyBackground(Color(theme.background), configStore.appearance)
         // const background = theme.background
         const backgroundMore = more(background.string(), 0.25).string()
         // const backgroundMore =more(theme.background, 0.25).string()
@@ -77,6 +77,7 @@ export class ThemesService {
         const contrastPairs: string[][] = []
 
         vars['--body-bg'] = background.string()
+        vars['--vibrancy-overlay-alpha'] = this.getVibrancyOverlayAlpha(configStore.appearance)
         if (this.findCurrentTheme().followsColorScheme) {
             vars['--bs-body-bg'] = theme.background
             vars['--bs-body-color'] = theme.foreground
@@ -163,13 +164,13 @@ export class ThemesService {
             vars['--bs-form-switch-bg'] = `url("data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-4 -4 8 8%27%3e%3ccircle r=%273%27 fill=%27${switchBackground}%27/%3e%3c/svg%3e")`
         }
 
-        vars['--spaciness'] = this.getConfigStoreOrDefaults().appearance.spaciness
+        vars['--spaciness'] = configStore.appearance.spaciness
 
         for (const [bg, fg] of contrastPairs) {
             const colorBg = Color(vars[bg]).hsl()
             const colorFg = Color(vars[fg]).hsl()
             const bgContrast = colorBg.contrast(colorFg)
-            if (bgContrast < this.getConfigStoreOrDefaults().terminal.minimumContrastRatio) {
+            if (bgContrast < configStore.terminal.minimumContrastRatio) {
                 vars[fg] = this.ensureContrast(colorFg, colorBg).string()
             }
         }
@@ -178,7 +179,33 @@ export class ThemesService {
             document.documentElement.style.setProperty(key, value)
         }
 
-        document.body.classList.toggle('no-animations', !this.getConfigStoreOrDefaults().accessibility.animations)
+        document.body.classList.toggle('no-animations', !configStore.accessibility.animations)
+    }
+
+    private getLinuxVibrancyOpacityFactor (appearance: Record<string, unknown>): number {
+        if (process.platform !== 'linux' || !appearance.vibrancy) {
+            return 1
+        }
+        const numericOpacity = Number(appearance.opacity)
+        if (!Number.isFinite(numericOpacity)) {
+            return 1
+        }
+        return Math.max(this.linuxMinWindowOpacity, Math.min(1, numericOpacity))
+    }
+
+    private getVibrancyBackground (background: Color, appearance: Record<string, unknown>): Color {
+        if (!appearance.vibrancy) {
+            return background
+        }
+        const fadedBackground = background.fade(0.6)
+        if (process.platform !== 'linux') {
+            return fadedBackground
+        }
+        return fadedBackground.alpha(fadedBackground.alpha() * this.getLinuxVibrancyOpacityFactor(appearance))
+    }
+
+    private getVibrancyOverlayAlpha (appearance: Record<string, unknown>): string {
+        return `${(this.defaultVibrancyOverlayAlpha * this.getLinuxVibrancyOpacityFactor(appearance)).toFixed(3)}`
     }
 
     private ensureContrast (color: Color, against: Color): Color {
