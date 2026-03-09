@@ -44,9 +44,9 @@ $tab-border-radius: 4px;
     --royal-sidebar-border-color: var(--theme-bg);
     --royal-sidebar-surface-bg: var(--theme-bg-more-2);
     --royal-sidebar-surface-emphasis-bg: var(--theme-bg-more);
-    --royal-sidebar-surface-hover-bg: var(--theme-primary-less);
-    --royal-sidebar-surface-active-bg: var(--theme-primary-active-bg);
-    --royal-sidebar-surface-active-fg: var(--theme-primary-active-fg);
+    --royal-sidebar-surface-hover-bg: var(--theme-primary-active-fg);
+    --royal-sidebar-surface-active-bg: var(--theme-primary-more);
+    --royal-sidebar-surface-active-fg: var(--theme-primary-less);
     --royal-sidebar-accent: var(--theme-primary);
 
     position: absolute;
@@ -212,7 +212,6 @@ $tab-border-radius: 4px;
         &.active {
             background: var(--royal-sidebar-surface-active-bg);
             color: var(--royal-sidebar-surface-active-fg);
-            box-shadow: inset 0 0 0 1px var(--royal-sidebar-surface-active-bg), inset 2px 0 0 var(--royal-sidebar-accent);
         }
     }
 
@@ -485,7 +484,6 @@ $tab-border-radius: 4px;
     font-size: .95em;
     line-height: 1.15;
     text-align: left;
-    box-shadow: inset 0 0 0 1px transparent;
     transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
 
     &:hover {
@@ -511,7 +509,6 @@ $tab-border-radius: 4px;
     &[aria-expanded='true'] {
         color: var(--theme-fg);
         background: var(--royal-sidebar-surface-active-bg);
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
     }
 
     &[aria-expanded='true']:hover,
@@ -579,7 +576,6 @@ $tab-border-radius: 4px;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    padding: 5px 6px 6px;
     background: var(--royal-sidebar-surface-bg);
     border-top: 1px solid var(--royal-sidebar-border-color);
 }
@@ -616,14 +612,11 @@ $tab-border-radius: 4px;
     &:active {
         background: var(--royal-sidebar-surface-emphasis-bg);
         border-color: var(--royal-sidebar-border-color);
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
     }
 
     &.active {
         background: var(--royal-sidebar-surface-active-bg);
         color: var(--royal-sidebar-surface-active-fg);
-        border-color: var(--royal-sidebar-border-color);
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color), inset 2px 0 0 var(--royal-sidebar-accent);
     }
 }
 

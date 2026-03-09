@@ -71,7 +71,7 @@ app-root {
 
         &.tabs-on-top:not(.tabs-on-left):not(.tabs-on-right) {
             .tab-bar {
-                background: linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, rgba(0, 0, 0, .2) 100%), #1a1b20;
+                background: linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, rgba(0, 0, 0, .2) 100%), var(--theme-bg-more-2);
                 border-bottom: 1px solid rgba(255, 255, 255, .12);
                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
                 height: calc(var(--tabs-height) + 6px);
