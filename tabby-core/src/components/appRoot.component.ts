@@ -103,6 +103,7 @@ function makeTabAnimation (dimension: string, size: number) {
     ],
 })
 export class AppRootComponent {
+    private readonly minMacOSWindowOpacity = 0.85
     Platform = Platform
     @Input() ready = false
     @Input() leftToolbarButtons: Command[]
@@ -1445,9 +1446,19 @@ export class AppRootComponent {
             document.querySelector('app-root')?.classList.toggle('vibrant', shouldBeVibrant)
             this.pendingVibrancySync = null
         })
-        const opacity = this.config.store?.appearance?.opacity
+        const opacity = this.normalizeWindowOpacity(this.config.store?.appearance?.opacity)
         if (typeof hostWindowWithOpacity.setOpacity === 'function' && typeof opacity === 'number') {
             hostWindowWithOpacity.setOpacity(opacity)
         }
+    }
+
+    private normalizeWindowOpacity (value: unknown): number {
+        const numericValue = Number(value)
+        const maxOpacity = 1
+        const minOpacity = this.hostApp.platform === Platform.macOS ? this.minMacOSWindowOpacity : 0.4
+        if (!Number.isFinite(numericValue)) {
+            return maxOpacity
+        }
+        return Math.max(minOpacity, Math.min(maxOpacity, numericValue))
     }
 }

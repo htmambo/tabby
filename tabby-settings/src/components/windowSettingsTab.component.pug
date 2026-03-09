@@ -79,7 +79,7 @@ h3.mb-3(translate) Window
         type='range',
         [(ngModel)]='config.store.appearance.opacity',
         (ngModelChange)='saveConfiguration(); (hostApp.platform === Platform.Linux && config.requestRestart())',
-        min='0.4',
+        [min]='minWindowOpacity',
         max='1',
         step='0.01'
     )

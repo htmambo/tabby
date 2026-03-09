@@ -14,8 +14,11 @@ import { Config, ConfigSyncService } from '../services/configSync.service'
 })
 export class ConfigSyncSettingsTabComponent extends BaseComponent {
     connectionSuccessful: boolean|null = null
+    connectionTestInProgress = false
     connectionError: Error|null = null
     configs: Config[]|null = null
+    private connectionSettingsSaveTimer: ReturnType<typeof setTimeout>|null = null
+    private connectionTestRequestID = 0
 
     @HostBinding('class.content-box') true
 
@@ -34,27 +37,93 @@ export class ConfigSyncSettingsTabComponent extends BaseComponent {
 
     async ngOnInit () {
         await this.testConnection()
-        this.loadConfigs()
+    }
+
+    override ngOnDestroy (): void {
+        this.clearPendingConnectionSettingsSave()
+        super.ngOnDestroy()
+    }
+
+    onConnectionSettingsChanged (): void {
+        this.clearPendingConnectionSettingsSave()
+        this.resetConnectionState()
+        this.connectionSettingsSaveTimer = setTimeout(() => {
+            void this.saveConnectionSettings()
+        }, 500)
+    }
+
+    async saveConnectionSettings (immediate = false): Promise<void> {
+        if (immediate) {
+            this.clearPendingConnectionSettingsSave()
+        }
+
+        await this.config.save()
+        if (this.hasConnectionCredentials()) {
+            await this.testConnection()
+        }
     }
 
     async testConnection () {
-        if (!this.config.store.configSync.host || !this.config.store.configSync.token) {
+        if (!this.hasConnectionCredentials()) {
+            this.resetConnectionState()
             return
         }
-        this.connectionSuccessful = null
+        const requestID = ++this.connectionTestRequestID
+        this.connectionTestInProgress = true
+        this.connectionError = null
         try {
             await this.configSync.getUser()
+            if (requestID !== this.connectionTestRequestID) {
+                return
+            }
             this.connectionSuccessful = true
-            this.loadConfigs()
+            await this.loadConfigs()
         } catch (e) {
+            if (requestID !== this.connectionTestRequestID) {
+                return
+            }
             this.connectionSuccessful = false
-            this.connectionError = e
+            this.connectionError = e instanceof Error ? e : new Error(String(e))
             this.configs = null
+        } finally {
+            if (requestID === this.connectionTestRequestID) {
+                this.connectionTestInProgress = false
+            }
         }
     }
 
     async loadConfigs () {
-        this.configs = await this.configSync.getConfigs()
+        if (!this.hasConnectionCredentials()) {
+            this.configs = null
+            return
+        }
+
+        this.configs = null
+        try {
+            this.configs = await this.configSync.getConfigs()
+        } catch (e) {
+            this.connectionSuccessful = false
+            this.connectionError = e instanceof Error ? e : new Error(String(e))
+            this.configs = null
+        }
+    }
+
+    private hasConnectionCredentials (): boolean {
+        return !!this.config.store.configSync.host?.trim() && !!this.config.store.configSync.token?.trim()
+    }
+
+    private resetConnectionState (): void {
+        this.connectionSuccessful = null
+        this.connectionTestInProgress = false
+        this.connectionError = null
+        this.configs = null
+    }
+
+    private clearPendingConnectionSettingsSave (): void {
+        if (this.connectionSettingsSaveTimer) {
+            clearTimeout(this.connectionSettingsSaveTimer)
+            this.connectionSettingsSaveTimer = null
+        }
     }
 
     async uploadAsNew () {

@@ -22,6 +22,8 @@ import {
     templateUrl: './windowSettingsTab.component.pug',
 })
 export class WindowSettingsTabComponent extends BaseComponent {
+    readonly minMacOSWindowOpacity = 0.85
+    readonly minWindowOpacity = this.hostApp.platform === Platform.macOS ? this.minMacOSWindowOpacity : 0.4
     screens: Screen[]
     Platform = Platform
     isFluentVibrancySupported = false
@@ -65,6 +67,9 @@ export class WindowSettingsTabComponent extends BaseComponent {
 
     @debounce(500)
     saveConfiguration (requireRestart?: boolean) {
+        if (typeof this.config.store?.appearance?.opacity === 'number') {
+            this.config.store.appearance.opacity = Math.max(this.minWindowOpacity, Math.min(1, this.config.store.appearance.opacity))
+        }
         this.config.save()
         if (requireRestart) {
             this.config.requestRestart()

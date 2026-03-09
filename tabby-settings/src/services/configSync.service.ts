@@ -42,6 +42,20 @@ export class SyncConflictError extends Error {
 }
 
 const OPTIONAL_CONFIG_PARTS = ['hotkeys', 'appearance', 'vault']
+const MISSING_CONFIG_VALUE = Symbol('missing-config-value')
+const NON_SYNCED_CONFIG_PATHS = [
+    // Add more dotted paths here when a setting should remain local-only.
+    'appearance.dock',
+    'appearance.dockAlwaysOnTop',
+    'appearance.dockFill',
+    'appearance.dockHideOnBlur',
+    'appearance.dockScreen',
+    'appearance.dockSpace',
+    'appearance.frame',
+    'appearance.opacity',
+    'appearance.vibrancy',
+    'appearance.vibrancyType',
+]
 
 @Injectable({ providedIn: 'root' })
 export class ConfigSyncService {
@@ -152,6 +166,7 @@ export class ConfigSyncService {
                     data[part] = remoteData[part]
                 }
             }
+            this.removeNonSyncedConfigPaths(data)
             const content = yaml.dump(data)
             const result = await this.updateConfig(this.config.store.configSync.configID, {
                 content,
@@ -184,6 +199,7 @@ export class ConfigSyncService {
                     }
                 }
             }
+            this.restoreNonSyncedConfigPaths(data, localData)
 
             await this.writeConfigDataFromSync(data)
             this.lastRemoteChange = this.parseModifiedAt(config.modified_at)
@@ -208,6 +224,7 @@ export class ConfigSyncService {
     private async readConfigDataForSync (): Promise<any> {
         const data = yaml.load(await this.platform.loadConfig()) as any
         delete data.configSync
+        this.removeNonSyncedConfigPaths(data)
         return data
     }
 
@@ -223,17 +240,17 @@ export class ConfigSyncService {
     }
 
     private async request (method: 'GET'|'POST'|'PATCH'|'DELETE', url: string, params = {}) {
-        if (this.config.store.configSync.host.endsWith('/')) {
-            this.config.store.configSync.host = this.config.store.configSync.host.slice(0, -1)
-        }
-        url = this.config.store.configSync.host + url
+        const host = this.getNormalizedHost()
+        const token = this.getToken()
+
+        url = host + url
         this.logger.debug(`${method} ${url}`, params)
         try {
             const response = await axios.request({
                 url,
                 method,
                 headers: {
-                    Authorization: `Bearer ${this.config.store.configSync.token}`,
+                    Authorization: `Bearer ${token}`,
                 },
                 ...params,
             })
@@ -243,6 +260,34 @@ export class ConfigSyncService {
             this.logger.error(error)
             throw error
         }
+    }
+
+    private getNormalizedHost (): string {
+        const host = this.config.store.configSync.host
+        if (typeof host !== 'string') {
+            throw new Error('Config sync host is not configured')
+        }
+
+        const normalizedHost = host.trim().replace(/\/+$/, '')
+        if (!normalizedHost) {
+            throw new Error('Config sync host is not configured')
+        }
+
+        return normalizedHost
+    }
+
+    private getToken (): string {
+        const token = this.config.store.configSync.token
+        if (typeof token !== 'string') {
+            throw new Error('Config sync token is not configured')
+        }
+
+        const normalizedToken = token.trim()
+        if (!normalizedToken) {
+            throw new Error('Config sync token is not configured')
+        }
+
+        return normalizedToken
     }
 
     private async autoSync () {
@@ -323,5 +368,74 @@ export class ConfigSyncService {
         }
         const keys = Object.keys(value).sort()
         return `{${keys.map(key => `${JSON.stringify(key)}:${this.serializeForSyncFingerprint(value[key])}`).join(',')}}`
+    }
+
+    private removeNonSyncedConfigPaths (data: any): void {
+        for (const configPath of NON_SYNCED_CONFIG_PATHS) {
+            this.deleteConfigPathValue(data, configPath)
+        }
+    }
+
+    private restoreNonSyncedConfigPaths (target: any, localSource: any): void {
+        for (const configPath of NON_SYNCED_CONFIG_PATHS) {
+            const localValue = this.getConfigPathValue(localSource, configPath)
+            if (localValue === MISSING_CONFIG_VALUE) {
+                this.deleteConfigPathValue(target, configPath)
+                continue
+            }
+            this.setConfigPathValue(target, configPath, localValue)
+        }
+    }
+
+    private getConfigPathValue (root: any, configPath: string): any {
+        let current = root
+        for (const segment of configPath.split('.')) {
+            if (!current || typeof current !== 'object' || !(segment in current)) {
+                return MISSING_CONFIG_VALUE
+            }
+            current = current[segment]
+        }
+        return current
+    }
+
+    private setConfigPathValue (root: any, configPath: string, value: any): void {
+        const segments = configPath.split('.')
+        let current = root
+        for (const segment of segments.slice(0, -1)) {
+            if (!current[segment] || typeof current[segment] !== 'object' || current[segment] instanceof Array) {
+                current[segment] = {}
+            }
+            current = current[segment]
+        }
+        current[segments.at(-1)!] = this.cloneConfigValue(value)
+    }
+
+    private deleteConfigPathValue (root: any, configPath: string): void {
+        const segments = configPath.split('.')
+        let current = root
+        for (const segment of segments.slice(0, -1)) {
+            if (!current || typeof current !== 'object' || !(segment in current)) {
+                return
+            }
+            current = current[segment]
+        }
+        if (current && typeof current === 'object') {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete current[segments.at(-1)!]
+        }
+    }
+
+    private cloneConfigValue (value: any): any {
+        if (value === null || typeof value !== 'object') {
+            return value
+        }
+        if (value instanceof Array) {
+            return value.map(item => this.cloneConfigValue(item))
+        }
+        const result = {}
+        for (const [key, nestedValue] of Object.entries(value)) {
+            result[key] = this.cloneConfigValue(nestedValue)
+        }
+        return result
     }
 }

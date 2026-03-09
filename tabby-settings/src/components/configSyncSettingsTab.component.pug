@@ -12,7 +12,9 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                     input.form-control(
                         type='text',
                         [(ngModel)]='config.store.configSync.host',
-                        (keydown.enter)='config.save()',
+                        (ngModelChange)='onConnectionSettingsChanged()',
+                        (blur)='saveConnectionSettings(true)',
+                        (keydown.enter)='saveConnectionSettings(true)',
                     )
                     button.btn.btn-secondary(
                         *ngIf='config.store.configSync.host',
@@ -29,12 +31,14 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                     input.form-control(
                         type='password',
                         [(ngModel)]='config.store.configSync.token',
-                        (keydown.enter)='config.save(); testConnection()'
+                        (ngModelChange)='onConnectionSettingsChanged()',
+                        (blur)='saveConnectionSettings(true)',
+                        (keydown.enter)='saveConnectionSettings(true)'
                     )
                     .input-group-text(*ngIf='config.store.configSync.token')
-                        i.fas.fa-fw.fa-circle-notch.fa-spin.text-warning(*ngIf='connectionSuccessful === null')
+                        i.fas.fa-fw.fa-circle-notch.fa-spin.text-warning(*ngIf='connectionTestInProgress')
                         i.fas.fa-fw.fa-check.text-success(*ngIf='connectionSuccessful')
-                        i.fas.fa-fw.fa-exclamation-triangle.text-danger(*ngIf='connectionSuccessful === false')
+                        i.fas.fa-fw.fa-exclamation-triangle.text-danger(*ngIf='connectionSuccessful === false && !connectionTestInProgress')
 
             .alert.alert-info
                 span(translate) Config sync requires a compatible sync service endpoint.
