@@ -35,13 +35,19 @@ export class OSCProcessor extends SessionMiddleware {
             if (oscCode === 1337) {
                 const paramString = oscParams.join(';')
                 if (paramString.startsWith('CurrentDir=')) {
-                    let reportedCWD = paramString.split('=')[1]
-                    if (reportedCWD.startsWith('~')) {
-                        reportedCWD = os.homedir() + reportedCWD.substring(1)
+                    const reportedCWD = this.normalizeReportedCWD(paramString.split('=')[1])
+                    if (reportedCWD) {
+                        this.cwdReported.next(reportedCWD)
                     }
-                    this.cwdReported.next(reportedCWD)
                 } else {
                     console.debug('Unsupported OSC 1337 parameter:', paramString)
+                }
+            } else if (oscCode === 7) {
+                const reportedCWD = this.parseOSC7CurrentDir(oscParams.join(';'))
+                if (reportedCWD) {
+                    this.cwdReported.next(reportedCWD)
+                } else {
+                    console.debug('Unsupported OSC 7 parameter:', oscParams.join(';'))
                 }
             } else {
                 continue
@@ -53,5 +59,29 @@ export class OSCProcessor extends SessionMiddleware {
     close (): void {
         this.cwdReported.complete()
         super.close()
+    }
+
+    private normalizeReportedCWD (reportedCWD?: string): string|null {
+        if (!reportedCWD) {
+            return null
+        }
+
+        if (reportedCWD.startsWith('~')) {
+            return os.homedir() + reportedCWD.substring(1)
+        }
+
+        return reportedCWD
+    }
+
+    private parseOSC7CurrentDir (uri: string): string|null {
+        if (!uri.startsWith('file://')) {
+            return null
+        }
+
+        try {
+            return this.normalizeReportedCWD(decodeURIComponent(new URL(uri).pathname))
+        } catch {
+            return null
+        }
     }
 }

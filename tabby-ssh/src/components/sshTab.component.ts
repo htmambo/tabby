@@ -38,6 +38,8 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     activeKIPrompt: KeyboardInteractivePrompt|null = null
     readonly minSFTPPanelHeight = 160
     private readonly minSSHPanelHeight = 120
+    private currentTerminalDirectoryProbe: Promise<string|null>|null = null
+    private lastTerminalOutputAt = 0
     private sftpResizeStartY = 0
     private sftpResizeInitialHeight = this.sftpPanelHeight
 
@@ -65,7 +67,11 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         super(injector)
         this.sessionChanged$.subscribe(() => {
             this.activeKIPrompt = null
+            this.lastTerminalOutputAt = Date.now()
             this.syncSFTPPanelAfterSessionChange()
+        })
+        this.subscribeUntilDestroyed(this.binaryOutput$, () => {
+            this.lastTerminalOutputAt = Date.now()
         })
     }
 
@@ -379,12 +385,119 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
     private async prepareSFTPInitialPaths (): Promise<void> {
         if (!this.sftpPath || this.sftpPath === '/') {
-            this.sftpPath = resolveSFTPRemoteStartPath(
-                this.profile,
-                await this.session?.getWorkingDirectory() ?? this.sftpPath,
-            )
+            const currentTerminalDirectory = await this.getCurrentTerminalDirectory()
+            if (currentTerminalDirectory) {
+                this.sftpPath = currentTerminalDirectory
+            } else {
+                this.sftpPath = resolveSFTPRemoteStartPath(
+                    this.profile,
+                    this.sftpPath,
+                )
+            }
         }
+
         this.sftpInitialLocalPath = await resolveSFTPLocalStartPath(this.platform, this.profile)
+    }
+
+    private async getCurrentTerminalDirectory (): Promise<string|null> {
+        if (!this.session?.open) {
+            return null
+        }
+
+        const workingDirectory = await this.session.getWorkingDirectory()
+        const normalizedWorkingDirectory = workingDirectory?.trim()
+        if (normalizedWorkingDirectory) {
+            return normalizedWorkingDirectory
+        }
+
+        return this.probeCurrentTerminalDirectory()
+    }
+
+    private async probeCurrentTerminalDirectory (): Promise<string|null> {
+        if (this.currentTerminalDirectoryProbe) {
+            return this.currentTerminalDirectoryProbe
+        }
+
+        if (!this.canProbeCurrentTerminalDirectory()) {
+            return null
+        }
+
+        this.currentTerminalDirectoryProbe = this.runCurrentTerminalDirectoryProbe()
+        try {
+            return await this.currentTerminalDirectoryProbe
+        } finally {
+            this.currentTerminalDirectoryProbe = null
+        }
+    }
+
+    private canProbeCurrentTerminalDirectory (): boolean {
+        if (!this.session?.open || this.frontend?.isAlternateScreenActive()) {
+            return false
+        }
+
+        const lastRecentInput = this.recentInputs.slice(-1)
+        if (!lastRecentInput) {
+            return true
+        }
+
+        return lastRecentInput === '\r' || lastRecentInput === '\n'
+    }
+
+    private async runCurrentTerminalDirectoryProbe (): Promise<string|null> {
+        if (!await this.waitForTerminalQuiet(150, 1000)) {
+            return null
+        }
+
+        const knownWorkingDirectory = (await this.session?.getWorkingDirectory())?.trim() ?? null
+        const hiddenProbeResult = await this.runShellCurrentDirectoryProbe(
+            ' printf \'\\033[1A\\r\\033[2K\\r\\033]1337;CurrentDir=%s\\007\' "$PWD"\r',
+            knownWorkingDirectory,
+        )
+        if (hiddenProbeResult) {
+            return hiddenProbeResult
+        }
+
+        return this.runShellCurrentDirectoryProbe(
+            ' printf \'\\033]1337;CurrentDir=%s\\007\' "$PWD"\r',
+            knownWorkingDirectory,
+        )
+    }
+
+    private async waitForTerminalQuiet (quietWindowMs: number, timeoutMs: number): Promise<boolean> {
+        const deadline = Date.now() + timeoutMs
+
+        while (Date.now() < deadline) {
+            const quietForMs = Date.now() - this.lastTerminalOutputAt
+            if (quietForMs >= quietWindowMs) {
+                return true
+            }
+            await new Promise(resolve => setTimeout(resolve, 50))
+        }
+
+        return false
+    }
+
+    private async runShellCurrentDirectoryProbe (command: string, knownWorkingDirectory: string|null): Promise<string|null> {
+        if (!this.session?.open) {
+            return null
+        }
+
+        this.session.write(Buffer.from(command, 'utf-8'))
+        return this.waitForWorkingDirectoryUpdate(knownWorkingDirectory, 1000)
+    }
+
+    private async waitForWorkingDirectoryUpdate (knownWorkingDirectory: string|null, timeoutMs: number): Promise<string|null> {
+        const probeDeadline = Date.now() + timeoutMs
+
+        while (Date.now() < probeDeadline) {
+            await new Promise(resolve => setTimeout(resolve, 50))
+            const workingDirectory = (await this.session?.getWorkingDirectory())?.trim() ?? null
+            if (workingDirectory && workingDirectory !== knownWorkingDirectory) {
+                return workingDirectory
+            }
+        }
+
+        return (await this.session?.getWorkingDirectory())?.trim() ?? null
     }
 
     private async resolveSFTPSession (): Promise<SSHSession|null> {
