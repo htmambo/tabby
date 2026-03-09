@@ -5,6 +5,7 @@ import { Observable, Subject, AsyncSubject, takeUntil, debounceTime } from 'rxjs
 import { BaseTabComponent } from '../components/baseTab.component'
 import { SplitTabComponent } from '../components/splitTab.component'
 import { RenameTabModalComponent } from '../components/renameTabModal.component'
+import { StartupTabsRecoveryModalComponent } from '../components/startupTabsRecoveryModal.component'
 import { SelectorOption } from '../api/selector'
 import { RecoveryToken } from '../api/tabRecovery'
 import { BootstrapData, BOOTSTRAP_DATA } from '../api/mainProcess'
@@ -12,7 +13,7 @@ import { HostWindowService } from '../api/hostWindow'
 import { HostAppService } from '../api/hostApp'
 
 import { ConfigService } from './config.service'
-import { TabRecoveryService } from './tabRecovery.service'
+import { RecoveredTabsState, TabRecoveryService } from './tabRecovery.service'
 import { TabsService, NewTabParameters } from './tabs.service'
 import { SelectorService } from './selector.service'
 
@@ -109,13 +110,8 @@ export class AppService {
             if (this.bootstrapData.isMainWindow) {
                 if (config.store.recoverTabs) {
                     const recoveredTabs = await this.tabRecovery.recoverTabs()
-                    const restoredTopLevelTabs: BaseTabComponent[] = []
-                    for (const tab of recoveredTabs.tabs) {
-                        restoredTopLevelTabs.push(this.openNewTabRaw(tab))
-                    }
-                    if (recoveredTabs.activeTabIndex !== null && recoveredTabs.activeTabIndex < restoredTopLevelTabs.length) {
-                        this.selectTab(restoredTopLevelTabs[recoveredTabs.activeTabIndex])
-                    }
+                    const selectedTabs = await this.selectTabsToRestore(recoveredTabs)
+                    this.restoreRecoveredTabs(selectedTabs)
                 }
                 /** Continue to store the tabs even if the setting is currently off */
                 this.tabRecovery.enabled = true
@@ -208,6 +204,55 @@ export class AppService {
         const tab = this.tabsService.create(params)
         this.wrapAndAddTab(tab)
         return tab
+    }
+
+    private async selectTabsToRestore (recoveredTabs: RecoveredTabsState): Promise<RecoveredTabsState> {
+        if (!recoveredTabs.entries.length) {
+            return recoveredTabs
+        }
+
+        const modal = this.ngbModal.open(StartupTabsRecoveryModalComponent, {
+            size: 'lg',
+            backdrop: 'static',
+            keyboard: false,
+            centered: true,
+        })
+        modal.componentInstance.entries = recoveredTabs.entries
+
+        const selection = await modal.result.catch(() => null) as boolean[]|null
+        if (!selection) {
+            return { tabs: [], activeTabIndex: null, entries: [] }
+        }
+
+        const activeEntry = recoveredTabs.activeTabIndex !== null
+            ? recoveredTabs.entries[recoveredTabs.activeTabIndex] ?? null
+            : null
+        const entries = recoveredTabs.entries.filter((_entry, index) => selection[index])
+        const activeTabIndex = entries.length
+            ? Math.max(0, activeEntry ? entries.indexOf(activeEntry) : 0)
+            : null
+
+        return {
+            tabs: entries.map(entry => entry.tab),
+            activeTabIndex,
+            entries,
+        }
+    }
+
+    private restoreRecoveredTabs (recoveredTabs: RecoveredTabsState): void {
+        if (!recoveredTabs.tabs.length) {
+            return
+        }
+
+        const restoredTopLevelTabs: BaseTabComponent[] = []
+        for (const tab of recoveredTabs.tabs) {
+            restoredTopLevelTabs.push(this.openNewTabRaw(tab, null, { select: false }))
+        }
+
+        const activeTabIndex = recoveredTabs.activeTabIndex !== null && recoveredTabs.activeTabIndex < restoredTopLevelTabs.length
+            ? recoveredTabs.activeTabIndex
+            : 0
+        this.selectTab(restoredTopLevelTabs[activeTabIndex])
     }
 
     /**

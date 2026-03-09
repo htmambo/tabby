@@ -1,0 +1,26 @@
+.modal-header
+    h4.modal-title(translate) Restore previous tabs
+
+.modal-body
+    p.text-muted.mb-3(translate) Choose which tabs to reopen from the previous session.
+
+    .d-flex.align-items-center.gap-2.mb-3
+        button.btn.btn-sm.btn-outline-secondary(type='button', (click)='selectAll()', translate) Select all
+        button.btn.btn-sm.btn-outline-secondary(type='button', (click)='clearAll()', translate) Clear all
+        span.ms-auto.text-muted.small {{selectedCount}} / {{entries.length}}
+
+    .list-group.recovery-selection-list(*ngIf='entries.length > 0')
+        label.list-group-item.list-group-item-action.d-flex.align-items-start.gap-2(*ngFor='let entry of entries; let i = index')
+            input.form-check-input.mt-1(type='checkbox', [ngModel]='selection[i]', (ngModelChange)='selection[i] = $event')
+            profile-icon.recovery-entry-icon(*ngIf='entry.icon', [icon]='entry.icon', [color]='entry.color')
+            i.fas.fa-terminal.recovery-entry-icon(*ngIf='!entry.icon', aria-hidden='true')
+            .recovery-entry-body
+                .d-flex.align-items-center.gap-2
+                    .recovery-entry-title {{entry.title}}
+                    span.badge.text-bg-secondary(*ngIf='entry.wasActive', translate) Active
+                .recovery-entry-detail([attr.title]='entry.detail') {{entry.detail}}
+                .recovery-entry-secondary(*ngIf='entry.secondaryDetail', [attr.title]='entry.secondaryDetail') {{entry.secondaryDetail}}
+
+.modal-footer
+    button.btn.btn-secondary(type='button', (click)='skip()', translate) Skip restore
+    button.btn.btn-primary(type='button', [disabled]='!hasSelection', (click)='restore()', translate) Restore selected

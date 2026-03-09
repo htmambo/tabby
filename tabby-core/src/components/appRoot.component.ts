@@ -23,6 +23,7 @@ import { SplitTabComponent } from './splitTab.component'
 import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup } from '../api'
 
 type RoyalEnvironment = 'prod'|'lab'|'dev'|'other'
+type RoyalSidebarViewMode = 'cards'|'tree'
 
 interface RoyalNavigationItem {
     hostTab: BaseTabComponent
@@ -119,6 +120,7 @@ export class AppRootComponent {
     royalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
     royalSingleExpandMode = false
+    royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
     private readonly maxFixedTabWidth = 600
@@ -131,6 +133,7 @@ export class AppRootComponent {
     private readonly royalSidebarWidthStorageKey = 'tabby.royal.sidebar-width'
     private readonly royalCollapsedGroupsStorageKey = 'tabby.royal.collapsed-items'
     private readonly royalSingleExpandModeStorageKey = 'tabby.royal.single-expand-mode'
+    private readonly royalSidebarViewModeStorageKey = 'tabby.royal.sidebar-view-mode'
     private royalCollapsedGroups = new Set<string>()
     private royalConnectionsRefreshToken = 0
     private royalSidebarResizing = false
@@ -467,6 +470,10 @@ export class AppRootComponent {
         return this.translate.instant('Explorer')
     }
 
+    get isRoyalSidebarTreeMode (): boolean {
+        return this.royalSidebarViewMode === 'tree'
+    }
+
     get royalSidebarToggleAriaLabel (): string {
         if (this.royalSidebarCollapsed) {
             return this.translate.instant('Expand navigation panel')
@@ -556,6 +563,14 @@ export class AppRootComponent {
         if (this.royalSingleExpandMode) {
             this.normalizeRoyalExpandedGroups()
         }
+    }
+
+    setRoyalSidebarViewMode (mode: RoyalSidebarViewMode): void {
+        if (this.royalSidebarViewMode === mode) {
+            return
+        }
+        this.royalSidebarViewMode = mode
+        this.saveRoyalSidebarViewMode()
     }
 
     isRoyalGroupCollapsed (groupKey: string): boolean {
@@ -1329,6 +1344,7 @@ export class AppRootComponent {
         this.royalSidebarWidth = this.readRoyalSidebarWidth()
         this.royalCollapsedGroups = new Set(this.readRoyalCollapsedGroups())
         this.royalSingleExpandMode = this.readRoyalFlag(this.royalSingleExpandModeStorageKey, false)
+        this.royalSidebarViewMode = this.readRoyalSidebarViewMode()
     }
 
     private readRoyalFlag (key: string, fallback: boolean): boolean {
@@ -1346,6 +1362,22 @@ export class AppRootComponent {
     private saveRoyalFlag (key: string, value: boolean): void {
         try {
             localStorage.setItem(key, value ? '1' : '0')
+        } catch {
+            // Ignore storage errors (private mode, restricted env).
+        }
+    }
+
+    private readRoyalSidebarViewMode (): RoyalSidebarViewMode {
+        try {
+            return localStorage.getItem(this.royalSidebarViewModeStorageKey) === 'tree' ? 'tree' : 'cards'
+        } catch {
+            return 'cards'
+        }
+    }
+
+    private saveRoyalSidebarViewMode (): void {
+        try {
+            localStorage.setItem(this.royalSidebarViewModeStorageKey, this.royalSidebarViewMode)
         } catch {
             // Ignore storage errors (private mode, restricted env).
         }

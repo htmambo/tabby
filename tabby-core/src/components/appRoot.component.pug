@@ -106,6 +106,7 @@ title-bar(
     )
         aside.royal-sidebar(
             *ngIf='shouldShowRoyalSidebar()',
+            [class.tree-mode]='isRoyalSidebarTreeMode',
             [class.collapsed]='royalSidebarCollapsed'
         )
             .royal-sidebar-header
@@ -136,8 +137,15 @@ title-bar(
                     )
                         i.fas.fa-sliders-h(aria-hidden='true')
                     div(ngbDropdownMenu)
+                        button(ngbDropdownItem, (click)='setRoyalSidebarViewMode("cards")')
+                            i.fas.fa-fw([class.fa-check]='royalSidebarViewMode === "cards"', [class.fa-minus]='royalSidebarViewMode !== "cards"')
+                            span(translate) Card view
+                        button(ngbDropdownItem, (click)='setRoyalSidebarViewMode("tree")')
+                            i.fas.fa-fw([class.fa-check]='royalSidebarViewMode === "tree"', [class.fa-minus]='royalSidebarViewMode !== "tree"')
+                            span(translate) Tree view
+                        div.dropdown-divider
                         button(ngbDropdownItem, (click)='toggleRoyalSingleExpandMode()')
-                            i.fas.fa-fw([class.fa-check]='royalSingleExpandMode', [class.fa-empty-set]='!royalSingleExpandMode')
+                            i.fas.fa-fw([class.fa-check]='royalSingleExpandMode', [class.fa-minus]='!royalSingleExpandMode')
                             span(translate) Single expand mode
                 button.btn.btn-link.royal-sidebar-toggle(
                     type='button',
@@ -175,6 +183,12 @@ title-bar(
                                         (click)='toggleRoyalGroup(royalConnectionGroupKey(group.id))'
                                     )
                                         i.fas.fa-chevron-right.royal-group-toggle-icon(aria-hidden='true')
+                                        i.fas.royal-group-folder-icon(
+                                            *ngIf='isRoyalSidebarTreeMode',
+                                            [class.fa-folder]='isRoyalGroupCollapsed(royalConnectionGroupKey(group.id))',
+                                            [class.fa-folder-open]='!isRoyalGroupCollapsed(royalConnectionGroupKey(group.id))',
+                                            aria-hidden='true'
+                                        )
                                         span.royal-group-name {{group.label}}
                                         span.royal-group-count {{group.items.length}}
                                     .royal-nav-items(*ngIf='!isRoyalGroupCollapsed(royalConnectionGroupKey(group.id))')
@@ -185,12 +199,17 @@ title-bar(
                                             (click)='activateRoyalConnection(item)',
                                             (contextmenu)='showRoyalConnectionContextMenu(item, $event)'
                                         )
-                                            profile-icon.royal-nav-item-icon(
-                                                *ngIf='item.profile.icon',
-                                                [icon]='item.profile.icon',
-                                                [color]='item.profile.color ?? undefined'
-                                            )
-                                            span.royal-nav-item-title([ngbTooltip]='item.title', tooltipClass='royal-sidebar-tooltip', container='body') {{item.title}}
+                                            span.royal-nav-item-main
+                                                profile-icon.royal-nav-item-icon(
+                                                    *ngIf='item.profile.icon',
+                                                    [icon]='item.profile.icon',
+                                                    [color]='item.profile.color ?? undefined'
+                                                )
+                                                i.fas.fa-terminal.royal-nav-item-icon.royal-nav-item-fallback-icon(
+                                                    *ngIf='isRoyalSidebarTreeMode && !item.profile.icon',
+                                                    aria-hidden='true'
+                                                )
+                                                span.royal-nav-item-title([ngbTooltip]='item.title', tooltipClass='royal-sidebar-tooltip', container='body') {{item.title}}
                                             span.royal-nav-item-meta {{item.kind}}
                     ng-container(*ngIf='royalSessionGroups as sessionGroups')
                         .royal-nav-section(*ngIf='sessionGroups.length > 0')
@@ -203,6 +222,12 @@ title-bar(
                                         (click)='toggleRoyalGroup(royalSessionGroupKey(group.id))'
                                     )
                                         i.fas.fa-chevron-right.royal-group-toggle-icon(aria-hidden='true')
+                                        i.fas.royal-group-folder-icon(
+                                            *ngIf='isRoyalSidebarTreeMode',
+                                            [class.fa-folder]='isRoyalGroupCollapsed(royalSessionGroupKey(group.id))',
+                                            [class.fa-folder-open]='!isRoyalGroupCollapsed(royalSessionGroupKey(group.id))',
+                                            aria-hidden='true'
+                                        )
                                         span.royal-group-name {{group.label}}
                                         span.royal-group-count {{group.items.length}}
                                     .royal-nav-items(*ngIf='!isRoyalGroupCollapsed(royalSessionGroupKey(group.id))')
@@ -213,7 +238,9 @@ title-bar(
                                             (click)='activateRoyalSession(item)',
                                             (contextmenu)='showRoyalSessionContextMenu(item, $event)'
                                         )
-                                            span.royal-nav-item-title([ngbTooltip]='item.title', tooltipClass='royal-sidebar-tooltip', container='body') {{item.title}}
+                                            span.royal-nav-item-main
+                                                i.fas.fa-terminal.royal-nav-item-icon.royal-nav-item-fallback-icon(*ngIf='isRoyalSidebarTreeMode', aria-hidden='true')
+                                                span.royal-nav-item-title([ngbTooltip]='item.title', tooltipClass='royal-sidebar-tooltip', container='body') {{item.title}}
                                             span.royal-nav-item-meta {{item.kind}}
             button.royal-sidebar-resizer(
                 *ngIf='!royalSidebarCollapsed',

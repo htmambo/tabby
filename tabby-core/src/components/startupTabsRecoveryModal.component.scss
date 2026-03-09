@@ -1,0 +1,45 @@
+.recovery-selection-list {
+    max-height: min(50vh, 480px);
+    overflow: auto;
+}
+
+.list-group-item {
+    user-select: none;
+}
+
+.recovery-entry-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--theme-primary);
+}
+
+.recovery-entry-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.recovery-entry-title,
+.recovery-entry-detail,
+.recovery-entry-secondary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recovery-entry-title {
+    font-weight: 500;
+}
+
+.recovery-entry-detail {
+    color: var(--theme-fg-more);
+    font-size: .85em;
+}
+
+.recovery-entry-secondary {
+    color: var(--theme-fg-more);
+    font-size: .72em;
+    opacity: .75;
+    margin-top: 1px;
+}

@@ -2971,3 +2971,67 @@ msgstr "上传文件夹失败：{message}"
 
 msgid "Connecting to"
 msgstr "正在连接到"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:2
+msgid "Restore previous tabs"
+msgstr "恢复上次的标签页"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:5
+msgid "Choose which tabs to reopen from the previous session."
+msgstr "选择要从上一次会话中重新打开的标签页。"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:9
+msgid "Clear all"
+msgstr "取消全选"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:24
+msgid "Skip restore"
+msgstr "跳过恢复"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:25
+msgid "Restore selected"
+msgstr "恢复所选"
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:20
+msgid "Active"
+msgstr "活动"
+
+#: tabby-core/src/components/appRoot.component.pug:142
+msgid "Card view"
+msgstr "卡片视图"
+
+#: tabby-core/src/components/appRoot.component.pug:145
+msgid "Tree view"
+msgstr "树状视图"
+
+#: tabby-core/src/services/tabRecovery.service.ts:232
+msgid "Local shell"
+msgstr "本地终端"
+
+#: tabby-core/src/services/tabRecovery.service.ts:237
+msgid "SSH session"
+msgstr "SSH 会话"
+
+#: tabby-core/src/services/tabRecovery.service.ts:246
+msgid "Serial session"
+msgstr "串口会话"
+
+#: tabby-core/src/services/tabRecovery.service.ts:283
+msgid "Vertical split"
+msgstr "垂直分割"
+
+#: tabby-core/src/services/tabRecovery.service.ts:285
+msgid "Horizontal split"
+msgstr "水平分割"
+
+#: tabby-core/src/services/tabRecovery.service.ts:286
+msgid "Split layout"
+msgstr "分割布局"
+
+#: tabby-core/src/services/tabRecovery.service.ts:293
+msgid "{count} pane · {orientation}"
+msgstr "{count} 个窗格 · {orientation}"
+
+#: tabby-core/src/services/tabRecovery.service.ts:293
+msgid "{count} panes · {orientation}"
+msgstr "{count} 个窗格 · {orientation}"

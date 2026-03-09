@@ -28,6 +28,7 @@ import { SplitTabSpannerComponent } from './components/splitTabSpanner.component
 import { SplitTabDropZoneComponent } from './components/splitTabDropZone.component'
 import { SplitTabPaneLabelComponent } from './components/splitTabPaneLabel.component'
 import { UnlockVaultModalComponent } from './components/unlockVaultModal.component'
+import { StartupTabsRecoveryModalComponent } from './components/startupTabsRecoveryModal.component'
 import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
@@ -126,6 +127,7 @@ const PROVIDERS = [
         SplitTabDropZoneComponent,
         SplitTabPaneLabelComponent,
         UnlockVaultModalComponent,
+        StartupTabsRecoveryModalComponent,
         WelcomeTabComponent,
         TransfersMenuComponent,
         DropZoneDirective,
@@ -164,7 +166,10 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         private ngZone: NgZone,
     ) {
         app.ready$.subscribe(() => {
-            void firstValueFrom(config.ready$).then(() => {
+            void Promise.all([
+                firstValueFrom(config.ready$),
+                firstValueFrom(app.tabsRestored$),
+            ]).then(() => {
                 setTimeout(() => {
                     this.ngZone.run(() => {
                         if (config.store.enableWelcomeTab) {

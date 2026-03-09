@@ -2782,3 +2782,67 @@ msgstr ""
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:2
+msgid "Restore previous tabs"
+msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:5
+msgid "Choose which tabs to reopen from the previous session."
+msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:9
+msgid "Clear all"
+msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:24
+msgid "Skip restore"
+msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:25
+msgid "Restore selected"
+msgstr ""
+
+#: tabby-core/src/components/startupTabsRecoveryModal.component.pug:20
+msgid "Active"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.pug:142
+msgid "Card view"
+msgstr ""
+
+#: tabby-core/src/components/appRoot.component.pug:145
+msgid "Tree view"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:232
+msgid "Local shell"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:237
+msgid "SSH session"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:246
+msgid "Serial session"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:283
+msgid "Vertical split"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:285
+msgid "Horizontal split"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:286
+msgid "Split layout"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:293
+msgid "{count} pane · {orientation}"
+msgstr ""
+
+#: tabby-core/src/services/tabRecovery.service.ts:293
+msgid "{count} panes · {orientation}"
+msgstr ""
