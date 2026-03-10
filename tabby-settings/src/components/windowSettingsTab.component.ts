@@ -23,7 +23,7 @@ import {
 })
 export class WindowSettingsTabComponent extends BaseComponent {
     readonly minMacOSWindowOpacity = 0.85
-    readonly minWindowOpacity = this.hostApp.platform === Platform.macOS ? this.minMacOSWindowOpacity : 0.4
+    readonly minVibrantWindowOpacity = 0.4
     screens: Screen[]
     Platform = Platform
     isFluentVibrancySupported = false
@@ -54,6 +54,13 @@ export class WindowSettingsTabComponent extends BaseComponent {
         }
 
         this.isFluentVibrancySupported = isWindowsBuild(WIN_BUILD_FLUENT_BG_SUPPORTED)
+    }
+
+    get minWindowOpacity (): number {
+        if (this.hostApp.platform !== Platform.macOS) {
+            return this.minVibrantWindowOpacity
+        }
+        return this.config.store?.appearance?.vibrancy ? this.minVibrantWindowOpacity : this.minMacOSWindowOpacity
     }
 
     get fixedTabWidth (): number {

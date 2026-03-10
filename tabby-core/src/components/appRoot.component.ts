@@ -104,6 +104,7 @@ function makeTabAnimation (dimension: string, size: number) {
 })
 export class AppRootComponent {
     private readonly minMacOSWindowOpacity = 0.85
+    private readonly minVibrantWindowOpacity = 0.4
     Platform = Platform
     @Input() ready = false
     @Input() leftToolbarButtons: Command[]
@@ -113,6 +114,7 @@ export class AppRootComponent {
     @HostBinding('class.platform-linux') platformClassLinux = process.platform === 'linux'
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
+    activeTab: BaseTabComponent|null = null
     unsortedTabs: BaseTabComponent[] = []
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
@@ -150,6 +152,7 @@ export class AppRootComponent {
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
+    private pendingActiveTabSync: number|null = null
     private pendingViewRefresh: number|null = null
     private readonly preloadHideRetryDelay = 50
     private preloadLogoHidden = false
@@ -208,6 +211,19 @@ export class AppRootComponent {
         }, delay)
     }
 
+    private scheduleActiveTabSync (delay = 0): void {
+        if (this.pendingActiveTabSync !== null) {
+            return
+        }
+        this.pendingActiveTabSync = window.setTimeout(() => {
+            this.pendingActiveTabSync = null
+            this.runInAngular(() => {
+                this.activeTab = this.app.activeTab
+                this.scheduleViewRefresh()
+            })
+        }, delay)
+    }
+
     private scheduleViewRefresh (delay = 0): void {
         if (this.pendingViewRefresh !== null) {
             return
@@ -238,12 +254,16 @@ export class AppRootComponent {
         private changeDetector: ChangeDetectorRef,
     ) {
         this.restoreRoyalPreferences()
+        this.activeTab = this.app.activeTab
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
         this.logger.info('v', this.platform.getAppVersion())
 
-        this.app.activeTabChange$.subscribe(() => this.scheduleRoyalActiveSync())
+        this.app.activeTabChange$.subscribe(() => {
+            this.scheduleActiveTabSync()
+            this.scheduleRoyalActiveSync()
+        })
         this.app.tabsChanged$.subscribe(() => this.scheduleRoyalActiveSync())
         this.app.tabsRestored$.subscribe(() => {
             this.scheduleRoyalActiveSync()
@@ -1455,10 +1475,17 @@ export class AppRootComponent {
     private normalizeWindowOpacity (value: unknown): number {
         const numericValue = Number(value)
         const maxOpacity = 1
-        const minOpacity = this.hostApp.platform === Platform.macOS ? this.minMacOSWindowOpacity : 0.4
+        const minOpacity = this.getMinWindowOpacity()
         if (!Number.isFinite(numericValue)) {
             return maxOpacity
         }
         return Math.max(minOpacity, Math.min(maxOpacity, numericValue))
+    }
+
+    private getMinWindowOpacity (): number {
+        if (this.hostApp.platform !== Platform.macOS) {
+            return this.minVibrantWindowOpacity
+        }
+        return this.config.store?.appearance?.vibrancy ? this.minVibrantWindowOpacity : this.minMacOSWindowOpacity
     }
 }

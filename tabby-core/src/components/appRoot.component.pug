@@ -32,7 +32,7 @@ title-bar(
                 *ngFor='let tab of app.tabs; let idx = index',
                 [index]='idx',
                 [tab]='tab',
-                [active]='tab == app.activeTab',
+                [active]='tab == activeTab',
                 [@animateTab]='{value: "in", params: {size: targetTabSize}}',
                 [@.disabled]='hasVerticalTabs() || !config.store.accessibility.animations',
                 (click)='app.selectTab(tab)',
@@ -253,8 +253,8 @@ title-bar(
         tab-body.content-tab(
             #tabBodies,
             *ngFor='let tab of unsortedTabs',
-            [class.content-tab-active]='tab == app.activeTab',
-            [active]='tab == app.activeTab',
+            [class.content-tab-active]='tab == activeTab',
+            [active]='tab == activeTab',
             [tab]='tab',
         )
 
