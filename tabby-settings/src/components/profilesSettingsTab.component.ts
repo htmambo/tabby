@@ -282,7 +282,6 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
             ssh: 'secondary',
             serial: 'success',
             telnet: 'info',
-            'split-layout': 'primary',
         }[this.profilesService.providerForProfile(profile)?.id ?? ''] ?? 'warning'
     }
 

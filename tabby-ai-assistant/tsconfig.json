@@ -1,0 +1,27 @@
+{
+    "extends": "../tsconfig.json",
+    "files": ["src/index.ts"],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "integration-tests",
+        "setup-jest.ts",
+        "**/*.spec.ts",
+        "**/*.test.ts"
+    ],
+    "compilerOptions": {
+        "baseUrl": "src",
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "paths": {
+            "*": [
+                "../../node_modules/*",
+                "../../app/node_modules/*",
+                "./*"
+            ],
+            "tabby-*": [
+                "../../tabby-*/src"
+            ]
+        }
+    }
+}

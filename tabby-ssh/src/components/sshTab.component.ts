@@ -172,11 +172,13 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
             try {
                 await session.start()
+                await this.sshMultiplexer.addSession(session)
+            } catch (error) {
+                await session.destroy().catch(() => null)
+                throw error
             } finally {
                 this.stopSpinner()
             }
-
-            this.sshMultiplexer.addSession(session)
         }
 
         return session

@@ -7,6 +7,7 @@ process.env.ARCH = ((process.env.ARCH || process.arch) === 'arm') ? 'armv7l' : (
 
 import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+const repoRoot = path.resolve(__dirname, '..')
 
 const electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
 const appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))
@@ -79,6 +80,7 @@ export const builtinPlugins = [
     'tabby-plugin-manager',
     'tabby-linkifier',
     'tabby-auto-sudo-password',
+    'tabby-ai-assistant',
 ]
 
 export const packagesWithDocs = [
@@ -91,6 +93,35 @@ export const packagesWithDocs = [
 export const allPackages = [
     ...builtinPlugins,
 ]
+
+export function resolvePackageDir (pkg) {
+    const rootSource = path.resolve(repoRoot, pkg)
+    if (fs.existsSync(rootSource)) {
+        return rootSource
+    }
+
+    const builtinSource = path.resolve(repoRoot, 'builtin-plugins', pkg)
+    if (fs.existsSync(builtinSource)) {
+        return builtinSource
+    }
+
+    return rootSource
+}
+
+export function resolvePackageFile (pkg, file) {
+    return path.resolve(resolvePackageDir(pkg), file)
+}
+
+export function packageHasFile (pkg, file) {
+    return fs.existsSync(resolvePackageFile(pkg, file))
+}
+
+export function resolvePackageRelativePath (pkg, file = '') {
+    return path.relative(repoRoot, resolvePackageFile(pkg, file)).replaceAll(path.sep, '/')
+}
+
+export const buildablePackages = allPackages.filter(pkg => packageHasFile(pkg, 'webpack.config.mjs'))
+export const packagesWithTypings = builtinPlugins.filter(pkg => packageHasFile(pkg, 'tsconfig.typings.json'))
 
 export const bundledModules = [
     '@angular',

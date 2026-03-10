@@ -48,6 +48,7 @@ $tab-border-radius: 4px;
     --royal-sidebar-surface-active-bg: var(--theme-primary-more);
     --royal-sidebar-surface-active-fg: var(--theme-primary-less);
     --royal-sidebar-accent: var(--theme-primary);
+    --royal-sidebar-preview-overlay-opacity: .42;
 
     position: absolute;
     top: 0;
@@ -66,8 +67,10 @@ $tab-border-radius: 4px;
     transition: width .18s ease, flex-basis .18s ease, background-color .18s ease, border-color .18s ease;
 
     &.collapsed {
+        z-index: 30;
         width: 44px;
         flex-basis: 44px;
+        overflow: visible;
 
         .royal-sidebar-header {
             flex-direction: column;
@@ -348,6 +351,37 @@ $tab-border-radius: 4px;
     min-height: 0;
     flex: 1 1 auto;
     background: var(--royal-sidebar-surface-bg);
+
+    &.floating-preview {
+        position: absolute;
+        top: 8px;
+        left: 100%;
+        bottom: 8px;
+        width: var(--royal-sidebar-expanded-width, 260px);
+        max-width: min(440px, calc(100vw - 72px));
+        border: 1px solid var(--royal-sidebar-border-color);
+        border-radius: 10px;
+        box-shadow: 0 14px 32px rgba(0, 0, 0, .32), inset 0 0 0 1px var(--royal-sidebar-border-color);
+        overflow: hidden;
+        z-index: 20;
+        isolation: isolate;
+    }
+}
+
+.royal-sidebar-content.floating-preview > * {
+    position: relative;
+    z-index: 1;
+}
+
+.royal-sidebar-content.floating-preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--bs-body-bg, var(--theme-bg));
+    opacity: var(--royal-sidebar-preview-overlay-opacity);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .royal-sidebar-search {

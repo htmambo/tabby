@@ -87,8 +87,13 @@ export class SFTPTabLauncherService {
         }
 
         if (!session.open) {
-            await session.start()
-            await this.sshMultiplexer.addSession(session)
+            try {
+                await session.start()
+                await this.sshMultiplexer.addSession(session)
+            } catch (error) {
+                await session.destroy().catch(() => null)
+                throw error
+            }
         }
 
         return session

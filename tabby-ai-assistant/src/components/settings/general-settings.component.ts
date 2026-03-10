@@ -1,0 +1,401 @@
+import { Component, Output, EventEmitter, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { ConfigProviderService } from '../../services/core/config-provider.service';
+import { LoggerService } from '../../services/core/logger.service';
+import { ThemeService, ThemeType } from '../../services/core/theme.service';
+import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
+import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types';
+import { TranslateService, SupportedLanguage } from '../../i18n';
+
+@Component({
+    selector: 'app-general-settings',
+    templateUrl: './general-settings.component.html',
+    styleUrls: ['./general-settings.component.scss'],
+    encapsulation: ViewEncapsulation.None
+})
+export class GeneralSettingsComponent implements OnInit, OnDestroy {
+    @Output() providerChanged = new EventEmitter<string>();
+    @Output() openProvidersTab = new EventEmitter<void>();
+
+    availableProviders: any[] = [];
+    configuredProviderCount = 0;
+    selectedProvider: string = '';
+    isEnabled: boolean = true;
+    language: string = 'zh-CN';
+    theme: string = 'auto';
+    sidebarPosition: 'left' | 'right' = 'right';
+
+    // 翻译对象
+    t: any;
+
+    // 本地供应商状态缓存
+    private localProviderStatus: { [key: string]: { text: string; color: string; icon: string; time: number } } = {};
+    private readonly statusCacheDuration = 30000; // 30秒缓存
+    private readonly localProviders = ['ollama', 'vllm'];
+    private destroy$ = new Subject<void>();
+
+    languages = [
+        { value: 'zh-CN', label: '简体中文', flag: '🇨🇳' },
+        { value: 'en-US', label: 'English', flag: '🇺🇸' }
+    ];
+
+    sidebarPositions = [
+        { value: 'left', label: '左侧', icon: 'fa-arrow-left' },
+        { value: 'right', label: '右侧', icon: 'fa-arrow-right' }
+    ];
+
+    themes = [
+        { value: 'auto', label: '跟随系统' },
+        { value: 'light', label: '浅色主题' },
+        { value: 'dark', label: '深色主题' },
+        { value: 'pixel', label: '像素复古' },
+        { value: 'tech', label: '赛博科技' },
+        { value: 'parchment', label: '羊皮卷' }
+    ];
+
+    // 提供商模板，用于显示名称
+    private providerNames: { [key: string]: string } = {
+        'openai': 'OpenAI',
+        'anthropic': 'Anthropic Claude',
+        'minimax': 'Minimax',
+        'glm': 'GLM (ChatGLM)',
+        'openai-compatible': 'OpenAI Compatible',
+        'ollama': 'Ollama (本地)',
+        'vllm': 'vLLM (本地)'
+    };
+
+    constructor(
+        private config: ConfigProviderService,
+        private logger: LoggerService,
+        private translate: TranslateService,
+        private themeService: ThemeService,
+        private sidebarService: AiSidebarService
+    ) {
+        this.t = this.translate.t;
+    }
+
+    ngOnInit(): void {
+        // 监听语言变化
+        this.translate.translation$.pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(translation => {
+            this.t = translation;
+            // 更新主题翻译
+            this.updateThemeLabels();
+        });
+
+        this.loadSettings();
+        this.loadProviders();
+        // 应用当前主题
+        this.applyTheme(this.theme);
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    /**
+     * 更新主题标签翻译
+     */
+    private updateThemeLabels(): void {
+        this.themes = [
+            { value: 'auto', label: this.t.general.themeAuto },
+            { value: 'light', label: this.t.general.themeLight },
+            { value: 'dark', label: this.t.general.themeDark },
+            { value: 'pixel', label: this.t.general.themePixel || '像素复古' },
+            { value: 'tech', label: this.t.general.themeTech || '赛博科技' },
+            { value: 'parchment', label: this.t.general.themeParchment || '羊皮卷' }
+        ];
+    }
+
+    /**
+     * 加载设置
+     */
+    private loadSettings(): void {
+        this.selectedProvider = this.config.getDefaultProvider() || '';
+        this.isEnabled = this.config.isEnabled() ?? true;
+        this.language = this.config.get('language', 'zh-CN') || 'zh-CN';
+        this.theme = this.config.get('theme', 'auto') || 'auto';
+        this.sidebarPosition = this.sidebarService.getSidebarPosition();
+    }
+
+    /**
+     * 更新侧边栏位置
+     */
+    updateSidebarPosition(position: 'left' | 'right'): void {
+        this.sidebarPosition = position;
+        this.sidebarService.setSidebarPosition(position);
+        this.logger.info('Sidebar position updated', { position });
+    }
+
+    /**
+     * 加载可用提供商 - 支持云端和本地供应商
+     */
+    private loadProviders(): void {
+        const allConfigs = this.config.getAllProviderConfigs();
+        this.availableProviders = Object.keys(this.providerNames).map(key => {
+            const providerConfig = allConfigs[key];
+            const isLocal = this.localProviders.includes(key);
+
+            return {
+                name: key,
+                displayName: providerConfig?.displayName || this.providerNames[key] || key,
+                description: this.getProviderDescription(key),
+                enabled: providerConfig?.enabled !== false,
+                isLocal,
+                configured: this.isProviderConfigured(key, providerConfig)
+            };
+        });
+        this.configuredProviderCount = this.availableProviders.filter(provider => provider.configured).length;
+
+        this.logger.info('Loaded providers from config', { count: this.availableProviders.length });
+    }
+
+    /**
+     * 获取供应商描述
+     */
+    getProviderDescription(key: string): string {
+        const descriptions: { [key: string]: string } = {
+            'openai': '云端 OpenAI GPT 系列模型',
+            'anthropic': '云端 Anthropic Claude 系列模型',
+            'minimax': '云端 Minimax 大模型',
+            'glm': '云端 智谱 ChatGLM 模型',
+            'openai-compatible': '兼容 OpenAI API 的第三方服务',
+            'ollama': '本地运行的 Ollama 服务 (端口 11434)',
+            'vllm': '本地运行的 vLLM 服务 (端口 8000)'
+        };
+        return descriptions[key] || `${this.providerNames[key] || key} 提供商`;
+    }
+
+    private isLocalProvider(providerName: string): boolean {
+        return this.localProviders.includes(providerName);
+    }
+
+    isProviderConfigured(providerName: string, providerConfig: ProviderConfig | null = null): boolean {
+        const config = providerConfig ?? this.config.getProviderConfig(providerName);
+        if (!config) {
+            return false;
+        }
+
+        if (this.isLocalProvider(providerName)) {
+            return !!config.baseURL;
+        }
+
+        return !!config.apiKey;
+    }
+
+    getProviderLabel(providerName: string): string {
+        if (!providerName) {
+            return '未选择';
+        }
+
+        return this.config.getProviderConfig(providerName)?.displayName || this.providerNames[providerName] || providerName;
+    }
+
+    getProviderEndpoint(providerName: string): string {
+        const config = this.getEffectiveProviderConfig(providerName);
+        return config?.baseURL || '未配置';
+    }
+
+    getProviderModel(providerName: string): string {
+        const config = this.getEffectiveProviderConfig(providerName);
+        return config?.model || '未配置';
+    }
+
+    getProviderSecretSummary(providerName: string): string {
+        const providerConfig = this.config.getProviderConfig(providerName);
+
+        if (providerName === 'ollama') {
+            return '本地服务无需 API Key';
+        }
+
+        if (!providerConfig?.apiKey) {
+            return providerName === 'vllm' ? '未设置（可选）' : '未配置';
+        }
+
+        return this.maskSecret(providerConfig.apiKey);
+    }
+
+    getProviderSummaryHint(providerName: string): string {
+        if (!providerName) {
+            return '请选择一个 AI 提供商后再继续配置。';
+        }
+
+        if (this.isProviderConfigured(providerName)) {
+            return '如需修改 API 端点、密钥或更细的连接参数，请进入“AI 提供商”标签页。';
+        }
+
+        return this.isLocalProvider(providerName)
+            ? '当前提供商尚未完成连接配置，请进入“AI 提供商”标签页填写 Base URL 和模型。'
+            : '当前提供商尚未完成连接配置，请进入“AI 提供商”标签页填写 Base URL、Model 和 API Key。';
+    }
+
+    getCurrentProviderStatus(providerName: string = this.selectedProvider): { text: string; color: string; icon: string } {
+        if (!providerName) {
+            return { text: '未选择', color: '#9e9e9e', icon: 'fa-question-circle' };
+        }
+
+        return this.isLocalProvider(providerName)
+            ? this.getLocalProviderStatus(providerName)
+            : this.getProviderStatus(providerName);
+    }
+
+    openProviderConfiguration(): void {
+        this.openProvidersTab.emit();
+    }
+
+    /**
+     * 获取云端提供商状态（同步返回）
+     */
+    getProviderStatus(providerName: string): { text: string; color: string; icon: string } {
+        const providerConfig = this.config.getProviderConfig(providerName);
+        if (providerConfig && providerConfig.apiKey) {
+            return {
+                text: providerConfig.enabled !== false ? '已启用' : '已禁用',
+                color: providerConfig.enabled !== false ? '#4caf50' : '#ff9800',
+                icon: providerConfig.enabled !== false ? 'fa-check-circle' : 'fa-pause-circle'
+            };
+        }
+        return { text: '未配置', color: '#9e9e9e', icon: 'fa-question-circle' };
+    }
+
+    /**
+     * 检测本地供应商状态（异步）
+     */
+    private async checkLocalProviderStatus(providerName: string): Promise<boolean> {
+        const urls: { [key: string]: string } = {
+            'ollama': 'http://localhost:11434/v1/models',
+            'vllm': 'http://localhost:8000/v1/models'
+        };
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+            const response = await fetch(urls[providerName], {
+                method: 'GET',
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+            return response.ok;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * 获取本地供应商状态（同步返回，异步更新缓存）
+     */
+    getLocalProviderStatus(providerName: string): { text: string; color: string; icon: string } {
+        const now = Date.now();
+        const cached = this.localProviderStatus[providerName];
+
+        // 检查缓存是否有效（30秒内）
+        if (cached && (now - cached.time) < this.statusCacheDuration) {
+            return { text: cached.text, color: cached.color, icon: cached.icon };
+        }
+
+        // 返回默认状态并异步更新
+        const defaultStatus = { text: '检测中...', color: '#ff9800', icon: 'fa-spinner fa-spin' };
+        this.localProviderStatus[providerName] = { ...defaultStatus, time: now };
+
+        // 异步检查实际状态
+        this.checkLocalProviderStatus(providerName).then(isOnline => {
+            const status = isOnline
+                ? { text: '在线', color: '#4caf50', icon: 'fa-check-circle', time: now }
+                : { text: '离线', color: '#f44336', icon: 'fa-times-circle', time: now };
+            this.localProviderStatus[providerName] = status;
+            this.logger.debug('Local provider status updated', { provider: providerName, isOnline });
+        }).catch(() => {
+            const status = { text: '离线', color: '#f44336', icon: 'fa-times-circle', time: now };
+            this.localProviderStatus[providerName] = status;
+        });
+
+        return defaultStatus;
+    }
+
+    /**
+     * 更新默认提供商
+     */
+    updateDefaultProvider(providerName: string): void {
+        this.selectedProvider = providerName;
+        this.config.setDefaultProvider(providerName);
+        this.providerChanged.emit(providerName);
+        this.logger.info('Default provider updated', { provider: providerName });
+    }
+
+    /**
+     * 更新启用状态
+     */
+    updateEnabled(enabled: boolean): void {
+        this.isEnabled = enabled;
+        this.config.setEnabled(enabled);
+        this.logger.info('AI Assistant enabled state changed', { enabled });
+    }
+
+    /**
+     * 更新语言
+     */
+    updateLanguage(language: string): void {
+        this.language = language;
+        this.translate.setLanguage(language as SupportedLanguage);
+        this.logger.info('Language updated', { language });
+    }
+
+    /**
+     * 更新主题
+     */
+    updateTheme(theme: string): void {
+        this.theme = theme;
+        this.config.set('theme', theme);
+        this.themeService.applyTheme(theme as ThemeType);
+        this.logger.info('Theme updated', { theme });
+    }
+
+    /**
+     * 应用主题 - 使用 ThemeService
+     */
+    private applyTheme(theme: string): void {
+        this.themeService.applyTheme(theme as ThemeType);
+    }
+
+    private getEffectiveProviderConfig(providerName: string): ProviderConfig | null {
+        if (!providerName) {
+            return null;
+        }
+
+        const storedConfig = this.config.getProviderConfig(providerName);
+        const defaults = PROVIDER_DEFAULTS[providerName];
+
+        if (!storedConfig && !defaults) {
+            return null;
+        }
+
+        return {
+            name: providerName,
+            displayName: storedConfig?.displayName || this.providerNames[providerName] || providerName,
+            apiKey: storedConfig?.apiKey,
+            baseURL: storedConfig?.baseURL || defaults?.baseURL || '',
+            model: storedConfig?.model || defaults?.model || '',
+            maxTokens: storedConfig?.maxTokens ?? defaults?.maxTokens,
+            temperature: storedConfig?.temperature ?? defaults?.temperature,
+            timeout: storedConfig?.timeout ?? defaults?.timeout,
+            retries: storedConfig?.retries ?? defaults?.retries,
+            authConfig: storedConfig?.authConfig || defaults?.authConfig,
+            enabled: storedConfig?.enabled ?? true,
+            contextWindow: storedConfig?.contextWindow ?? defaults?.contextWindow,
+            disableStreaming: storedConfig?.disableStreaming ?? false
+        };
+    }
+
+    private maskSecret(secret: string): string {
+        if (secret.length <= 8) {
+            return `${secret.slice(0, 2)}***`;
+        }
+
+        return `${secret.slice(0, 4)}...${secret.slice(-4)}`;
+    }
+}

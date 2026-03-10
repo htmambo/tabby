@@ -23,9 +23,9 @@ export interface WindowOptions {
     debug?: boolean
 }
 
-abstract class GlasstronWindow extends BrowserWindow {
-    blurType: string
-    abstract setBlur (_: boolean)
+interface ManagedBrowserWindow extends BrowserWindow {
+    blurType?: string
+    setBlur?: (_: boolean) => void
 }
 
 const macOSVibrancyType: any = process.platform === 'darwin' ? compareVersions(macOSRelease().version || '0.0', '10.14', '>=') ? 'fullscreen-ui' : 'dark' : null
@@ -38,7 +38,7 @@ export class Window {
     webContents: WebContents
     private visible = new Subject<boolean>()
     private closed = new Subject<void>()
-    private window?: GlasstronWindow
+    private window?: ManagedBrowserWindow
     private windowConfig: ElectronConfig
     private windowBounds?: Rectangle
     private closing = false
@@ -79,6 +79,7 @@ export class Window {
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     constructor (private application: Application, private configStore: any, options?: WindowOptions) {
         options = options ?? {}
+        const useNativeBrowserWindow = this.shouldUseNativeBrowserWindow()
 
         this.windowConfig = new ElectronConfig({ name: 'window' })
         this.windowBounds = this.windowConfig.get('windowBoundaries')
@@ -101,6 +102,10 @@ export class Window {
             show: false,
             backgroundColor: '#00000000',
             acceptFirstMouse: true,
+        }
+
+        if (useNativeBrowserWindow && process.platform === 'linux') {
+            bwOptions.backgroundColor = '#131d27'
         }
 
         if (this.windowBounds) {
@@ -131,10 +136,10 @@ export class Window {
             bwOptions.visualEffectState = 'active'
         }
 
-        if (process.platform === 'darwin') {
-            this.window = new BrowserWindow(bwOptions) as GlasstronWindow
+        if (useNativeBrowserWindow) {
+            this.window = new BrowserWindow(bwOptions) as ManagedBrowserWindow
         } else {
-            this.window = new glasstron.BrowserWindow(bwOptions)
+            this.window = new glasstron.BrowserWindow(bwOptions) as ManagedBrowserWindow
         }
 
         this.webContents = this.window.webContents
@@ -267,9 +272,11 @@ export class Window {
         }
         if (process.platform === 'win32') {
             if (parseFloat(os.release()) >= 10) {
-                this.window.blurType = enabled ? type === 'fluent' ? 'acrylic' : 'blurbehind' : null
+                if (this.window) {
+                    this.window.blurType = enabled ? type === 'fluent' ? 'acrylic' : 'blurbehind' : null
+                }
                 try {
-                    this.window.setBlur(enabled)
+                    this.window?.setBlur?.(enabled)
                     this.isFluentVibrancy = enabled && type === 'fluent'
                 } catch (error) {
                     console.error('Failed to set window blur', error)
@@ -278,11 +285,20 @@ export class Window {
                 DwmEnableBlurBehindWindow(this.window.getNativeWindowHandle(), enabled)
             }
         } else if (process.platform === 'linux') {
-            this.window.setBackgroundColor(enabled ? '#00000000' : '#131d27')
-            this.window.setBlur(enabled)
+            if (this.window?.setBlur) {
+                this.window.setBackgroundColor(enabled ? '#00000000' : '#131d27')
+                this.window.setBlur(enabled)
+            } else {
+                // Native BrowserWindow keeps Linux dev mode opaque to avoid DevTools issues with transparent windows.
+                this.window?.setBackgroundColor('#131d27')
+            }
         } else {
             this.window.setVibrancy(enabled ? macOSVibrancyType : null)
         }
+    }
+
+    private shouldUseNativeBrowserWindow (): boolean {
+        return process.platform === 'darwin' || (process.platform === 'linux' && !!process.env.TABBY_DEV)
     }
 
     setDarkMode (mode: string): void {

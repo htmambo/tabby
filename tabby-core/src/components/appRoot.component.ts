@@ -117,6 +117,7 @@ export class AppRootComponent {
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
     royalSidebarCollapsed = false
+    royalSidebarPreviewVisible = false
     sidebarFilter = ''
     royalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
@@ -147,10 +148,12 @@ export class AppRootComponent {
     private royalRestoreBindingsAttempt = 0
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
+    private readonly royalSidebarPreviewCloseDelay = 120
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
     private pendingViewRefresh: number|null = null
+    private royalSidebarPreviewCloseHandle: number|null = null
     private readonly preloadHideRetryDelay = 50
     private preloadLogoHidden = false
 
@@ -283,12 +286,6 @@ export class AppRootComponent {
                 if (hotkey === 'restart-tab') {
                     this.app.duplicateTab(this.app.activeTab)
                     this.app.closeTab(this.app.activeTab, true)
-                }
-                if (hotkey === 'explode-tab' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.explodeTab(this.app.activeTab)
-                }
-                if (hotkey === 'combine-tabs' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.combineTabsInto(this.app.activeTab)
                 }
             }
             if (hotkey === 'reopen-tab') {
@@ -501,6 +498,41 @@ export class AppRootComponent {
     toggleRoyalSidebar (): void {
         this.royalSidebarCollapsed = !this.royalSidebarCollapsed
         this.saveRoyalFlag(this.royalSidebarCollapsedStorageKey, this.royalSidebarCollapsed)
+        this.hideRoyalSidebarPreview()
+    }
+
+    onRoyalSidebarBadgeMouseEnter (): void {
+        if (!this.royalSidebarCollapsed) {
+            return
+        }
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewVisible = true
+    }
+
+    onRoyalSidebarBadgeMouseLeave (event?: MouseEvent): void {
+        if (this.isRoyalSidebarHoverTransition(event?.relatedTarget, '.royal-sidebar')) {
+            return
+        }
+        this.scheduleRoyalSidebarPreviewClose()
+    }
+
+    onRoyalSidebarContainerMouseEnter (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+    }
+
+    onRoyalSidebarContainerMouseLeave (): void {
+        this.scheduleRoyalSidebarPreviewClose()
+    }
+
+    onRoyalSidebarPreviewMouseEnter (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+    }
+
+    onRoyalSidebarPreviewMouseLeave (event?: MouseEvent): void {
+        if (this.isRoyalSidebarHoverTransition(event?.relatedTarget, '.royal-sidebar')) {
+            return
+        }
+        this.scheduleRoyalSidebarPreviewClose()
     }
 
     onRoyalSidebarResizeStart (event: MouseEvent): void {
@@ -533,6 +565,7 @@ export class AppRootComponent {
 
     @HostListener('window:blur')
     onWindowBlur (): void {
+        this.hideRoyalSidebarPreview()
         if (!this.royalSidebarResizing) {
             return
         }
@@ -1398,6 +1431,38 @@ export class AppRootComponent {
         } catch {
             // Ignore storage errors (private mode, restricted env).
         }
+    }
+
+    private clearRoyalSidebarPreviewCloseTimer (): void {
+        if (this.royalSidebarPreviewCloseHandle === null) {
+            return
+        }
+        window.clearTimeout(this.royalSidebarPreviewCloseHandle)
+        this.royalSidebarPreviewCloseHandle = null
+    }
+
+    private scheduleRoyalSidebarPreviewClose (): void {
+        if (!this.royalSidebarCollapsed) {
+            this.hideRoyalSidebarPreview()
+            return
+        }
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewCloseHandle = window.setTimeout(() => {
+            this.royalSidebarPreviewCloseHandle = null
+            this.royalSidebarPreviewVisible = false
+        }, this.royalSidebarPreviewCloseDelay)
+    }
+
+    private hideRoyalSidebarPreview (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewVisible = false
+    }
+
+    private isRoyalSidebarHoverTransition (target: EventTarget|null|undefined, selector: string): boolean {
+        if (!(target instanceof Element)) {
+            return false
+        }
+        return !!target.closest(selector)
     }
 
     private readRoyalCollapsedGroups (): string[] {

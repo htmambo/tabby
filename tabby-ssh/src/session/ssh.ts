@@ -20,6 +20,7 @@ import * as russh from 'russh'
 
 const WINDOWS_OPENSSH_AGENT_PIPE = '\\\\.\\pipe\\openssh-ssh-agent'
 const REMOTE_COMMAND_EXIT_SENTINEL = '__TABBY_REMOTE_EXIT__'
+const DEFAULT_READY_TIMEOUT_MS = 20000
 
 function escapePOSIXShellArgument (value: string): string {
     return `'${value.replace(/'/g, `'\"'\"'`)}'`
@@ -132,6 +133,7 @@ export class SSHSession {
     private knownHosts: SSHKnownHostsService
     private privateKeyImporters: AutoPrivateKeyLocator[]
     private previouslyDisconnected = false
+    private destroying = false
 
     constructor (
         private injector: Injector,
@@ -362,6 +364,7 @@ export class SSHSession {
 
     async start (): Promise<void> {
         await this.init()
+        const readyTimeoutMs = this.getReadyTimeoutMs()
 
         const algorithms = {}
         for (const key of Object.values(SSHAlgorithmType)) {
@@ -417,7 +420,7 @@ export class SSHSession {
                 },
                 keepaliveIntervalSeconds: Math.round(this.profile.options.keepaliveInterval / 1000),
                 keepaliveCountMax: this.profile.options.keepaliveCountMax,
-                connectionTimeoutSeconds: this.profile.options.readyTimeout ? Math.round(this.profile.options.readyTimeout / 1000) : undefined,
+                connectionTimeoutSeconds: readyTimeoutMs ? Math.max(1, Math.round(readyTimeoutMs / 1000)) : undefined,
             },
         )
 
@@ -429,11 +432,11 @@ export class SSHSession {
 
         this.previouslyDisconnected = false
         this.ssh.disconnect$.subscribe(() => {
-            if (!this.previouslyDisconnected) {
+            if (!this.previouslyDisconnected && !this.destroying) {
                 this.previouslyDisconnected = true
                 // Let service messages drain
                 setTimeout(() => {
-                    this.destroy()
+                    void this.destroy()
                 })
             }
         })
@@ -861,11 +864,20 @@ export class SSHSession {
     }
 
     async destroy (): Promise<void> {
+        if (this.destroying) {
+            return
+        }
+        this.destroying = true
+        this.open = false
+        this.previouslyDisconnected = true
         this.logger.info('Destroying')
         this.willDestroy.next()
         this.willDestroy.complete()
         this.serviceMessage.complete()
-        this.ssh.disconnect()
+        const disconnectPromise = this.ssh?.disconnect()
+        await disconnectPromise?.catch(error => {
+            this.logger.debug('SSH disconnect during destroy failed:', error)
+        })
     }
 
     async executePOSIXCommand (command: string): Promise<string> {
@@ -915,26 +927,98 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
         if (!(this.ssh instanceof russh.AuthenticatedSSHClient)) {
             throw new Error('Cannot open shell channel before auth')
         }
-        const ch = await this.ssh.activateChannel(await this.ssh.openSessionChannel())
-        await ch.requestPTY('xterm-256color', {
-            columns: 80,
-            rows: 24,
-            pixHeight: 0,
-            pixWidth: 0,
-        })
-        if (options.x11) {
-            await ch.requestX11Forwarding({
-                singleConnection: false,
-                authProtocol: 'MIT-MAGIC-COOKIE-1',
-                authCookie: crypto.randomBytes(16).toString('hex'),
-                screenNumber: 0,
+        const newChannel = await this.withReadyTimeout(
+            this.ssh.openSessionChannel(),
+            this.translate.instant('opening an SSH session channel'),
+        )
+        const ch = await this.withReadyTimeout(
+            this.ssh.activateChannel(newChannel),
+            this.translate.instant('activating the SSH session channel'),
+        )
+        try {
+            await this.withReadyTimeout(
+                ch.requestPTY('xterm-256color', {
+                    columns: 80,
+                    rows: 24,
+                    pixHeight: 0,
+                    pixWidth: 0,
+                }),
+                this.translate.instant('requesting a terminal from the server'),
+            )
+            if (options.x11) {
+                await this.withReadyTimeout(
+                    ch.requestX11Forwarding({
+                        singleConnection: false,
+                        authProtocol: 'MIT-MAGIC-COOKIE-1',
+                        authCookie: crypto.randomBytes(16).toString('hex'),
+                        screenNumber: 0,
+                    }),
+                    this.translate.instant('requesting X11 forwarding'),
+                )
+            }
+            if (this.profile.options.agentForward) {
+                await this.withReadyTimeout(
+                    ch.requestAgentForwarding(),
+                    this.translate.instant('requesting agent forwarding'),
+                )
+            }
+            await this.withReadyTimeout(
+                ch.requestShell(),
+                this.translate.instant('waiting for the remote shell'),
+            )
+            return ch
+        } catch (error) {
+            await ch.close().catch(() => null)
+            throw error
+        }
+    }
+
+    private getReadyTimeoutMs (): number|null {
+        const timeoutMs = Number(this.profile.options.readyTimeout)
+        if (timeoutMs === 0) {
+            return null
+        }
+        if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+            return timeoutMs
+        }
+        return DEFAULT_READY_TIMEOUT_MS
+    }
+
+    private async withReadyTimeout<T> (promise: Promise<T>, operation: string): Promise<T> {
+        const timeoutMs = this.getReadyTimeoutMs()
+        if (!timeoutMs) {
+            return promise
+        }
+
+        return new Promise<T>((resolve, reject) => {
+            let settled = false
+            const timer = window.setTimeout(() => {
+                if (settled) {
+                    return
+                }
+                settled = true
+                reject(new Error(this.translate.instant('Timed out after {timeout} ms while {operation}', {
+                    timeout: timeoutMs,
+                    operation,
+                })))
+            }, timeoutMs)
+
+            promise.then(value => {
+                if (settled) {
+                    return
+                }
+                settled = true
+                window.clearTimeout(timer)
+                resolve(value)
+            }, error => {
+                if (settled) {
+                    return
+                }
+                settled = true
+                window.clearTimeout(timer)
+                reject(error)
             })
-        }
-        if (this.profile.options.agentForward) {
-            await ch.requestAgentForwarding()
-        }
-        await ch.requestShell()
-        return ch
+        })
     }
 
     private setupSocketChannelEvents (channel: russh.Channel, socket: Socket, logPrefix: string): void {

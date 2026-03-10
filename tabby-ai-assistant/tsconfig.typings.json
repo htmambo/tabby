@@ -1,0 +1,25 @@
+{
+  "extends": "../tsconfig.json",
+  "files": ["src/index.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "typings",
+    "integration-tests",
+    "setup-jest.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": "src",
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationDir": "./typings",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "tabby-*": ["../../tabby-*"],
+      "*": ["../../app/node_modules/*"]
+    }
+  }
+}
