@@ -280,9 +280,8 @@ export class Window {
         } else if (process.platform === 'linux') {
             this.window.setBackgroundColor(enabled ? '#00000000' : '#131d27')
             this.window.setBlur(enabled)
-        } else {
-            this.window.setVibrancy(enabled ? macOSVibrancyType : null)
         }
+        // macOS: vibrancy is now handled via CSS backdrop-filter, no Electron API needed
     }
 
     setDarkMode (mode: string): void {

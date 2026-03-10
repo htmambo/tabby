@@ -193,6 +193,18 @@ export class ThemesService {
         return Math.max(this.linuxMinWindowOpacity, Math.min(1, numericOpacity))
     }
 
+    private getVibrancyOpacityFactor (appearance: Record<string, unknown>): number {
+        if (!appearance.vibrancy) {
+            return 1
+        }
+        const numericOpacity = Number(appearance.opacity)
+        if (!Number.isFinite(numericOpacity)) {
+            return 1
+        }
+        // Scale overlay for macOS and Linux based on window opacity setting
+        return Math.min(1, numericOpacity)
+    }
+
     private getVibrancyBackground (background: Color, appearance: Record<string, unknown>): Color {
         if (!appearance.vibrancy) {
             return background
@@ -205,7 +217,7 @@ export class ThemesService {
     }
 
     private getVibrancyOverlayAlpha (appearance: Record<string, unknown>): string {
-        return `${(this.defaultVibrancyOverlayAlpha * this.getLinuxVibrancyOpacityFactor(appearance)).toFixed(3)}`
+        return `${(this.defaultVibrancyOverlayAlpha * this.getVibrancyOpacityFactor(appearance)).toFixed(3)}`
     }
 
     private ensureContrast (color: Color, against: Color): Color {

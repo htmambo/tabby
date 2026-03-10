@@ -75,14 +75,16 @@ h3.mb-3(translate) Window
 .form-line(*ngIf='platform.supportsWindowControls')
     .header
         .title(translate) Opacity
-    input(
-        type='range',
-        [(ngModel)]='config.store.appearance.opacity',
-        (ngModelChange)='saveConfiguration(); (hostApp.platform === Platform.Linux && config.requestRestart())',
-        [min]='minWindowOpacity',
-        max='1',
-        step='0.01'
-    )
+    .opacity-slider-container
+        input(
+            type='range',
+            [(ngModel)]='config.store.appearance.opacity',
+            (ngModelChange)='saveConfiguration(); (hostApp.platform === Platform.Linux && config.requestRestart())',
+            [min]='minWindowOpacity',
+            max='1',
+            step='0.01'
+        )
+        .opacity-value {{opacityPercent}}%
 
 .form-line(*ngIf='platform.supportsWindowControls')
     .header

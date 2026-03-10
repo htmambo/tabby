@@ -20,6 +20,7 @@ import {
     standalone: false,
     selector: 'window-settings-tab',
     templateUrl: './windowSettingsTab.component.pug',
+    styleUrls: ['./windowSettingsTab.component.scss'],
 })
 export class WindowSettingsTabComponent extends BaseComponent {
     readonly minMacOSWindowOpacity = 0.85
@@ -65,6 +66,11 @@ export class WindowSettingsTabComponent extends BaseComponent {
 
     get fixedTabWidth (): number {
         return this.normalizeFixedTabWidth(this.config.store?.appearance?.fixedTabWidth)
+    }
+
+    get opacityPercent (): number {
+        const opacity = this.config.store?.appearance?.opacity || 1
+        return Math.round((opacity as number) * 100)
     }
 
     onFixedTabWidthChange (value: unknown): void {

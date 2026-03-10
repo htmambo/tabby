@@ -8,6 +8,18 @@ app-root {
 
     &.vibrant {
         background: rgba(var(--bs-dark-rgb), var(--vibrancy-overlay-alpha, .65));
+        backdrop-filter: blur(8px) saturate(1.2);
+
+        &.platform-darwin {
+            // macOS: weaker overlay + stronger blur to create frosted glass effect
+            background: rgba(var(--bs-dark-rgb), calc(var(--vibrancy-overlay-alpha, .65) * 0.3));
+            backdrop-filter: blur(16px) saturate(1.3);
+        }
+
+        &.platform-linux {
+            // Linux: slight blur to complement system vibrancy
+            backdrop-filter: blur(4px) saturate(1.1);
+        }
     }
 
     &> .content {
