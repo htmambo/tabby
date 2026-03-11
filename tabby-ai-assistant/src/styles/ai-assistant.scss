@@ -8,6 +8,27 @@
 // 主题颜色变量已移至 themes.scss
 // 这里只保留通用样式和组件样式
 
+// 兼容层：将插件内部历史变量名统一映射到 Tabby 项目主题变量桥接后的 ai-* 变量
+// 作用范围仅限 AI 助手相关容器，避免污染全局
+.ai-assistant,
+.ai-chat-interface,
+.ai-settings-tab,
+.ai-sidebar-container,
+.ai-chat-modal-left {
+    --background-primary: var(--ai-bg-primary);
+    --background-secondary: var(--ai-bg-secondary);
+    --background-tertiary: var(--ai-bg-tertiary);
+    --text-primary: var(--ai-text-primary);
+    --text-secondary: var(--ai-text-secondary);
+    --border-color: var(--ai-border);
+    --primary: var(--ai-primary);
+    --primary-hover: var(--ai-primary-hover);
+    --success: var(--ai-success);
+    --warning: var(--ai-warning);
+    --danger: var(--ai-danger);
+    --info: var(--ai-info);
+}
+
 // 通用样式
 .ai-assistant {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

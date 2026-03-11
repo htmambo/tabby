@@ -240,8 +240,8 @@ export class AiSidebarService {
             height: ${viewportMetrics.height}px;
             display: flex;
             flex-direction: column;
-            background: var(--bs-body-bg, #1e1e1e);
-            border-${isRight ? 'left' : 'right'}: 1px solid var(--bs-border-color, #333);
+            background: var(--body-bg, var(--bs-body-bg, #1e1e1e));
+            border-${isRight ? 'left' : 'right'}: 1px solid var(--bs-border-color, var(--theme-bg-more-2, #333));
             box-shadow: ${isRight ? '-2px' : '2px'} 0 10px rgba(0,0,0,0.3);
             z-index: 1000;
             overflow: hidden;

@@ -10,77 +10,51 @@ import { ConfigProviderService } from './config-provider.service';
 
 export type ThemeType = 'auto' | 'light' | 'dark' | 'pixel' | 'tech' | 'parchment';
 
+// 使用 Tabby 项目自身主题变量（--theme-* / --bs-* / --body-bg）
+// 作为 AI 助手默认配色来源，避免维护独立的 light/dark 硬编码调色盘
+const PROJECT_THEME_VARIABLES: Record<string, string> = {
+    // 主色调
+    'ai-primary': 'var(--theme-primary, var(--bs-primary, #007bff))',
+    'ai-primary-hover': 'var(--theme-primary-less, var(--bs-primary, #0069d9))',
+    'ai-secondary': 'var(--theme-secondary, var(--bs-secondary, #6c757d))',
+    'ai-success': 'var(--theme-success, var(--bs-success, #28a745))',
+    'ai-warning': 'var(--theme-warning, var(--bs-warning, #ffc107))',
+    'ai-danger': 'var(--theme-danger, var(--bs-danger, #dc3545))',
+    'ai-info': 'var(--theme-info, var(--bs-info, #17a2b8))',
+    // 风险级别颜色
+    'ai-risk-low': 'var(--theme-success, var(--bs-success, #28a745))',
+    'ai-risk-medium': 'var(--theme-warning, var(--bs-warning, #ffc107))',
+    'ai-risk-high': 'var(--theme-warning-more, var(--bs-warning, #fd7e14))',
+    'ai-risk-critical': 'var(--theme-danger, var(--bs-danger, #dc3545))',
+    // 聊天消息颜色
+    'ai-user-message': 'var(--theme-primary-active-fg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.15))',
+    'ai-assistant-message': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
+    'ai-system-message': 'var(--theme-warning-active-fg, var(--theme-bg-more-2, #3a3a3a))',
+    // 背景和边框
+    'ai-bg-primary': 'var(--body-bg, var(--bs-body-bg, #1e1e1e))',
+    'ai-bg-secondary': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
+    'ai-bg-tertiary': 'var(--theme-bg-more-2, var(--bs-tertiary-bg, #3d3d3d))',
+    'ai-text-primary': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
+    'ai-text-secondary': 'var(--theme-fg-more, var(--bs-secondary-color, #adb5bd))',
+    'ai-border': 'var(--bs-border-color, var(--theme-bg-more-2, #4a4a4a))',
+    'ai-border-radius': 'var(--bs-border-radius, 0.375rem)',
+    'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.18)',
+    // 字体
+    'ai-font-family': "var(--bs-body-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
+    'ai-font-size-base': 'var(--bs-body-font-size, 14px)',
+    // 其他
+    'ai-dark': 'var(--theme-bg, var(--bs-body-bg, #1e1e1e))',
+    'ai-light': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
+    'ai-transition-duration': '0.2s'
+};
+
 // 主题变量定义
 const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>> = {
     light: {
-        // 主色调
-        'ai-primary': '#007bff',
-        'ai-primary-hover': '#0056b3',
-        'ai-secondary': '#6c757d',
-        'ai-success': '#28a745',
-        'ai-warning': '#ffc107',
-        'ai-danger': '#dc3545',
-        'ai-info': '#17a2b8',
-        // 风险级别颜色
-        'ai-risk-low': '#28a745',
-        'ai-risk-medium': '#ffc107',
-        'ai-risk-high': '#fd7e14',
-        'ai-risk-critical': '#dc3545',
-        // 聊天消息颜色
-        'ai-user-message': '#e3f2fd',
-        'ai-assistant-message': '#f5f5f5',
-        'ai-system-message': '#fff3cd',
-        // 背景和边框
-        'ai-bg-primary': '#ffffff',
-        'ai-bg-secondary': '#f8f9fa',
-        'ai-bg-tertiary': '#e9ecef',
-        'ai-text-primary': '#212529',
-        'ai-text-secondary': '#6c757d',
-        'ai-border': '#dee2e6',
-        'ai-border-radius': '0.375rem',
-        'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)',
-        // 字体
-        'ai-font-family': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        'ai-font-size-base': '14px',
-        // 其他
-        'ai-dark': '#212529',
-        'ai-light': '#f8f9fa',
-        'ai-transition-duration': '0.3s'
+        ...PROJECT_THEME_VARIABLES
     },
     dark: {
-        // 主色调 - 更深沉的深色主题
-        'ai-primary': '#60a5fa',
-        'ai-primary-hover': '#93c5fd',
-        'ai-secondary': '#9ca3af',
-        'ai-success': '#34d399',
-        'ai-warning': '#fbbf24',
-        'ai-danger': '#f87171',
-        'ai-info': '#22d3ee',
-        // 风险级别颜色
-        'ai-risk-low': '#34d399',
-        'ai-risk-medium': '#fbbf24',
-        'ai-risk-high': '#fb923c',
-        'ai-risk-critical': '#f87171',
-        // 聊天消息颜色
-        'ai-user-message': '#1e3a5f',
-        'ai-assistant-message': '#1f2937',
-        'ai-system-message': '#374151',
-        // 背景和边框 - 更深的配色
-        'ai-bg-primary': '#0d0d14',
-        'ai-bg-secondary': '#12121a',
-        'ai-bg-tertiary': '#1e1e2e',
-        'ai-text-primary': '#f1f5f9',
-        'ai-text-secondary': '#94a3b8',
-        'ai-border': '#2d2d3d',
-        'ai-border-radius': '0.375rem',
-        'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.4)',
-        // 字体
-        'ai-font-family': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        'ai-font-size-base': '14px',
-        // 其他
-        'ai-dark': '#0d0d14',
-        'ai-light': '#f1f5f9',
-        'ai-transition-duration': '0.3s'
+        ...PROJECT_THEME_VARIABLES
     },
     pixel: {
         // 主色调 - 经典 GameBoy 绿

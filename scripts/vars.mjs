@@ -2,12 +2,15 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as semver from 'semver'
 import * as childProcess from 'child_process'
+import dotenv from 'dotenv'
 
 process.env.ARCH = ((process.env.ARCH || process.arch) === 'arm') ? 'armv7l' : (process.env.ARCH || process.arch)
 
 import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
+
+dotenv.config({ path: path.resolve(repoRoot, '.env'), quiet: true })
 
 const electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
 const appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))

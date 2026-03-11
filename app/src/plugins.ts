@@ -1,5 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import { rm } from 'node:fs/promises'
 import * as remote from '@electron/remote'
 import { PluginInfo } from '../../tabby-core/src/api/mainProcess'
 import { PLUGIN_BLACKLIST } from './pluginBlacklist'
@@ -7,6 +8,7 @@ import { PLUGIN_BLACKLIST } from './pluginBlacklist'
 const nodeModule = require('module') // eslint-disable-line @typescript-eslint/no-var-requires
 
 const nodeRequire = global['require']
+let managedUserPluginsNodeModulesPath: string | null = null
 
 function normalizePath (p: string): string {
     const cygwinPrefix = '/cygdrive/'
@@ -70,6 +72,7 @@ export function initModuleLookup (userPluginsPath: string): void {
     global['module'].paths.map((x: string) => nodeModule.globalPaths.push(normalizePath(x)))
 
     const paths = []
+    managedUserPluginsNodeModulesPath = normalizePath(path.resolve(path.join(userPluginsPath, 'node_modules')))
     paths.unshift(path.join(userPluginsPath, 'node_modules'))
     paths.unshift(path.join(remote.app.getAppPath(), 'node_modules'))
 
@@ -188,6 +191,65 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
     }
 }
 
+function normalizePathForCompare (p: string): string {
+    return normalizePath(path.resolve(p)).replace(/\\/g, '/').toLowerCase()
+}
+
+function isManagedUserPluginCopy (pluginPath: string): boolean {
+    if (!managedUserPluginsNodeModulesPath) {
+        return false
+    }
+    const managedRoot = normalizePathForCompare(managedUserPluginsNodeModulesPath)
+    const target = normalizePathForCompare(pluginPath)
+    return target === managedRoot || target.startsWith(`${managedRoot}/`)
+}
+
+function cleanupStaleUserPluginCopy (stalePlugin: PluginInfo, builtinPlugin: PluginInfo): void {
+    if (stalePlugin.isBuiltin || !stalePlugin.path) {
+        return
+    }
+    if (!isManagedUserPluginCopy(stalePlugin.path)) {
+        console.info(`Skip cleanup for ${stalePlugin.packageName}: path is outside managed user plugin cache (${stalePlugin.path})`)
+        return
+    }
+
+    rm(stalePlugin.path, { recursive: true, force: true })
+        .then(() => {
+            console.info(`Removed stale cached plugin ${stalePlugin.packageName}@${stalePlugin.version}, using builtin ${builtinPlugin.version}`)
+        })
+        .catch(error => {
+            console.warn(`Failed to remove stale cached plugin ${stalePlugin.packageName} at ${stalePlugin.path}`, error)
+        })
+}
+
+function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): PluginInfo {
+    // 优先非 legacy 插件
+    if (existing.isLegacy !== candidate.isLegacy) {
+        const preferred = existing.isLegacy ? candidate : existing
+        console.info(`Plugin ${candidate.packageName} already exists, using ${preferred.packageName} (non-legacy preferred)`)
+        return preferred
+    }
+
+    // 内置插件与缓存/用户插件冲突时：
+    // 1. 若版本不一致，直接使用内置插件（视为更新到内置版本）
+    // 2. 若版本一致，也统一使用内置插件，避免重复来源导致不确定行为
+    if (existing.isBuiltin !== candidate.isBuiltin) {
+        const builtin = existing.isBuiltin ? existing : candidate
+        const cached = existing.isBuiltin ? candidate : existing
+        if (builtin.version !== cached.version) {
+            console.info(`Plugin ${cached.packageName} cache version ${cached.version} differs from builtin ${builtin.version}, using builtin`)
+        } else {
+            console.info(`Plugin ${cached.packageName} cache version matches builtin (${builtin.version}), using builtin`)
+        }
+        cleanupStaleUserPluginCopy(cached, builtin)
+        return builtin
+    }
+
+    // 同来源重复（都内置或都非内置）时保留先发现的一项
+    console.info(`Plugin ${candidate.packageName} already exists, keeping ${existing.packageName}`)
+    return existing
+}
+
 export async function findPlugins (): Promise<PluginInfo[]> {
     const paths = nodeModule.globalPaths
     let foundPlugins: PluginInfo[] = []
@@ -206,15 +268,10 @@ export async function findPlugins (): Promise<PluginInfo[]> {
 
     for (const pluginInfo of await Promise.all(foundPluginsPromises)) {
         if (pluginInfo) {
-            const existing = foundPlugins.find(x => x.name === pluginInfo.name)
-            if (existing) {
-                if (existing.isLegacy) {
-                    console.info(`Plugin ${pluginInfo.packageName} already exists, overriding`)
-                    foundPlugins = foundPlugins.filter(x => x.name !== pluginInfo.name)
-                } else {
-                    console.info(`Plugin ${pluginInfo.packageName} already exists, skipping`)
-                    continue
-                }
+            const existingIndex = foundPlugins.findIndex(x => x.name === pluginInfo.name)
+            if (existingIndex >= 0) {
+                foundPlugins[existingIndex] = resolveDuplicatePlugin(foundPlugins[existingIndex], pluginInfo)
+                continue
             }
 
             foundPlugins.push(pluginInfo)
