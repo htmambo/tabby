@@ -119,11 +119,14 @@ export class AppRootComponent {
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
     royalSidebarCollapsed = false
+    royalSidebarPreviewVisible = false
     sidebarFilter = ''
     royalConnectionGroups: RoyalConnectionGroup[] = []
+    filteredRoyalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
     royalSingleExpandMode = false
     royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
+    royalSessionGroups: RoyalNavigationGroup[] = []
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
     private readonly maxFixedTabWidth = 600
@@ -149,11 +152,13 @@ export class AppRootComponent {
     private royalRestoreBindingsAttempt = 0
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
+    private readonly royalSidebarPreviewCloseDelay = 120
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
     private pendingActiveTabSync: number|null = null
     private pendingViewRefresh: number|null = null
+    private royalSidebarPreviewCloseHandle: number|null = null
     private readonly preloadHideRetryDelay = 50
     private preloadLogoHidden = false
 
@@ -255,6 +260,7 @@ export class AppRootComponent {
     ) {
         this.restoreRoyalPreferences()
         this.activeTab = this.app.activeTab
+        this.recomputeRoyalSidebarGroups()
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
@@ -303,12 +309,6 @@ export class AppRootComponent {
                 if (hotkey === 'restart-tab') {
                     this.app.duplicateTab(this.app.activeTab)
                     this.app.closeTab(this.app.activeTab, true)
-                }
-                if (hotkey === 'explode-tab' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.explodeTab(this.app.activeTab)
-                }
-                if (hotkey === 'combine-tabs' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.combineTabsInto(this.app.activeTab)
                 }
             }
             if (hotkey === 'reopen-tab') {
@@ -521,6 +521,41 @@ export class AppRootComponent {
     toggleRoyalSidebar (): void {
         this.royalSidebarCollapsed = !this.royalSidebarCollapsed
         this.saveRoyalFlag(this.royalSidebarCollapsedStorageKey, this.royalSidebarCollapsed)
+        this.hideRoyalSidebarPreview()
+    }
+
+    onRoyalSidebarBadgeMouseEnter (): void {
+        if (!this.royalSidebarCollapsed) {
+            return
+        }
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewVisible = true
+    }
+
+    onRoyalSidebarBadgeMouseLeave (event?: MouseEvent): void {
+        if (this.isRoyalSidebarHoverTransition(event?.relatedTarget, '.royal-sidebar')) {
+            return
+        }
+        this.scheduleRoyalSidebarPreviewClose()
+    }
+
+    onRoyalSidebarContainerMouseEnter (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+    }
+
+    onRoyalSidebarContainerMouseLeave (): void {
+        this.scheduleRoyalSidebarPreviewClose()
+    }
+
+    onRoyalSidebarPreviewMouseEnter (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+    }
+
+    onRoyalSidebarPreviewMouseLeave (event?: MouseEvent): void {
+        if (this.isRoyalSidebarHoverTransition(event?.relatedTarget, '.royal-sidebar')) {
+            return
+        }
+        this.scheduleRoyalSidebarPreviewClose()
     }
 
     onRoyalSidebarResizeStart (event: MouseEvent): void {
@@ -553,6 +588,7 @@ export class AppRootComponent {
 
     @HostListener('window:blur')
     onWindowBlur (): void {
+        this.hideRoyalSidebarPreview()
         if (!this.royalSidebarResizing) {
             return
         }
@@ -729,7 +765,7 @@ export class AppRootComponent {
         return `connections:${groupID}`
     }
 
-    get filteredRoyalConnectionGroups (): RoyalConnectionGroup[] {
+    private buildFilteredRoyalConnectionGroups (): RoyalConnectionGroup[] {
         const filterText = this.sidebarFilter.trim().toLowerCase()
         if (!filterText) {
             return this.royalConnectionGroups
@@ -745,7 +781,7 @@ export class AppRootComponent {
             .filter(group => group.items.length > 0)
     }
 
-    get royalSessionGroups (): RoyalNavigationGroup[] {
+    private buildRoyalSessionGroups (): RoyalNavigationGroup[] {
         const groups: Record<RoyalEnvironment, RoyalNavigationGroup> = {
             prod: {
                 id: 'prod',
@@ -807,6 +843,16 @@ export class AppRootComponent {
         return (['prod', 'lab', 'dev', 'other'] as RoyalEnvironment[])
             .map(groupID => groups[groupID])
             .filter(group => group.items.length > 0)
+    }
+
+    private recomputeRoyalSidebarGroups (): void {
+        this.filteredRoyalConnectionGroups = this.buildFilteredRoyalConnectionGroups()
+        this.royalSessionGroups = this.buildRoyalSessionGroups()
+    }
+
+    onSidebarFilterChange (value: string): void {
+        this.sidebarFilter = value
+        this.recomputeRoyalSidebarGroups()
     }
 
     private getRoyalTabLabel (tab: BaseTabComponent): string {
@@ -946,7 +992,7 @@ export class AppRootComponent {
             }
             this.setRoyalConnectionBinding(profileID, target.targetTab)
         }
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
     }
 
     private startRoyalRestoredBindingsRecovery (): void {
@@ -994,7 +1040,7 @@ export class AppRootComponent {
             this.royalRestoredBindingCandidates.delete(hostTab)
         }
 
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
 
         if (!this.royalRestoredBindingCandidates.size) {
             this.stopRoyalRestoredBindingsRecovery()
@@ -1062,7 +1108,7 @@ export class AppRootComponent {
         if (target.hostTab instanceof SplitTabComponent && target.targetTab !== target.hostTab) {
             target.hostTab.focus(target.targetTab)
         }
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
     }
 
     private observeRoyalTab (tab: BaseTabComponent): void {
@@ -1076,6 +1122,7 @@ export class AppRootComponent {
     private syncRoyalActiveConnection (): void {
         this.cleanupRoyalConnectionBindings()
         this.activeRoyalTab = this.getRoyalResolvedActiveTab()
+        this.recomputeRoyalSidebarGroups()
         this.ensureRoyalActiveGroupExpanded()
     }
 
@@ -1260,8 +1307,7 @@ export class AppRootComponent {
             }
 
             this.royalConnectionGroups = mapped
-            this.ensureRoyalActiveGroupExpanded()
-            this.scheduleViewRefresh()
+            this.scheduleRoyalActiveSync()
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }
@@ -1418,6 +1464,38 @@ export class AppRootComponent {
         } catch {
             // Ignore storage errors (private mode, restricted env).
         }
+    }
+
+    private clearRoyalSidebarPreviewCloseTimer (): void {
+        if (this.royalSidebarPreviewCloseHandle === null) {
+            return
+        }
+        window.clearTimeout(this.royalSidebarPreviewCloseHandle)
+        this.royalSidebarPreviewCloseHandle = null
+    }
+
+    private scheduleRoyalSidebarPreviewClose (): void {
+        if (!this.royalSidebarCollapsed) {
+            this.hideRoyalSidebarPreview()
+            return
+        }
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewCloseHandle = window.setTimeout(() => {
+            this.royalSidebarPreviewCloseHandle = null
+            this.royalSidebarPreviewVisible = false
+        }, this.royalSidebarPreviewCloseDelay)
+    }
+
+    private hideRoyalSidebarPreview (): void {
+        this.clearRoyalSidebarPreviewCloseTimer()
+        this.royalSidebarPreviewVisible = false
+    }
+
+    private isRoyalSidebarHoverTransition (target: EventTarget|null|undefined, selector: string): boolean {
+        if (!(target instanceof Element)) {
+            return false
+        }
+        return !!target.closest(selector)
     }
 
     private readRoyalCollapsedGroups (): string[] {

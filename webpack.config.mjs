@@ -1,10 +1,10 @@
 import log from 'npmlog'
-import { builtinPlugins } from './scripts/vars.mjs'
+import { buildablePackages, resolvePackageRelativePath } from './scripts/vars.mjs'
 
 const paths = [
     './app/webpack.config.mjs',
     './app/webpack.config.main.mjs',
-    ...builtinPlugins.map(x => `./${x}/webpack.config.mjs`),
+    ...buildablePackages.map(x => `./${resolvePackageRelativePath(x, 'webpack.config.mjs')}`),
 ]
 
 paths.forEach(x => log.info(`Using config: ${x}`))

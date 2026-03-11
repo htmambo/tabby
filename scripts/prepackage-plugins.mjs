@@ -16,7 +16,13 @@ fs.writeFileSync(path.join(target, 'package.json'), '{}')
 sh.cd(target)
 for (let plugin of vars.builtinPlugins) {
     log.info('install', plugin)
-    sh.cp('-r', path.join('..', plugin), '.')
+    const sourcePath = vars.resolvePackageDir(plugin)
+    const targetPath = path.resolve(target, plugin)
+    if (sourcePath !== targetPath) {
+        // 清理旧的预打包副本，避免遗留已删除文件
+        sh.rm('-rf', targetPath)
+        sh.cp('-r', sourcePath, '.')
+    }
     sh.rm('-rf', path.join(plugin, 'node_modules'))
     await runYarnInstallWithRetry({
         cwd: path.join(target, plugin),

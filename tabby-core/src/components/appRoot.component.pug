@@ -107,7 +107,9 @@ title-bar(
         aside.royal-sidebar(
             *ngIf='shouldShowRoyalSidebar()',
             [class.tree-mode]='isRoyalSidebarTreeMode',
-            [class.collapsed]='royalSidebarCollapsed'
+            [class.collapsed]='royalSidebarCollapsed',
+            (mouseenter)='royalSidebarCollapsed && onRoyalSidebarContainerMouseEnter()',
+            (mouseleave)='royalSidebarCollapsed && onRoyalSidebarContainerMouseLeave()'
         )
             .royal-sidebar-header
                 button.btn.btn-link.royal-sidebar-badge(
@@ -117,7 +119,10 @@ title-bar(
                     tooltipClass='royal-sidebar-tooltip',
                     container='body',
                     placement='right',
-                    (click)='toggleRoyalSidebar()',
+                    (mouseenter)='onRoyalSidebarBadgeMouseEnter()',
+                    (mouseleave)='onRoyalSidebarBadgeMouseLeave($event)',
+                    (focus)='onRoyalSidebarBadgeMouseEnter()',
+                    (blur)='onRoyalSidebarBadgeMouseLeave()',
                     [attr.aria-label]='royalSidebarTitle'
                 )
                     i.fas.fa-folder-tree(aria-hidden='true')
@@ -161,7 +166,12 @@ title-bar(
                         [class.fa-angles-left]='!royalSidebarCollapsed',
                         aria-hidden='true'
                     )
-            .royal-sidebar-content(*ngIf='!royalSidebarCollapsed')
+            .royal-sidebar-content(
+                *ngIf='!royalSidebarCollapsed || royalSidebarPreviewVisible',
+                [class.floating-preview]='royalSidebarCollapsed',
+                (mouseenter)='royalSidebarCollapsed && onRoyalSidebarPreviewMouseEnter()',
+                (mouseleave)='royalSidebarCollapsed && onRoyalSidebarPreviewMouseLeave($event)'
+            )
                 .royal-sidebar-search
                     .royal-sidebar-search-field
                         i.fas.fa-search.royal-sidebar-search-icon(aria-hidden='true')
@@ -169,7 +179,7 @@ title-bar(
                             type='search',
                             [placeholder]='royalSidebarFilterPlaceholder',
                             [ngModel]='sidebarFilter',
-                            (ngModelChange)='sidebarFilter = $event'
+                            (ngModelChange)='onSidebarFilterChange($event)'
                         )
                 .royal-nav-sections
                     ng-container(*ngIf='filteredRoyalConnectionGroups as connectionGroups')

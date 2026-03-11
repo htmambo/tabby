@@ -37,20 +37,22 @@ export class SSHShellSession extends BaseSession {
 
         this.shellEnded = false
         this.ssh.ref()
-        this.ssh.willDestroy$.subscribe(() => {
-            this.destroy()
-        })
 
         this.logger.debug('Opening shell')
 
         try {
             this.shell = await this.ssh.openShellChannel({ x11: this.profile.options.x11 })
         } catch (err) {
+            this.ssh.unref()
             if (err.toString().includes('Unable to request X11')) {
                 this.emitServiceMessage('    ' + this.translate.instant('Make sure `xauth` is installed on the remote side'))
             }
             throw new Error(this.translate.instant('Remote rejected opening a shell channel: {error}', { error: `${err}` }))
         }
+
+        this.ssh.willDestroy$.subscribe(() => {
+            this.destroy()
+        })
 
         this.open = true
         this.logger.debug('Shell open')

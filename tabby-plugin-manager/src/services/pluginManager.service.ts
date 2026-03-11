@@ -1,11 +1,47 @@
 import axios from 'axios'
 import { compare as semverCompare } from 'semver'
-import { Observable, from, forkJoin, map, of } from 'rxjs'
+import { Observable, catchError, from, forkJoin, map, of } from 'rxjs'
 import { Injectable, Inject } from '@angular/core'
 import { Logger, LogService, PlatformService, BOOTSTRAP_DATA, BootstrapData, PluginInfo } from 'tabby-core'
 import { PLUGIN_BLACKLIST } from '../../../app/src/pluginBlacklist'
 
 const OFFICIAL_NPM_ACCOUNT = 'eugenepankov'
+
+interface NPMRegistrySearchPackage {
+    name?: string
+    keywords?: string[]
+    version?: string
+    description?: string
+    author?: {
+        name?: string
+    } | string
+    maintainers?: Array<{
+        username?: string
+    }>
+    publisher?: {
+        username?: string
+    }
+    links?: {
+        homepage?: string
+    }
+}
+
+interface NPMRegistrySearchObject {
+    package?: NPMRegistrySearchPackage
+}
+
+interface NPMRegistrySearchResponse {
+    objects?: NPMRegistrySearchObject[]
+}
+
+export interface AvailablePluginInfo extends PluginInfo {
+    isOfficial: boolean
+}
+
+export interface AvailablePluginsResult {
+    plugins: AvailablePluginInfo[]
+    warnings: string[]
+}
 
 
 @Injectable({ providedIn: 'root' })
@@ -25,10 +61,11 @@ export class PluginManagerService {
         this.userPluginsPath = bootstrapData.userPluginsPath
     }
 
-    listAvailable (query?: string): Observable<PluginInfo[]> {
+    listAvailable (query?: string): Observable<AvailablePluginsResult> {
+        const warnings: string[] = []
         return forkJoin(
-            this._listAvailableInternal('tabby-', 'tabby-plugin', query),
-            this._listAvailableInternal('terminus-', 'terminus-plugin', query),
+            this._listAvailableInternal('tabby-', 'tabby-plugin', query, warnings),
+            this._listAvailableInternal('terminus-', 'terminus-plugin', query, warnings),
         ).pipe(
             map(x => x.reduce((a, b) => a.concat(b), [])),
             map(x => {
@@ -42,6 +79,10 @@ export class PluginManagerService {
                 })
             }),
             map(x => x.sort((a, b) => a.name.localeCompare(b.name))),
+            map(plugins => ({
+                plugins,
+                warnings: [...warnings],
+            })),
         )
     }
 
@@ -49,38 +90,86 @@ export class PluginManagerService {
         return of(this.installedPlugins.filter(x=>x.name.includes(query)))
     }
 
-    _listAvailableInternal (namePrefix: string, keyword: string, query?: string): Observable<PluginInfo[]> {
+    _listAvailableInternal (namePrefix: string, keyword: string, query: string|undefined, warnings: string[]): Observable<AvailablePluginInfo[]> {
+        const encodedQuery = encodeURIComponent((query ?? '').trim())
+        const url = `https://registry.npmjs.com/-/v1/search?text=keywords%3A${keyword}${encodedQuery ? `%20${encodedQuery}` : ''}&size=250`
+
         return from(
-            axios.get(`https://registry.npmjs.com/-/v1/search?text=keywords%3A${keyword}%20${query}&size=250`),
+            axios.get<NPMRegistrySearchResponse>(url, { timeout: 10000 }),
         ).pipe(
-            map(response => response.data.objects
-                .filter(item => !item.keywords?.includes('tabby-dummy-transition-plugin'))
-                .map(item => ({
-                    name: item.package.name.substring(namePrefix.length),
-                    packageName: item.package.name,
-                    description: item.package.description,
-                    version: item.package.version,
-                    homepage: item.package.links.homepage,
-                    author: item.package.author?.name,
-                    isOfficial: item.package.publisher.username === OFFICIAL_NPM_ACCOUNT,
-                })),
+            map(response => response.data.objects ?? []),
+            map(items => items
+                .map(item => this.parseRegistryPlugin(item, namePrefix))
+                .filter((plugin): plugin is AvailablePluginInfo => plugin !== null),
             ),
-            map(plugins => plugins.filter(x => x.packageName.startsWith(namePrefix))),
-            map(plugins => plugins.filter(x => !PLUGIN_BLACKLIST.includes(x.packageName))),
             map(plugins => {
-                const mapping: Record<string, PluginInfo[]> = {}
+                const mapping: Record<string, AvailablePluginInfo[]> = {}
                 for (const p of plugins) {
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     mapping[p.name] ??= []
                     mapping[p.name].push(p)
                 }
                 return Object.values(mapping).map(list => {
-                    list.sort((a, b) => -semverCompare(a.version, b.version))
+                    list.sort((a, b) => this.comparePluginVersions(a, b))
                     return list[0]
                 })
             }),
             map(plugins => plugins.sort((a, b) => a.name.localeCompare(b.name))),
+            catchError(error => {
+                const warning = `Failed to load npm registry results for ${keyword}`
+                warnings.push(warning)
+                this.logger.warn(`${warning}: ${url}`, error)
+                return of([])
+            }),
         )
+    }
+
+    private parseRegistryPlugin (item: NPMRegistrySearchObject, namePrefix: string): AvailablePluginInfo | null {
+        const info = item.package
+        if (!info?.name?.startsWith(namePrefix)) {
+            return null
+        }
+        if (info.keywords?.includes('tabby-dummy-transition-plugin')) {
+            return null
+        }
+        if (PLUGIN_BLACKLIST.includes(info.name)) {
+            return null
+        }
+        if (!info.version) {
+            this.logger.warn(`Skipping plugin ${info.name}: missing version in npm registry response`)
+            return null
+        }
+
+        return {
+            name: info.name.substring(namePrefix.length),
+            packageName: info.name,
+            description: info.description ?? '',
+            version: info.version,
+            homepage: info.links?.homepage,
+            author: this.getPluginAuthor(info),
+            isOfficial: info.publisher?.username === OFFICIAL_NPM_ACCOUNT,
+            isBuiltin: false,
+            isLegacy: info.name.startsWith('terminus-') || info.keywords?.includes('terminus-plugin') || info.keywords?.includes('terminus-builtin-plugin') || false,
+        }
+    }
+
+    private getPluginAuthor (info: NPMRegistrySearchPackage): string {
+        if (typeof info.author === 'string') {
+            return info.author
+        }
+        if (info.author?.name) {
+            return info.author.name
+        }
+        return info.maintainers?.[0]?.username ?? info.publisher?.username ?? ''
+    }
+
+    private comparePluginVersions (a: PluginInfo, b: PluginInfo): number {
+        try {
+            return -semverCompare(a.version, b.version)
+        } catch (error) {
+            this.logger.warn(`Failed to compare plugin versions for ${a.packageName} (${a.version}) and ${b.packageName} (${b.version})`, error)
+            return b.version.localeCompare(a.version)
+        }
     }
 
     async installPlugin (plugin: PluginInfo): Promise<void> {

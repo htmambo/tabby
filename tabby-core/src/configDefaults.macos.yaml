@@ -16,8 +16,6 @@ hotkeys:
     - '⌘-Shift-Left'
   move-tab-right:
     - '⌘-Shift-Right'
-  rearrange-panes:
-    - 'Ctrl-Shift'
   tab-1:
     - '⌘-1'
   tab-2:
@@ -41,10 +39,6 @@ hotkeys:
   restart-tab: []
   reconnect-tab: []
   disconnect-tab: []
-  explode-tab:
-    - '⌘-Shift-.'
-  combine-tabs:
-    - '⌘-Shift-,'
   tab-11: []
   tab-12: []
   tab-13: []
@@ -55,44 +49,7 @@ hotkeys:
   tab-18: []
   tab-19: []
   tab-20: []
-  split-right:
-    - '⌘-Shift-D'
-  split-bottom:
-    - '⌘-D'
-  split-left: []
-  split-top: []
-  pane-nav-right:
-    - '⌘-⌥-Right'
-  pane-nav-down:
-    - '⌘-⌥-Down'
-  pane-nav-up:
-    - '⌘-⌥-Up'
-  pane-nav-left:
-    - '⌘-⌥-Left'
-  pane-nav-previous:
-    - '⌘-⌥-['
-  pane-nav-next:
-    - '⌘-⌥-]'
-  pane-nav-1: []
-  pane-nav-2: []
-  pane-nav-3: []
-  pane-nav-4: []
-  pane-nav-5: []
-  pane-nav-6: []
-  pane-nav-7: []
-  pane-nav-8: []
-  pane-nav-9: []
-  pane-maximize:
-    - '⌘-⌥-Enter'
-  close-pane:
-    - '⌘-Shift-W'
-  pane-increase-vertical: []
-  pane-decrease-vertical: []
-  pane-increase-horizontal: []
-  pane-decrease-horizontal: []
   profile-selector:
     - '⌘-E'
-  switch-profile:
-    - '⌘-Shift-E'
   command-selector:
     - '⌘-Shift-P'

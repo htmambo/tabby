@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
-import { BehaviorSubject, Observable, debounceTime, distinctUntilChanged, first, tap, flatMap, map } from 'rxjs'
+import { BehaviorSubject, Observable, catchError, debounceTime, distinctUntilChanged, first, map, of, shareReplay, switchMap, tap } from 'rxjs'
 import semverGt from 'semver/functions/gt'
 
 import { Component, HostBinding, Input } from '@angular/core'
 import { ConfigService, PlatformService, PluginInfo } from 'tabby-core'
-import { PluginManagerService } from '../services/pluginManager.service'
+import { AvailablePluginInfo, PluginManagerService } from '../services/pluginManager.service'
 
 enum BusyState { Installing = 'Installing', Uninstalling = 'Uninstalling' }
 
 const FORCE_ENABLE = ['tabby-core', 'tabby-settings', 'tabby-electron', 'tabby-plugin-manager']
 
 _('Search plugins')
+_('Some plugin sources failed to load. Results may be incomplete.')
+_('No plugins matched your search')
 
 /** @hidden */
 @Component({
@@ -21,11 +23,11 @@ _('Search plugins')
 })
 export class PluginsSettingsTabComponent {
     BusyState = BusyState
-    @Input() availablePlugins$: Observable<PluginInfo[]>
+    @Input() availablePlugins$: Observable<AvailablePluginInfo[]>
     @Input() availablePluginsQuery$ = new BehaviorSubject<string>('')
     @Input() availablePluginsReady = false
     @Input() installedPluginsQuery$ = new BehaviorSubject<string>('')
-    @Input() knownUpgrades: Record<string, PluginInfo|null> = {}
+    @Input() knownUpgrades: Record<string, AvailablePluginInfo|null> = {}
     @Input() busy = new Map<string, BusyState>()
     @Input() erroredPlugin: string
     @Input() errorMessage: string
@@ -33,6 +35,7 @@ export class PluginsSettingsTabComponent {
     @HostBinding('class.content-box') true
 
     installedPlugins$: PluginInfo[] = []
+    availableWarnings: string[] = []
     installedFilter = ''
     availableFilter = ''
 
@@ -49,17 +52,27 @@ export class PluginsSettingsTabComponent {
             .pipe(
                 debounceTime(200),
                 distinctUntilChanged(),
-                flatMap(query => {
+                switchMap(query => {
                     this.availablePluginsReady = false
+                    this.availableWarnings = []
                     return this.pluginManager.listAvailable(query).pipe(tap(() => {
+                        this.erroredPlugin = ''
+                        this.errorMessage = ''
                         this.availablePluginsReady = true
+                    }), map(result => {
+                        this.availableWarnings = result.warnings
+                        return result.plugins
+                    }), catchError(error => {
+                        console.error('Error listing available plugins', error)
+                        this.erroredPlugin = 'available plugins'
+                        this.errorMessage = `${error}`
+                        this.availablePluginsReady = true
+                        return of([])
                     }))
                 }),
+                shareReplay({ bufferSize: 1, refCount: true }),
             )
-        this.availablePlugins$.pipe(first(), map((plugins: PluginInfo[]) => {
-            plugins.sort((a, b) => a.name > b.name ? 1 : -1)
-            return plugins
-        })).subscribe(available => {
+        this.availablePlugins$.pipe(first()).subscribe(available => {
             for (const plugin of this.pluginManager.installedPlugins) {
                 this.knownUpgrades[plugin.name] = available.find(x => x.name === plugin.name && semverGt(x.version, plugin.version)) ?? null
             }
@@ -70,7 +83,7 @@ export class PluginsSettingsTabComponent {
             .pipe(
                 debounceTime(200),
                 distinctUntilChanged(),
-                flatMap(query => {
+                switchMap(query => {
                     return this.pluginManager.listInstalled(query)
                 }),
             ).subscribe(plugin => {

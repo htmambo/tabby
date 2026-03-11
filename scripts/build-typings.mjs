@@ -3,7 +3,7 @@ import sh from 'shelljs'
 import * as vars from './vars.mjs'
 import log from 'npmlog'
 
-vars.builtinPlugins.forEach(plugin => {
+vars.packagesWithTypings.forEach(plugin => {
     log.info('typings', plugin)
-    sh.exec(`yarn tsc --project ${plugin}/tsconfig.typings.json`, { fatal: true })
+    sh.exec(`yarn tsc --project ${vars.resolvePackageRelativePath(plugin, 'tsconfig.typings.json')}`, { fatal: true })
 })

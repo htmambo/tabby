@@ -22,7 +22,7 @@ sh.cd('..')
 for (let plugin of vars.allPackages) {
     log.info('deps', plugin)
     await runYarnInstallWithRetry({
-        cwd: path.join(process.cwd(), plugin),
+        cwd: vars.resolvePackageDir(plugin),
         args: ['install', '--force', '--network-timeout', '1000000'],
         label: `install ${plugin} deps`,
     })
@@ -31,7 +31,7 @@ for (let plugin of vars.allPackages) {
 if (['darwin', 'linux'].includes(process.platform)) {
     sh.cd('node_modules')
     for (let x of vars.builtinPlugins) {
-        sh.ln('-fs', '../' + x, x)
+        sh.ln('-fs', path.relative(process.cwd(), vars.resolvePackageDir(x)), x)
     }
     sh.cd('..')
 }

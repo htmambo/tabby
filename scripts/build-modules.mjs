@@ -3,11 +3,12 @@ import * as vars from './vars.mjs'
 import log from 'npmlog'
 import webpack from 'webpack'
 import { promisify } from 'node:util'
+import { pathToFileURL } from 'node:url'
 
 const configs = [
     '../app/webpack.config.main.mjs',
     '../app/webpack.config.mjs',
-    ...vars.allPackages.map(x => `../${x}/webpack.config.mjs`),
+    ...vars.buildablePackages.map(x => pathToFileURL(vars.resolvePackageFile(x, 'webpack.config.mjs')).href),
 ]
 
 ;(async () => {
