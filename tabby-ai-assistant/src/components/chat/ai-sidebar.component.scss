@@ -584,6 +584,15 @@
         }
     }
 
+    .send-btn.stop-btn {
+        background: var(--ai-danger, #ff6b6b);
+
+        &:hover:not(:disabled) {
+            background: var(--ai-danger-hover, #fa5252);
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.35);
+        }
+    }
+
     .input-footer {
         margin-top: 6px;
         display: flex;

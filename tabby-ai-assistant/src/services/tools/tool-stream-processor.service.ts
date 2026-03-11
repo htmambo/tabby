@@ -7,6 +7,7 @@ import {
     UIToolCompleteEvent,
     UIToolErrorEvent,
     UIRoundDividerEvent,
+    UIRoundEndEvent,
     UIAgentDoneEvent,
     UITaskSummaryEvent,
     AgentDoneReason
@@ -194,7 +195,7 @@ export class ToolStreamProcessorService {
                     break;
                     
                 case 'round_end':
-                    // 轮次结束，可选处理
+                    this.processRoundEnd(event, timestamp);
                     break;
                     
                 case 'agent_complete':
@@ -392,6 +393,21 @@ export class ToolStreamProcessorService {
 
             this.uiEventSubject.next(uiEvent);
         }
+    }
+
+    /**
+     * 处理轮次结束
+     */
+    private processRoundEnd(event: AgentStreamEvent, timestamp: number): void {
+        if (!this.uiEventSubject) return;
+
+        const uiEvent: UIRoundEndEvent = {
+            type: 'round_end',
+            timestamp,
+            roundNumber: event.round || 0
+        };
+
+        this.uiEventSubject.next(uiEvent);
     }
 
     /**

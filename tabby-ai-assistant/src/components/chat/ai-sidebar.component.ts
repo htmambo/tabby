@@ -84,7 +84,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
 
             <!-- Messages -->
             <div class="ai-sidebar-messages" #chatContainer (scroll)="onScroll($event)" (wheel)="onWheel($event)">
-                <div *ngFor="let message of messages; let i = index" class="message-item" [ngClass]="message.role">
+                <div *ngFor="let message of messages; let i = index" class="message-item" [ngClass]="message.role" [attr.data-message-id]="message.id">
                     <div class="message-avatar">
                         <svg *ngIf="message.role === 'user'" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
@@ -228,12 +228,22 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                         rows="1">
                     </textarea>
                     <button
+                        *ngIf="!isLoading"
                         class="send-btn"
-                        [disabled]="!inputValue.trim() || isLoading"
+                        [disabled]="!inputValue.trim()"
                         (click)="submit()"
                         title="发送消息">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                        </svg>
+                    </button>
+                    <button
+                        *ngIf="isLoading"
+                        class="send-btn stop-btn"
+                        (click)="cancelRequest()"
+                        title="停止生成">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 3h10v10H3z"/>
                         </svg>
                     </button>
                 </div>
@@ -290,7 +300,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private readonly AUTO_SCROLL_THRESHOLD = 80
     private initialAutoScrollPending = false
     private detectChangesPending = false
+    private pendingAfterDetectChanges: Array<() => void> = []
     private scrollRefreshPending = false
+    private activeAiMessageId: string | null = null
+    private aiStartScrollPending = false
+    private userScrolledDuringResponse = false
 
     constructor(
         private aiService: AiAssistantService,
@@ -723,6 +737,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             timestamp: new Date()
         }
         this.messages.push(aiMessage)
+        this.activeAiMessageId = aiMessage.id
+        this.userScrolledDuringResponse = false
 
         try {
             // 构建用于 Agent 的消息列表（限制历史消息数量）
@@ -815,6 +831,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 })
                 break
 
+            case 'round_end':
+                // 轮次结束，无需新增内容
+                break
+
             case 'agent_done':
                 // 添加状态块
                 message.uiBlocks.push({
@@ -843,9 +863,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 break
         }
 
-        this.shouldScrollToBottom = true
-        this.scheduleAutoScroll()
-        this.scheduleDetectChanges()
+        const shouldForceScroll = event.type !== 'round_end'
+        if (shouldForceScroll) {
+            this.shouldScrollToBottom = true
+            this.scheduleAutoScroll()
+            this.scheduleDetectChanges()
+        } else {
+            // 中间轮次结束时，等 DOM 落地后再触发滚动刷新
+            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
+        }
     }
 
     /**
@@ -855,7 +881,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.logger.error('Agent stream error', error)
         message.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`
         this.finalizeStream()
-        this.scheduleDetectChanges()
     }
 
     /**
@@ -863,7 +888,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private handleStreamComplete(message: ChatMessage): void {
         this.finalizeStream()
-        this.scheduleDetectChanges()
     }
 
     /**
@@ -878,8 +902,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.updateTokenUsage()
         this.saveChatHistory()
         this.shouldScrollToBottom = true
-        this.scheduleDetectChanges()
-        this.scheduleScrollRefresh()
+        this.scheduleDetectChanges(() => {
+            this.scheduleScrollRefresh()
+            this.scheduleScrollToAiMessageStart()
+        })
     }
 
     /**
@@ -913,6 +939,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             timestamp: new Date()
         }
         this.messages.push(aiMessage)
+        this.activeAiMessageId = aiMessage.id
+        this.userScrolledDuringResponse = false
 
         // 工具调用跟踪
         const pendingTools = new Map<string, { name: string; startTime: number }>()
@@ -990,6 +1018,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                 aiMessage.content += toolResults.join('')
                             }
                             this.logger.info('Stream completed')
+                            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                             break
                     }
                 }),
@@ -1005,6 +1034,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     this.updateTokenUsage()
                     this.saveChatHistory()
                     this.shouldScrollToBottom = true
+                    this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                 })
             })
 
@@ -1210,6 +1240,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const clientHeight = container.clientHeight
         const distanceFromBottom = Math.max(scrollHeight - (scrollTop + clientHeight), 0)
         this.isUserNearBottom = distanceFromBottom <= this.AUTO_SCROLL_THRESHOLD
+        if (this.isLoading && !this.isUserNearBottom) {
+            this.userScrolledDuringResponse = true
+        }
 
         // 判断是否显示滚动按钮
         const showTop = scrollTop > 50
@@ -1269,25 +1302,111 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     }
 
     private triggerScrollRefresh(): void {
-        const container = this.chatContainerRef?.nativeElement as HTMLElement | undefined
+        const container = this.resolveSidebarMessagesContainer()
         if (!container) {
+            this.logger.warn('[AI Sidebar] Scroll refresh skipped: container not found')
             return
         }
-        const original = container.scrollTop
+        const before = container.scrollTop
         const max = Math.max(container.scrollHeight - container.clientHeight, 0)
-        if (max <= 0) {
+        const delta = 10
+        const up = Math.max(before - delta, 0)
+
+        this.logger.info('[AI Sidebar] Scroll refresh scheduled', {
+            before,
+            delta,
+            up,
+            max,
+            height: container.scrollHeight,
+            clientHeight: container.clientHeight
+        })
+
+        window.setTimeout(() => {
+            container.scrollTop = up
+            container.dispatchEvent(new Event('scroll'))
+            // 强制一次 reflow，确保 scrollTop 写入生效
+            void container.offsetHeight
+            this.logger.info('[AI Sidebar] Scroll refresh (up)', {
+                before,
+                delta,
+                up,
+                applied: container.scrollTop,
+                max,
+                height: container.scrollHeight,
+                clientHeight: container.clientHeight
+            })
+
+            requestAnimationFrame(() => {
+                container.scrollTop = max
+                container.dispatchEvent(new Event('scroll'))
+                this.logger.info('[AI Sidebar] Scroll refresh (down)', {
+                    before,
+                    delta,
+                    up,
+                    applied: container.scrollTop,
+                    max,
+                    height: container.scrollHeight,
+                    clientHeight: container.clientHeight
+                })
+            })
+        }, 0)
+    }
+
+    private resolveSidebarMessagesContainer(): HTMLElement | null {
+        return document.getElementsByClassName('ai-sidebar-messages')[0] as HTMLElement | null
+            ?? (this.chatContainerRef?.nativeElement as HTMLElement | undefined)
+            ?? (document.querySelector('.ai-sidebar-messages') as HTMLElement | null)
+    }
+
+    /**
+     * 调度滚动到当前 AI 回复起始位置（仅在本轮输出超过可见区域时触发）
+     */
+    private scheduleScrollToAiMessageStart(): void {
+        if (this.userScrolledDuringResponse) {
+            return
+        }
+        if (this.aiStartScrollPending) {
+            return
+        }
+        this.aiStartScrollPending = true
+        window.setTimeout(() => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    this.aiStartScrollPending = false
+                    this.scrollToAiMessageStartIfNeeded()
+                })
+            })
+        }, 0)
+    }
+
+    private scrollToAiMessageStartIfNeeded(): void {
+        const container = this.resolveSidebarMessagesContainer()
+        if (!container || !this.activeAiMessageId) {
+            return
+        }
+        const selector = `[data-message-id="${this.activeAiMessageId}"]`
+        const messageEl = container.querySelector(selector) as HTMLElement | null
+        if (!messageEl) {
             return
         }
 
-        const next = original < max ? Math.min(original + 1, max) : Math.max(original - 1, 0)
-        container.scrollTop = next
-        container.scrollTop = original
+        const messageHeight = messageEl.offsetHeight
+        const visibleHeight = container.clientHeight
+        if (messageHeight <= visibleHeight) {
+            return
+        }
+
+        const targetTop = messageEl.offsetTop
+        container.scrollTo({ top: targetTop, behavior: 'smooth' })
     }
 
     /**
      * 调度变更检测（Zoneless 兼容）
      */
-    private scheduleDetectChanges(): void {
+    private scheduleDetectChanges(after?: () => void): void {
+        if (after) {
+            this.pendingAfterDetectChanges.push(after)
+        }
         if (this.detectChangesPending) {
             return
         }
@@ -1303,6 +1422,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                         this.cdr.detectChanges()
                     } catch {
                         // 忽略销毁期间的变更检测异常
+                    }
+                }
+                const callbacks = this.pendingAfterDetectChanges.splice(0)
+                for (const callback of callbacks) {
+                    try {
+                        callback()
+                    } catch (error) {
+                        this.logger.error('[AI Sidebar] Post-detect callback failed', error)
                     }
                 }
             })
@@ -1438,6 +1565,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             setTimeout(() => this.autoResize(), 0)
             this.textInput?.nativeElement.focus()
         }
+    }
+
+    /**
+     * 强制中断当前 AI 请求
+     */
+    cancelRequest(): void {
+        if (!this.isLoading) {
+            return
+        }
+        this.logger.info('[AI Sidebar] User cancelled AI response')
+        this.toolStreamProcessor.cancel()
     }
 
     /**

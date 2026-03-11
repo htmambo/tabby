@@ -44,7 +44,7 @@
                              'user-message': message.role === 'user',
                              'assistant-message': message.role === 'assistant',
                              'system-message': message.role === 'system'
-                         }">
+                         }" [attr.data-message-id]="message.id">
                         <!-- 头像 -->
                         <div class="message-avatar" *ngIf="showAvatars">
                             <div *ngIf="message.role === 'user'" class="avatar user">

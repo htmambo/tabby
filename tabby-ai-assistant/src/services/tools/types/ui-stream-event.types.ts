@@ -20,6 +20,7 @@ export type UIEventType =
     | 'tool_complete'  // 工具完成（显示结果）
     | 'tool_error'     // 工具错误
     | 'round_divider'  // 轮次分隔线
+    | 'round_end'      // 轮次结束（用于触发 UI 刷新）
     | 'agent_done'     // Agent 完成
     | 'task_summary'   // 任务总结（task_complete 工具专用）
     | 'async_task'     // 异步任务状态更新
@@ -163,6 +164,15 @@ export interface UIRoundDividerEvent extends UIStreamEvent {
 }
 
 /**
+ * 轮次结束事件（用于触发 UI 刷新）
+ */
+export interface UIRoundEndEvent extends UIStreamEvent {
+    type: 'round_end';
+    /** 轮次编号（可选） */
+    roundNumber?: number;
+}
+
+/**
  * Agent 完成事件
  */
 export interface UIAgentDoneEvent extends UIStreamEvent {
@@ -240,6 +250,7 @@ export type AnyUIStreamEvent =
     | UIToolCompleteEvent
     | UIToolErrorEvent
     | UIRoundDividerEvent
+    | UIRoundEndEvent
     | UIAgentDoneEvent
     | UITaskSummaryEvent
     | UIAsyncTaskEvent

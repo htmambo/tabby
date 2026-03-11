@@ -20,6 +20,17 @@ function normalizePath (p: string): string {
 }
 
 const builtinPluginsPath = process.env.TABBY_DEV ? path.dirname(remote.app.getAppPath()) : path.join((process as any).resourcesPath, 'builtin-plugins')
+const configuredBuiltinPluginRootPaths = (process.env.TABBY_BUILTIN_PLUGINS || '')
+    .split(path.delimiter)
+    .filter(Boolean)
+    .map(x => normalizePath(path.resolve(x)))
+const builtinPluginRootPaths = [
+    normalizePath(builtinPluginsPath),
+    ...configuredBuiltinPluginRootPaths,
+]
+const builtinPluginRoots = new Set<string>([
+    ...builtinPluginRootPaths.map(x => normalizePathForCompare(x)),
+])
 
 const cachedBuiltinModules = {
     '@angular/animations': require('@angular/animations'),
@@ -68,6 +79,20 @@ nodeModule.prototype.require = function (query: string) {
 
 export type ProgressCallback = (current: number, total: number) => void
 
+function isBuiltinPluginDir (pluginDir: string): boolean {
+    return builtinPluginRoots.has(normalizePathForCompare(pluginDir))
+}
+
+function resolveBuiltinPackagePath (packageName: string): string | null {
+    for (const root of builtinPluginRootPaths) {
+        const candidate = path.join(root, packageName)
+        if (require('fs').existsSync(path.join(candidate, 'package.json'))) {
+            return candidate
+        }
+    }
+    return null
+}
+
 export function initModuleLookup (userPluginsPath: string): void {
     global['module'].paths.map((x: string) => nodeModule.globalPaths.push(normalizePath(x)))
 
@@ -83,15 +108,27 @@ export function initModuleLookup (userPluginsPath: string): void {
     paths.unshift(builtinPluginsPath)
     // paths.unshift(path.join((process as any).resourcesPath, 'app.asar', 'node_modules'))
     if (process.env.TABBY_PLUGINS) {
-        process.env.TABBY_PLUGINS.split(':').map(x => paths.push(normalizePath(x)))
+        process.env.TABBY_PLUGINS
+            .split(path.delimiter)
+            .filter(Boolean)
+            .map(x => paths.push(normalizePath(path.resolve(x))))
     }
 
-    process.env.NODE_PATH += path.delimiter + paths.join(path.delimiter)
+    process.env.NODE_PATH = [
+        process.env.NODE_PATH || '',
+        paths.join(path.delimiter),
+    ].filter(Boolean).join(path.delimiter)
     nodeModule._initPaths()
 
     builtinModules.forEach(m => {
         if (!cachedBuiltinModules[m]) {
-            cachedBuiltinModules[m] = nodeRequire(m)
+            const builtinPackagePath = resolveBuiltinPackagePath(m)
+            if (builtinPackagePath) {
+                cachedBuiltinModules[m] = nodeRequire(builtinPackagePath)
+                console.info(`Pinned builtin module ${m} to ${builtinPackagePath}`)
+            } else {
+                cachedBuiltinModules[m] = nodeRequire(m)
+            }
         }
     })
 }
@@ -177,7 +214,7 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
         return {
             name: name,
             packageName: packageName,
-            isBuiltin: pluginDir === builtinPluginsPath,
+            isBuiltin: isBuiltinPluginDir(pluginDir),
             isLegacy: info.keywords.includes('terminus-plugin') || info.keywords.includes('terminus-builtin-plugin'),
             version: info.version,
             description: info.description,
@@ -259,7 +296,7 @@ export async function findPlugins (): Promise<PluginInfo[]> {
     const foundPluginsPromises: Promise<PluginInfo|null>[] = []
     for (const { pluginDir, packageName } of candidateLocations) {
 
-        if (builtinModules.includes(packageName) && pluginDir !== builtinPluginsPath) {
+        if (builtinModules.includes(packageName) && !isBuiltinPluginDir(pluginDir)) {
             continue
         }
 
@@ -317,6 +354,12 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 const pluginModule = pluginRootModule.forRoot ? pluginRootModule.forRoot() : pluginRootModule
                 pluginModule.pluginName = foundPlugin.name
                 pluginModule.bootstrap = packageModule.bootstrap
+                console.info(`Loaded ${foundPlugin.name}:`, {
+                    hasDefaultExport: !!packageModule.default,
+                    hasBootstrapExport: !!packageModule.bootstrap,
+                    pluginName: pluginModule.pluginName,
+                    moduleName: pluginModule?.constructor?.name,
+                })
                 plugins.push(pluginModule)
             } catch (error) {
                 console.error(`Could not load ${foundPlugin.name}:`, error)

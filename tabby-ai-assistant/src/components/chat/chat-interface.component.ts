@@ -40,6 +40,12 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
     private destroy$ = new Subject<void>();
     private shouldScrollToBottom = false;
+    private activeAiMessageId: string | null = null;
+    private aiStartScrollPending = false;
+    private userScrolledDuringResponse = false;
+    private isUserNearBottom = true;
+    private readonly AUTO_SCROLL_THRESHOLD = 80;
+    private scrollRefreshPending = false;
     private notificationSound: HTMLAudioElement | null = null;
 
     constructor(
@@ -230,6 +236,8 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             timestamp: new Date()
         };
         this.messages.push(aiMessage);
+        this.activeAiMessageId = aiMessage.id;
+        this.userScrolledDuringResponse = false;
 
         try {
             // 使用 ToolStreamProcessorService 处理流式事件
@@ -302,6 +310,11 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                 });
                 break;
 
+            case 'round_end':
+                // 轮次结束，无需新增内容
+                this.scheduleScrollRefresh();
+                break;
+
             case 'agent_done':
                 message.uiBlocks.push({
                     type: 'status',
@@ -309,6 +322,8 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                     text: event.reasonText,
                     rounds: event.totalRounds
                 });
+                this.scheduleScrollToAiMessageStart();
+                this.scheduleScrollRefresh();
                 break;
 
             case 'error':
@@ -316,7 +331,10 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                 break;
         }
 
-        this.shouldScrollToBottom = true;
+        const shouldForceScroll = event.type !== 'round_end';
+        if (shouldForceScroll) {
+            this.shouldScrollToBottom = true;
+        }
     }
 
     /**
@@ -327,6 +345,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         message.content += `\n\n❌ ${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         this.isLoading = false;
         this.shouldScrollToBottom = true;
+        this.scheduleScrollToAiMessageStart();
         this.saveChatHistory();
     }
 
@@ -337,6 +356,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.isLoading = false;
         this.saveChatHistory();
         this.shouldScrollToBottom = true;
+        this.scheduleScrollToAiMessageStart();
     }
 
     /**
@@ -374,6 +394,8 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             timestamp: new Date()
         };
         this.messages.push(aiMessage);
+        this.activeAiMessageId = aiMessage.id;
+        this.userScrolledDuringResponse = false;
 
         // 工具调用状态跟踪
         let pendingToolCalls: Map<string, { name: string; startTime: number }> = new Map();
@@ -456,6 +478,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                         this.logger.info('Stream completed');
                         this.playNotificationSound();
                         this.shouldScrollToBottom = true;
+                        this.scheduleScrollRefresh();
                     }
                 },
                 error: (error) => {
@@ -463,12 +486,14 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                     aiMessage.content += `\n\n${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}`;
                     this.isLoading = false;
                     this.shouldScrollToBottom = true;
+                    this.scheduleScrollRefresh();
                     this.saveChatHistory();
                 },
                 complete: () => {
                     this.isLoading = false;
                     this.saveChatHistory();
                     this.shouldScrollToBottom = true;
+                    this.scheduleScrollRefresh();
                 }
             });
 
@@ -616,6 +641,91 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     }
 
     /**
+     * 调度滚动刷新（先上移再到底部，触发渲染）
+     */
+    private scheduleScrollRefresh(): void {
+        if (this.scrollRefreshPending) {
+            return;
+        }
+        this.scrollRefreshPending = true;
+        window.setTimeout(() => {
+            this.scrollRefreshPending = false;
+            this.triggerScrollRefresh();
+        }, 50);
+    }
+
+    private triggerScrollRefresh(): void {
+        const chatContainer = this.chatContainerRef?.nativeElement || document.querySelector('.ai-chat-container');
+        if (!chatContainer) {
+            return;
+        }
+        const container = chatContainer as HTMLElement;
+        const max = Math.max(container.scrollHeight - container.clientHeight, 0);
+        const delta = 12;
+        const up = Math.max(container.scrollTop - delta, 0);
+        container.scrollTop = up;
+        this.logger.info('[Chat Interface] Scroll refresh (up)', {
+            delta,
+            up,
+            max,
+            height: container.scrollHeight,
+            clientHeight: container.clientHeight
+        });
+        window.setTimeout(() => {
+            container.scrollTop = max;
+            this.logger.info('[Chat Interface] Scroll refresh (down)', {
+                delta,
+                up,
+                max,
+                height: container.scrollHeight,
+                clientHeight: container.clientHeight
+            });
+        }, 30);
+    }
+
+    /**
+     * 调度滚动到当前 AI 回复起始位置（仅在本轮输出超过可见区域时触发）
+     */
+    private scheduleScrollToAiMessageStart(): void {
+        if (this.userScrolledDuringResponse) {
+            return;
+        }
+        if (this.aiStartScrollPending) {
+            return;
+        }
+        this.aiStartScrollPending = true;
+        window.setTimeout(() => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    this.aiStartScrollPending = false;
+                    this.scrollToAiMessageStartIfNeeded();
+                });
+            });
+        }, 0);
+    }
+
+    private scrollToAiMessageStartIfNeeded(): void {
+        const chatContainer = this.chatContainerRef?.nativeElement || document.querySelector('.ai-chat-container');
+        if (!chatContainer || !this.activeAiMessageId) {
+            return;
+        }
+        const selector = `[data-message-id="${this.activeAiMessageId}"]`;
+        const messageEl = (chatContainer as HTMLElement).querySelector(selector) as HTMLElement | null;
+        if (!messageEl) {
+            return;
+        }
+
+        const messageHeight = messageEl.offsetHeight;
+        const visibleHeight = (chatContainer as HTMLElement).clientHeight;
+        if (messageHeight <= visibleHeight) {
+            return;
+        }
+
+        const targetTop = messageEl.offsetTop;
+        (chatContainer as HTMLElement).scrollTo({ top: targetTop, behavior: 'smooth' });
+    }
+
+    /**
      * 处理滚动事件
      */
     onScroll(event: Event): void {
@@ -641,6 +751,11 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         const scrollTop = container.scrollTop;
         const scrollHeight = container.scrollHeight;
         const clientHeight = container.clientHeight;
+        const distanceFromBottom = Math.max(scrollHeight - (scrollTop + clientHeight), 0);
+        this.isUserNearBottom = distanceFromBottom <= this.AUTO_SCROLL_THRESHOLD;
+        if (this.isLoading && !this.isUserNearBottom) {
+            this.userScrolledDuringResponse = true;
+        }
 
         // 判断是否显示滚动按钮
         this.showScrollTop = scrollTop > 50;
