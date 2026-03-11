@@ -1,19 +1,19 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types';
-import { AiAssistantService } from '../../services/core/ai-assistant.service';
-import { ConfigProviderService } from '../../services/core/config-provider.service';
-import { LoggerService } from '../../services/core/logger.service';
-import { ChatHistoryService } from '../../services/chat/chat-history.service';
-import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
-import { ThemeService } from '../../services/core/theme.service';
-import { ContextManager } from '../../services/context/manager';
-import { ToolStreamProcessorService } from '../../services/tools/tool-stream-processor.service';
-import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.types';
-import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../types/provider.types';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core'
+import { CommonModule } from '@angular/common'
+import { FormsModule } from '@angular/forms'
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
+import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types'
+import { AiAssistantService } from '../../services/core/ai-assistant.service'
+import { ConfigProviderService } from '../../services/core/config-provider.service'
+import { LoggerService } from '../../services/core/logger.service'
+import { ChatHistoryService } from '../../services/chat/chat-history.service'
+import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
+import { ThemeService } from '../../services/core/theme.service'
+import { ContextManager } from '../../services/context/manager'
+import { ToolStreamProcessorService } from '../../services/tools/tool-stream-processor.service'
+import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.types'
+import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../types/provider.types'
 
 /**
  * AI Sidebar 组件 - 替代 ChatInterfaceComponent
@@ -246,51 +246,51 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
         </div>
     `,
     styleUrls: ['./ai-sidebar.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
 })
 export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, AfterViewInit {
     // HostBinding 确保样式正确应用
-    @HostBinding('style.display') displayStyle = 'flex';
-    @HostBinding('style.flex-direction') flexDirection = 'column';
-    @HostBinding('style.height') heightStyle = '100%';
-    @HostBinding('style.width') widthStyle = '100%';
-    @HostBinding('style.overflow') overflowStyle = 'hidden';
+    @HostBinding('style.display') displayStyle = 'flex'
+    @HostBinding('style.flex-direction') flexDirection = 'column'
+    @HostBinding('style.height') heightStyle = '100%'
+    @HostBinding('style.width') widthStyle = '100%'
+    @HostBinding('style.overflow') overflowStyle = 'hidden'
 
-    @ViewChild('chatContainer') chatContainerRef!: ElementRef;
-    @ViewChild('textInput') textInput!: ElementRef<HTMLTextAreaElement>;
+    @ViewChild('chatContainer') chatContainerRef!: ElementRef
+    @ViewChild('textInput') textInput!: ElementRef<HTMLTextAreaElement>
 
     // 服务引用（由 AiSidebarService 注入）
-    public sidebarService!: AiSidebarService;
+    sidebarService!: AiSidebarService
 
     // 组件状态
-    messages: ChatMessage[] = [];
-    isLoading = false;
-    currentProvider: string = '';
-    selectedProvider: string = '';
-    providerOptions: Array<{ name: string; displayName: string; enabled: boolean; configured: boolean }> = [];
-    currentSessionId: string = '';
-    showScrollTop = false;
-    showScrollBottom = false;
-    inputValue = '';
-    isComposing = false;
-    charLimit = 4000;
+    messages: ChatMessage[] = []
+    isLoading = false
+    currentProvider = ''
+    selectedProvider = ''
+    providerOptions: { name: string; displayName: string; enabled: boolean; configured: boolean }[] = []
+    currentSessionId = ''
+    showScrollTop = false
+    showScrollBottom = false
+    inputValue = ''
+    isComposing = false
+    charLimit = 4000
 
     // Agent 模式配置
     /** Agent 模式最多保留的历史消息数量（不包含系统消息） */
-    private readonly MAX_AGENT_HISTORY = 10;
+    private readonly MAX_AGENT_HISTORY = 10
 
-    private destroy$ = new Subject<void>();
-    private shouldScrollToBottom = false;
-    private pendingLoadingUpdate: number | null = null;
-    private pendingScrollUpdate: number | null = null;
-    private queuedScrollState: { showTop: boolean; showBottom: boolean } | null = null;
-    private streamFinalized = false;
-    private autoScrollPending = false;
-    private isUserNearBottom = true;
-    private readonly AUTO_SCROLL_THRESHOLD = 80;
-    private initialAutoScrollPending = false;
-    private detectChangesPending = false;
-    private scrollRefreshPending = false;
+    private destroy$ = new Subject<void>()
+    private shouldScrollToBottom = false
+    private pendingLoadingUpdate: number | null = null
+    private pendingScrollUpdate: number | null = null
+    private queuedScrollState: { showTop: boolean; showBottom: boolean } | null = null
+    private streamFinalized = false
+    private autoScrollPending = false
+    private isUserNearBottom = true
+    private readonly AUTO_SCROLL_THRESHOLD = 80
+    private initialAutoScrollPending = false
+    private detectChangesPending = false
+    private scrollRefreshPending = false
 
     constructor(
         private aiService: AiAssistantService,
@@ -310,72 +310,72 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.themeService.theme$.pipe(
             takeUntil(this.destroy$)
         ).subscribe(theme => {
-            this.logger.debug('Sidebar theme changed', { theme });
-        });
+            this.logger.debug('Sidebar theme changed', { theme })
+        })
 
         // 生成或加载会话 ID
-        this.currentSessionId = this.generateSessionId();
+        this.currentSessionId = this.generateSessionId()
 
         // 加载当前提供商信息
-        this.loadCurrentProvider();
+        this.loadCurrentProvider()
 
         // 加载聊天历史
-        this.loadChatHistory();
+        this.loadChatHistory()
 
         // 发送欢迎消息（仅在没有历史记录时）
         if (this.messages.length === 0) {
-            this.sendWelcomeMessage();
+            this.sendWelcomeMessage()
         }
-        this.updateTokenUsage();
+        this.updateTokenUsage()
 
         this.config.onConfigChange().pipe(
             takeUntil(this.destroy$)
         ).subscribe(change => {
             if (change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === '*' || change.key === 'providers') {
-                this.refreshProviderState();
+                this.refreshProviderState()
             }
-        });
+        })
 
-        this.refreshProviderState();
+        this.refreshProviderState()
 
         // 订阅预设消息（快捷键功能）
         this.sidebarService.presetMessage$.pipe(
             takeUntil(this.destroy$)
         ).subscribe(({ message, autoSend }) => {
-            this.inputValue = message;
+            this.inputValue = message
 
             if (autoSend) {
                 // 延迟一点确保 UI 更新
-                setTimeout(() => this.submit(), 100);
+                setTimeout(() => this.submit(), 100)
             } else {
                 // 聚焦输入框
-                this.textInput?.nativeElement?.focus();
+                this.textInput?.nativeElement?.focus()
             }
-        });
+        })
 
         // 延迟检查滚动状态（等待 DOM 渲染）
-        setTimeout(() => this.checkScrollState(), 100);
+        setTimeout(() => this.checkScrollState(), 100)
     }
 
     ngOnDestroy(): void {
         // 保存当前会话
-        this.saveChatHistory();
+        this.saveChatHistory()
         if (this.pendingLoadingUpdate !== null) {
-            window.clearTimeout(this.pendingLoadingUpdate);
-            this.pendingLoadingUpdate = null;
+            window.clearTimeout(this.pendingLoadingUpdate)
+            this.pendingLoadingUpdate = null
         }
         if (this.pendingScrollUpdate !== null) {
-            window.clearTimeout(this.pendingScrollUpdate);
-            this.pendingScrollUpdate = null;
-            this.queuedScrollState = null;
+            window.clearTimeout(this.pendingScrollUpdate)
+            this.pendingScrollUpdate = null
+            this.queuedScrollState = null
         }
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.destroy$.next()
+        this.destroy$.complete()
     }
 
     ngAfterViewInit(): void {
         // 强制设置滚动样式 - 绕过 CSS 优先级问题
-        this.forceScrollStyles();
+        this.forceScrollStyles()
     }
 
     /**
@@ -384,28 +384,28 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private forceScrollStyles(): void {
         setTimeout(() => {
-            const container = this.chatContainerRef?.nativeElement;
+            const container = this.chatContainerRef?.nativeElement
             if (container) {
                 // 直接设置内联样式 - 优先级最高
-                container.style.flex = '1 1 auto';
-                container.style.height = '0';
-                container.style.minHeight = '0';
-                container.style.overflowY = 'auto';
-                container.style.overflowX = 'hidden';
-                container.style.display = 'block';
-                this.logger.debug('[AI Sidebar] Scroll styles applied via JS');
+                container.style.flex = '1 1 auto'
+                container.style.height = '0'
+                container.style.minHeight = '0'
+                container.style.overflowY = 'auto'
+                container.style.overflowX = 'hidden'
+                container.style.display = 'block'
+                this.logger.debug('[AI Sidebar] Scroll styles applied via JS')
             }
         }, 100);  // 延迟确保 DOM 已渲染
     }
 
     ngAfterViewChecked(): void {
         if (this.shouldScrollToBottom) {
-            this.scheduleAutoScroll(true);
-            this.shouldScrollToBottom = false;
+            this.scheduleAutoScroll(true)
+            this.shouldScrollToBottom = false
         }
         if (this.initialAutoScrollPending && this.chatContainerRef?.nativeElement) {
-            this.initialAutoScrollPending = false;
-            this.scheduleAutoScroll(true);
+            this.initialAutoScrollPending = false
+            this.scheduleAutoScroll(true)
         }
     }
 
@@ -413,46 +413,46 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 加载当前提供商信息
      */
     private loadCurrentProvider(): void {
-        this.refreshProviderState();
+        this.refreshProviderState()
     }
 
     private refreshProviderState(): void {
-        let providerStatus: any = null;
+        let providerStatus: any = null
         try {
-            providerStatus = this.aiService.getProviderStatus();
+            providerStatus = this.aiService.getProviderStatus()
         } catch (error) {
-            this.logger.warn('Failed to read provider status', error);
+            this.logger.warn('Failed to read provider status', error)
         }
 
-        const configs = this.config.getAllProviderConfigs();
-        const statusProviders = new Map<string, any>();
+        const configs = this.config.getAllProviderConfigs()
+        const statusProviders = new Map<string, any>()
         if (providerStatus?.all) {
             for (const info of providerStatus.all) {
-                statusProviders.set(info.name, info);
+                statusProviders.set(info.name, info)
             }
         }
 
         const optionNames = new Set<string>([
             ...Object.keys(configs),
             ...Array.from(statusProviders.keys())
-        ]);
+        ])
 
         this.providerOptions = Array.from(optionNames).map(name => {
-            const providerConfig = configs[name] ?? null;
-            const statusInfo = statusProviders.get(name);
+            const providerConfig = configs[name] ?? null
+            const statusInfo = statusProviders.get(name)
             return {
                 name,
                 displayName: providerConfig?.displayName || statusInfo?.displayName || name,
                 enabled: providerConfig?.enabled !== false,
                 configured: this.isProviderConfigured(name, providerConfig)
-            };
-        }).sort((a, b) => a.displayName.localeCompare(b.displayName));
+            }
+        }).sort((a, b) => a.displayName.localeCompare(b.displayName))
 
-        const activeProviderName = providerStatus?.active?.name || this.config.getDefaultProvider() || '';
-        const activeDisplayName = this.getProviderDisplayName(activeProviderName, configs, statusProviders);
+        const activeProviderName = providerStatus?.active?.name || this.config.getDefaultProvider() || ''
+        const activeDisplayName = this.getProviderDisplayName(activeProviderName, configs, statusProviders)
 
-        this.selectedProvider = activeProviderName;
-        this.currentProvider = activeDisplayName || '未配置';
+        this.selectedProvider = activeProviderName
+        this.currentProvider = activeDisplayName || '未配置'
     }
 
     private getProviderDisplayName(
@@ -461,40 +461,40 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         statusProviders: Map<string, any>
     ): string {
         if (!providerName) {
-            return '';
+            return ''
         }
-        const providerConfig = configs[providerName];
+        const providerConfig = configs[providerName]
         if (providerConfig?.displayName) {
-            return providerConfig.displayName;
+            return providerConfig.displayName
         }
-        const statusInfo = statusProviders.get(providerName);
+        const statusInfo = statusProviders.get(providerName)
         if (statusInfo?.displayName) {
-            return statusInfo.displayName;
+            return statusInfo.displayName
         }
-        return providerName;
+        return providerName
     }
 
     private isProviderConfigured(providerName: string, providerConfig: ProviderConfig | null): boolean {
         if (!providerConfig) {
-            return false;
+            return false
         }
         if (PROVIDER_DEFAULTS[providerName]) {
-            const filled = ProviderConfigUtils.fillDefaults(providerConfig, providerName);
-            return ProviderConfigUtils.isConfigComplete(filled);
+            const filled = ProviderConfigUtils.fillDefaults(providerConfig, providerName)
+            return ProviderConfigUtils.isConfigComplete(filled)
         }
-        return ProviderConfigUtils.isConfigComplete(providerConfig);
+        return ProviderConfigUtils.isConfigComplete(providerConfig)
     }
 
     onProviderSelectionChange(providerName: string): void {
         if (!providerName || providerName === this.selectedProvider) {
-            return;
+            return
         }
-        const success = this.aiService.switchProvider(providerName);
+        const success = this.aiService.switchProvider(providerName)
         if (!success) {
-            this.refreshProviderState();
-            return;
+            this.refreshProviderState()
+            return
         }
-        this.refreshProviderState();
+        this.refreshProviderState()
     }
 
     /**
@@ -503,23 +503,23 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private loadChatHistory(): void {
         try {
             // 尝试加载最近的会话
-            const recentSessions = this.chatHistory.getRecentSessions(1);
+            const recentSessions = this.chatHistory.getRecentSessions(1)
             if (recentSessions.length > 0) {
-                const lastSession = recentSessions[0];
-                this.currentSessionId = lastSession.sessionId;
+                const lastSession = recentSessions[0]
+                this.currentSessionId = lastSession.sessionId
                 this.messages = lastSession.messages.map(msg => ({
                     ...msg,
                     timestamp: new Date(msg.timestamp)
-                }));
+                }))
                 this.logger.info('Loaded chat history', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length
-                });
-                this.initialAutoScrollPending = true;
+                })
+                this.initialAutoScrollPending = true
             }
         } catch (error) {
-            this.logger.error('Failed to load chat history', error);
-            this.messages = [];
+            this.logger.error('Failed to load chat history', error)
+            this.messages = []
         }
     }
 
@@ -532,8 +532,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             role: MessageRole.ASSISTANT,
             content: `您好！我是AI助手。\n\n我可以帮助您：\n• 将自然语言转换为终端命令\n• 解释复杂的命令\n• 分析命令执行结果\n• 提供错误修复建议\n\n当前使用：${this.currentProvider}\n\n请输入您的问题或描述您想执行的命令。`,
             timestamp: new Date()
-        };
-        this.messages.push(welcomeMessage);
+        }
+        this.messages.push(welcomeMessage)
     }
 
     /**
@@ -542,16 +542,16 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private buildAgentMessages(userMessage: ChatMessage): ChatMessage[] {
         // 1. 获取系统消息
-        const systemMessages = this.messages.filter(m => m.role === MessageRole.SYSTEM);
+        const systemMessages = this.messages.filter(m => m.role === MessageRole.SYSTEM)
 
         // 2. 使用 ContextManager 获取有效历史（自动过滤被压缩的消息）
-        const effectiveHistory = this.contextManager.getEffectiveHistory(this.currentSessionId);
+        const effectiveHistory = this.contextManager.getEffectiveHistory(this.currentSessionId)
 
         // 3. 转换并限制数量
         const historyMessages = effectiveHistory
             .filter(m => m.role !== 'system')
             .slice(-this.MAX_AGENT_HISTORY)
-            .map(m => this.convertToAgentMessage(m));
+            .map(m => this.convertToAgentMessage(m))
 
         // 4. 清洗历史消息中的工具卡片 HTML 和 XML 格式工具调用
         const cleanedHistory = historyMessages.map(m => {
@@ -560,95 +560,95 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 return {
                     ...m,
                     content: this.cleanToolCardHtml(m.content)
-                };
+                }
             }
-            return m;
-        });
+            return m
+        })
 
-        return [...systemMessages, ...cleanedHistory, userMessage];
+        return [...systemMessages, ...cleanedHistory, userMessage]
     }
 
     /**
      * 将 ApiMessage 转换为 ChatMessage
      */
     private convertToAgentMessage(apiMessage: any): ChatMessage {
-        let content = typeof apiMessage.content === 'string' ? apiMessage.content : '';
+        let content = typeof apiMessage.content === 'string' ? apiMessage.content : ''
 
         if (!content || !content.trim()) {
-            const derived = this.deriveContentFromUiBlocks(apiMessage);
+            const derived = this.deriveContentFromUiBlocks(apiMessage)
             if (derived) {
-                content = derived;
+                content = derived
             }
         }
 
         // 如果是摘要消息，添加标记
         if (apiMessage.isSummary) {
-            content = `[历史摘要] ${content}`;
+            content = `[历史摘要] ${content}`
         }
 
         // 如果是截断标记，保留原样
         if (apiMessage.isTruncationMarker) {
-            content = apiMessage.content;
+            content = apiMessage.content
         }
 
         const rawTs = apiMessage.ts
             ?? (apiMessage.timestamp instanceof Date ? apiMessage.timestamp.getTime() : undefined)
-            ?? (typeof apiMessage.timestamp === 'string' ? Date.parse(apiMessage.timestamp) : undefined);
-        const ts = Number.isFinite(rawTs) ? rawTs : Date.now();
+            ?? (typeof apiMessage.timestamp === 'string' ? Date.parse(apiMessage.timestamp) : undefined)
+        const ts = Number.isFinite(rawTs) ? rawTs : Date.now()
 
         return {
             id: apiMessage.id || this.generateId(),
             role: apiMessage.role as MessageRole,
             content,
             timestamp: new Date(ts)
-        };
+        }
     }
 
     /**
      * 从 uiBlocks 补全文本内容（兼容历史中 content 为空的情况）
      */
     private deriveContentFromUiBlocks(message: any): string | null {
-        const blocks = Array.isArray(message?.uiBlocks) ? message.uiBlocks : [];
+        const blocks = Array.isArray(message?.uiBlocks) ? message.uiBlocks : []
         if (blocks.length === 0) {
-            return null;
+            return null
         }
 
-        const textParts: string[] = [];
-        const toolSummaries: string[] = [];
+        const textParts: string[] = []
+        const toolSummaries: string[] = []
 
         for (const block of blocks) {
             if (block?.type === 'text' && typeof block.content === 'string' && block.content.trim()) {
-                textParts.push(block.content);
-                continue;
+                textParts.push(block.content)
+                continue
             }
 
             if (block?.type === 'task_summary' && typeof block.summary === 'string' && block.summary.trim()) {
-                textParts.push(block.summary);
-                continue;
+                textParts.push(block.summary)
+                continue
             }
 
             if (block?.type === 'status' && typeof block.text === 'string' && block.text.trim()) {
-                textParts.push(block.text);
-                continue;
+                textParts.push(block.text)
+                continue
             }
 
             if (block?.type === 'tool') {
-                const name = block.name || '工具';
-                const status = block.status === 'success' ? '成功' : block.status === 'error' ? '失败' : '执行中';
-                toolSummaries.push(`[${name}] ${status}`);
+                const name = block.name || '工具'
+                const status = block.status === 'success' ? '成功' : block.status === 'error' ? '失败' : '执行中'
+                toolSummaries.push(`[${name}] ${status}`)
             }
         }
 
-        const joined = textParts.join('');
+        const joined = textParts.join('')
         if (joined.trim()) {
-            return joined;
+            return joined
         }
 
         if (toolSummaries.length > 0) {
-            return `（工具调用已完成：${toolSummaries.join('，')}）`;
+            return `（工具调用已完成：${toolSummaries.join('，')}）`
         }
 
-        return null;
+        return null
     }
 
     /**
@@ -684,9 +684,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             .replace(/<div class="tool-output tool-error-message">/g, '\n[错误]:\n')
             // 清理多余空行
             .replace(/\n{3,}/g, '\n\n')
-            .trim();
+            .trim()
 
-        return cleaned;
+        return cleaned
     }
 
     /**
@@ -695,7 +695,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     async onSendMessageWithAgent(content: string): Promise<void> {
         if (!content.trim() || this.isLoading) {
-            return;
+            return
         }
 
         // 添加用户消息
@@ -704,15 +704,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             role: MessageRole.USER,
             content: content.trim(),
             timestamp: new Date()
-        };
-        this.messages.push(userMessage);
+        }
+        this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0);
+        setTimeout(() => this.scrollToBottom(), 0)
 
         // 显示加载状态
-        this.setLoadingState(true);
-        this.streamFinalized = false;
+        this.setLoadingState(true)
+        this.streamFinalized = false
 
         // 创建 AI 消息占位符用于流式更新
         const aiMessage: ChatMessage = {
@@ -721,12 +721,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             content: '',
             uiBlocks: [],
             timestamp: new Date()
-        };
-        this.messages.push(aiMessage);
+        }
+        this.messages.push(aiMessage)
 
         try {
             // 构建用于 Agent 的消息列表（限制历史消息数量）
-            const messagesForAgent = this.buildAgentMessages(userMessage);
+            const messagesForAgent = this.buildAgentMessages(userMessage)
 
             // 使用 ToolStreamProcessorService 处理流式事件
             this.toolStreamProcessor.startAgentStream({
@@ -741,13 +741,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 next: (event: AnyUIStreamEvent) => this.runInAngular(() => this.renderUIEvent(event, aiMessage)),
                 error: (error) => this.runInAngular(() => this.handleStreamError(error, aiMessage)),
                 complete: () => this.runInAngular(() => this.handleStreamComplete(aiMessage))
-            });
+            })
 
         } catch (error) {
-            this.logger.error('Failed to send message with agent', error);
-            aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`;
-            this.finalizeStream();
-            setTimeout(() => this.scrollToBottom(), 0);
+            this.logger.error('Failed to send message with agent', error)
+            aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
+            this.finalizeStream()
+            setTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -757,25 +757,25 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private renderUIEvent(event: AnyUIStreamEvent, message: ChatMessage): void {
         if (!message.uiBlocks) {
-            message.uiBlocks = [];
+            message.uiBlocks = []
         }
 
         switch (event.type) {
             case 'text':
                 // 将文本作为 uiBlock 添加，确保能正确显示
                 // 如果前一个块是文本块，追加到它的内容
-                message.content = (message.content || '') + event.content;
-                const lastBlock = message.uiBlocks[message.uiBlocks.length - 1];
+                message.content = (message.content || '') + event.content
+                const lastBlock = message.uiBlocks[message.uiBlocks.length - 1]
                 if (lastBlock && lastBlock.type === 'text') {
-                    lastBlock.content += event.content;
+                    lastBlock.content += event.content
                 } else {
                     // 创建新的文本块
                     message.uiBlocks.push({
                         type: 'text',
                         content: event.content
-                    });
+                    })
                 }
-                break;
+                break
 
             case 'tool_start':
                 // 添加工具块（执行中状态）
@@ -785,35 +785,35 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     name: event.toolDisplayName,
                     icon: event.toolIcon,
                     status: 'executing'
-                });
-                break;
+                })
+                break
 
             case 'tool_complete':
                 // 更新工具块为完成状态
-                const block = message.uiBlocks.find(b => b.id === event.toolId);
+                const block = message.uiBlocks.find(b => b.id === event.toolId)
                 if (block) {
-                    block.status = event.success ? 'success' : 'error';
-                    block.duration = event.duration;
+                    block.status = event.success ? 'success' : 'error'
+                    block.duration = event.duration
                     block.output = event.output;  // 已格式化，直接使用
                 }
-                break;
+                break
 
             case 'tool_error':
                 // 更新工具块为错误状态
-                const errorBlock = message.uiBlocks.find(b => b.id === event.toolId);
+                const errorBlock = message.uiBlocks.find(b => b.id === event.toolId)
                 if (errorBlock) {
-                    errorBlock.status = 'error';
-                    errorBlock.errorMessage = event.errorMessage;
+                    errorBlock.status = 'error'
+                    errorBlock.errorMessage = event.errorMessage
                 }
-                break;
+                break
 
             case 'round_divider':
                 // 添加分隔线块
                 message.uiBlocks.push({
                     type: 'divider',
                     round: event.roundNumber
-                });
-                break;
+                })
+                break
 
             case 'agent_done':
                 // 添加状态块
@@ -822,10 +822,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     icon: event.reasonIcon,
                     text: event.reasonText,
                     rounds: event.totalRounds
-                });
+                })
                 // 兜底：如果流未正常 complete，收到 agent_done 也要结束加载态
-                this.finalizeStream();
-                break;
+                this.finalizeStream()
+                break
 
             case 'task_summary':
                 // 🎯 任务总结块（task_complete 工具专用）
@@ -835,35 +835,35 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     success: event.success,
                     summary: event.summary,
                     nextSteps: event.nextSteps
-                });
-                break;
+                })
+                break
 
             case 'error':
-                message.content += `\n\n❌ 错误: ${event.error}`;
-                break;
+                message.content += `\n\n❌ 错误: ${event.error}`
+                break
         }
 
-        this.shouldScrollToBottom = true;
-        this.scheduleAutoScroll();
-        this.scheduleDetectChanges();
+        this.shouldScrollToBottom = true
+        this.scheduleAutoScroll()
+        this.scheduleDetectChanges()
     }
 
     /**
      * 处理流错误
      */
     private handleStreamError(error: any, message: ChatMessage): void {
-        this.logger.error('Agent stream error', error);
-        message.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        this.finalizeStream();
-        this.scheduleDetectChanges();
+        this.logger.error('Agent stream error', error)
+        message.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`
+        this.finalizeStream()
+        this.scheduleDetectChanges()
     }
 
     /**
      * 处理流完成
      */
     private handleStreamComplete(message: ChatMessage): void {
-        this.finalizeStream();
-        this.scheduleDetectChanges();
+        this.finalizeStream()
+        this.scheduleDetectChanges()
     }
 
     /**
@@ -871,15 +871,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private finalizeStream(): void {
         if (this.streamFinalized) {
-            return;
+            return
         }
-        this.streamFinalized = true;
-        this.setLoadingState(false);
-        this.updateTokenUsage();
-        this.saveChatHistory();
-        this.shouldScrollToBottom = true;
-        this.scheduleDetectChanges();
-        this.scheduleScrollRefresh();
+        this.streamFinalized = true
+        this.setLoadingState(false)
+        this.updateTokenUsage()
+        this.saveChatHistory()
+        this.shouldScrollToBottom = true
+        this.scheduleDetectChanges()
+        this.scheduleScrollRefresh()
     }
 
     /**
@@ -887,7 +887,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     async onSendMessage(content: string): Promise<void> {
         if (!content.trim() || this.isLoading) {
-            return;
+            return
         }
 
         // 添加用户消息
@@ -896,14 +896,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             role: MessageRole.USER,
             content: content.trim(),
             timestamp: new Date()
-        };
-        this.messages.push(userMessage);
+        }
+        this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0);
+        setTimeout(() => this.scrollToBottom(), 0)
 
         // 显示加载状态
-        this.setLoadingState(true);
+        this.setLoadingState(true)
 
         // 创建 AI 消息占位符用于流式更新
         const aiMessage: ChatMessage = {
@@ -911,12 +911,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             role: MessageRole.ASSISTANT,
             content: '',
             timestamp: new Date()
-        };
-        this.messages.push(aiMessage);
+        }
+        this.messages.push(aiMessage)
 
         // 工具调用跟踪
-        const pendingTools = new Map<string, { name: string; startTime: number }>();
-        const toolResults: string[] = [];
+        const pendingTools = new Map<string, { name: string; startTime: number }>()
+        const toolResults: string[] = []
 
         try {
             // 使用流式 API
@@ -932,90 +932,90 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                         case 'text_delta':
                             // 文本流式显示
                             if (event.textDelta) {
-                                aiMessage.content += event.textDelta;
-                                this.shouldScrollToBottom = true;
+                                aiMessage.content += event.textDelta
+                                this.shouldScrollToBottom = true
                             }
-                            break;
+                            break
 
                         case 'tool_use_start':
                             // 工具开始 - 显示工具名称
-                            const toolName = event.toolCall?.name || 'unknown';
-                            aiMessage.content += `\n\n🔧 正在执行 ${toolName}...`;
+                            const toolName = event.toolCall?.name || 'unknown'
+                            aiMessage.content += `\n\n🔧 正在执行 ${toolName}...`
                             if (event.toolCall?.id) {
                                 pendingTools.set(event.toolCall.id, {
                                     name: toolName,
                                     startTime: Date.now()
-                                });
+                                })
                             }
-                            this.shouldScrollToBottom = true;
-                            break;
+                            this.shouldScrollToBottom = true
+                            break
 
                         case 'tool_use_end':
                             // 工具完成 - 更新状态
                             if (event.toolCall) {
-                                const toolInfo = pendingTools.get(event.toolCall.id);
-                                const duration = toolInfo ? Date.now() - toolInfo.startTime : 0;
-                                const name = toolInfo?.name || event.toolCall.name || 'unknown';
+                                const toolInfo = pendingTools.get(event.toolCall.id)
+                                const duration = toolInfo ? Date.now() - toolInfo.startTime : 0
+                                const name = toolInfo?.name || event.toolCall.name || 'unknown'
 
                                 aiMessage.content = aiMessage.content.replace(
                                     new RegExp(`🔧 正在执行 ${name}\\.\\.\\.`),
                                     `✅ ${name} (${duration}ms)`
-                                );
-                                pendingTools.delete(event.toolCall.id);
+                                )
+                                pendingTools.delete(event.toolCall.id)
                             }
-                            this.shouldScrollToBottom = true;
-                            break;
+                            this.shouldScrollToBottom = true
+                            break
 
                         case 'tool_result':
                             // 工具结果 - 存储用于最后显示
                             if (event.result) {
-                                const preview = event.result.content.substring(0, 500);
-                                const truncated = event.result.content.length > 500 ? '\n...(已截断)' : '';
-                                toolResults.push(`\n\n📋 **输出**:\n\`\`\`\n${preview}${truncated}\n\`\`\``);
+                                const preview = event.result.content.substring(0, 500)
+                                const truncated = event.result.content.length > 500 ? '\n...(已截断)' : ''
+                                toolResults.push(`\n\n📋 **输出**:\n\`\`\`\n${preview}${truncated}\n\`\`\``)
                             }
-                            break;
+                            break
 
                         case 'tool_error':
                             // 工具错误
                             aiMessage.content = aiMessage.content.replace(
                                 /🔧 正在执行 \w+\.\.\./,
                                 `❌ 工具执行失败: ${event.error}`
-                            );
-                            this.shouldScrollToBottom = true;
-                            break;
+                            )
+                            this.shouldScrollToBottom = true
+                            break
 
                         case 'message_end':
                             // 消息结束 - 附加工具结果
                             if (toolResults.length > 0) {
-                                aiMessage.content += toolResults.join('');
+                                aiMessage.content += toolResults.join('')
                             }
-                            this.logger.info('Stream completed');
-                            break;
+                            this.logger.info('Stream completed')
+                            break
                     }
                 }),
                 error: (error) => this.runInAngular(() => {
-                    this.logger.error('Stream error', error);
-                    aiMessage.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                    this.setLoadingState(false);
-                    this.shouldScrollToBottom = true;
-                    this.saveChatHistory();
+                    this.logger.error('Stream error', error)
+                    aiMessage.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    this.setLoadingState(false)
+                    this.shouldScrollToBottom = true
+                    this.saveChatHistory()
                 }),
                 complete: () => this.runInAngular(() => {
-                    this.setLoadingState(false);
-                    this.updateTokenUsage();
-                    this.saveChatHistory();
-                    this.shouldScrollToBottom = true;
+                    this.setLoadingState(false)
+                    this.updateTokenUsage()
+                    this.saveChatHistory()
+                    this.shouldScrollToBottom = true
                 })
-            });
+            })
 
         } catch (error) {
-            this.logger.error('Failed to send message', error);
+            this.logger.error('Failed to send message', error)
 
             // 添加错误消息
-            aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`;
-            this.setLoadingState(false);
-            this.updateTokenUsage();
-            setTimeout(() => this.scrollToBottom(), 0);
+            aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
+            this.setLoadingState(false)
+            this.updateTokenUsage()
+            setTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -1024,30 +1024,30 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private setLoadingState(isLoading: boolean): void {
         if (this.isLoading === isLoading) {
-            return;
+            return
         }
 
         if (this.pendingLoadingUpdate !== null) {
-            window.clearTimeout(this.pendingLoadingUpdate);
-            this.pendingLoadingUpdate = null;
+            window.clearTimeout(this.pendingLoadingUpdate)
+            this.pendingLoadingUpdate = null
         }
 
         if (!isLoading) {
             // 延迟到下一个宏任务，避免在同一检测周期内变更
             this.pendingLoadingUpdate = window.setTimeout(() => {
                 this.runInAngular(() => {
-                    this.pendingLoadingUpdate = null;
-                    this.isLoading = false;
-                    this.scheduleDetectChanges();
-                });
-            }, 0);
-            return;
+                    this.pendingLoadingUpdate = null
+                    this.isLoading = false
+                    this.scheduleDetectChanges()
+                })
+            }, 0)
+            return
         }
 
         this.runInAngular(() => {
-            this.isLoading = true;
-            this.scheduleDetectChanges();
-        });
+            this.isLoading = true
+            this.scheduleDetectChanges()
+        })
     }
 
     /**
@@ -1061,7 +1061,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 获取最大上下文限制
      */
     get maxTokens(): number {
-        return this.config.getActiveProviderContextWindow() || 200000;
+        return this.config.getActiveProviderContextWindow() || 200000
     }
 
     /**
@@ -1069,23 +1069,23 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     get currentTokens(): number {
         return this.messages.reduce((sum, msg) => {
-            const content = typeof msg.content === 'string' ? msg.content : '';
-            return sum + Math.ceil(content.length / 4);
-        }, 0);
+            const content = typeof msg.content === 'string' ? msg.content : ''
+            return sum + Math.ceil(content.length / 4)
+        }, 0)
     }
 
     /**
      * 获取 Token 使用百分比
      */
     get tokenUsagePercent(): number {
-        const maxTokens = this.maxTokens;
+        const maxTokens = this.maxTokens
         if (!maxTokens) {
-            return 0;
+            return 0
         }
         return Math.min(
             Math.round((this.currentTokens / maxTokens) * 100),
             100
-        );
+        )
     }
 
     /**
@@ -1095,13 +1095,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         if (confirm('确定要清空聊天记录吗？')) {
             // 删除当前会话
             if (this.currentSessionId) {
-                this.chatHistory.deleteSession(this.currentSessionId);
+                this.chatHistory.deleteSession(this.currentSessionId)
             }
             // 创建新会话
-            this.currentSessionId = this.generateSessionId();
-            this.messages = [];
-            this.sendWelcomeMessage();
-            this.logger.info('Chat cleared, new session created', { sessionId: this.currentSessionId });
+            this.currentSessionId = this.generateSessionId()
+            this.messages = []
+            this.sendWelcomeMessage()
+            this.logger.info('Chat cleared, new session created', { sessionId: this.currentSessionId })
         }
     }
 
@@ -1113,29 +1113,29 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             provider: this.currentProvider,
             exportTime: new Date().toISOString(),
             messages: this.messages
-        };
+        }
 
-        const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ai-chat-${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `ai-chat-${new Date().toISOString().slice(0, 10)}.json`
+        a.click()
+        window.URL.revokeObjectURL(url)
     }
 
     /**
      * 切换提供商
      */
     async switchProvider(): Promise<void> {
-        this.openSettings();
+        this.openSettings()
     }
 
     /**
      * 打开 AI 助手设置页
      */
     openSettings(): void {
-        this.sidebarService?.openSettings();
+        this.sidebarService?.openSettings()
     }
 
     /**
@@ -1143,7 +1143,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     hideSidebar(): void {
         if (this.sidebarService) {
-            this.sidebarService.hide();
+            this.sidebarService.hide()
         }
     }
 
@@ -1151,17 +1151,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 滚动到底部（公开方法）
      */
     scrollToBottom(): void {
-        this.shouldScrollToBottom = true;
-        this.scheduleAutoScroll(true);
+        this.shouldScrollToBottom = true
+        this.scheduleAutoScroll(true)
     }
 
     /**
      * 滚动到顶部
      */
     scrollToTop(): void {
-        const chatContainer = this.chatContainerRef?.nativeElement;
+        const chatContainer = this.chatContainerRef?.nativeElement
         if (chatContainer) {
-            chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            chatContainer.scrollTo({ top: 0, behavior: 'smooth' })
         }
     }
 
@@ -1169,9 +1169,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 实际执行滚动到底部
      */
     private performScrollToBottom(): void {
-        const chatContainer = this.chatContainerRef?.nativeElement;
+        const chatContainer = this.chatContainerRef?.nativeElement
         if (chatContainer) {
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' })
         }
     }
 
@@ -1179,25 +1179,25 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 处理滚动事件
      */
     onScroll(event: Event): void {
-        const target = event.target as HTMLElement;
-        if (!target) return;
-        this.updateScrollButtons(target);
+        const target = event.target as HTMLElement
+        if (!target) return
+        this.updateScrollButtons(target)
     }
 
     /**
      * 阻止滚轮事件冒泡，避免被外层捕获导致无法滚动
      */
     onWheel(event: WheelEvent): void {
-        event.stopPropagation();
+        event.stopPropagation()
     }
 
     /**
      * 检查滚动状态（初始化时调用）
      */
     private checkScrollState(): void {
-        const chatContainer = this.chatContainerRef?.nativeElement;
+        const chatContainer = this.chatContainerRef?.nativeElement
         if (chatContainer) {
-            this.updateScrollButtons(chatContainer);
+            this.updateScrollButtons(chatContainer)
         }
     }
 
@@ -1205,34 +1205,34 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 更新滚动按钮显示状态
      */
     private updateScrollButtons(container: HTMLElement): void {
-        const scrollTop = container.scrollTop;
-        const scrollHeight = container.scrollHeight;
-        const clientHeight = container.clientHeight;
-        const distanceFromBottom = Math.max(scrollHeight - (scrollTop + clientHeight), 0);
-        this.isUserNearBottom = distanceFromBottom <= this.AUTO_SCROLL_THRESHOLD;
+        const scrollTop = container.scrollTop
+        const scrollHeight = container.scrollHeight
+        const clientHeight = container.clientHeight
+        const distanceFromBottom = Math.max(scrollHeight - (scrollTop + clientHeight), 0)
+        this.isUserNearBottom = distanceFromBottom <= this.AUTO_SCROLL_THRESHOLD
 
         // 判断是否显示滚动按钮
-        const showTop = scrollTop > 50;
-        const showBottom = scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 50;
+        const showTop = scrollTop > 50
+        const showBottom = scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 50
 
         if (this.showScrollTop === showTop && this.showScrollBottom === showBottom) {
-            return;
+            return
         }
 
         if (this.pendingScrollUpdate !== null) {
-            this.queuedScrollState = { showTop, showBottom };
-            return;
+            this.queuedScrollState = { showTop, showBottom }
+            return
         }
 
         this.pendingScrollUpdate = window.setTimeout(() => {
             this.runInAngular(() => {
-                this.pendingScrollUpdate = null;
-                const state = this.queuedScrollState ?? { showTop, showBottom };
-                this.queuedScrollState = null;
-                this.showScrollTop = state.showTop;
-                this.showScrollBottom = state.showBottom;
-            });
-        }, 0);
+                this.pendingScrollUpdate = null
+                const state = this.queuedScrollState ?? { showTop, showBottom }
+                this.queuedScrollState = null
+                this.showScrollTop = state.showTop
+                this.showScrollBottom = state.showBottom
+            })
+        }, 0)
     }
 
     /**
@@ -1240,18 +1240,18 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private scheduleAutoScroll(force: boolean = false): void {
         if (!force && !this.isUserNearBottom) {
-            return;
+            return
         }
         if (this.autoScrollPending) {
-            return;
+            return
         }
-        this.autoScrollPending = true;
+        this.autoScrollPending = true
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                this.autoScrollPending = false;
-                this.performScrollToBottom();
-            });
-        });
+                this.autoScrollPending = false
+                this.performScrollToBottom()
+            })
+        })
     }
 
     /**
@@ -1259,29 +1259,29 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private scheduleScrollRefresh(): void {
         if (this.scrollRefreshPending) {
-            return;
+            return
         }
-        this.scrollRefreshPending = true;
+        this.scrollRefreshPending = true
         window.setTimeout(() => {
-            this.scrollRefreshPending = false;
-            this.triggerScrollRefresh();
-        }, 50);
+            this.scrollRefreshPending = false
+            this.triggerScrollRefresh()
+        }, 50)
     }
 
     private triggerScrollRefresh(): void {
-        const container = this.chatContainerRef?.nativeElement as HTMLElement | undefined;
+        const container = this.chatContainerRef?.nativeElement as HTMLElement | undefined
         if (!container) {
-            return;
+            return
         }
-        const original = container.scrollTop;
-        const max = Math.max(container.scrollHeight - container.clientHeight, 0);
+        const original = container.scrollTop
+        const max = Math.max(container.scrollHeight - container.clientHeight, 0)
         if (max <= 0) {
-            return;
+            return
         }
 
-        const next = original < max ? Math.min(original + 1, max) : Math.max(original - 1, 0);
-        container.scrollTop = next;
-        container.scrollTop = original;
+        const next = original < max ? Math.min(original + 1, max) : Math.max(original - 1, 0)
+        container.scrollTop = next
+        container.scrollTop = original
     }
 
     /**
@@ -1289,33 +1289,33 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private scheduleDetectChanges(): void {
         if (this.detectChangesPending) {
-            return;
+            return
         }
-        this.detectChangesPending = true;
+        this.detectChangesPending = true
         // 使用 setTimeout 避免 rAF 在后台或无交互时被节流导致 UI 不更新
         window.setTimeout(() => {
             this.runInAngular(() => {
-                this.detectChangesPending = false;
+                this.detectChangesPending = false
                 try {
-                    this.appRef.tick();
+                    this.appRef.tick()
                 } catch {
                     try {
-                        this.cdr.detectChanges();
+                        this.cdr.detectChanges()
                     } catch {
                         // 忽略销毁期间的变更检测异常
                     }
                 }
-            });
-        }, 0);
+            })
+        }, 0)
     }
 
     private runInAngular(fn: () => void): void {
         if (NgZone.isInAngularZone()) {
-            fn();
-            return;
+            fn()
+            return
         }
 
-        this.ngZone.run(fn);
+        this.ngZone.run(fn)
     }
 
     /**
@@ -1324,14 +1324,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private saveChatHistory(): void {
         try {
             if (this.messages.length > 0 && this.currentSessionId) {
-                this.chatHistory.saveSession(this.currentSessionId, this.messages);
+                this.chatHistory.saveSession(this.currentSessionId, this.messages)
                 this.logger.info('Chat history saved', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length
-                });
+                })
             }
         } catch (error) {
-            this.logger.error('Failed to save chat history', error);
+            this.logger.error('Failed to save chat history', error)
         }
     }
 
@@ -1339,14 +1339,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 生成会话 ID
      */
     private generateSessionId(): string {
-        return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     /**
      * 生成唯一ID
      */
     private generateId(): string {
-        return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     /**
@@ -1356,18 +1356,18 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         return timestamp.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit'
-        });
+        })
     }
 
     /**
      * 格式化消息内容（支持 Markdown 渲染）
      */
     formatMessage(content: string): string {
-        if (!content) return '';
+        if (!content) return ''
 
         try {
             // 使用 marked 库渲染 Markdown
-            const { marked } = require('marked');
+            const { marked } = require('marked')
 
             // 配置 marked 选项
             marked.setOptions({
@@ -1375,9 +1375,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 gfm: true,          // 支持 GitHub Flavored Markdown
                 headerIds: false,   // 不生成标题 ID
                 mangle: false       // 不转义邮箱
-            });
+            })
 
-            return marked.parse(content);
+            return marked.parse(content)
         } catch (e) {
             // 如果 marked 失败，使用基本格式化
             return content
@@ -1387,7 +1387,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 .replace(/\n/g, '<br>')
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code>$1</code>');
+                .replace(/`(.*?)`/g, '<code>$1</code>')
         }
     }
 
@@ -1395,15 +1395,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 检查是否为今天的消息
      */
     isToday(date: Date): boolean {
-        const today = new Date();
-        return date.toDateString() === today.toDateString();
+        const today = new Date()
+        return date.toDateString() === today.toDateString()
     }
 
     /**
      * 检查是否为同一天的消息
      */
     isSameDay(date1: Date, date2: Date): boolean {
-        return date1.toDateString() === date2.toDateString();
+        return date1.toDateString() === date2.toDateString()
     }
 
     /**
@@ -1412,8 +1412,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     onKeydown(event: KeyboardEvent): void {
         // Enter 发送（不包含Shift）
         if (event.key === 'Enter' && !event.shiftKey && !this.isComposing) {
-            event.preventDefault();
-            this.submit();
+            event.preventDefault()
+            this.submit()
         }
     }
 
@@ -1421,22 +1421,22 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 处理输入事件
      */
     onInput(event: Event): void {
-        const target = event.target as HTMLTextAreaElement;
-        this.inputValue = target.value;
-        this.autoResize();
+        const target = event.target as HTMLTextAreaElement
+        this.inputValue = target.value
+        this.autoResize()
     }
 
     /**
      * 提交消息
      */
     submit(): void {
-        const message = this.inputValue.trim();
+        const message = this.inputValue.trim()
         if (message && !this.isLoading) {
             // 使用 Agent 循环模式发送消息（支持多轮工具调用）
-            this.onSendMessageWithAgent(message);
-            this.inputValue = '';
-            setTimeout(() => this.autoResize(), 0);
-            this.textInput?.nativeElement.focus();
+            this.onSendMessageWithAgent(message)
+            this.inputValue = ''
+            setTimeout(() => this.autoResize(), 0)
+            this.textInput?.nativeElement.focus()
         }
     }
 
@@ -1445,9 +1445,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private autoResize(): void {
         if (this.textInput?.nativeElement) {
-            const textarea = this.textInput.nativeElement;
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            const textarea = this.textInput.nativeElement
+            textarea.style.height = 'auto'
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
         }
     }
 
@@ -1455,29 +1455,29 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 获取字符计数
      */
     getCharCount(): number {
-        return this.inputValue.length;
+        return this.inputValue.length
     }
 
     /**
      * 检查是否接近限制
      */
     isNearLimit(): boolean {
-        return this.getCharCount() > this.charLimit * 0.8;
+        return this.getCharCount() > this.charLimit * 0.8
     }
 
     /**
      * 检查是否超过限制
      */
     isOverLimit(): boolean {
-        return this.getCharCount() > this.charLimit;
+        return this.getCharCount() > this.charLimit
     }
 
     /**
      * 转义 HTML 特殊字符
      */
     private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        const div = document.createElement('div')
+        div.textContent = text
+        return div.innerHTML
     }
 }

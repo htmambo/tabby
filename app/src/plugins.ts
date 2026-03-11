@@ -252,7 +252,7 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
 
 export async function findPlugins (): Promise<PluginInfo[]> {
     const paths = nodeModule.globalPaths
-    let foundPlugins: PluginInfo[] = []
+    const foundPlugins: PluginInfo[] = []
 
     const candidateLocations: { pluginDir: string, packageName: string }[] = await getPluginCandidateLocation(paths)
 
