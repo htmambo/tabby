@@ -194,11 +194,16 @@ export class AppService {
     }
 
     /**
-     * Adds a new tab
+     * Adds a new tab while wrapping it in a SplitTabComponent
      * @param inputs  Properties to be assigned on the new tab component instance
      */
     openNewTab <T extends BaseTabComponent> (params: NewTabParameters<T>): T {
-        return this.openNewTabRaw(params)
+        if (params.type as any === SplitTabComponent) {
+            return this.openNewTabRaw(params)
+        }
+        const tab = this.tabsService.create(params)
+        this.wrapAndAddTab(tab)
+        return tab
     }
 
     private async selectTabsToRestore (recoveredTabs: RecoveredTabsState): Promise<RecoveredTabsState> {

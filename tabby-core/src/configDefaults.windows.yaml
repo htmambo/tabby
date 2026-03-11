@@ -19,10 +19,16 @@ hotkeys:
     - 'Ctrl-Shift-PageUp'
   move-tab-right:
     - 'Ctrl-Shift-PageDown'
+  rearrange-panes:
+    - 'Ctrl-Shift'
   duplicate-tab: []
   restart-tab: []
   reconnect-tab: []
   disconnect-tab: []
+  explode-tab:
+    - 'Ctrl-Shift-.'
+  combine-tabs:
+    - 'Ctrl-Shift-,'
   tab-1:
     - 'Alt-1'
   tab-2:
@@ -53,6 +59,42 @@ hotkeys:
   tab-18: []
   tab-19: []
   tab-20: []
+  split-right:
+    - 'Ctrl-Shift-S'
+  split-bottom:
+    - 'Ctrl-Shift-D'
+  split-left: []
+  split-top: []
+  pane-nav-right:
+    - 'Ctrl-Alt-Right'
+  pane-nav-down:
+    - 'Ctrl-Alt-Down'
+  pane-nav-up:
+    - 'Ctrl-Alt-Up'
+  pane-nav-left:
+    - 'Ctrl-Alt-Left'
+  pane-nav-previous:
+    - 'Ctrl-Alt-['
+  pane-nav-next:
+    - 'Ctrl-Alt-]'
+  pane-nav-1: []
+  pane-nav-2: []
+  pane-nav-3: []
+  pane-nav-4: []
+  pane-nav-5: []
+  pane-nav-6: []
+  pane-nav-7: []
+  pane-nav-8: []
+  pane-nav-9: []
+  pane-maximize:
+    - 'Ctrl-Alt-Enter'
+  close-pane: []
+  pane-increase-vertical: []
+  pane-decrease-vertical: []
+  pane-increase-horizontal: []
+  pane-decrease-horizontal: []
+  switch-profile:
+    - 'Ctrl-Alt-T'
   profile-selector:
     - 'Ctrl-Shift-E'
   command-selector:

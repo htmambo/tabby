@@ -310,6 +310,12 @@ export class AppRootComponent {
                     this.app.duplicateTab(this.app.activeTab)
                     this.app.closeTab(this.app.activeTab, true)
                 }
+                if (hotkey === 'explode-tab' && this.app.activeTab instanceof SplitTabComponent) {
+                    this.app.explodeTab(this.app.activeTab)
+                }
+                if (hotkey === 'combine-tabs' && this.app.activeTab instanceof SplitTabComponent) {
+                    this.app.combineTabsInto(this.app.activeTab)
+                }
             }
             if (hotkey === 'reopen-tab') {
                 this.app.reopenLastTab()
