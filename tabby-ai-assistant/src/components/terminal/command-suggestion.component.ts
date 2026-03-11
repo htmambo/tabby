@@ -8,6 +8,7 @@ import { LoggerService } from '../../services/core/logger.service';
 
 @Component({
     selector: 'app-command-suggestion',
+    standalone: false,
     templateUrl: './command-suggestion.component.html',
     styleUrls: ['./command-suggestion.component.scss']
 })

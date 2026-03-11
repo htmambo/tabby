@@ -8,6 +8,7 @@ import { TranslateService } from '../../i18n';
 
 @Component({
     selector: 'app-chat-settings',
+    standalone: false,
     templateUrl: './chat-settings.component.html',
     styleUrls: ['./chat-settings.component.scss'],
     encapsulation: ViewEncapsulation.None

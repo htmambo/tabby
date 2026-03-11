@@ -13,6 +13,7 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
 
 @Component({
     selector: 'app-chat-interface',
+    standalone: false,
     templateUrl: './chat-interface.component.html',
     styleUrls: ['./chat-interface.component.scss'],
     encapsulation: ViewEncapsulation.None

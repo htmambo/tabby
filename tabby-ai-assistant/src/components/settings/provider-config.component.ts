@@ -8,6 +8,7 @@ import { TranslateService } from '../../i18n';
 
 @Component({
     selector: 'app-provider-config',
+    standalone: false,
     templateUrl: './provider-config.component.html',
     styleUrls: ['./provider-config.component.scss'],
     encapsulation: ViewEncapsulation.None

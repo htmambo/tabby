@@ -26,6 +26,7 @@ export interface DataFileInfo {
  */
 @Component({
     selector: 'app-data-settings',
+    standalone: false,
     template: `
         <div class="data-settings">
             <div class="section-header">

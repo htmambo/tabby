@@ -23,6 +23,7 @@ type EditorMode = 'add' | 'edit' | null;
  */
 @Component({
     selector: 'app-mcp-settings',
+    standalone: false,
     template: `
         <div class="mcp-settings">
             <h3>{{ t.mcpSettings?.title || 'MCP 服务器' }}</h3>

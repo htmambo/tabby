@@ -4,6 +4,7 @@ import { RiskLevel } from '../../types/security.types';
 
 @Component({
     selector: 'app-risk-confirm-dialog',
+    standalone: false,
     templateUrl: './risk-confirm-dialog.component.html',
     styleUrls: ['./risk-confirm-dialog.component.scss']
 })

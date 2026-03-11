@@ -186,7 +186,6 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider';
         ChatMessageComponent,
         ChatInputComponent,
         ChatSettingsComponent,
-        AiSidebarComponent,
 
         // Settings Components
         AiSettingsTabComponent,

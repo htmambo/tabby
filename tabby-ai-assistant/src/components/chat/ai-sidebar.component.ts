@@ -1,7 +1,9 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ChatMessage, MessageRole, StreamEvent, AgentStreamEvent } from '../../types/ai.types';
+import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types';
 import { AiAssistantService } from '../../services/core/ai-assistant.service';
 import { ConfigProviderService } from '../../services/core/config-provider.service';
 import { LoggerService } from '../../services/core/logger.service';
@@ -11,6 +13,7 @@ import { ThemeService } from '../../services/core/theme.service';
 import { ContextManager } from '../../services/context/manager';
 import { ToolStreamProcessorService } from '../../services/tools/tool-stream-processor.service';
 import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.types';
+import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../types/provider.types';
 
 /**
  * AI Sidebar 组件 - 替代 ChatInterfaceComponent
@@ -18,17 +21,26 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
  */
 @Component({
     selector: 'app-ai-sidebar',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
     template: `
         <div class="ai-sidebar-container">
             <!-- Header -->
             <div class="ai-sidebar-header">
                 <div class="header-title">
-                    <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/>
-                        <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/>
-                    </svg>
-                    <span>AI 助手</span>
-                    <small class="provider-badge">{{ currentProvider }}</small>
+                    <div class="provider-switcher" *ngIf="providerOptions.length > 1">
+                        <select class="provider-select"
+                                [ngModel]="selectedProvider"
+                                (ngModelChange)="onProviderSelectionChange($event)"
+                                [title]="t?.advancedSettings?.currentProvider || '当前提供商'">
+                            <option *ngFor="let provider of providerOptions"
+                                    [ngValue]="provider.name"
+                                    [disabled]="!provider.enabled || !provider.configured">
+                                {{ provider.displayName }}{{ provider.configured ? '' : ' (未配置)' }}{{ provider.enabled ? '' : ' (已禁用)' }}
+                            </option>
+                        </select>
+                        <i class="fa fa-exchange-alt" aria-hidden="true"></i>
+                    </div>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" title="隐藏侧边栏">
@@ -71,7 +83,7 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
             </div>
 
             <!-- Messages -->
-            <div class="ai-sidebar-messages" #chatContainer (scroll)="onScroll($event)">
+            <div class="ai-sidebar-messages" #chatContainer (scroll)="onScroll($event)" (wheel)="onWheel($event)">
                 <div *ngFor="let message of messages; let i = index" class="message-item" [ngClass]="message.role">
                     <div class="message-avatar">
                         <svg *ngIf="message.role === 'user'" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -100,13 +112,13 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
                             <ng-container *ngFor="let block of message.uiBlocks">
 
                                 <!-- 1. 文本块 -->
-                                <div *ngIf="block.type === 'text'" 
-                                     class="message-text" 
+                                <div *ngIf="block.type === 'text'"
+                                     class="message-text"
                                      [innerHTML]="formatMessage(block.content)">
                                 </div>
 
                                 <!-- 2. 工具块 -->
-                                <div *ngIf="block.type === 'tool'" 
+                                <div *ngIf="block.type === 'tool'"
                                      class="tool-call-card"
                                      [ngClass]="{
                                          'tool-executing': block.status === 'executing',
@@ -149,7 +161,7 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
                                 </div>
 
                                 <!-- 5. 任务总结块 (task_complete 专用) -->
-                                <div *ngIf="block.type === 'task_summary'" 
+                                <div *ngIf="block.type === 'task_summary'"
                                      class="ai-task-summary"
                                      [ngClass]="{
                                          'ai-task-summary--success': block.success,
@@ -254,6 +266,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     messages: ChatMessage[] = [];
     isLoading = false;
     currentProvider: string = '';
+    selectedProvider: string = '';
+    providerOptions: Array<{ name: string; displayName: string; enabled: boolean; configured: boolean }> = [];
     currentSessionId: string = '';
     showScrollTop = false;
     showScrollBottom = false;
@@ -265,13 +279,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     /** Agent 模式最多保留的历史消息数量（不包含系统消息） */
     private readonly MAX_AGENT_HISTORY = 10;
 
-    // Token 使用状态
-    currentTokens: number = 0;
-    maxTokens: number = 200000;
-    tokenUsagePercent: number = 0;
-
     private destroy$ = new Subject<void>();
     private shouldScrollToBottom = false;
+    private pendingLoadingUpdate: number | null = null;
+    private pendingScrollUpdate: number | null = null;
+    private queuedScrollState: { showTop: boolean; showBottom: boolean } | null = null;
+    private streamFinalized = false;
+    private autoScrollPending = false;
+    private isUserNearBottom = true;
+    private readonly AUTO_SCROLL_THRESHOLD = 80;
+    private initialAutoScrollPending = false;
+    private detectChangesPending = false;
 
     constructor(
         private aiService: AiAssistantService,
@@ -280,7 +298,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         private chatHistory: ChatHistoryService,
         private themeService: ThemeService,
         private contextManager: ContextManager,
-        private toolStreamProcessor: ToolStreamProcessorService
+        private toolStreamProcessor: ToolStreamProcessorService,
+        private cdr: ChangeDetectorRef,
+        private appRef: ApplicationRef,
+        private ngZone: NgZone
     ) { }
 
     ngOnInit(): void {
@@ -304,6 +325,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         if (this.messages.length === 0) {
             this.sendWelcomeMessage();
         }
+        this.updateTokenUsage();
+
+        this.config.onConfigChange().pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(change => {
+            if (change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === '*' || change.key === 'providers') {
+                this.refreshProviderState();
+            }
+        });
+
+        this.refreshProviderState();
 
         // 订阅预设消息（快捷键功能）
         this.sidebarService.presetMessage$.pipe(
@@ -327,6 +359,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     ngOnDestroy(): void {
         // 保存当前会话
         this.saveChatHistory();
+        if (this.pendingLoadingUpdate !== null) {
+            window.clearTimeout(this.pendingLoadingUpdate);
+            this.pendingLoadingUpdate = null;
+        }
+        if (this.pendingScrollUpdate !== null) {
+            window.clearTimeout(this.pendingScrollUpdate);
+            this.pendingScrollUpdate = null;
+            this.queuedScrollState = null;
+        }
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -358,8 +399,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
     ngAfterViewChecked(): void {
         if (this.shouldScrollToBottom) {
-            this.performScrollToBottom();
+            this.scheduleAutoScroll(true);
             this.shouldScrollToBottom = false;
+        }
+        if (this.initialAutoScrollPending && this.chatContainerRef?.nativeElement) {
+            this.initialAutoScrollPending = false;
+            this.scheduleAutoScroll(true);
         }
     }
 
@@ -367,23 +412,88 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 加载当前提供商信息
      */
     private loadCurrentProvider(): void {
-        const defaultProvider = this.config.getDefaultProvider();
-        if (defaultProvider) {
-            const providerConfig = this.config.getProviderConfig(defaultProvider);
-            this.currentProvider = providerConfig?.displayName || defaultProvider;
-        } else {
-            // 尝试获取第一个已配置的提供商
-            const allConfigs = this.config.getAllProviderConfigs();
-            const configuredProviders = Object.keys(allConfigs).filter(k => allConfigs[k]?.apiKey);
-            if (configuredProviders.length > 0) {
-                const firstProvider = configuredProviders[0];
-                const providerConfig = allConfigs[firstProvider];
-                this.currentProvider = providerConfig?.displayName || firstProvider;
-                this.config.setDefaultProvider(firstProvider);
-            } else {
-                this.currentProvider = '未配置';
+        this.refreshProviderState();
+    }
+
+    private refreshProviderState(): void {
+        let providerStatus: any = null;
+        try {
+            providerStatus = this.aiService.getProviderStatus();
+        } catch (error) {
+            this.logger.warn('Failed to read provider status', error);
+        }
+
+        const configs = this.config.getAllProviderConfigs();
+        const statusProviders = new Map<string, any>();
+        if (providerStatus?.all) {
+            for (const info of providerStatus.all) {
+                statusProviders.set(info.name, info);
             }
         }
+
+        const optionNames = new Set<string>([
+            ...Object.keys(configs),
+            ...Array.from(statusProviders.keys())
+        ]);
+
+        this.providerOptions = Array.from(optionNames).map(name => {
+            const providerConfig = configs[name] ?? null;
+            const statusInfo = statusProviders.get(name);
+            return {
+                name,
+                displayName: providerConfig?.displayName || statusInfo?.displayName || name,
+                enabled: providerConfig?.enabled !== false,
+                configured: this.isProviderConfigured(name, providerConfig)
+            };
+        }).sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        const activeProviderName = providerStatus?.active?.name || this.config.getDefaultProvider() || '';
+        const activeDisplayName = this.getProviderDisplayName(activeProviderName, configs, statusProviders);
+
+        this.selectedProvider = activeProviderName;
+        this.currentProvider = activeDisplayName || '未配置';
+    }
+
+    private getProviderDisplayName(
+        providerName: string,
+        configs: Record<string, ProviderConfig>,
+        statusProviders: Map<string, any>
+    ): string {
+        if (!providerName) {
+            return '';
+        }
+        const providerConfig = configs[providerName];
+        if (providerConfig?.displayName) {
+            return providerConfig.displayName;
+        }
+        const statusInfo = statusProviders.get(providerName);
+        if (statusInfo?.displayName) {
+            return statusInfo.displayName;
+        }
+        return providerName;
+    }
+
+    private isProviderConfigured(providerName: string, providerConfig: ProviderConfig | null): boolean {
+        if (!providerConfig) {
+            return false;
+        }
+        if (PROVIDER_DEFAULTS[providerName]) {
+            const filled = ProviderConfigUtils.fillDefaults(providerConfig, providerName);
+            return ProviderConfigUtils.isConfigComplete(filled);
+        }
+        return ProviderConfigUtils.isConfigComplete(providerConfig);
+    }
+
+    onProviderSelectionChange(providerName: string): void {
+        if (!providerName || providerName === this.selectedProvider) {
+            return;
+        }
+        const success = this.aiService.switchProvider(providerName);
+        if (!success) {
+            this.refreshProviderState();
+            return;
+        }
+        this.refreshProviderState();
     }
 
     /**
@@ -404,6 +514,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length
                 });
+                this.initialAutoScrollPending = true;
             }
         } catch (error) {
             this.logger.error('Failed to load chat history', error);
@@ -460,7 +571,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 将 ApiMessage 转换为 ChatMessage
      */
     private convertToAgentMessage(apiMessage: any): ChatMessage {
-        let content = apiMessage.content;
+        let content = typeof apiMessage.content === 'string' ? apiMessage.content : '';
+
+        if (!content || !content.trim()) {
+            const derived = this.deriveContentFromUiBlocks(apiMessage);
+            if (derived) {
+                content = derived;
+            }
+        }
 
         // 如果是摘要消息，添加标记
         if (apiMessage.isSummary) {
@@ -472,12 +590,64 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             content = apiMessage.content;
         }
 
+        const rawTs = apiMessage.ts
+            ?? (apiMessage.timestamp instanceof Date ? apiMessage.timestamp.getTime() : undefined)
+            ?? (typeof apiMessage.timestamp === 'string' ? Date.parse(apiMessage.timestamp) : undefined);
+        const ts = Number.isFinite(rawTs) ? rawTs : Date.now();
+
         return {
             id: apiMessage.id || this.generateId(),
             role: apiMessage.role as MessageRole,
             content,
-            timestamp: new Date(apiMessage.ts || Date.now())
+            timestamp: new Date(ts)
         };
+    }
+
+    /**
+     * 从 uiBlocks 补全文本内容（兼容历史中 content 为空的情况）
+     */
+    private deriveContentFromUiBlocks(message: any): string | null {
+        const blocks = Array.isArray(message?.uiBlocks) ? message.uiBlocks : [];
+        if (blocks.length === 0) {
+            return null;
+        }
+
+        const textParts: string[] = [];
+        const toolSummaries: string[] = [];
+
+        for (const block of blocks) {
+            if (block?.type === 'text' && typeof block.content === 'string' && block.content.trim()) {
+                textParts.push(block.content);
+                continue;
+            }
+
+            if (block?.type === 'task_summary' && typeof block.summary === 'string' && block.summary.trim()) {
+                textParts.push(block.summary);
+                continue;
+            }
+
+            if (block?.type === 'status' && typeof block.text === 'string' && block.text.trim()) {
+                textParts.push(block.text);
+                continue;
+            }
+
+            if (block?.type === 'tool') {
+                const name = block.name || '工具';
+                const status = block.status === 'success' ? '成功' : block.status === 'error' ? '失败' : '执行中';
+                toolSummaries.push(`[${name}] ${status}`);
+            }
+        }
+
+        const joined = textParts.join('');
+        if (joined.trim()) {
+            return joined;
+        }
+
+        if (toolSummaries.length > 0) {
+            return `（工具调用已完成：${toolSummaries.join('，')}）`;
+        }
+
+        return null;
     }
 
     /**
@@ -540,7 +710,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         setTimeout(() => this.scrollToBottom(), 0);
 
         // 显示加载状态
-        this.isLoading = true;
+        this.setLoadingState(true);
+        this.streamFinalized = false;
 
         // 创建 AI 消息占位符用于流式更新
         const aiMessage: ChatMessage = {
@@ -566,16 +737,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             }).pipe(
                 takeUntil(this.destroy$)
             ).subscribe({
-                next: (event: AnyUIStreamEvent) => this.renderUIEvent(event, aiMessage),
-                error: (error) => this.handleStreamError(error, aiMessage),
-                complete: () => this.handleStreamComplete(aiMessage)
+                next: (event: AnyUIStreamEvent) => this.runInAngular(() => this.renderUIEvent(event, aiMessage)),
+                error: (error) => this.runInAngular(() => this.handleStreamError(error, aiMessage)),
+                complete: () => this.runInAngular(() => this.handleStreamComplete(aiMessage))
             });
 
         } catch (error) {
             this.logger.error('Failed to send message with agent', error);
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`;
-            this.isLoading = false;
-            this.updateTokenUsage();
+            this.finalizeStream();
             setTimeout(() => this.scrollToBottom(), 0);
         }
     }
@@ -593,6 +763,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             case 'text':
                 // 将文本作为 uiBlock 添加，确保能正确显示
                 // 如果前一个块是文本块，追加到它的内容
+                message.content = (message.content || '') + event.content;
                 const lastBlock = message.uiBlocks[message.uiBlocks.length - 1];
                 if (lastBlock && lastBlock.type === 'text') {
                     lastBlock.content += event.content;
@@ -651,6 +822,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     text: event.reasonText,
                     rounds: event.totalRounds
                 });
+                // 兜底：如果流未正常 complete，收到 agent_done 也要结束加载态
+                this.finalizeStream();
                 break;
 
             case 'task_summary':
@@ -670,6 +843,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
 
         this.shouldScrollToBottom = true;
+        this.scheduleAutoScroll();
+        this.scheduleDetectChanges();
     }
 
     /**
@@ -678,20 +853,31 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private handleStreamError(error: any, message: ChatMessage): void {
         this.logger.error('Agent stream error', error);
         message.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        this.isLoading = false;
-        this.shouldScrollToBottom = true;
-        this.updateTokenUsage();
-        this.saveChatHistory();
+        this.finalizeStream();
+        this.scheduleDetectChanges();
     }
 
     /**
      * 处理流完成
      */
     private handleStreamComplete(message: ChatMessage): void {
-        this.isLoading = false;
+        this.finalizeStream();
+        this.scheduleDetectChanges();
+    }
+
+    /**
+     * 统一结束流状态，避免重复触发
+     */
+    private finalizeStream(): void {
+        if (this.streamFinalized) {
+            return;
+        }
+        this.streamFinalized = true;
+        this.setLoadingState(false);
         this.updateTokenUsage();
         this.saveChatHistory();
         this.shouldScrollToBottom = true;
+        this.scheduleDetectChanges();
     }
 
     /**
@@ -715,7 +901,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         setTimeout(() => this.scrollToBottom(), 0);
 
         // 显示加载状态
-        this.isLoading = true;
+        this.setLoadingState(true);
 
         // 创建 AI 消息占位符用于流式更新
         const aiMessage: ChatMessage = {
@@ -739,7 +925,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             }).pipe(
                 takeUntil(this.destroy$)
             ).subscribe({
-                next: (event: StreamEvent) => {
+                next: (event: StreamEvent) => this.runInAngular(() => {
                     switch (event.type) {
                         case 'text_delta':
                             // 文本流式显示
@@ -804,20 +990,20 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             this.logger.info('Stream completed');
                             break;
                     }
-                },
-                error: (error) => {
+                }),
+                error: (error) => this.runInAngular(() => {
                     this.logger.error('Stream error', error);
                     aiMessage.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                    this.isLoading = false;
+                    this.setLoadingState(false);
                     this.shouldScrollToBottom = true;
                     this.saveChatHistory();
-                },
-                complete: () => {
-                    this.isLoading = false;
+                }),
+                complete: () => this.runInAngular(() => {
+                    this.setLoadingState(false);
                     this.updateTokenUsage();
                     this.saveChatHistory();
                     this.shouldScrollToBottom = true;
-                }
+                })
             });
 
         } catch (error) {
@@ -825,28 +1011,77 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
             // 添加错误消息
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`;
-            this.isLoading = false;
+            this.setLoadingState(false);
             this.updateTokenUsage();
             setTimeout(() => this.scrollToBottom(), 0);
         }
     }
 
     /**
+     * 安全更新加载状态，避免 ExpressionChangedAfterItHasBeenCheckedError
+     */
+    private setLoadingState(isLoading: boolean): void {
+        if (this.isLoading === isLoading) {
+            return;
+        }
+
+        if (this.pendingLoadingUpdate !== null) {
+            window.clearTimeout(this.pendingLoadingUpdate);
+            this.pendingLoadingUpdate = null;
+        }
+
+        if (!isLoading) {
+            // 延迟到下一个宏任务，避免在同一检测周期内变更
+            this.pendingLoadingUpdate = window.setTimeout(() => {
+                this.runInAngular(() => {
+                    this.pendingLoadingUpdate = null;
+                    this.isLoading = false;
+                    this.scheduleDetectChanges();
+                });
+            }, 0);
+            return;
+        }
+
+        this.runInAngular(() => {
+            this.isLoading = true;
+            this.scheduleDetectChanges();
+        });
+    }
+
+    /**
      * 更新 Token 使用情况
      */
     private updateTokenUsage(): void {
-        // 获取最大上下文限制
-        this.maxTokens = this.config.getActiveProviderContextWindow() || 200000;
+        // 保留空方法以兼容现有调用，Token 使用情况改为实时计算
+    }
 
-        // 计算当前消息的 Token 使用量（简单估算：每4个字符≈1 Token）
-        this.currentTokens = this.messages.reduce((sum, msg) => {
+    /**
+     * 获取最大上下文限制
+     */
+    get maxTokens(): number {
+        return this.config.getActiveProviderContextWindow() || 200000;
+    }
+
+    /**
+     * 获取当前消息 Token 使用量（简单估算：每4个字符≈1 Token）
+     */
+    get currentTokens(): number {
+        return this.messages.reduce((sum, msg) => {
             const content = typeof msg.content === 'string' ? msg.content : '';
             return sum + Math.ceil(content.length / 4);
         }, 0);
+    }
 
-        // 计算使用百分比
-        this.tokenUsagePercent = Math.min(
-            Math.round((this.currentTokens / this.maxTokens) * 100),
+    /**
+     * 获取 Token 使用百分比
+     */
+    get tokenUsagePercent(): number {
+        const maxTokens = this.maxTokens;
+        if (!maxTokens) {
+            return 0;
+        }
+        return Math.min(
+            Math.round((this.currentTokens / maxTokens) * 100),
             100
         );
     }
@@ -915,6 +1150,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     scrollToBottom(): void {
         this.shouldScrollToBottom = true;
+        this.scheduleAutoScroll(true);
     }
 
     /**
@@ -933,7 +1169,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private performScrollToBottom(): void {
         const chatContainer = this.chatContainerRef?.nativeElement;
         if (chatContainer) {
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
         }
     }
 
@@ -944,6 +1180,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const target = event.target as HTMLElement;
         if (!target) return;
         this.updateScrollButtons(target);
+    }
+
+    /**
+     * 阻止滚轮事件冒泡，避免被外层捕获导致无法滚动
+     */
+    onWheel(event: WheelEvent): void {
+        event.stopPropagation();
     }
 
     /**
@@ -963,10 +1206,84 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const scrollTop = container.scrollTop;
         const scrollHeight = container.scrollHeight;
         const clientHeight = container.clientHeight;
+        const distanceFromBottom = Math.max(scrollHeight - (scrollTop + clientHeight), 0);
+        this.isUserNearBottom = distanceFromBottom <= this.AUTO_SCROLL_THRESHOLD;
 
         // 判断是否显示滚动按钮
-        this.showScrollTop = scrollTop > 50;
-        this.showScrollBottom = scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 50;
+        const showTop = scrollTop > 50;
+        const showBottom = scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 50;
+
+        if (this.showScrollTop === showTop && this.showScrollBottom === showBottom) {
+            return;
+        }
+
+        if (this.pendingScrollUpdate !== null) {
+            this.queuedScrollState = { showTop, showBottom };
+            return;
+        }
+
+        this.pendingScrollUpdate = window.setTimeout(() => {
+            this.runInAngular(() => {
+                this.pendingScrollUpdate = null;
+                const state = this.queuedScrollState ?? { showTop, showBottom };
+                this.queuedScrollState = null;
+                this.showScrollTop = state.showTop;
+                this.showScrollBottom = state.showBottom;
+            });
+        }, 0);
+    }
+
+    /**
+     * 调度自动滚动，确保 DOM 渲染完成后再滚动
+     */
+    private scheduleAutoScroll(force: boolean = false): void {
+        if (!force && !this.isUserNearBottom) {
+            return;
+        }
+        if (this.autoScrollPending) {
+            return;
+        }
+        this.autoScrollPending = true;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                this.autoScrollPending = false;
+                this.performScrollToBottom();
+            });
+        });
+    }
+
+    /**
+     * 调度变更检测（Zoneless 兼容）
+     */
+    private scheduleDetectChanges(): void {
+        if (this.detectChangesPending) {
+            return;
+        }
+        this.detectChangesPending = true;
+        // 使用 setTimeout 避免 rAF 在后台或无交互时被节流导致 UI 不更新
+        window.setTimeout(() => {
+            this.runInAngular(() => {
+                this.detectChangesPending = false;
+                try {
+                    this.appRef.tick();
+                } catch {
+                    try {
+                        this.cdr.detectChanges();
+                    } catch {
+                        // 忽略销毁期间的变更检测异常
+                    }
+                }
+            });
+        }, 0);
+    }
+
+    private runInAngular(fn: () => void): void {
+        if (NgZone.isInAngularZone()) {
+            fn();
+            return;
+        }
+
+        this.ngZone.run(fn);
     }
 
     /**

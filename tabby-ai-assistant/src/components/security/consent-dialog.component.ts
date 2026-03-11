@@ -4,6 +4,7 @@ import { RiskLevel } from '../../types/security.types';
 
 @Component({
     selector: 'app-consent-dialog',
+    standalone: false,
     templateUrl: './consent-dialog.component.html',
     styleUrls: ['./consent-dialog.component.scss']
 })

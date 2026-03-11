@@ -120,9 +120,11 @@ export class AppRootComponent {
     royalSidebarPreviewVisible = false
     sidebarFilter = ''
     royalConnectionGroups: RoyalConnectionGroup[] = []
+    filteredRoyalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
     royalSingleExpandMode = false
     royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
+    royalSessionGroups: RoyalNavigationGroup[] = []
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
     private readonly maxFixedTabWidth = 600
@@ -241,6 +243,7 @@ export class AppRootComponent {
         private changeDetector: ChangeDetectorRef,
     ) {
         this.restoreRoyalPreferences()
+        this.recomputeRoyalSidebarGroups()
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
@@ -742,7 +745,7 @@ export class AppRootComponent {
         return `connections:${groupID}`
     }
 
-    get filteredRoyalConnectionGroups (): RoyalConnectionGroup[] {
+    private buildFilteredRoyalConnectionGroups (): RoyalConnectionGroup[] {
         const filterText = this.sidebarFilter.trim().toLowerCase()
         if (!filterText) {
             return this.royalConnectionGroups
@@ -758,7 +761,7 @@ export class AppRootComponent {
             .filter(group => group.items.length > 0)
     }
 
-    get royalSessionGroups (): RoyalNavigationGroup[] {
+    private buildRoyalSessionGroups (): RoyalNavigationGroup[] {
         const groups: Record<RoyalEnvironment, RoyalNavigationGroup> = {
             prod: {
                 id: 'prod',
@@ -820,6 +823,16 @@ export class AppRootComponent {
         return (['prod', 'lab', 'dev', 'other'] as RoyalEnvironment[])
             .map(groupID => groups[groupID])
             .filter(group => group.items.length > 0)
+    }
+
+    private recomputeRoyalSidebarGroups (): void {
+        this.filteredRoyalConnectionGroups = this.buildFilteredRoyalConnectionGroups()
+        this.royalSessionGroups = this.buildRoyalSessionGroups()
+    }
+
+    onSidebarFilterChange (value: string): void {
+        this.sidebarFilter = value
+        this.recomputeRoyalSidebarGroups()
     }
 
     private getRoyalTabLabel (tab: BaseTabComponent): string {
@@ -959,7 +972,7 @@ export class AppRootComponent {
             }
             this.setRoyalConnectionBinding(profileID, target.targetTab)
         }
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
     }
 
     private startRoyalRestoredBindingsRecovery (): void {
@@ -1007,7 +1020,7 @@ export class AppRootComponent {
             this.royalRestoredBindingCandidates.delete(hostTab)
         }
 
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
 
         if (!this.royalRestoredBindingCandidates.size) {
             this.stopRoyalRestoredBindingsRecovery()
@@ -1075,7 +1088,7 @@ export class AppRootComponent {
         if (target.hostTab instanceof SplitTabComponent && target.targetTab !== target.hostTab) {
             target.hostTab.focus(target.targetTab)
         }
-        this.syncRoyalActiveConnection()
+        this.scheduleRoyalActiveSync()
     }
 
     private observeRoyalTab (tab: BaseTabComponent): void {
@@ -1089,6 +1102,7 @@ export class AppRootComponent {
     private syncRoyalActiveConnection (): void {
         this.cleanupRoyalConnectionBindings()
         this.activeRoyalTab = this.getRoyalResolvedActiveTab()
+        this.recomputeRoyalSidebarGroups()
         this.ensureRoyalActiveGroupExpanded()
     }
 
@@ -1273,8 +1287,7 @@ export class AppRootComponent {
             }
 
             this.royalConnectionGroups = mapped
-            this.ensureRoyalActiveGroupExpanded()
-            this.scheduleViewRefresh()
+            this.scheduleRoyalActiveSync()
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }

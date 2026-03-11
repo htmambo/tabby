@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional, Injector } from '@angular/core';
 import { Observable, from, throwError, Subject, merge } from 'rxjs';
-import { map, catchError, tap, takeUntil, finalize } from 'rxjs/operators';
+import { map, catchError, tap, takeUntil, finalize, filter } from 'rxjs/operators';
 import {
     ChatMessage, MessageRole, ChatRequest, ChatResponse, CommandRequest, CommandResponse,
     ExplainRequest, ExplainResponse, StreamEvent, ToolCall, ToolResult,
@@ -31,6 +31,8 @@ import { VllmProviderService } from '../providers/vllm-provider.service';
 export class AiAssistantService {
     // 提供商映射表
     private providerMapping: { [key: string]: BaseAiProvider } = {};
+    private initialized = false;
+    private pendingProviderRefresh: number | null = null;
 
     constructor(
         private providerManager: AiProviderManagerService,
@@ -52,6 +54,15 @@ export class AiAssistantService {
     ) {
         // 构建提供商映射表
         this.buildProviderMapping();
+
+        this.config.onConfigChange().pipe(
+            filter(change => change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === 'providers' || change.key === '*')
+        ).subscribe(() => {
+            if (!this.initialized) {
+                return;
+            }
+            this.scheduleProviderRefresh();
+        });
     }
 
     /**
@@ -115,6 +126,54 @@ export class AiAssistantService {
         }
 
         this.logger.info('AI Assistant initialized successfully');
+        this.initialized = true;
+    }
+
+    private scheduleProviderRefresh(): void {
+        if (this.pendingProviderRefresh !== null) {
+            return;
+        }
+        this.pendingProviderRefresh = window.setTimeout(() => {
+            this.pendingProviderRefresh = null;
+            this.refreshProvidersFromConfig();
+        }, 0);
+    }
+
+    private refreshProvidersFromConfig(): void {
+        if (!this.config.isEnabled()) {
+            return;
+        }
+
+        const allConfigs = this.config.getAllProviderConfigs();
+        const configuredNames = new Set(Object.keys(allConfigs));
+
+        for (const [name, providerConfig] of Object.entries(allConfigs)) {
+            const provider = this.providerMapping[name];
+            if (!provider) {
+                this.logger.warn(`Provider not found in mapping: ${name}`);
+                continue;
+            }
+            try {
+                provider.configure({
+                    ...providerConfig,
+                    enabled: providerConfig.enabled !== false
+                });
+                this.providerManager.registerProvider(provider);
+            } catch (error) {
+                this.logger.error(`Failed to refresh provider: ${name}`, error);
+            }
+        }
+
+        for (const provider of this.providerManager.getAllProviders()) {
+            if (!configuredNames.has(provider.name)) {
+                this.providerManager.unregisterProvider(provider.name);
+            }
+        }
+
+        const defaultProvider = this.config.getDefaultProvider();
+        if (defaultProvider && this.providerManager.hasProvider(defaultProvider)) {
+            this.providerManager.setActiveProvider(defaultProvider);
+        }
     }
 
     /**
@@ -1158,6 +1217,30 @@ export class AiAssistantService {
                                     }
                                     break;
 
+                                case 'message_end': {
+                                    // 兼容只在 message_end 返回完整内容的 Provider
+                                    const messageContent = event?.message?.content || '';
+                                    if (messageContent) {
+                                        if (!roundTextContent) {
+                                            roundTextContent = messageContent;
+                                            subscriber.next({
+                                                type: 'text_delta',
+                                                textDelta: messageContent
+                                            });
+                                        } else if (messageContent.length > roundTextContent.length) {
+                                            const delta = messageContent.slice(roundTextContent.length);
+                                            roundTextContent = messageContent;
+                                            if (delta) {
+                                                subscriber.next({
+                                                    type: 'text_delta',
+                                                    textDelta: delta
+                                                });
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+
                                 case 'tool_use_start':
                                     // 转发工具开始
                                     subscriber.next({
@@ -1655,31 +1738,47 @@ export class AiAssistantService {
 
         // 2. 无工具调用检测 (只在 AI 响应后检查)
         if (phase === 'after_ai_response') {
-            if (currentToolCalls.length === 0 && state.lastAiResponse) {
-                // 先检查「未完成暗示」
-                if (this.hasIncompleteHint(state.lastAiResponse)) {
-                    this.logger.warn('AI indicated incomplete task but no tools called', {
-                        response: state.lastAiResponse.substring(0, 100)
-                    });
-                    return { shouldTerminate: false, reason: 'no_tools' };
+            if (currentToolCalls.length === 0) {
+                const responseText = state.lastAiResponse || '';
+                const trimmedResponse = responseText.trim();
+
+                // 没有文本且无工具调用，直接结束
+                if (!trimmedResponse) {
+                    return {
+                        shouldTerminate: true,
+                        reason: 'no_tools',
+                        message: '本轮无工具调用，且未收到文本回复'
+                    };
                 }
 
-                // === 新增：检查 AI 是否提到了工具名但没调用 ===
-                if (this.mentionsToolWithoutCalling(state.lastAiResponse)) {
+                const hasToolHistory = state.toolCallHistory.length > 0;
+                const shortResponse = trimmedResponse.length < 200;
+
+                // === 检查 AI 是否提到了工具名但没调用 ===
+                if (this.mentionsToolWithoutCalling(trimmedResponse) && shortResponse) {
                     this.logger.warn('AI mentioned tool but did not call it, continuing', {
-                        response: state.lastAiResponse.substring(0, 100)
+                        response: trimmedResponse.substring(0, 100)
                     });
                     return { shouldTerminate: false, reason: 'mentioned_tool' };
                 }
 
+                // 仅在尚未执行过工具时，才允许因“未完成暗示”继续
+                if (!hasToolHistory && shortResponse && this.hasIncompleteHint(trimmedResponse)) {
+                    this.logger.warn('AI indicated incomplete task but no tools called', {
+                        response: trimmedResponse.substring(0, 100)
+                    });
+                    return { shouldTerminate: false, reason: 'no_tools' };
+                }
+
                 // 检查总结关键词
-                if (this.hasSummaryHint(state.lastAiResponse)) {
+                if (this.hasSummaryHint(trimmedResponse)) {
                     return {
                         shouldTerminate: true,
                         reason: 'summarizing',
                         message: '检测到 AI 正在总结，任务已完成'
                     };
                 }
+
                 // 默认无工具调用结束
                 return {
                     shouldTerminate: true,

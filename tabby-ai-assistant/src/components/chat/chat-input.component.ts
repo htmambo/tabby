@@ -6,6 +6,7 @@ import { AiAssistantService } from '../../services/core/ai-assistant.service';
 
 @Component({
     selector: 'app-chat-input',
+    standalone: false,
     templateUrl: './chat-input.component.html',
     styleUrls: ['./chat-input.component.scss'],
     encapsulation: ViewEncapsulation.None

@@ -15,6 +15,7 @@ const PLUGIN_VERSION = packageJson.version;
 
 @Component({
     selector: 'app-ai-settings-tab',
+    standalone: false,
     templateUrl: './ai-settings-tab.component.html',
     styleUrls: ['./ai-settings-tab.component.scss'],
     encapsulation: ViewEncapsulation.None
@@ -30,7 +31,17 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
     t: any;
 
     // Tab 定义（使用翻译 key）
-    tabs: { id: AiSettingsTabId; labelKey: string; icon: string }[] = [];
+    tabs: { id: AiSettingsTabId; labelKey: string; icon: string }[] = [
+        { id: 'providers', labelKey: 'settings.providersTab', icon: 'fa fa-cloud' },
+        { id: 'general', labelKey: 'settings.generalTab', icon: 'fa fa-cog' },
+        { id: 'context', labelKey: 'settings.contextTab', icon: 'fa fa-database' },
+        { id: 'security', labelKey: 'settings.securityTab', icon: 'fa fa-shield' },
+        { id: 'chat', labelKey: 'settings.chatTab', icon: 'fa fa-comments' },
+        { id: 'mcp', labelKey: 'settings.mcpTab', icon: 'fa fa-plug' },
+        { id: 'data', labelKey: 'settings.dataTab', icon: 'fa fa-folder-open' },
+        { id: 'proxy', labelKey: 'proxy', icon: 'fa fa-server' },
+        { id: 'advanced', labelKey: 'settings.advancedTab', icon: 'fa fa-sliders' }
+    ];
 
     private destroy$ = new Subject<void>();
 
@@ -47,14 +58,13 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.activeTab = this.settingsView.consumeRequestedTab(this.activeTab);
-        this.updateTabLabels();
+        this.ensureActiveTab();
 
         // 监听语言变化
         this.translate.translation$.pipe(
             takeUntil(this.destroy$)
         ).subscribe(translation => {
             this.t = translation;
-            this.updateTabLabels();
         });
 
         this.settingsView.requestedTab$.pipe(
@@ -62,6 +72,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
             filter((tab): tab is AiSettingsTabId => !!tab)
         ).subscribe(tab => {
             this.activeTab = tab;
+            this.ensureActiveTab();
             this.settingsView.clearRequestedTab();
         });
 
@@ -74,21 +85,10 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    /**
-     * 更新 Tab 标签
-     */
-    private updateTabLabels(): void {
-        this.tabs = [
-            { id: 'providers', labelKey: 'settings.providersTab', icon: 'fa fa-cloud' },
-            { id: 'general', labelKey: 'settings.generalTab', icon: 'fa fa-cog' },
-            { id: 'context', labelKey: 'settings.contextTab', icon: 'fa fa-database' },
-            { id: 'security', labelKey: 'settings.securityTab', icon: 'fa fa-shield' },
-            { id: 'chat', labelKey: 'settings.chatTab', icon: 'fa fa-comments' },
-            { id: 'mcp', labelKey: 'settings.mcpTab', icon: 'fa fa-plug' },
-            { id: 'data', labelKey: 'settings.dataTab', icon: 'fa fa-folder-open' },
-            { id: 'proxy', labelKey: 'proxy', icon: 'fa fa-server' },
-            { id: 'advanced', labelKey: 'settings.advancedTab', icon: 'fa fa-sliders' }
-        ];
+    private ensureActiveTab(): void {
+        if (!this.tabs.some(tab => tab.id === this.activeTab)) {
+            this.activeTab = 'general';
+        }
     }
 
     /**
@@ -117,6 +117,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
      */
     switchTab(tabId: AiSettingsTabId): void {
         this.activeTab = tabId;
+        this.ensureActiveTab();
     }
 
     /**

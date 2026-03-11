@@ -7,6 +7,7 @@ import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
  */
 @Component({
     selector: 'ai-toolbar-button',
+    standalone: false,
     templateUrl: './ai-toolbar-button.component.html',
     styleUrls: ['./ai-toolbar-button.component.scss']
 })

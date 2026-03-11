@@ -4,6 +4,7 @@ import { ToastService } from '../../services/core/toast.service';
 
 @Component({
     selector: 'app-chat-message',
+    standalone: false,
     templateUrl: './chat-message.component.html',
     styleUrls: ['./chat-message.component.scss'],
     encapsulation: ViewEncapsulation.None

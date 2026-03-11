@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
     selector: 'app-error-message',
+    standalone: false,
     templateUrl: './error-message.component.html',
     styleUrls: ['./error-message.component.scss']
 })

@@ -6,6 +6,7 @@ import { LoggerService } from '../../services/core/logger.service';
 
 @Component({
     selector: 'app-command-preview',
+    standalone: false,
     templateUrl: './command-preview.component.html',
     styleUrls: ['./command-preview.component.scss']
 })

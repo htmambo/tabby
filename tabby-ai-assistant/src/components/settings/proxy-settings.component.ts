@@ -13,6 +13,7 @@ import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types';
  */
 @Component({
     selector: 'app-proxy-settings',
+    standalone: false,
     template: `
         <div class="proxy-settings">
             <h3>{{ t.proxy?.title || '代理设置' }}</h3>

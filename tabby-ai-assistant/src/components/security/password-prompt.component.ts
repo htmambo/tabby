@@ -3,6 +3,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-password-prompt',
+    standalone: false,
     templateUrl: './password-prompt.component.html',
     styleUrls: ['./password-prompt.component.scss']
 })

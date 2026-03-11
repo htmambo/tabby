@@ -9,6 +9,7 @@ import { ContextConfig, DEFAULT_CONTEXT_CONFIG } from '../../types/ai.types';
 
 @Component({
     selector: 'app-context-settings',
+    standalone: false,
     templateUrl: './context-settings.component.html',
     styleUrls: ['./context-settings.component.scss'],
     encapsulation: ViewEncapsulation.None

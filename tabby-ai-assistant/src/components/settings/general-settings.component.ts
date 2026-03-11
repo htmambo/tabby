@@ -10,6 +10,7 @@ import { TranslateService, SupportedLanguage } from '../../i18n';
 
 @Component({
     selector: 'app-general-settings',
+    standalone: false,
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
     encapsulation: ViewEncapsulation.None

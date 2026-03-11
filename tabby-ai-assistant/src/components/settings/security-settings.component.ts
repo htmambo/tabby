@@ -7,6 +7,7 @@ import { TranslateService } from '../../i18n';
 
 @Component({
     selector: 'app-security-settings',
+    standalone: false,
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
     encapsulation: ViewEncapsulation.None

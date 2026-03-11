@@ -179,7 +179,7 @@ title-bar(
                             type='search',
                             [placeholder]='royalSidebarFilterPlaceholder',
                             [ngModel]='sidebarFilter',
-                            (ngModelChange)='sidebarFilter = $event'
+                            (ngModelChange)='onSidebarFilterChange($event)'
                         )
                 .royal-nav-sections
                     ng-container(*ngIf='filteredRoyalConnectionGroups as connectionGroups')
