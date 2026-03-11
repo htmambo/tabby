@@ -290,6 +290,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private readonly AUTO_SCROLL_THRESHOLD = 80;
     private initialAutoScrollPending = false;
     private detectChangesPending = false;
+    private scrollRefreshPending = false;
 
     constructor(
         private aiService: AiAssistantService,
@@ -878,6 +879,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.saveChatHistory();
         this.shouldScrollToBottom = true;
         this.scheduleDetectChanges();
+        this.scheduleScrollRefresh();
     }
 
     /**
@@ -1250,6 +1252,36 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.performScrollToBottom();
             });
         });
+    }
+
+    /**
+     * 通过轻微滚动触发一次 DOM 更新（用于某些环境下的渲染滞后）
+     */
+    private scheduleScrollRefresh(): void {
+        if (this.scrollRefreshPending) {
+            return;
+        }
+        this.scrollRefreshPending = true;
+        window.setTimeout(() => {
+            this.scrollRefreshPending = false;
+            this.triggerScrollRefresh();
+        }, 50);
+    }
+
+    private triggerScrollRefresh(): void {
+        const container = this.chatContainerRef?.nativeElement as HTMLElement | undefined;
+        if (!container) {
+            return;
+        }
+        const original = container.scrollTop;
+        const max = Math.max(container.scrollHeight - container.clientHeight, 0);
+        if (max <= 0) {
+            return;
+        }
+
+        const next = original < max ? Math.min(original + 1, max) : Math.max(original - 1, 0);
+        container.scrollTop = next;
+        container.scrollTop = original;
     }
 
     /**
