@@ -18,7 +18,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "tabby-*": ["../../tabby-*/src"],
+      "tabby-*": ["../../tabby-*"],
       "*": ["../../app/node_modules/*"]
     }
   }
