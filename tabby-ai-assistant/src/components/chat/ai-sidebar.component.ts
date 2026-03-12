@@ -878,8 +878,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         if (shouldForceScroll) {
             this.shouldScrollToBottom = true
             this.scheduleAutoScroll()
+            this.scheduleDetectChanges()
+        } else {
+            // 中间轮次结束时，等 DOM 落地后再触发滚动刷新
+            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
         }
-        this.scheduleDetectChanges()
     }
 
     /**
@@ -911,6 +914,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.saveChatHistory()
         this.shouldScrollToBottom = true
         this.scheduleDetectChanges(() => {
+            this.scheduleScrollRefresh()
             this.scheduleScrollToAiMessageStart()
         })
     }
@@ -1025,7 +1029,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                 aiMessage.content += toolResults.join('')
                             }
                             this.logger.info('Stream completed')
-                            this.scheduleDetectChanges()
+                            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                             break
                     }
                 }),
@@ -1041,7 +1045,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     this.updateTokenUsage()
                     this.saveChatHistory()
                     this.shouldScrollToBottom = true
-                    this.scheduleDetectChanges()
+                    this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                 })
             })
 
@@ -1290,6 +1294,72 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.performScrollToBottom()
             })
         })
+    }
+
+    /**
+     * 通过轻微滚动触发一次 DOM 更新（用于某些环境下的渲染滞后）
+     * 目前此Bug仅在我的Deepin中碰到
+     */
+    private scheduleScrollRefresh(): void {
+        if (this.scrollRefreshPending) {
+            return
+        }
+        this.scrollRefreshPending = true
+        window.setTimeout(() => {
+            this.scrollRefreshPending = false
+            this.triggerScrollRefresh()
+        }, 50)
+    }
+
+    private triggerScrollRefresh(): void {
+        const container = this.resolveSidebarMessagesContainer()
+        if (!container) {
+            this.logger.warn('[AI Sidebar] Scroll refresh skipped: container not found')
+            return
+        }
+        const before = container.scrollTop
+        const max = Math.max(container.scrollHeight - container.clientHeight, 0)
+        const delta = 2
+        const up = Math.max(before - delta, 0)
+
+        this.logger.info('[AI Sidebar] Scroll refresh scheduled', {
+            before,
+            delta,
+            up,
+            max,
+            height: container.scrollHeight,
+            clientHeight: container.clientHeight
+        })
+
+        window.setTimeout(() => {
+            container.scrollTop = up
+            container.dispatchEvent(new Event('scroll'))
+            // 强制一次 reflow，确保 scrollTop 写入生效
+            void container.offsetHeight
+            this.logger.info('[AI Sidebar] Scroll refresh (up)', {
+                before,
+                delta,
+                up,
+                applied: container.scrollTop,
+                max,
+                height: container.scrollHeight,
+                clientHeight: container.clientHeight
+            })
+
+            requestAnimationFrame(() => {
+                container.scrollTop = max
+                container.dispatchEvent(new Event('scroll'))
+                this.logger.info('[AI Sidebar] Scroll refresh (down)', {
+                    before,
+                    delta,
+                    up,
+                    applied: container.scrollTop,
+                    max,
+                    height: container.scrollHeight,
+                    clientHeight: container.clientHeight
+                })
+            })
+        }, 0)
     }
 
     private resolveSidebarMessagesContainer(): HTMLElement | null {
@@ -1567,8 +1637,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             textarea.style.maxHeight = '100px'
 
             // 动态调整消息列表高度：基础高度 - 输入框实际高度
-            const baseHeight = 186 // header(60) + token bar(36) + input padding(24) + button(36) + gaps(30)
-            const inputActualHeight = newHeight + 24 // textarea height + padding
+            const baseHeight = 190 // header(60) + token bar(36) + input padding(24) + button(36) + gaps(34)
+            const inputActualHeight = newHeight // textarea height + padding
             const messagesHeight = `calc(100vh - ${baseHeight + inputActualHeight - 36}px)`
             this.chatContainerRef.nativeElement.style.height = messagesHeight
         }

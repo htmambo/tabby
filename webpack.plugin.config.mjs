@@ -3,6 +3,7 @@ import * as path from 'path'
 import wp from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import { AngularWebpackPlugin } from '@ngtools/webpack'
+import * as vars from './scripts/vars.mjs'
 
 const bundleAnalyzer = new BundleAnalyzerPlugin({
     analyzerPort: 0,
@@ -171,6 +172,9 @@ export default options => {
         ],
         plugins: [
             new devtoolPlugin(sourceMapOptions),
+            new wp.DefinePlugin({
+                __TABBY_BUILD_VERSION__: JSON.stringify(vars.version),
+            }),
             new AngularWebpackPlugin({
                 tsconfig: path.resolve(options.dirname, 'tsconfig.json'),
                 directTemplateLoading: false,

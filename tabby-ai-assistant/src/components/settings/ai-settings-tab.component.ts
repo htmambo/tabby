@@ -8,10 +8,8 @@ import { LoggerService } from '../../services/core/logger.service';
 import { ToastService } from '../../services/core/toast.service';
 import { TranslateService } from '../../i18n';
 
-// 动态读取 package.json 中的版本号
-declare const require: (path: string) => any;
-const packageJson = require('../../../package.json');
-const PLUGIN_VERSION = packageJson.version;
+declare const __TABBY_BUILD_VERSION__: string;
+const PLUGIN_VERSION = __TABBY_BUILD_VERSION__;
 
 @Component({
     selector: 'app-ai-settings-tab',

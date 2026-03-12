@@ -23,6 +23,15 @@ for (let plugin of vars.builtinPlugins) {
         sh.rm('-rf', targetPath)
         sh.cp('-r', sourcePath, '.')
     }
+    const packagePath = path.join(targetPath, 'package.json')
+    if (fs.existsSync(packagePath)) {
+        const packageInfo = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+        if (packageInfo.version !== vars.version) {
+            packageInfo.version = vars.version
+            fs.writeFileSync(packagePath, `${JSON.stringify(packageInfo, null, 2)}\n`)
+            log.info('version', `${plugin}: staged package.json -> ${vars.version}`)
+        }
+    }
     sh.rm('-rf', path.join(plugin, 'node_modules'))
     await runYarnInstallWithRetry({
         cwd: path.join(target, plugin),

@@ -156,7 +156,7 @@
 // Messages container
 .ai-sidebar-messages {
     flex: 1 1 auto;
-    height: calc(100vh - 186px); // 100% - header(60px) - token bar(36px) - input area(90px)
+    height: calc(100vh - 190px); // 100% - header(60px) - token bar(36px) - input area(94px)
     min-height: 0;
     overflow-y: auto !important;
     overflow-x: hidden !important;

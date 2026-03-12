@@ -34,6 +34,7 @@ sentry.properties
 sentry-symbols.js
 
 *.psd
+.env
 
 crowdin.yml
 .crowdin.env
