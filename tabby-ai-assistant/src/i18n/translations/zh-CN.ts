@@ -1,13 +1,13 @@
 /**
  * 中文翻译
  */
-import { TranslationKeys } from '../types';
+import { TranslationKeys } from '../types'
 
 export const zhCN: TranslationKeys = {
     common: {
         save: '保存',
         cancel: '取消',
-        delete: '删除',
+        'delete': '删除',
         confirm: '确定',
         enabled: '已启用',
         disabled: '已禁用',
@@ -23,8 +23,8 @@ export const zhCN: TranslationKeys = {
         yes: '是',
         no: '否',
         reset: '重置',
-        default: '默认',
-        today: '今天'
+        'default': '默认',
+        today: '今天',
     },
 
     settings: {
@@ -36,7 +36,7 @@ export const zhCN: TranslationKeys = {
         chatTab: '聊天设置',
         mcpTab: 'MCP服务器',
         dataTab: '数据管理',
-        advancedTab: '高级设置'
+        advancedTab: '高级设置',
     },
 
     general: {
@@ -60,7 +60,7 @@ export const zhCN: TranslationKeys = {
         shortcutGenerateDesc: '从选择生成命令',
         shortcutExplain: '解释命令',
         shortcutExplainDesc: '解释当前选择',
-        shortcutTip: '快捷键可在 Tabby 设置中自定义'
+        shortcutTip: '快捷键可在 Tabby 设置中自定义',
     },
 
     chatSettings: {
@@ -93,7 +93,7 @@ export const zhCN: TranslationKeys = {
         clearHistory: '清空聊天记录',
         resetDefaults: '重置为默认',
         clearHistoryConfirm: '确定要清空所有聊天记录吗？此操作不可恢复。',
-        resetConfirm: '确定要重置所有设置为默认值吗？'
+        resetConfirm: '确定要重置所有设置为默认值吗？',
     },
 
     security: {
@@ -118,7 +118,7 @@ export const zhCN: TranslationKeys = {
         patternPlaceholder: '输入危险命令模式',
         saveSettings: '保存设置',
         resetDefaults: '恢复默认',
-        resetConfirm: '确定要重置安全设置为默认值吗？'
+        resetConfirm: '确定要重置安全设置为默认值吗？',
     },
 
     providers: {
@@ -136,7 +136,7 @@ export const zhCN: TranslationKeys = {
         saveConfig: '保存配置',
         testConnection: '测试连接',
         detectService: '检测服务',
-        delete: '删除',
+        'delete': '删除',
         deleteConfirm: '确定要删除该提供商配置吗？',
         testSuccess: '连接测试成功！',
         testFail: '连接测试失败',
@@ -144,7 +144,7 @@ export const zhCN: TranslationKeys = {
         configSaved: '配置已保存',
         configDeleted: '配置已删除',
         contextWindow: '上下文限制',
-        contextWindowDesc: '模型的最大上下文Token数'
+        contextWindowDesc: '模型的最大上下文Token数',
     },
 
     providerNames: {
@@ -154,7 +154,7 @@ export const zhCN: TranslationKeys = {
         glm: 'GLM (ChatGLM)',
         openaiCompatible: 'OpenAI Compatible',
         ollama: 'Ollama (本地)',
-        vllm: 'vLLM (本地)'
+        vllm: 'vLLM (本地)',
     },
 
     chatInterface: {
@@ -171,14 +171,14 @@ export const zhCN: TranslationKeys = {
         clearChatConfirm: '确定要清空聊天记录吗？',
         exportChat: '导出聊天记录',
         switchProvider: '切换AI提供商',
-        providerBadge: '提供商'
+        providerBadge: '提供商',
     },
 
     riskLevel: {
         low: '低风险',
         medium: '中等风险',
         high: '高风险',
-        unknown: '未知'
+        unknown: '未知',
     },
 
     advancedSettings: {
@@ -192,12 +192,12 @@ export const zhCN: TranslationKeys = {
             debug: '调试',
             info: '信息',
             warn: '警告',
-            error: '错误'
+            error: '错误',
         },
         systemInfo: '系统信息',
         pluginVersion: '插件版本',
         supportedProviders: '支持的提供商',
-        currentProvider: '当前提供商'
+        currentProvider: '当前提供商',
     },
 
     contextSettings: {
@@ -220,7 +220,7 @@ export const zhCN: TranslationKeys = {
         compactThresholdDesc: '使用率超过此阈值时生成摘要压缩（默认：85%）',
         messagesToKeep: '保留消息数',
         messagesToKeepDesc: '压缩时始终保留的最近消息数量（默认：3）',
-        configSaved: '上下文配置已保存'
+        configSaved: '上下文配置已保存',
     },
 
     mcpSettings: {
@@ -257,7 +257,7 @@ export const zhCN: TranslationKeys = {
         connect: '连接',
         disconnect: '断开',
         connecting: '连接中...',
-        retry: '重试'
+        retry: '重试',
     },
 
     dataSettings: {
@@ -271,7 +271,7 @@ export const zhCN: TranslationKeys = {
         lastModified: '最后修改',
         actions: '操作',
         view: '查看',
-        delete: '删除',
+        'delete': '删除',
         noFiles: '暂无数据文件',
         statistics: '数据统计',
         chatSessions: '聊天会话',
@@ -282,7 +282,7 @@ export const zhCN: TranslationKeys = {
         importData: '导入数据',
         migrateData: '迁移浏览器数据',
         clearAll: '清除所有数据',
-        migrationNote: '检测到浏览器存储中还有旧数据，建议点击"迁移浏览器数据"将数据迁移到文件存储'
+        migrationNote: '检测到浏览器存储中还有旧数据，建议点击"迁移浏览器数据"将数据迁移到文件存储',
     },
 
     proxy: {
@@ -321,7 +321,7 @@ export const zhCN: TranslationKeys = {
         usageInfo2: '本地提供商（Ollama、vLLM）默认不使用代理',
         usageInfo3: '支持 HTTP、HTTPS 和 SOCKS5 代理协议',
         optional: '可选',
-        recommended: '推荐'
+        recommended: '推荐',
     },
 
     systemPrompts: {
@@ -377,6 +377,6 @@ export const zhCN: TranslationKeys = {
 5. 考虑当前工作目录和上下文环境
 
 请始终返回有效的命令，避免危险操作（如删除系统文件、格式化磁盘等）。
-如果无法确定准确的命令，请明确说明并提供替代方案。`
-    }
-};
+如果无法确定准确的命令，请明确说明并提供替代方案。`,
+    },
+}

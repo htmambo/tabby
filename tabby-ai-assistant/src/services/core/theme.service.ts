@@ -2,13 +2,13 @@
  * 主题服务 - 统一管理所有 AI 助手主题
  * 通过动态 <style> 注入实现主题切换
  */
-import { Injectable, OnDestroy } from '@angular/core';
-import { Subject, Subscription } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
-import { ConfigService } from 'tabby-core';
-import { ConfigProviderService } from './config-provider.service';
+import { Injectable, OnDestroy } from '@angular/core'
+import { Subject, Subscription } from 'rxjs'
+import { debounceTime } from 'rxjs/operators'
+import { ConfigService } from 'tabby-core'
+import { ConfigProviderService } from './config-provider.service'
 
-export type ThemeType = 'auto' | 'light' | 'dark' | 'pixel' | 'tech' | 'parchment';
+export type ThemeType = 'auto' | 'light' | 'dark' | 'pixel' | 'tech' | 'parchment'
 
 // 使用 Tabby 项目自身主题变量（--theme-* / --bs-* / --body-bg）
 // 作为 AI 助手默认配色来源，避免维护独立的 light/dark 硬编码调色盘
@@ -40,21 +40,21 @@ const PROJECT_THEME_VARIABLES: Record<string, string> = {
     'ai-border-radius': 'var(--bs-border-radius, 0.375rem)',
     'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.18)',
     // 字体
-    'ai-font-family': "var(--bs-body-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
+    'ai-font-family': 'var(--bs-body-font-family, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif)',
     'ai-font-size-base': 'var(--bs-body-font-size, 14px)',
     // 其他
     'ai-dark': 'var(--theme-bg, var(--bs-body-bg, #1e1e1e))',
     'ai-light': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
-    'ai-transition-duration': '0.2s'
-};
+    'ai-transition-duration': '0.2s',
+}
 
 // 主题变量定义
 const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>> = {
     light: {
-        ...PROJECT_THEME_VARIABLES
+        ...PROJECT_THEME_VARIABLES,
     },
     dark: {
-        ...PROJECT_THEME_VARIABLES
+        ...PROJECT_THEME_VARIABLES,
     },
     pixel: {
         // 主色调 - 经典 GameBoy 绿
@@ -84,12 +84,12 @@ const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>
         'ai-border-radius': '0',
         'ai-box-shadow': '4px 4px 0 rgba(15, 56, 15, 0.8)',
         // 字体 - 像素风格
-        'ai-font-family': "'Courier New', 'Press Start 2P', monospace",
+        'ai-font-family': '\'Courier New\', \'Press Start 2P\', monospace',
         'ai-font-size-base': '12px',
         // 其他
         'ai-dark': '#0f380f',
         'ai-light': '#306230',
-        'ai-transition-duration': '0s'
+        'ai-transition-duration': '0s',
     },
     tech: {
         // 主色调 - 霓虹赛博朋克
@@ -119,12 +119,12 @@ const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>
         'ai-border-radius': '4px',
         'ai-box-shadow': '0 0 20px rgba(0, 255, 249, 0.2)',
         // 字体 - 科幻感
-        'ai-font-family': "'Segoe UI', 'Share Tech Mono', monospace",
+        'ai-font-family': '\'Segoe UI\', \'Share Tech Mono\', monospace',
         'ai-font-size-base': '14px',
         // 其他
         'ai-dark': '#0a0a0f',
         'ai-light': '#12121a',
-        'ai-transition-duration': '0.3s'
+        'ai-transition-duration': '0.3s',
     },
     parchment: {
         // 做旧羊皮卷 (Parchment) 主题
@@ -156,7 +156,7 @@ const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>
         'ai-border-radius': '2px',
         'ai-box-shadow': '0 2px 8px rgba(61, 46, 28, 0.15)',
         // 字体
-        'ai-font-family': "'Georgia', 'Times New Roman', serif",
+        'ai-font-family': '\'Georgia\', \'Times New Roman\', serif',
         'ai-font-size-base': '14px',
         // 其他
         'ai-dark': '#3d2e1c',
@@ -166,23 +166,23 @@ const THEME_VARIABLES: Record<Exclude<ThemeType, 'auto'>, Record<string, string>
         'ai-code-bg': '#f0e0c0',
         // 滚动条
         'ai-scrollbar': '#c9b896',
-        'ai-scrollbar-thumb': '#a08060'
-    }
-};
+        'ai-scrollbar-thumb': '#a08060',
+    },
+}
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class ThemeService implements OnDestroy {
-    private currentTheme$ = new Subject<ThemeType>();
-    private tabbySubscription?: Subscription;
-    private styleElement: HTMLStyleElement;
-    readonly theme$ = this.currentTheme$.asObservable();
+    private currentTheme$ = new Subject<ThemeType>()
+    private tabbySubscription?: Subscription
+    private styleElement: HTMLStyleElement
+    readonly theme$ = this.currentTheme$.asObservable()
 
     private readonly allThemeClasses = [
         'ai-theme-auto', 'ai-theme-light', 'ai-theme-dark',
-        'ai-theme-pixel', 'ai-theme-tech', 'ai-theme-parchment'
-    ];
+        'ai-theme-pixel', 'ai-theme-tech', 'ai-theme-parchment',
+    ]
 
     // AI 助手容器选择器
     private readonly containerSelectors = [
@@ -190,67 +190,67 @@ export class ThemeService implements OnDestroy {
         '.ai-settings-tab',
         '.ai-assistant',
         '.ai-sidebar-container',
-        '.ai-chat-modal-left'
-    ];
+        '.ai-chat-modal-left',
+    ]
 
     constructor(
         private config: ConfigProviderService,
-        private tabbyConfig: ConfigService
+        private tabbyConfig: ConfigService,
     ) {
         // 创建并注入动态样式元素
-        this.styleElement = document.createElement('style');
-        this.styleElement.id = 'ai-assistant-dynamic-theme';
-        document.head.appendChild(this.styleElement);
+        this.styleElement = document.createElement('style')
+        this.styleElement.id = 'ai-assistant-dynamic-theme'
+        document.head.appendChild(this.styleElement)
 
-        this.init();
+        this.init()
     }
 
     private init(): void {
-        const savedTheme = this.config.get<string>('theme', 'auto') as ThemeType;
-        this.setTheme(savedTheme);
+        const savedTheme = this.config.get<string>('theme', 'auto') as ThemeType
+        this.setTheme(savedTheme)
 
         // 监听 Tabby 主题变化（带防抖）
         this.tabbySubscription = this.tabbyConfig.changed$.pipe(
-            debounceTime(100)
+            debounceTime(100),
         ).subscribe(() => {
-            const currentTheme = this.config.get<string>('theme', 'auto');
+            const currentTheme = this.config.get<string>('theme', 'auto')
             if (currentTheme === 'auto') {
-                this.applyTheme('auto');
+                this.applyTheme('auto')
             }
-        });
+        })
     }
 
     /**
      * 获取当前主题
      */
     getCurrentTheme(): ThemeType {
-        return this.config.get<string>('theme', 'auto') as ThemeType;
+        return this.config.get<string>('theme', 'auto') as ThemeType
     }
 
     /**
      * 设置并应用主题
      */
     setTheme(theme: ThemeType): void {
-        this.config.set('theme', theme);
-        this.applyTheme(theme);
+        this.config.set('theme', theme)
+        this.applyTheme(theme)
     }
 
     /**
      * 核心方法：动态注入主题样式
      */
     applyTheme(theme: ThemeType): void {
-        this.currentTheme$.next(theme);
+        this.currentTheme$.next(theme)
 
         // 确定实际生效的主题
-        let effectiveTheme: ThemeType = theme;
+        let effectiveTheme: ThemeType = theme
         if (theme === 'auto') {
-            effectiveTheme = this.getTabbyEffectiveTheme();
+            effectiveTheme = this.getTabbyEffectiveTheme()
         }
 
         // 1. 生成 CSS 变量样式
-        const cssVariables = this.buildCssVariables(effectiveTheme);
+        const cssVariables = this.buildCssVariables(effectiveTheme)
         // 2. 生成主题特定样式
-        const themeStyles = this.buildThemeStyles(effectiveTheme);
+        const themeStyles = this.buildThemeStyles(effectiveTheme)
         // 3. 注入完整样式到 DOM
         this.styleElement.innerHTML = `
 /* AI Assistant Dynamic Theme - ${theme} (effective: ${effectiveTheme}) */
@@ -261,27 +261,27 @@ ${this.containerSelectors.join(',\n')} {
 ${cssVariables}
 }
 ${themeStyles}
-        `.trim();
+        `.trim()
 
         // 4. 更新类名和 data 属性
-        this.updateBodyClasses(theme, effectiveTheme);
+        this.updateBodyClasses(theme, effectiveTheme)
 
         // 5. 触发自定义事件
         window.dispatchEvent(new CustomEvent('ai-theme-changed', {
-            detail: { theme, effectiveTheme }
-        }));
+            detail: { theme, effectiveTheme },
+        }))
 
-        console.log('[ThemeService] Theme applied dynamically:', { theme, effectiveTheme });
+        console.log('[ThemeService] Theme applied dynamically:', { theme, effectiveTheme })
     }
 
     /**
      * 生成 CSS 变量字符串
      */
     private buildCssVariables(theme: ThemeType): string {
-        const vars = THEME_VARIABLES[theme] || THEME_VARIABLES.dark;
+        const vars = THEME_VARIABLES[theme] || THEME_VARIABLES.dark
         return Object.entries(vars)
             .map(([key, value]) => `    --${key}: ${value} !important;`)
-            .join('\n');
+            .join('\n')
     }
 
     /**
@@ -337,7 +337,7 @@ ${this.containerSelectors.join(',\n')} {
         letter-spacing: 1px !important;
     }
 }
-            `.trim();
+            `.trim()
         }
 
         if (theme === 'tech') {
@@ -408,7 +408,7 @@ ${this.containerSelectors.join(',\n')} {
         box-shadow: 0 0 10px var(--ai-primary) !important;
     }
 }
-            `.trim();
+            `.trim()
         }
 
         if (theme === 'parchment') {
@@ -557,89 +557,89 @@ ${this.containerSelectors.join(',\n')} {
         font-family: var(--ai-font-family) !important;
     }
 }
-            `.trim();
+            `.trim()
         }
 
-        return '';
+        return ''
     }
 
     /**
      * 更新 body 和 html 的类名
      */
     private updateBodyClasses(theme: ThemeType, effectiveTheme: ThemeType): void {
-        const root = document.documentElement;
-        const body = document.body;
+        const root = document.documentElement
+        const body = document.body
 
         // 移除所有主题类
         this.allThemeClasses.forEach(cls => {
-            root.classList.remove(cls);
-            body.classList.remove(cls);
-        });
+            root.classList.remove(cls)
+            body.classList.remove(cls)
+        })
 
         // 添加新主题类
-        const themeClass = `ai-theme-${theme}`;
-        const effectiveClass = `ai-theme-${effectiveTheme}`;
+        const themeClass = `ai-theme-${theme}`
+        const effectiveClass = `ai-theme-${effectiveTheme}`
 
-        root.classList.add(themeClass);
-        body.classList.add(themeClass);
-        root.setAttribute('data-ai-theme', effectiveTheme);
-        body.setAttribute('data-ai-theme', effectiveTheme);
+        root.classList.add(themeClass)
+        body.classList.add(themeClass)
+        root.setAttribute('data-ai-theme', effectiveTheme)
+        body.setAttribute('data-ai-theme', effectiveTheme)
 
         if (theme === 'auto') {
-            root.classList.add(effectiveClass);
-            body.classList.add(effectiveClass);
+            root.classList.add(effectiveClass)
+            body.classList.add(effectiveClass)
         }
 
         // 更新所有 AI 容器的类
-        const containers = document.querySelectorAll(this.containerSelectors.join(','));
+        const containers = document.querySelectorAll(this.containerSelectors.join(','))
         containers.forEach(container => {
-            this.allThemeClasses.forEach(cls => container.classList.remove(cls));
-            container.classList.add(themeClass);
-            container.setAttribute('data-ai-theme', effectiveTheme);
+            this.allThemeClasses.forEach(cls => container.classList.remove(cls))
+            container.classList.add(themeClass)
+            container.setAttribute('data-ai-theme', effectiveTheme)
 
             if (theme === 'auto') {
-                container.classList.add(effectiveClass);
+                container.classList.add(effectiveClass)
             }
-        });
+        })
     }
 
     /**
      * 获取 Tabby 当前的有效主题
      */
     private getTabbyEffectiveTheme(): 'light' | 'dark' {
-        const appearance = this.tabbyConfig.store?.appearance;
+        const appearance = this.tabbyConfig.store?.appearance
 
         if (appearance) {
             if (appearance.colorScheme) {
-                const scheme = appearance.colorScheme.toLowerCase();
-                if (scheme === 'light') return 'light';
-                if (scheme === 'dark') return 'dark';
+                const scheme = appearance.colorScheme.toLowerCase()
+                if (scheme === 'light') {return 'light'}
+                if (scheme === 'dark') {return 'dark'}
             }
 
-            const theme = appearance.theme?.toLowerCase() || '';
-            const darkThemes = ['hype', 'standard', 'dark', 'dracula', 'monokai', 'one-dark'];
+            const theme = appearance.theme?.toLowerCase() || ''
+            const darkThemes = ['hype', 'standard', 'dark', 'dracula', 'monokai', 'one-dark']
             if (darkThemes.some(t => theme.includes(t))) {
-                return 'dark';
+                return 'dark'
             }
         }
 
-        return 'dark';
+        return 'dark'
     }
 
     /**
      * 刷新所有容器的主题类
      */
     refreshContainers(): void {
-        const theme = this.config.get<string>('theme', 'auto') as ThemeType;
-        this.applyTheme(theme);
+        const theme = this.config.get<string>('theme', 'auto') as ThemeType
+        this.applyTheme(theme)
     }
 
     ngOnDestroy(): void {
         // 清理动态样式
-        if (this.styleElement && this.styleElement.parentNode) {
-            this.styleElement.parentNode.removeChild(this.styleElement);
+        if (this.styleElement?.parentNode) {
+            this.styleElement.parentNode.removeChild(this.styleElement)
         }
-        this.tabbySubscription?.unsubscribe();
-        this.currentTheme$.complete();
+        this.tabbySubscription?.unsubscribe()
+        this.currentTheme$.complete()
     }
 }

@@ -1,6 +1,6 @@
 /**
  * UI 层流式事件类型定义
- * 
+ *
  * 设计原则：
  * - 前端无需关心工具执行细节，只需渲染
  * - 所有内容已过滤/转义，可直接使用
@@ -24,7 +24,7 @@ export type UIEventType =
     | 'agent_done'     // Agent 完成
     | 'task_summary'   // 任务总结（task_complete 工具专用）
     | 'async_task'     // 异步任务状态更新
-    | 'error';         // 系统错误
+    | 'error'         // 系统错误
 
 /**
  * 工具分类
@@ -35,7 +35,7 @@ export type ToolCategory =
     | 'file'        // 文件操作
     | 'network'     // 网络请求
     | 'system'      // 系统控制
-    | 'other';      // 其他
+    | 'other'      // 其他
 
 /**
  * Agent 完成原因
@@ -48,7 +48,7 @@ export type AgentDoneReason =
     | 'high_failure_rate'
     | 'timeout'
     | 'max_rounds'
-    | 'user_cancel';
+    | 'user_cancel'
 
 /**
  * 工具错误类型
@@ -57,7 +57,7 @@ export type ToolErrorType =
     | 'execution'   // 执行错误
     | 'timeout'     // 超时
     | 'rejected'    // 用户拒绝
-    | 'unknown';    // 未知错误
+    | 'unknown'    // 未知错误
 
 // ============================================================================
 // 工具输出格式
@@ -219,7 +219,7 @@ export type AsyncTaskStatus =
     | 'running'      // 执行中
     | 'completed'    // 成功完成
     | 'failed'       // 执行失败
-    | 'timeout';     // 超时
+    | 'timeout'     // 超时
 
 /**
  * 异步任务事件
@@ -254,7 +254,7 @@ export type AnyUIStreamEvent =
     | UIAgentDoneEvent
     | UITaskSummaryEvent
     | UIAsyncTaskEvent
-    | UIErrorEvent;
+    | UIErrorEvent
 
 // ============================================================================
 // UI 渲染块类型（用于消息的结构化渲染）
@@ -263,12 +263,12 @@ export type AnyUIStreamEvent =
 /**
  * UI 渲染块类型
  */
-export type UIBlockType = 'text' | 'tool' | 'divider' | 'status' | 'task_summary' | 'async_task';
+export type UIBlockType = 'text' | 'tool' | 'divider' | 'status' | 'task_summary' | 'async_task'
 
 /**
  * 工具状态
  */
-export type ToolStatus = 'executing' | 'success' | 'error';
+export type ToolStatus = 'executing' | 'success' | 'error'
 
 /**
  * 文本渲染块
@@ -368,7 +368,7 @@ export type AnyUIBlock =
     | UIDividerBlock
     | UIStatusBlock
     | UITaskSummaryBlock
-    | UIAsyncTaskBlock;
+    | UIAsyncTaskBlock
 
 // ============================================================================
 // 常量定义
@@ -378,24 +378,24 @@ export type AnyUIBlock =
  * Agent 完成原因映射
  */
 export const AGENT_DONE_REASONS: Record<AgentDoneReason, { text: string; icon: string }> = {
-    'task_complete': { text: '任务完成', icon: '✅' },
-    'no_tools': { text: '已执行完成', icon: '✅' },
-    'summarizing': { text: '总结完成', icon: '✅' },
-    'repeated_tool': { text: '检测到重复操作', icon: '⚠️' },
-    'high_failure_rate': { text: '多次调用失败', icon: '⚠️' },
-    'timeout': { text: '执行超时', icon: '⏱️' },
-    'max_rounds': { text: '达到最大轮数', icon: '⚠️' },
-    'user_cancel': { text: '用户取消', icon: '🛑' },
-};
+    task_complete: { text: '任务完成', icon: '✅' },
+    no_tools: { text: '已执行完成', icon: '✅' },
+    summarizing: { text: '总结完成', icon: '✅' },
+    repeated_tool: { text: '检测到重复操作', icon: '⚠️' },
+    high_failure_rate: { text: '多次调用失败', icon: '⚠️' },
+    timeout: { text: '执行超时', icon: '⏱️' },
+    max_rounds: { text: '达到最大轮数', icon: '⚠️' },
+    user_cancel: { text: '用户取消', icon: '🛑' },
+}
 
 /**
  * 工具分类图标映射
  */
 export const TOOL_CATEGORY_ICONS: Record<ToolCategory, string> = {
-    'terminal': '💻',
-    'browser': '🌐',
-    'file': '📁',
-    'network': '🔗',
-    'system': '⚙️',
-    'other': '🔧',
-};
+    terminal: '💻',
+    browser: '🌐',
+    file: '📁',
+    network: '🔗',
+    system: '⚙️',
+    other: '🔧',
+}

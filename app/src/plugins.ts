@@ -19,8 +19,12 @@ function normalizePath (p: string): string {
     return p
 }
 
+function normalizePathForCompare (p: string): string {
+    return normalizePath(path.resolve(p)).replace(/\\/g, '/').toLowerCase()
+}
+
 const builtinPluginsPath = process.env.TABBY_DEV ? path.dirname(remote.app.getAppPath()) : path.join((process as any).resourcesPath, 'builtin-plugins')
-const configuredBuiltinPluginRootPaths = (process.env.TABBY_BUILTIN_PLUGINS || '')
+const configuredBuiltinPluginRootPaths = (process.env.TABBY_BUILTIN_PLUGINS ?? '')
     .split(path.delimiter)
     .filter(Boolean)
     .map(x => normalizePath(path.resolve(x)))
@@ -115,7 +119,7 @@ export function initModuleLookup (userPluginsPath: string): void {
     }
 
     process.env.NODE_PATH = [
-        process.env.NODE_PATH || '',
+        process.env.NODE_PATH ?? '',
         paths.join(path.delimiter),
     ].filter(Boolean).join(path.delimiter)
     nodeModule._initPaths()
@@ -226,10 +230,6 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
         console.error('Cannot load package info for', packageName)
         return null
     }
-}
-
-function normalizePathForCompare (p: string): string {
-    return normalizePath(path.resolve(p)).replace(/\\/g, '/').toLowerCase()
 }
 
 function isManagedUserPluginCopy (pluginPath: string): boolean {

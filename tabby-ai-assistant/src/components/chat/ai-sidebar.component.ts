@@ -301,7 +301,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private readonly AUTO_SCROLL_THRESHOLD = 80
     private initialAutoScrollPending = false
     private detectChangesPending = false
-    private pendingAfterDetectChanges: Array<() => void> = []
+    private pendingAfterDetectChanges: (() => void)[] = []
     private scrollRefreshPending = false
     private activeAiMessageId: string | null = null
     private aiStartScrollPending = false
@@ -318,7 +318,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         private cdr: ChangeDetectorRef,
         private appRef: ApplicationRef,
         private ngZone: NgZone,
-        private electron: ElectronService
+        private electron: ElectronService,
     ) {
         // 开发模式下过滤 NG0100 错误
         if (typeof window !== 'undefined') {
@@ -336,7 +336,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     ngOnInit(): void {
         // 监听主题变化
         this.themeService.theme$.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(theme => {
             this.logger.debug('Sidebar theme changed', { theme })
         })
@@ -357,7 +357,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.updateTokenUsage()
 
         this.config.onConfigChange().pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(change => {
             if (change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === '*' || change.key === 'providers') {
                 this.refreshProviderState()
@@ -368,7 +368,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
         // 订阅预设消息（快捷键功能）
         this.sidebarService.presetMessage$.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(({ message, autoSend }) => {
             this.inputValue = message
 
@@ -420,7 +420,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 container.style.overflowX = 'hidden'
                 this.logger.debug('[AI Sidebar] Scroll styles applied via JS')
             }
-        }, 100);  // 延迟确保 DOM 已渲染
+        }, 100)  // 延迟确保 DOM 已渲染
     }
 
     ngAfterViewChecked(): void {
@@ -459,7 +459,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
         const optionNames = new Set<string>([
             ...Object.keys(configs),
-            ...Array.from(statusProviders.keys())
+            ...Array.from(statusProviders.keys()),
         ])
 
         this.providerOptions = Array.from(optionNames).map(name => {
@@ -469,7 +469,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 name,
                 displayName: providerConfig?.displayName || statusInfo?.displayName || name,
                 enabled: providerConfig?.enabled !== false,
-                configured: this.isProviderConfigured(name, providerConfig)
+                configured: this.isProviderConfigured(name, providerConfig),
             }
         }).sort((a, b) => a.displayName.localeCompare(b.displayName))
 
@@ -483,7 +483,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private getProviderDisplayName(
         providerName: string,
         configs: Record<string, ProviderConfig>,
-        statusProviders: Map<string, any>
+        statusProviders: Map<string, any>,
     ): string {
         if (!providerName) {
             return ''
@@ -534,11 +534,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.currentSessionId = lastSession.sessionId
                 this.messages = lastSession.messages.map(msg => ({
                     ...msg,
-                    timestamp: new Date(msg.timestamp)
+                    timestamp: new Date(msg.timestamp),
                 }))
                 this.logger.info('Loaded chat history', {
                     sessionId: this.currentSessionId,
-                    messageCount: this.messages.length
+                    messageCount: this.messages.length,
                 })
                 this.initialAutoScrollPending = true
             }
@@ -556,7 +556,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             id: this.generateId(),
             role: MessageRole.ASSISTANT,
             content: `您好！我是AI助手。\n\n我可以帮助您：\n• 将自然语言转换为终端命令\n• 解释复杂的命令\n• 分析命令执行结果\n• 提供错误修复建议\n\n当前使用：${this.currentProvider}\n\n请输入您的问题或描述您想执行的命令。`,
-            timestamp: new Date()
+            timestamp: new Date(),
         }
         this.messages.push(welcomeMessage)
     }
@@ -584,7 +584,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 (m.content.includes('tool-call-card') || m.content.includes('<invoke') || m.content.includes('<parameter'))) {
                 return {
                     ...m,
-                    content: this.cleanToolCardHtml(m.content)
+                    content: this.cleanToolCardHtml(m.content),
                 }
             }
             return m
@@ -599,7 +599,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private convertToAgentMessage(apiMessage: any): ChatMessage {
         let content = typeof apiMessage.content === 'string' ? apiMessage.content : ''
 
-        if (!content || !content.trim()) {
+        if (!content?.trim()) {
             const derived = this.deriveContentFromUiBlocks(apiMessage)
             if (derived) {
                 content = derived
@@ -625,7 +625,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             id: apiMessage.id || this.generateId(),
             role: apiMessage.role as MessageRole,
             content,
-            timestamp: new Date(ts)
+            timestamp: new Date(ts),
         }
     }
 
@@ -682,7 +682,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private cleanToolCardHtml(content: string): string {
         // 移除工具卡片 div，保留输出内容
-        let cleaned = content
+        const cleaned = content
             // === 新增：移除 XML 格式的工具调用（防止 AI 模仿）===
             .replace(/<invoke\s+name="[^"]*"[^>]*>[\s\S]*?<\/invoke>/gi, '[工具已调用]')
             .replace(/<invoke\s+name="[^"]*"[^>]*>[\s\S]*/gi, '[工具已调用]')  // 未闭合的标签
@@ -728,7 +728,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             id: this.generateId(),
             role: MessageRole.USER,
             content: content.trim(),
-            timestamp: new Date()
+            timestamp: new Date(),
         }
         this.messages.push(userMessage)
 
@@ -745,7 +745,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             role: MessageRole.ASSISTANT,
             content: '',
             uiBlocks: [],
-            timestamp: new Date()
+            timestamp: new Date(),
         }
         this.messages.push(aiMessage)
         this.activeAiMessageId = aiMessage.id
@@ -759,15 +759,15 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.toolStreamProcessor.startAgentStream({
                 messages: messagesForAgent,
                 maxTokens: 2000,
-                temperature: 0.7
+                temperature: 0.7,
             }, {
-                maxRounds: this.config.get('agentMaxRounds', 50) ?? 50
+                maxRounds: this.config.get('agentMaxRounds', 50) ?? 50,
             }).pipe(
-                takeUntil(this.destroy$)
+                takeUntil(this.destroy$),
             ).subscribe({
                 next: (event: AnyUIStreamEvent) => this.runInAngular(() => this.renderUIEvent(event, aiMessage)),
                 error: (error) => this.runInAngular(() => this.handleStreamError(error, aiMessage)),
-                complete: () => this.runInAngular(() => this.handleStreamComplete(aiMessage))
+                complete: () => this.runInAngular(() => this.handleStreamComplete()),
             })
 
         } catch (error) {
@@ -799,7 +799,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     // 创建新的文本块
                     message.uiBlocks.push({
                         type: 'text',
-                        content: event.content
+                        content: event.content,
                     })
                 }
                 break
@@ -811,7 +811,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     id: event.toolId,
                     name: event.toolDisplayName,
                     icon: event.toolIcon,
-                    status: 'executing'
+                    status: 'executing',
                 })
                 break
 
@@ -821,7 +821,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 if (block) {
                     block.status = event.success ? 'success' : 'error'
                     block.duration = event.duration
-                    block.output = event.output;  // 已格式化，直接使用
+                    block.output = event.output  // 已格式化，直接使用
                 }
                 break
 
@@ -838,7 +838,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 // 添加分隔线块
                 message.uiBlocks.push({
                     type: 'divider',
-                    round: event.roundNumber
+                    round: event.roundNumber,
                 })
                 break
 
@@ -852,7 +852,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     type: 'status',
                     icon: event.reasonIcon,
                     text: event.reasonText,
-                    rounds: event.totalRounds
+                    rounds: event.totalRounds,
                 })
                 // 兜底：如果流未正常 complete，收到 agent_done 也要结束加载态
                 this.finalizeStream()
@@ -865,8 +865,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     type: 'task_summary',
                     success: event.success,
                     summary: event.summary,
-                    nextSteps: event.nextSteps
+                    nextSteps: event.nextSteps,
                 })
+                break
+
+            case 'async_task':
                 break
 
             case 'error':
@@ -897,7 +900,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     /**
      * 处理流完成
      */
-    private handleStreamComplete(message: ChatMessage): void {
+    private handleStreamComplete(): void {
         this.finalizeStream()
     }
 
@@ -932,7 +935,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             id: this.generateId(),
             role: MessageRole.USER,
             content: content.trim(),
-            timestamp: new Date()
+            timestamp: new Date(),
         }
         this.messages.push(userMessage)
 
@@ -947,7 +950,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             id: this.generateId(),
             role: MessageRole.ASSISTANT,
             content: '',
-            timestamp: new Date()
+            timestamp: new Date(),
         }
         this.messages.push(aiMessage)
         this.activeAiMessageId = aiMessage.id
@@ -962,9 +965,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.aiService.chatStream({
                 messages: this.messages.slice(0, -1),  // 排除刚添加的空 AI 消息
                 maxTokens: 2000,
-                temperature: 0.7
+                temperature: 0.7,
             }).pipe(
-                takeUntil(this.destroy$)
+                takeUntil(this.destroy$),
             ).subscribe({
                 next: (event: StreamEvent) => this.runInAngular(() => {
                     switch (event.type) {
@@ -978,12 +981,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
                         case 'tool_use_start':
                             // 工具开始 - 显示工具名称
-                            const toolName = event.toolCall?.name || 'unknown'
+                            const toolName = event.toolCall?.name ?? 'unknown'
                             aiMessage.content += `\n\n🔧 正在执行 ${toolName}...`
                             if (event.toolCall?.id) {
                                 pendingTools.set(event.toolCall.id, {
                                     name: toolName,
-                                    startTime: Date.now()
+                                    startTime: Date.now(),
                                 })
                             }
                             this.shouldScrollToBottom = true
@@ -994,11 +997,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             if (event.toolCall) {
                                 const toolInfo = pendingTools.get(event.toolCall.id)
                                 const duration = toolInfo ? Date.now() - toolInfo.startTime : 0
-                                const name = toolInfo?.name || event.toolCall.name || 'unknown'
+                                const name = toolInfo?.name ?? event.toolCall.name ?? 'unknown'
 
                                 aiMessage.content = aiMessage.content.replace(
                                     new RegExp(`🔧 正在执行 ${name}\\.\\.\\.`),
-                                    `✅ ${name} (${duration}ms)`
+                                    `✅ ${name} (${duration}ms)`,
                                 )
                                 pendingTools.delete(event.toolCall.id)
                             }
@@ -1018,9 +1021,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             // 工具错误
                             aiMessage.content = aiMessage.content.replace(
                                 /🔧 正在执行 \w+\.\.\./,
-                                `❌ 工具执行失败: ${event.error}`
+                                `❌ 工具执行失败: ${event.error}`,
                             )
                             this.shouldScrollToBottom = true
+                            break
+
+                        case 'tool_use_delta':
                             break
 
                         case 'message_end':
@@ -1030,6 +1036,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             }
                             this.logger.info('Stream completed')
                             this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
+                            break
+
+                        case 'error':
+                            aiMessage.content += `\n\n❌ 错误: ${event.error ?? 'Unknown error'}`
+                            this.shouldScrollToBottom = true
                             break
                     }
                 }),
@@ -1046,7 +1057,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     this.saveChatHistory()
                     this.shouldScrollToBottom = true
                     this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
-                })
+                }),
             })
 
         } catch (error) {
@@ -1123,7 +1134,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
         return Math.min(
             Math.round((this.currentTokens / maxTokens) * 100),
-            100
+            100,
         )
     }
 
@@ -1151,7 +1162,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const chatData = {
             provider: this.currentProvider,
             exportTime: new Date().toISOString(),
-            messages: this.messages
+            messages: this.messages,
         }
 
         const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
@@ -1219,7 +1230,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     onScroll(event: Event): void {
         const target = event.target as HTMLElement
-        if (!target) return
+        if (!target) {return}
         this.updateScrollButtons(target)
     }
 
@@ -1280,7 +1291,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     /**
      * 调度自动滚动，确保 DOM 渲染完成后再滚动
      */
-    private scheduleAutoScroll(force: boolean = false): void {
+    private scheduleAutoScroll(force = false): void {
         if (!force && !this.isUserNearBottom) {
             return
         }
@@ -1328,7 +1339,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             up,
             max,
             height: container.scrollHeight,
-            clientHeight: container.clientHeight
+            clientHeight: container.clientHeight,
         })
 
         window.setTimeout(() => {
@@ -1343,7 +1354,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 applied: container.scrollTop,
                 max,
                 height: container.scrollHeight,
-                clientHeight: container.clientHeight
+                clientHeight: container.clientHeight,
             })
 
             requestAnimationFrame(() => {
@@ -1356,7 +1367,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     applied: container.scrollTop,
                     max,
                     height: container.scrollHeight,
-                    clientHeight: container.clientHeight
+                    clientHeight: container.clientHeight,
                 })
             })
         }, 0)
@@ -1464,7 +1475,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.chatHistory.saveSession(this.currentSessionId, this.messages)
                 this.logger.info('Chat history saved', {
                     sessionId: this.currentSessionId,
-                    messageCount: this.messages.length
+                    messageCount: this.messages.length,
                 })
             }
         } catch (error) {
@@ -1492,7 +1503,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     formatTimestamp(timestamp: Date): string {
         return timestamp.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
         })
     }
 
@@ -1500,7 +1511,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 格式化消息内容（支持 Markdown 渲染）
      */
     formatMessage(content: string): string {
-        if (!content) return ''
+        if (!content) {return ''}
 
         try {
             // 使用 marked 库渲染 Markdown
@@ -1511,7 +1522,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 breaks: true,       // 支持换行
                 gfm: true,          // 支持 GitHub Flavored Markdown
                 headerIds: false,   // 不生成标题 ID
-                mangle: false       // 不转义邮箱
+                mangle: false,       // 不转义邮箱
             })
 
             return marked.parse(content)

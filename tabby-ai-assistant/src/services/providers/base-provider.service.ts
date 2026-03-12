@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { IBaseAiProvider, ProviderConfig, AuthConfig, ProviderCapability, HealthStatus, ValidationResult, ProviderInfo, PROVIDER_DEFAULTS } from '../../types/provider.types';
-import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, StreamEvent, MessageRole } from '../../types/ai.types';
-import { LoggerService } from '../core/logger.service';
-import { TranslateService } from '../../i18n';
+import { Injectable } from '@angular/core'
+import { Observable } from 'rxjs'
+import { IBaseAiProvider, ProviderConfig, AuthConfig, ProviderCapability, HealthStatus, ValidationResult, ProviderInfo, PROVIDER_DEFAULTS } from '../../types/provider.types'
+import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, StreamEvent, MessageRole } from '../../types/ai.types'
+import { LoggerService } from '../core/logger.service'
+import { TranslateService } from '../../i18n'
 
 /**
  * 基础AI提供商抽象类
@@ -11,53 +11,53 @@ import { TranslateService } from '../../i18n';
  */
 @Injectable()
 export abstract class BaseAiProvider implements IBaseAiProvider {
-    abstract readonly name: string;
-    abstract readonly displayName: string;
-    abstract readonly capabilities: ProviderCapability[];
-    abstract readonly authConfig: AuthConfig;
+    abstract readonly name: string
+    abstract readonly displayName: string
+    abstract readonly capabilities: ProviderCapability[]
+    abstract readonly authConfig: AuthConfig
 
-    protected config: ProviderConfig | null = null;
-    protected isInitialized = false;
-    protected lastHealthCheck: { status: HealthStatus; timestamp: Date } | null = null;
+    protected config: ProviderConfig | null = null
+    protected isInitialized = false
+    protected lastHealthCheck: { status: HealthStatus; timestamp: Date } | null = null
 
     constructor(
         protected logger: LoggerService,
-        protected translate: TranslateService
+        protected translate: TranslateService,
     ) {}
 
     /**
      * 配置提供商
      */
     configure(config: ProviderConfig): void {
-        this.config = { ...config };
-        this.isInitialized = true;
-        this.logger.debug(`Provider ${this.name} configured`, { config: { ...config, apiKey: '***' } });
+        this.config = { ...config }
+        this.isInitialized = true
+        this.logger.debug(`Provider ${this.name} configured`, { config: { ...config, apiKey: '***' } })
     }
 
     /**
      * 聊天功能 - 必须由子类实现
      */
-    abstract chat(request: ChatRequest): Promise<ChatResponse>;
+    abstract chat(request: ChatRequest): Promise<ChatResponse>
 
     /**
      * 流式聊天功能 - 必须由子类实现
      */
-    abstract chatStream(request: ChatRequest): Observable<StreamEvent>;
+    abstract chatStream(request: ChatRequest): Observable<StreamEvent>
 
     /**
      * 生成命令 - 必须由子类实现
      */
-    abstract generateCommand(request: CommandRequest): Promise<CommandResponse>;
+    abstract generateCommand(request: CommandRequest): Promise<CommandResponse>
 
     /**
      * 解释命令 - 必须由子类实现
      */
-    abstract explainCommand(request: ExplainRequest): Promise<ExplainResponse>;
+    abstract explainCommand(request: ExplainRequest): Promise<ExplainResponse>
 
     /**
      * 分析结果 - 必须由子类实现
      */
-    abstract analyzeResult(request: AnalysisRequest): Promise<AnalysisResponse>;
+    abstract analyzeResult(request: AnalysisRequest): Promise<AnalysisResponse>
 
     /**
      * 健康检查 - 默认实现，子类可以重写
@@ -65,26 +65,26 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
     async healthCheck(): Promise<HealthStatus> {
         try {
             // 1. 验证配置
-            const validation = this.validateConfig();
+            const validation = this.validateConfig()
             if (!validation.valid) {
-                this.lastHealthCheck = { status: HealthStatus.UNHEALTHY, timestamp: new Date() };
-                return HealthStatus.UNHEALTHY;
+                this.lastHealthCheck = { status: HealthStatus.UNHEALTHY, timestamp: new Date() }
+                return HealthStatus.UNHEALTHY
             }
 
             // 2. 执行网络健康检查
-            const networkStatus = await this.performNetworkHealthCheck();
+            const networkStatus = await this.performNetworkHealthCheck()
 
             this.lastHealthCheck = {
                 status: networkStatus,
-                timestamp: new Date()
-            };
+                timestamp: new Date(),
+            }
 
-            return networkStatus;
+            return networkStatus
 
         } catch (error) {
-            this.logger.error(`Health check failed for ${this.name}`, error);
-            this.lastHealthCheck = { status: HealthStatus.UNHEALTHY, timestamp: new Date() };
-            return HealthStatus.UNHEALTHY;
+            this.logger.error(`Health check failed for ${this.name}`, error)
+            this.lastHealthCheck = { status: HealthStatus.UNHEALTHY, timestamp: new Date() }
+            return HealthStatus.UNHEALTHY
         }
     }
 
@@ -99,103 +99,103 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
                     id: 'health-check',
                     role: MessageRole.USER,
                     content: 'Hi',
-                    timestamp: new Date()
+                    timestamp: new Date(),
                 }],
                 maxTokens: 1,
-                temperature: 0
-            };
+                temperature: 0,
+            }
 
-            const response = await this.withRetry(() => this.sendTestRequest(testRequest));
+            const response = await this.withRetry(() => this.sendTestRequest(testRequest))
 
             if (this.isSuccessfulResponse(response)) {
-                return HealthStatus.HEALTHY;
+                return HealthStatus.HEALTHY
             } else {
                 this.logger.warn(`Health check returned unsuccessful response for ${this.name}`, {
-                    response: this.sanitizeResponse(response)
-                });
-                return HealthStatus.DEGRADED;
+                    response: this.sanitizeResponse(response),
+                })
+                return HealthStatus.DEGRADED
             }
 
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = error instanceof Error ? error.message : String(error)
 
             // 根据错误类型判断状态
             if (errorMessage.includes('timeout') || errorMessage.includes('Timed out')) {
-                this.logger.warn(`Health check timed out for ${this.name}`);
-                return HealthStatus.DEGRADED;
+                this.logger.warn(`Health check timed out for ${this.name}`)
+                return HealthStatus.DEGRADED
             }
 
             if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') ||
                 errorMessage.includes('invalid') || errorMessage.includes('API key')) {
-                this.logger.warn(`Health check authentication failed for ${this.name}`);
-                return HealthStatus.UNHEALTHY;
+                this.logger.warn(`Health check authentication failed for ${this.name}`)
+                return HealthStatus.UNHEALTHY
             }
 
             if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
-                this.logger.warn(`Health check rate limited for ${this.name}`);
-                return HealthStatus.DEGRADED;
+                this.logger.warn(`Health check rate limited for ${this.name}`)
+                return HealthStatus.DEGRADED
             }
 
-            this.logger.error(`Health check network error for ${this.name}`, error);
-            return HealthStatus.UNHEALTHY;
+            this.logger.error(`Health check network error for ${this.name}`, error)
+            return HealthStatus.UNHEALTHY
         }
     }
 
     /**
      * 发送测试请求 - 子类必须实现
      */
-    protected abstract sendTestRequest(request: ChatRequest): Promise<ChatResponse>;
+    protected abstract sendTestRequest(request: ChatRequest): Promise<ChatResponse>
 
     /**
      * 验证配置 - 默认实现，子类可以重写
      */
     validateConfig(): ValidationResult {
-        const errors: string[] = [];
-        const warnings: string[] = [];
+        const errors: string[] = []
+        const warnings: string[] = []
 
         // 检查必需的配置
         if (!this.config) {
-            errors.push('Provider not configured');
-            return { valid: false, errors, warnings };
+            errors.push('Provider not configured')
+            return { valid: false, errors, warnings }
         }
 
         // 检查API密钥
         if (!this.config.apiKey) {
-            errors.push('API key is required');
+            errors.push('API key is required')
         }
 
         // 检查模型
         if (!this.config.model) {
-            warnings.push('No model specified, using default');
+            warnings.push('No model specified, using default')
         }
 
         // 检查基础URL
         if (!this.config.baseURL) {
-            warnings.push('No base URL specified, using provider default');
+            warnings.push('No base URL specified, using provider default')
         }
 
         // 检查令牌限制
         if (this.config.maxTokens && this.config.maxTokens < 1) {
-            errors.push('Max tokens must be greater than 0');
+            errors.push('Max tokens must be greater than 0')
         }
 
         // 检查温度参数
         if (this.config.temperature !== undefined && (this.config.temperature < 0 || this.config.temperature > 2)) {
-            warnings.push('Temperature should be between 0 and 2');
+            warnings.push('Temperature should be between 0 and 2')
         }
 
         return {
             valid: errors.length === 0,
             errors: errors.length > 0 ? errors : undefined,
-            warnings: warnings.length > 0 ? warnings : undefined
-        };
+            warnings: warnings.length > 0 ? warnings : undefined,
+        }
     }
 
     /**
      * 检查是否支持指定能力
      */
     supportsCapability(capability: ProviderCapability): boolean {
-        return this.capabilities.includes(capability);
+        return this.capabilities.includes(capability)
     }
 
     /**
@@ -211,29 +211,29 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
             authConfig: this.authConfig,
             supportedModels: this.config?.model ? [this.config.model] : [],
             configured: this.isInitialized,
-            lastHealthCheck: this.lastHealthCheck ?? undefined
-        };
+            lastHealthCheck: this.lastHealthCheck ?? undefined,
+        }
     }
 
     /**
      * 获取当前配置
      */
     getConfig(): ProviderConfig | null {
-        return this.config;
+        return this.config
     }
 
     /**
      * 检查是否已配置
      */
     isConfigured(): boolean {
-        return this.isInitialized && this.config !== null;
+        return this.isInitialized && this.config !== null
     }
 
     /**
      * 检查是否启用
      */
     isEnabled(): boolean {
-        return this.config?.enabled !== false;
+        return this.config?.enabled !== false
     }
 
     /**
@@ -241,134 +241,137 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected getAuthHeaders(): Record<string, string> {
         const headers: Record<string, string> = {
-            'Content-Type': 'application/json'
-        };
+            'Content-Type': 'application/json',
+        }
 
         switch (this.authConfig.type) {
             case 'apiKey':
             case 'bearer':
                 if (this.config?.apiKey) {
-                    headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+                    headers['Authorization'] = `Bearer ${this.config.apiKey}`
                 }
-                break;
+                break
 
             case 'basic':
                 if (this.authConfig.credentials.username && this.authConfig.credentials.password) {
                     const credentials = Buffer.from(
-                        `${this.authConfig.credentials.username}:${this.authConfig.credentials.password}`
-                    ).toString('base64');
-                    headers['Authorization'] = `Basic ${credentials}`;
+                        `${this.authConfig.credentials.username}:${this.authConfig.credentials.password}`,
+                    ).toString('base64')
+                    headers['Authorization'] = `Basic ${credentials}`
                 }
-                break;
+                break
 
             case 'oauth':
                 // OAuth 认证预留
                 // 当前无提供商使用此认证方式
                 // 如需实现，可参考 OAuth 2.0 Authorization Code Flow
-                this.logger.debug('OAuth authentication not implemented');
-                break;
+                this.logger.debug('OAuth authentication not implemented')
+                break
+
+            case 'none':
+                break
         }
 
-        return headers;
+        return headers
     }
 
     /**
      * 获取请求超时时间
      */
     protected getTimeout(): number {
-        return this.config?.timeout || 30000; // 默认30秒
+        return this.config?.timeout ?? 30000 // 默认30秒
     }
 
     /**
      * 获取重试次数
      */
     protected getRetries(): number {
-        return this.config?.retries || 3;
+        return this.config?.retries ?? 3
     }
 
     /**
      * 执行重试逻辑
      */
     protected async withRetry<T>(operation: () => Promise<T>): Promise<T> {
-        let lastError: Error | null = null;
-        const retries = this.getRetries();
+        let lastError: Error | null = null
+        const retries = this.getRetries()
 
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                return await operation();
+                return await operation()
             } catch (error) {
-                lastError = error instanceof Error ? error : new Error(String(error));
+                lastError = error instanceof Error ? error : new Error(String(error))
 
                 if (attempt === retries) {
-                    break;
+                    break
                 }
 
                 // 指数退避
-                const delay = Math.pow(2, attempt) * 1000;
+                const delay = Math.pow(2, attempt) * 1000
                 this.logger.warn(
                     `Operation failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms`,
-                    { error: lastError.message }
-                );
+                    { error: lastError.message },
+                )
 
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise(resolve => setTimeout(resolve, delay))
             }
         }
 
-        throw lastError;
+        throw lastError ?? new Error('Operation failed after retries')
     }
 
     /**
      * 记录请求
      */
-    protected logRequest(request: any): void {
+    protected logRequest(request: unknown): void {
         this.logger.debug(`[${this.name}] Request`, {
-            request: this.sanitizeRequest(request)
-        });
+            request: this.sanitizeRequest(request),
+        })
     }
 
     /**
      * 记录响应
      */
-    protected logResponse(response: any): void {
+    protected logResponse(response: unknown): void {
         this.logger.debug(`[${this.name}] Response`, {
-            response: this.sanitizeResponse(response)
-        });
+            response: this.sanitizeResponse(response),
+        })
     }
 
     /**
      * 记录错误
      */
-    protected logError(error: any, context?: any): void {
+    protected logError(error: unknown, context?: unknown): void {
         this.logger.error(`[${this.name}] Error`, {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
-            context
-        });
+            context,
+        })
     }
 
     /**
      * 清理请求数据（移除敏感信息）
      */
-    protected sanitizeRequest(request: any): any {
-        const sanitized = { ...request };
+    protected sanitizeRequest(request: unknown): Record<string, unknown> {
+        const sanitized = { ...(request as Record<string, any>) } as Record<string, any>
         if (sanitized.apiKey) {
-            sanitized.apiKey = '***';
+            sanitized.apiKey = '***'
         }
         if (sanitized.headers?.Authorization) {
-            sanitized.headers.Authorization = '***';
+            sanitized.headers.Authorization = '***'
         }
-        return sanitized;
+        return sanitized
     }
 
     /**
      * 清理响应数据
      */
-    protected sanitizeResponse(response: any): any {
-        const sanitized = { ...response };
+    protected sanitizeResponse(response: unknown): Record<string, unknown> {
+        const sanitized = { ...(response as Record<string, any>) } as Record<string, any>
         if (sanitized.data?.apiKey) {
-            sanitized.data.apiKey = '***';
+            sanitized.data.apiKey = '***'
         }
-        return sanitized;
+        return sanitized
     }
 
     /**
@@ -376,11 +379,11 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected getBaseURL(): string {
         if (this.config?.baseURL) {
-            return this.config.baseURL;
+            return this.config.baseURL
         }
         // 从统一默认值获取
-        const defaults = PROVIDER_DEFAULTS[this.name];
-        return defaults?.baseURL || '';
+        const defaults = PROVIDER_DEFAULTS[this.name]
+        return defaults?.baseURL || ''
     }
 
     /**
@@ -388,79 +391,82 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected getDefaultModel(): string {
         if (this.config?.model) {
-            return this.config.model;
+            return this.config.model
         }
         // 从统一默认值获取
-        const defaults = PROVIDER_DEFAULTS[this.name];
-        return defaults?.model || 'default';
+        const defaults = PROVIDER_DEFAULTS[this.name]
+        return defaults?.model || 'default'
     }
 
     /**
      * 获取默认超时时间
      */
     protected getDefaultTimeout(): number {
-        const defaults = PROVIDER_DEFAULTS[this.name];
-        return defaults?.timeout || 30000;
+        const defaults = PROVIDER_DEFAULTS[this.name]
+        return defaults?.timeout || 30000
     }
 
     /**
      * 获取默认重试次数
      */
     protected getDefaultRetries(): number {
-        const defaults = PROVIDER_DEFAULTS[this.name];
-        return defaults?.retries || 3;
+        const defaults = PROVIDER_DEFAULTS[this.name]
+        return defaults?.retries || 3
     }
 
     /**
      * 转换聊天消息格式 - 子类可以重写
      */
     protected transformMessages(messages: any[]): any[] {
-        return messages;
+        return messages
     }
 
     /**
      * 转换响应格式 - 子类可以重写
      */
-    protected transformResponse(response: any): ChatResponse {
+    protected transformResponse(response: unknown): ChatResponse {
+        const payload = response as any
         // 默认实现，子类应该重写
         return {
             message: {
                 id: this.generateId(),
                 role: 'assistant' as any,
-                content: typeof response === 'string' ? response : JSON.stringify(response),
-                timestamp: new Date()
-            }
-        };
+                content: typeof payload === 'string' ? payload : JSON.stringify(payload),
+                timestamp: new Date(),
+            },
+        }
     }
 
     /**
      * 生成唯一ID
      */
     protected generateId(): string {
-        return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     /**
      * 检查响应是否成功
      */
-    protected isSuccessfulResponse(response: any): boolean {
-        return response && !response.error;
+    protected isSuccessfulResponse(response: unknown): boolean {
+        const payload = response as any
+        return !!payload && !payload.error
     }
 
     /**
      * 提取错误信息
      */
-    protected extractError(response: any): string {
-        if (response.error?.message) {
-            return response.error.message;
+    protected extractError(response: unknown): string {
+        const payload = response as any
+        if (payload.error?.message) {
+            return payload.error.message
         }
-        if (response.message) {
-            return response.message;
+        if (payload.message) {
+            return payload.message
         }
-        if (typeof response === 'string') {
-            return response;
+        if (typeof payload === 'string') {
+            return payload
         }
-        return 'Unknown error';
+        return 'Unknown error'
     }
 
     // ==================== 通用命令处理方法 ====================
@@ -469,80 +475,80 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      * 构建命令生成提示 - 通用实现
      */
     protected buildCommandPrompt(request: CommandRequest): string {
-        let prompt = `请将以下自然语言描述转换为准确的终端命令：\n\n"${request.naturalLanguage}"\n\n`;
+        let prompt = `请将以下自然语言描述转换为准确的终端命令：\n\n"${request.naturalLanguage}"\n\n`
 
         if (request.context) {
-            prompt += `当前环境：\n`;
+            prompt += `当前环境：\n`
             if (request.context.currentDirectory) {
-                prompt += `- 当前目录：${request.context.currentDirectory}\n`;
+                prompt += `- 当前目录：${request.context.currentDirectory}\n`
             }
             if (request.context.operatingSystem) {
-                prompt += `- 操作系统：${request.context.operatingSystem}\n`;
+                prompt += `- 操作系统：${request.context.operatingSystem}\n`
             }
             if (request.context.shell) {
-                prompt += `- Shell：${request.context.shell}\n`;
+                prompt += `- Shell：${request.context.shell}\n`
             }
         }
 
-        prompt += `\n请直接返回JSON格式：\n`;
-        prompt += `{\n`;
-        prompt += `  "command": "具体命令",\n`;
-        prompt += `  "explanation": "命令解释",\n`;
-        prompt += `  "confidence": 0.95\n`;
-        prompt += `}\n`;
+        prompt += `\n请直接返回JSON格式：\n`
+        prompt += `{\n`
+        prompt += `  "command": "具体命令",\n`
+        prompt += `  "explanation": "命令解释",\n`
+        prompt += `  "confidence": 0.95\n`
+        prompt += `}\n`
 
-        return prompt;
+        return prompt
     }
 
     /**
      * 构建命令解释提示 - 通用实现
      */
     protected buildExplainPrompt(request: ExplainRequest): string {
-        let prompt = `请详细解释以下终端命令：\n\n\`${request.command}\`\n\n`;
+        let prompt = `请详细解释以下终端命令：\n\n\`${request.command}\`\n\n`
 
         if (request.context?.currentDirectory) {
-            prompt += `当前目录：${request.context.currentDirectory}\n`;
+            prompt += `当前目录：${request.context.currentDirectory}\n`
         }
         if (request.context?.operatingSystem) {
-            prompt += `操作系统：${request.context.operatingSystem}\n`;
+            prompt += `操作系统：${request.context.operatingSystem}\n`
         }
 
-        prompt += `\n请按以下JSON格式返回：\n`;
-        prompt += `{\n`;
-        prompt += `  "explanation": "整体解释",\n`;
-        prompt += `  "breakdown": [\n`;
-        prompt += `    {"part": "命令部分", "description": "说明"}\n`;
-        prompt += `  ],\n`;
-        prompt += `  "examples": ["使用示例"]\n`;
-        prompt += `}\n`;
+        prompt += `\n请按以下JSON格式返回：\n`
+        prompt += `{\n`
+        prompt += `  "explanation": "整体解释",\n`
+        prompt += `  "breakdown": [\n`
+        prompt += `    {"part": "命令部分", "description": "说明"}\n`
+        prompt += `  ],\n`
+        prompt += `  "examples": ["使用示例"]\n`
+        prompt += `}\n`
 
-        return prompt;
+        return prompt
     }
 
     /**
      * 构建结果分析提示 - 通用实现
      */
     protected buildAnalysisPrompt(request: AnalysisRequest): string {
-        let prompt = `请分析以下命令执行结果：\n\n`;
-        prompt += `命令：${request.command}\n`;
-        prompt += `退出码：${request.exitCode}\n`;
-        prompt += `输出：\n${request.output}\n\n`;
+        let prompt = `请分析以下命令执行结果：\n\n`
+        prompt += `命令：${request.command}\n`
+        prompt += `退出码：${request.exitCode}\n`
+        prompt += `输出：\n${request.output}\n\n`
 
         if (request.context?.workingDirectory) {
-            prompt += `工作目录：${request.context.workingDirectory}\n`;
+            prompt += `工作目录：${request.context.workingDirectory}\n`
         }
 
-        prompt += `\n请按以下JSON格式返回：\n`;
-        prompt += `{\n`;
-        prompt += `  "summary": "结果总结",\n`;
-        prompt += `  "insights": ["洞察1", "洞察2"],\n`;
-        prompt += `  "success": true/false,\n`;
-        prompt += `  "issues": [\n`;
-        prompt += `    {"severity": "warning|error|info", "message": "问题描述", "suggestion": "建议"}\n`;
-        prompt += `  ]\n`;
-        prompt += `}\n`;
+        prompt += `\n请按以下JSON格式返回：\n`
+        prompt += `{\n`
+        prompt += `  "summary": "结果总结",\n`
+        prompt += `  "insights": ["洞察1", "洞察2"],\n`
+        prompt += `  "success": true/false,\n`
+        prompt += `  "issues": [\n`
+        prompt += `    {"severity": "warning|error|info", "message": "问题描述", "suggestion": "建议"}\n`
+        prompt += `  ]\n`
+        prompt += `}\n`
 
-        return prompt;
+        return prompt
     }
 
     /**
@@ -550,26 +556,26 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected parseCommandResponse(content: string): CommandResponse {
         try {
-            const match = content.match(/\{[\s\S]*\}/);
+            const match = content.match(/\{[\s\S]*\}/)
             if (match) {
-                const parsed = JSON.parse(match[0]);
+                const parsed = JSON.parse(match[0])
                 return {
                     command: parsed.command || '',
                     explanation: parsed.explanation || '',
-                    confidence: parsed.confidence || 0.5
-                };
+                    confidence: parsed.confidence || 0.5,
+                }
             }
         } catch (error) {
-            this.logger.warn('Failed to parse command response as JSON', error);
+            this.logger.warn('Failed to parse command response as JSON', error)
         }
 
         // 备用解析
-        const lines = content.split('\n').map(l => l.trim()).filter(l => l);
+        const lines = content.split('\n').map(l => l.trim()).filter(l => l)
         return {
             command: lines[0] || '',
             explanation: lines.slice(1).join(' ') || 'AI生成的命令',
-            confidence: 0.5
-        };
+            confidence: 0.5,
+        }
     }
 
     /**
@@ -577,23 +583,23 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected parseExplainResponse(content: string): ExplainResponse {
         try {
-            const match = content.match(/\{[\s\S]*\}/);
+            const match = content.match(/\{[\s\S]*\}/)
             if (match) {
-                const parsed = JSON.parse(match[0]);
+                const parsed = JSON.parse(match[0])
                 return {
                     explanation: parsed.explanation || '',
                     breakdown: parsed.breakdown || [],
-                    examples: parsed.examples || []
-                };
+                    examples: parsed.examples || [],
+                }
             }
         } catch (error) {
-            this.logger.warn('Failed to parse explain response as JSON', error);
+            this.logger.warn('Failed to parse explain response as JSON', error)
         }
 
         return {
             explanation: content,
-            breakdown: []
-        };
+            breakdown: [],
+        }
     }
 
     /**
@@ -601,31 +607,31 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      */
     protected parseAnalysisResponse(content: string): AnalysisResponse {
         try {
-            const match = content.match(/\{[\s\S]*\}/);
+            const match = content.match(/\{[\s\S]*\}/)
             if (match) {
-                const parsed = JSON.parse(match[0]);
+                const parsed = JSON.parse(match[0])
                 return {
                     summary: parsed.summary || '',
                     insights: parsed.insights || [],
                     success: parsed.success !== false,
-                    issues: parsed.issues || []
-                };
+                    issues: parsed.issues || [],
+                }
             }
         } catch (error) {
-            this.logger.warn('Failed to parse analysis response as JSON', error);
+            this.logger.warn('Failed to parse analysis response as JSON', error)
         }
 
         return {
             summary: content,
             insights: [],
-            success: true
-        };
+            success: true,
+        }
     }
 
     /**
      * 获取默认系统提示 - 子类可重写
      */
     protected getDefaultSystemPrompt(): string {
-        return this.translate.t.systemPrompts?.assistantRole || `You are a professional terminal command assistant running in Tabby terminal.`;
+        return this.translate.t.systemPrompts?.assistantRole || `You are a professional terminal command assistant running in Tabby terminal.`
     }
 }

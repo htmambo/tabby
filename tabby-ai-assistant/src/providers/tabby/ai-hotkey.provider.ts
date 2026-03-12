@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
-import { HotkeyProvider, HotkeyDescription, TranslateService } from 'tabby-core';
-import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
+import { Injectable } from '@angular/core'
+import { HotkeyProvider, HotkeyDescription, TranslateService } from 'tabby-core'
+import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 
 /**
  * Tabby热键提供者
  * 为Tabby添加AI助手热键支持
- * 
+ *
  * 注意：热键 ID 必须与 AiConfigProvider.defaults.hotkeys 中定义的一致
  */
 @Injectable()
@@ -22,18 +22,18 @@ export class AiHotkeyProvider extends HotkeyProvider {
         {
             id: 'ai-explain-command',
             name: '解释命令',
-        }
-    ];
+        },
+    ]
 
     constructor(
         private sidebarService: AiSidebarService,
-        private translate: TranslateService
+        private translate: TranslateService,
     ) {
-        super();
+        super()
     }
 
     async provide(): Promise<HotkeyDescription[]> {
-        return this.hotkeys;
+        return this.hotkeys
     }
 }
 

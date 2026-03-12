@@ -1,38 +1,39 @@
-import { Injectable, Inject, Optional, Injector } from '@angular/core';
-import { Observable, from, throwError, Subject, merge } from 'rxjs';
-import { map, catchError, tap, takeUntil, finalize, filter } from 'rxjs/operators';
+import { Injectable, Optional, Injector } from '@angular/core'
+import { Observable, from, throwError, Subject, merge } from 'rxjs'
+import { catchError, tap, finalize, filter } from 'rxjs/operators'
 import {
     ChatMessage, MessageRole, ChatRequest, ChatResponse, CommandRequest, CommandResponse,
     ExplainRequest, ExplainResponse, StreamEvent, ToolCall, ToolResult,
-    AgentStreamEvent, AgentLoopConfig, TerminationReason, AgentState, ToolCallRecord,
-    TerminationResult
-} from '../../types/ai.types';
-import { AiProviderManagerService } from './ai-provider-manager.service';
-import { ConfigProviderService } from './config-provider.service';
-import { TerminalContextService } from '../terminal/terminal-context.service';
-import { TerminalToolsService } from '../terminal/terminal-tools.service';
-import { TerminalManagerService } from '../terminal/terminal-manager.service';
-import { SecurityValidatorService } from '../security/security-validator.service';
+    AgentStreamEvent, AgentLoopConfig, AgentState,
+    TerminationResult,
+    AnalysisRequest, AnalysisResponse,
+} from '../../types/ai.types'
+import { AiProviderManagerService } from './ai-provider-manager.service'
+import { ConfigProviderService } from './config-provider.service'
+import { TerminalContextService } from '../terminal/terminal-context.service'
+import { TerminalToolsService } from '../terminal/terminal-tools.service'
+import { TerminalManagerService } from '../terminal/terminal-manager.service'
+import { SecurityValidatorService } from '../security/security-validator.service'
 // 使用延迟注入获取 AiSidebarService 以打破循环依赖
-import type { AiSidebarService } from '../chat/ai-sidebar.service';
-import { LoggerService } from './logger.service';
-import { BaseAiProvider } from '../../types/provider.types';
+import type { AiSidebarService } from '../chat/ai-sidebar.service'
+import { LoggerService } from './logger.service'
+import { BaseAiProvider } from '../../types/provider.types'
 
 // Import all provider services
-import { OpenAiProviderService } from '../providers/openai-provider.service';
-import { AnthropicProviderService } from '../providers/anthropic-provider.service';
-import { MinimaxProviderService } from '../providers/minimax-provider.service';
-import { GlmProviderService } from '../providers/glm-provider.service';
-import { OpenAiCompatibleProviderService } from '../providers/openai-compatible.service';
-import { OllamaProviderService } from '../providers/ollama-provider.service';
-import { VllmProviderService } from '../providers/vllm-provider.service';
+import { OpenAiProviderService } from '../providers/openai-provider.service'
+import { AnthropicProviderService } from '../providers/anthropic-provider.service'
+import { MinimaxProviderService } from '../providers/minimax-provider.service'
+import { GlmProviderService } from '../providers/glm-provider.service'
+import { OpenAiCompatibleProviderService } from '../providers/openai-compatible.service'
+import { OllamaProviderService } from '../providers/ollama-provider.service'
+import { VllmProviderService } from '../providers/vllm-provider.service'
 
 @Injectable({ providedIn: 'root' })
 export class AiAssistantService {
     // 提供商映射表
-    private providerMapping: { [key: string]: BaseAiProvider } = {};
-    private initialized = false;
-    private pendingProviderRefresh: number | null = null;
+    private providerMapping: Record<string, BaseAiProvider> = {}
+    private initialized = false
+    private pendingProviderRefresh: number | null = null
 
     constructor(
         private providerManager: AiProviderManagerService,
@@ -50,19 +51,19 @@ export class AiAssistantService {
         @Optional() private glmProvider: GlmProviderService,
         @Optional() private openaiCompatibleProvider: OpenAiCompatibleProviderService,
         @Optional() private ollamaProvider: OllamaProviderService,
-        @Optional() private vllmProvider: VllmProviderService
+        @Optional() private vllmProvider: VllmProviderService,
     ) {
         // 构建提供商映射表
-        this.buildProviderMapping();
+        this.buildProviderMapping()
 
         this.config.onConfigChange().pipe(
-            filter(change => change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === 'providers' || change.key === '*')
+            filter(change => change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === 'providers' || change.key === '*'),
         ).subscribe(() => {
             if (!this.initialized) {
-                return;
+                return
             }
-            this.scheduleProviderRefresh();
-        });
+            this.scheduleProviderRefresh()
+        })
     }
 
     /**
@@ -70,25 +71,25 @@ export class AiAssistantService {
      */
     private buildProviderMapping(): void {
         if (this.openaiProvider) {
-            this.providerMapping['openai'] = this.openaiProvider;
+            this.providerMapping['openai'] = this.openaiProvider
         }
         if (this.anthropicProvider) {
-            this.providerMapping['anthropic'] = this.anthropicProvider;
+            this.providerMapping['anthropic'] = this.anthropicProvider
         }
         if (this.minimaxProvider) {
-            this.providerMapping['minimax'] = this.minimaxProvider;
+            this.providerMapping['minimax'] = this.minimaxProvider
         }
         if (this.glmProvider) {
-            this.providerMapping['glm'] = this.glmProvider;
+            this.providerMapping['glm'] = this.glmProvider
         }
         if (this.openaiCompatibleProvider) {
-            this.providerMapping['openai-compatible'] = this.openaiCompatibleProvider;
+            this.providerMapping['openai-compatible'] = this.openaiCompatibleProvider
         }
         if (this.ollamaProvider) {
-            this.providerMapping['ollama'] = this.ollamaProvider;
+            this.providerMapping['ollama'] = this.ollamaProvider
         }
         if (this.vllmProvider) {
-            this.providerMapping['vllm'] = this.vllmProvider;
+            this.providerMapping['vllm'] = this.vllmProvider
         }
     }
 
@@ -96,83 +97,83 @@ export class AiAssistantService {
      * 初始化AI助手
      */
     initialize(): void {
-        this.logger.info('Initializing AI Assistant...');
+        this.logger.info('Initializing AI Assistant...')
 
         // 检查是否启用
         if (!this.config.isEnabled()) {
-            this.logger.info('AI Assistant is disabled in configuration');
-            return;
+            this.logger.info('AI Assistant is disabled in configuration')
+            return
         }
 
         // 注册并配置所有提供商
-        this.registerAllProviders();
+        this.registerAllProviders()
 
         // 设置默认提供商
-        const defaultProvider = this.config.getDefaultProvider();
+        const defaultProvider = this.config.getDefaultProvider()
         if (defaultProvider && this.providerManager.hasProvider(defaultProvider)) {
-            this.providerManager.setActiveProvider(defaultProvider);
-            this.logger.info(`Active provider set to: ${defaultProvider}`);
+            this.providerManager.setActiveProvider(defaultProvider)
+            this.logger.info(`Active provider set to: ${defaultProvider}`)
         } else {
             // 尝试设置第一个已配置的提供商
-            const allConfigs = this.config.getAllProviderConfigs();
+            const allConfigs = this.config.getAllProviderConfigs()
             for (const [name, providerConfig] of Object.entries(allConfigs)) {
                 if (providerConfig?.apiKey && this.providerManager.hasProvider(name)) {
-                    this.providerManager.setActiveProvider(name);
-                    this.config.setDefaultProvider(name);
-                    this.logger.info(`Auto-selected provider: ${name}`);
-                    break;
+                    this.providerManager.setActiveProvider(name)
+                    this.config.setDefaultProvider(name)
+                    this.logger.info(`Auto-selected provider: ${name}`)
+                    break
                 }
             }
         }
 
-        this.logger.info('AI Assistant initialized successfully');
-        this.initialized = true;
+        this.logger.info('AI Assistant initialized successfully')
+        this.initialized = true
     }
 
     private scheduleProviderRefresh(): void {
         if (this.pendingProviderRefresh !== null) {
-            return;
+            return
         }
         this.pendingProviderRefresh = window.setTimeout(() => {
-            this.pendingProviderRefresh = null;
-            this.refreshProvidersFromConfig();
-        }, 0);
+            this.pendingProviderRefresh = null
+            this.refreshProvidersFromConfig()
+        }, 0)
     }
 
     private refreshProvidersFromConfig(): void {
         if (!this.config.isEnabled()) {
-            return;
+            return
         }
 
-        const allConfigs = this.config.getAllProviderConfigs();
-        const configuredNames = new Set(Object.keys(allConfigs));
+        const allConfigs = this.config.getAllProviderConfigs()
+        const configuredNames = new Set(Object.keys(allConfigs))
 
         for (const [name, providerConfig] of Object.entries(allConfigs)) {
-            const provider = this.providerMapping[name];
+            const provider = this.providerMapping[name]
             if (!provider) {
-                this.logger.warn(`Provider not found in mapping: ${name}`);
-                continue;
+                this.logger.warn(`Provider not found in mapping: ${name}`)
+                continue
             }
             try {
                 provider.configure({
                     ...providerConfig,
-                    enabled: providerConfig.enabled !== false
-                });
-                this.providerManager.registerProvider(provider);
+                    enabled: providerConfig.enabled !== false,
+                })
+                this.providerManager.registerProvider(provider)
             } catch (error) {
-                this.logger.error(`Failed to refresh provider: ${name}`, error);
+                this.logger.error(`Failed to refresh provider: ${name}`, error)
             }
         }
 
         for (const provider of this.providerManager.getAllProviders()) {
             if (!configuredNames.has(provider.name)) {
-                this.providerManager.unregisterProvider(provider.name);
+                this.providerManager.unregisterProvider(provider.name)
             }
         }
 
-        const defaultProvider = this.config.getDefaultProvider();
+        const defaultProvider = this.config.getDefaultProvider()
         if (defaultProvider && this.providerManager.hasProvider(defaultProvider)) {
-            this.providerManager.setActiveProvider(defaultProvider);
+            this.providerManager.setActiveProvider(defaultProvider)
         }
     }
 
@@ -180,89 +181,89 @@ export class AiAssistantService {
      * 注册并配置所有提供商
      */
     private registerAllProviders(): void {
-        this.logger.info('Registering AI providers...');
+        this.logger.info('Registering AI providers...')
 
-        const allConfigs = this.config.getAllProviderConfigs();
-        let registeredCount = 0;
+        const allConfigs = this.config.getAllProviderConfigs()
+        let registeredCount = 0
 
         for (const [name, providerConfig] of Object.entries(allConfigs)) {
-            const provider = this.providerMapping[name];
+            const provider = this.providerMapping[name]
             if (provider) {
                 try {
                     // 配置提供商（这会初始化客户端）
                     if (providerConfig) {
                         provider.configure({
                             ...providerConfig,
-                            enabled: providerConfig.enabled !== false
-                        });
+                            enabled: providerConfig.enabled !== false,
+                        })
                         this.logger.info(`Provider ${name} configured`, {
                             hasApiKey: !!providerConfig.apiKey,
-                            model: providerConfig.model
-                        });
+                            model: providerConfig.model,
+                        })
                     }
 
                     // 注册到管理器
-                    this.providerManager.registerProvider(provider);
-                    registeredCount++;
-                    this.logger.info(`Provider registered: ${name}`);
+                    this.providerManager.registerProvider(provider)
+                    registeredCount++
+                    this.logger.info(`Provider registered: ${name}`)
                 } catch (error) {
-                    this.logger.error(`Failed to register provider: ${name}`, error);
+                    this.logger.error(`Failed to register provider: ${name}`, error)
                 }
             } else {
-                this.logger.warn(`Provider not found in mapping: ${name}`);
+                this.logger.warn(`Provider not found in mapping: ${name}`)
             }
         }
 
-        this.logger.info(`Total providers registered: ${registeredCount}`);
+        this.logger.info(`Total providers registered: ${registeredCount}`)
     }
 
     /**
      * 聊天功能
      */
     async chat(request: ChatRequest): Promise<ChatResponse> {
-        const activeProvider = this.providerManager.getActiveProvider();
+        const activeProvider = this.providerManager.getActiveProvider()
         if (!activeProvider) {
-            throw new Error('No active AI provider available');
+            throw new Error('No active AI provider available')
         }
 
-        this.logger.info('Processing chat request', { provider: activeProvider.name });
+        this.logger.info('Processing chat request', { provider: activeProvider.name })
 
         try {
             // 检查提供商能力
             if (!activeProvider.supportsCapability('chat' as any)) {
-                throw new Error(`Provider ${activeProvider.name} does not support chat capability`);
+                throw new Error(`Provider ${activeProvider.name} does not support chat capability`)
             }
 
             // 如果启用工具调用，添加工具定义
             if (request.enableTools !== false) {
-                request.tools = this.terminalTools.getToolDefinitions();
+                request.tools = this.terminalTools.getToolDefinitions()
             }
 
-            let response = await activeProvider.chat(request);
+            let response = await activeProvider.chat(request)
 
             // 处理工具调用（返回值包含工具调用统计）
             const { finalResponse, totalToolCallsExecuted } = await this.handleToolCallsWithStats(
-                request, response, activeProvider
-            );
-            response = finalResponse;
+                request, response, activeProvider,
+            )
+            response = finalResponse
 
             // 使用累计的工具调用次数进行幻觉检测
             const hallucinationDetected = this.detectHallucination({
                 text: response.message.content,
-                toolCallCount: totalToolCallsExecuted
-            });
+                toolCallCount: totalToolCallsExecuted,
+            })
 
             if (hallucinationDetected) {
                 // 附加警告消息，提醒用户
-                response.message.content += '\n\n⚠️ **检测到可能的幻觉**：AI声称执行了操作但未实际调用工具。\n实际执行的命令可能为空。请重新描述您的需求。';
+                response.message.content += '\n\n⚠️ **检测到可能的幻觉**：AI声称执行了操作但未实际调用工具。\n实际执行的命令可能为空。请重新描述您的需求。'
             }
 
-            this.logger.info('Chat request completed successfully');
-            return response;
+            this.logger.info('Chat request completed successfully')
+            return response
 
         } catch (error) {
-            this.logger.error('Chat request failed', error);
-            throw error;
+            this.logger.error('Chat request failed', error)
+            throw error
         }
     }
 
@@ -270,24 +271,24 @@ export class AiAssistantService {
      * 流式聊天功能
      */
     chatStream(request: ChatRequest): Observable<any> {
-        const activeProvider = this.providerManager.getActiveProvider() as any;
+        const activeProvider = this.providerManager.getActiveProvider() as any
         if (!activeProvider) {
-            return throwError(() => new Error('No active AI provider available'));
+            return throwError(() => new Error('No active AI provider available'))
         }
 
         // 检查提供商是否支持流式
         if (!activeProvider.supportsCapability('streaming' as any)) {
-            this.logger.warn(`Provider ${activeProvider.name} does not support streaming, falling back to non-streaming`);
-            return from(this.chat(request));
+            this.logger.warn(`Provider ${activeProvider.name} does not support streaming, falling back to non-streaming`)
+            return from(this.chat(request))
         }
 
         // 添加工具定义
         if (request.enableTools !== false) {
-            request.tools = this.terminalTools.getToolDefinitions();
+            request.tools = this.terminalTools.getToolDefinitions()
         }
 
         // 使用 Subject 发送额外的工具结果事件
-        const toolResultSubject = new Subject<StreamEvent>();
+        const toolResultSubject = new Subject<StreamEvent>()
 
         // 调用流式方法
         return merge(
@@ -295,22 +296,22 @@ export class AiAssistantService {
                 tap(async (event: StreamEvent) => {
                     // 工具调用完成时执行
                     if (event.type === 'tool_use_end' && event.toolCall) {
-                        await this.executeToolAndEmit(event.toolCall, toolResultSubject);
+                        await this.executeToolAndEmit(event.toolCall, toolResultSubject)
                     }
                 }),
                 catchError(error => {
-                    this.logger.error('Stream error', error);
-                    toolResultSubject.error(error);
-                    return throwError(() => error);
+                    this.logger.error('Stream error', error)
+                    toolResultSubject.error(error)
+                    return throwError(() => error)
                 }),
                 // 主流完成时，同时完成 toolResultSubject
                 finalize(() => {
-                    this.logger.info('Main stream finalized, completing toolResultSubject');
-                    toolResultSubject.complete();
-                })
+                    this.logger.info('Main stream finalized, completing toolResultSubject')
+                    toolResultSubject.complete()
+                }),
             ),
-            toolResultSubject.asObservable()
-        );
+            toolResultSubject.asObservable(),
+        )
     }
 
     /**
@@ -318,16 +319,16 @@ export class AiAssistantService {
      */
     private async executeToolAndEmit(
         toolCall: { id: string; name: string; input: any },
-        resultSubject: Subject<StreamEvent>
+        resultSubject: Subject<StreamEvent>,
     ): Promise<void> {
         try {
-            const startTime = Date.now();
+            const startTime = Date.now()
             const result = await this.terminalTools.executeToolCall({
                 id: toolCall.id,
                 name: toolCall.name,
-                input: toolCall.input
-            });
-            const duration = Date.now() - startTime;
+                input: toolCall.input,
+            })
+            const duration = Date.now() - startTime
 
             // 发送工具结果事件
             resultSubject.next({
@@ -335,23 +336,23 @@ export class AiAssistantService {
                 result: {
                     tool_use_id: result.tool_use_id,
                     content: result.content,
-                    is_error: result.is_error
-                }
-            });
+                    is_error: result.is_error,
+                },
+            })
 
             this.logger.info('Tool executed in stream', {
                 name: toolCall.name,
                 duration,
                 success: !result.is_error,
-                resultPreview: result.content.substring(0, 100)
-            });
+                resultPreview: result.content.substring(0, 100),
+            })
         } catch (error) {
             // 发送工具错误事件
             resultSubject.next({
                 type: 'tool_error',
-                error: error instanceof Error ? error.message : String(error)
-            });
-            this.logger.error('Tool execution failed in stream', { name: toolCall.name, error });
+                error: error instanceof Error ? error.message : String(error),
+            })
+            this.logger.error('Tool execution failed in stream', { name: toolCall.name, error })
         }
     }
 
@@ -363,30 +364,30 @@ export class AiAssistantService {
         originalRequest: ChatRequest,
         response: ChatResponse,
         provider: BaseAiProvider,
-        depth: number = 0,
-        maxDepth: number = 10
+        depth = 0,
+        maxDepth = 10,
     ): Promise<ChatResponse> {
         // 检查响应中是否有工具调用
-        const toolCalls = (response as any).toolCalls as ToolCall[] | undefined;
+        const toolCalls = (response as any).toolCalls as ToolCall[] | undefined
 
         if (!toolCalls || toolCalls.length === 0) {
-            return response;
+            return response
         }
 
         // 检查递归深度
         if (depth >= maxDepth) {
-            this.logger.warn('Max tool call depth reached', { depth, maxDepth });
-            return response;
+            this.logger.warn('Max tool call depth reached', { depth, maxDepth })
+            return response
         }
 
-        this.logger.info('Tool calls detected', { count: toolCalls.length, depth });
+        this.logger.info('Tool calls detected', { count: toolCalls.length, depth })
 
         // 执行所有工具调用
-        const toolResults: ToolResult[] = [];
+        const toolResults: ToolResult[] = []
         for (const toolCall of toolCalls) {
-            this.logger.info('Executing tool in handleToolCalls', { name: toolCall.name, depth });
-            const result = await this.terminalTools.executeToolCall(toolCall);
-            toolResults.push(result);
+            this.logger.info('Executing tool in handleToolCalls', { name: toolCall.name, depth })
+            const result = await this.terminalTools.executeToolCall(toolCall)
+            toolResults.push(result)
         }
 
         // 构建包含工具结果的新请求
@@ -394,11 +395,11 @@ export class AiAssistantService {
             id: `tool_result_${Date.now()}`,
             role: MessageRole.USER,
             content: toolResults.map(r =>
-                `工具 ${r.tool_use_id} 结果:\n${r.content}`
+                `工具 ${r.tool_use_id} 结果:\n${r.content}`,
             ).join('\n\n'),
             timestamp: new Date(),
-            metadata: { toolResults }
-        };
+            metadata: { toolResults },
+        }
 
         // 继续对话 - 仍然允许工具调用但递归处理
         const followUpRequest: ChatRequest = {
@@ -406,42 +407,42 @@ export class AiAssistantService {
             messages: [
                 ...originalRequest.messages,
                 response.message,
-                toolResultsMessage
+                toolResultsMessage,
             ],
-            tools: this.terminalTools.getToolDefinitions()
-        };
+            tools: this.terminalTools.getToolDefinitions(),
+        }
 
         // 发送后续请求
-        const followUpResponse = await provider.chat(followUpRequest);
+        const followUpResponse = await provider.chat(followUpRequest)
 
         // ===== 关键修复：如果 AI 回复太短，直接附加工具结果 =====
-        const minResponseLength = 50; // 如果回复少于50字符，认为AI没有正确展示结果
-        const toolResultsText = toolResults.map(r => r.content).join('\n\n');
+        const minResponseLength = 50 // 如果回复少于50字符，认为AI没有正确展示结果
+        const toolResultsText = toolResults.map(r => r.content).join('\n\n')
 
         if (followUpResponse.message.content.length < minResponseLength && toolResultsText.length > 0) {
             this.logger.info('AI response too short, appending tool results directly', {
                 responseLength: followUpResponse.message.content.length,
-                toolResultsLength: toolResultsText.length
-            });
+                toolResultsLength: toolResultsText.length,
+            })
 
             // 查找包含终端输出的工具结果
             const terminalOutput = toolResults.find(r =>
                 r.content.includes('=== 终端输出 ===') ||
-                r.content.includes('✅ 命令已执行')
-            );
+                r.content.includes('✅ 命令已执行'),
+            )
 
             if (terminalOutput) {
                 followUpResponse.message.content =
-                    followUpResponse.message.content + '\n\n' + terminalOutput.content;
+                    followUpResponse.message.content + '\n\n' + terminalOutput.content
             } else {
                 // 附加所有工具结果
                 followUpResponse.message.content =
-                    followUpResponse.message.content + '\n\n' + toolResultsText;
+                    followUpResponse.message.content + '\n\n' + toolResultsText
             }
         }
 
         // 递归处理后续响应中的工具调用
-        return this.handleToolCalls(followUpRequest, followUpResponse, provider, depth + 1, maxDepth);
+        return this.handleToolCalls(followUpRequest, followUpResponse, provider, depth + 1, maxDepth)
     }
 
     /**
@@ -452,43 +453,43 @@ export class AiAssistantService {
         originalRequest: ChatRequest,
         response: ChatResponse,
         provider: BaseAiProvider,
-        depth: number = 0,
-        maxDepth: number = 10,
-        accumulatedToolCalls: number = 0
+        depth = 0,
+        maxDepth = 10,
+        accumulatedToolCalls = 0,
     ): Promise<{ finalResponse: ChatResponse; totalToolCallsExecuted: number }> {
         // 检查响应中是否有工具调用
-        const toolCalls = (response as any).toolCalls as ToolCall[] | undefined;
+        const toolCalls = (response as any).toolCalls as ToolCall[] | undefined
 
         if (!toolCalls || toolCalls.length === 0) {
             return {
                 finalResponse: response,
-                totalToolCallsExecuted: accumulatedToolCalls
-            };
+                totalToolCallsExecuted: accumulatedToolCalls,
+            }
         }
 
         // 检查递归深度
         if (depth >= maxDepth) {
-            this.logger.warn('Max tool call depth reached', { depth, maxDepth });
+            this.logger.warn('Max tool call depth reached', { depth, maxDepth })
             return {
                 finalResponse: response,
-                totalToolCallsExecuted: accumulatedToolCalls
-            };
+                totalToolCallsExecuted: accumulatedToolCalls,
+            }
         }
 
         // 累计工具调用次数
-        const newTotal = accumulatedToolCalls + toolCalls.length;
+        const newTotal = accumulatedToolCalls + toolCalls.length
         this.logger.info('Tool calls executed', {
             thisRound: toolCalls.length,
             total: newTotal,
-            depth
-        });
+            depth,
+        })
 
         // 执行所有工具调用
-        const toolResults: ToolResult[] = [];
+        const toolResults: ToolResult[] = []
         for (const toolCall of toolCalls) {
-            this.logger.info('Executing tool in handleToolCalls', { name: toolCall.name, depth });
-            const result = await this.terminalTools.executeToolCall(toolCall);
-            toolResults.push(result);
+            this.logger.info('Executing tool in handleToolCalls', { name: toolCall.name, depth })
+            const result = await this.terminalTools.executeToolCall(toolCall)
+            toolResults.push(result)
         }
 
         // 构建包含工具结果的新请求
@@ -496,11 +497,11 @@ export class AiAssistantService {
             id: `tool_result_${Date.now()}`,
             role: MessageRole.USER,
             content: toolResults.map(r =>
-                `工具 ${r.tool_use_id} 结果:\n${r.content}`
+                `工具 ${r.tool_use_id} 结果:\n${r.content}`,
             ).join('\n\n'),
             timestamp: new Date(),
-            metadata: { toolResults }
-        };
+            metadata: { toolResults },
+        }
 
         // 继续对话 - 仍然允许工具调用但递归处理
         const followUpRequest: ChatRequest = {
@@ -508,35 +509,35 @@ export class AiAssistantService {
             messages: [
                 ...originalRequest.messages,
                 response.message,
-                toolResultsMessage
+                toolResultsMessage,
             ],
-            tools: this.terminalTools.getToolDefinitions()
-        };
+            tools: this.terminalTools.getToolDefinitions(),
+        }
 
         // 发送后续请求
-        const followUpResponse = await provider.chat(followUpRequest);
+        const followUpResponse = await provider.chat(followUpRequest)
 
         // 如果 AI 回复太短，直接附加工具结果
-        const minResponseLength = 50;
-        const toolResultsText = toolResults.map(r => r.content).join('\n\n');
+        const minResponseLength = 50
+        const toolResultsText = toolResults.map(r => r.content).join('\n\n')
 
         if (followUpResponse.message.content.length < minResponseLength && toolResultsText.length > 0) {
             this.logger.info('AI response too short, appending tool results directly', {
                 responseLength: followUpResponse.message.content.length,
-                toolResultsLength: toolResultsText.length
-            });
+                toolResultsLength: toolResultsText.length,
+            })
 
             const terminalOutput = toolResults.find(r =>
                 r.content.includes('=== 终端输出 ===') ||
-                r.content.includes('✅ 命令已执行')
-            );
+                r.content.includes('✅ 命令已执行'),
+            )
 
             if (terminalOutput) {
                 followUpResponse.message.content =
-                    followUpResponse.message.content + '\n\n' + terminalOutput.content;
+                    followUpResponse.message.content + '\n\n' + terminalOutput.content
             } else {
                 followUpResponse.message.content =
-                    followUpResponse.message.content + '\n\n' + toolResultsText;
+                    followUpResponse.message.content + '\n\n' + toolResultsText
             }
         }
 
@@ -547,34 +548,34 @@ export class AiAssistantService {
             provider,
             depth + 1,
             maxDepth,
-            newTotal
-        );
+            newTotal,
+        )
     }
 
     /**
      * 生成命令
      */
     async generateCommand(request: CommandRequest): Promise<CommandResponse> {
-        const activeProvider = this.providerManager.getActiveProvider();
+        const activeProvider = this.providerManager.getActiveProvider()
         if (!activeProvider) {
-            throw new Error('No active AI provider available');
+            throw new Error('No active AI provider available')
         }
 
-        this.logger.info('Processing command generation request', { provider: activeProvider.name });
+        this.logger.info('Processing command generation request', { provider: activeProvider.name })
 
         try {
             // 检查提供商能力
             if (!activeProvider.supportsCapability('command_generation' as any)) {
-                throw new Error(`Provider ${activeProvider.name} does not support command generation capability`);
+                throw new Error(`Provider ${activeProvider.name} does not support command generation capability`)
             }
 
-            const response = await activeProvider.generateCommand(request);
-            this.logger.info('Command generation completed successfully');
-            return response;
+            const response = await activeProvider.generateCommand(request)
+            this.logger.info('Command generation completed successfully')
+            return response
 
         } catch (error) {
-            this.logger.error('Command generation failed', error);
-            throw error;
+            this.logger.error('Command generation failed', error)
+            throw error
         }
     }
 
@@ -582,48 +583,48 @@ export class AiAssistantService {
      * 解释命令
      */
     async explainCommand(request: ExplainRequest): Promise<ExplainResponse> {
-        const activeProvider = this.providerManager.getActiveProvider();
+        const activeProvider = this.providerManager.getActiveProvider()
         if (!activeProvider) {
-            throw new Error('No active AI provider available');
+            throw new Error('No active AI provider available')
         }
 
-        this.logger.info('Processing command explanation request', { provider: activeProvider.name });
+        this.logger.info('Processing command explanation request', { provider: activeProvider.name })
 
         try {
             // 检查提供商能力
             if (!activeProvider.supportsCapability('command_explanation' as any)) {
-                throw new Error(`Provider ${activeProvider.name} does not support command explanation capability`);
+                throw new Error(`Provider ${activeProvider.name} does not support command explanation capability`)
             }
 
-            const response = await activeProvider.explainCommand(request);
-            this.logger.info('Command explanation completed successfully');
-            return response;
+            const response = await activeProvider.explainCommand(request)
+            this.logger.info('Command explanation completed successfully')
+            return response
 
         } catch (error) {
-            this.logger.error('Command explanation failed', error);
-            throw error;
+            this.logger.error('Command explanation failed', error)
+            throw error
         }
     }
 
     /**
      * 分析结果
      */
-    async analyzeResult(request: any): Promise<any> {
-        const activeProvider = this.providerManager.getActiveProvider();
+    async analyzeResult(request: AnalysisRequest): Promise<AnalysisResponse> {
+        const activeProvider = this.providerManager.getActiveProvider()
         if (!activeProvider) {
-            throw new Error('No active AI provider available');
+            throw new Error('No active AI provider available')
         }
 
-        this.logger.info('Processing result analysis request', { provider: activeProvider.name });
+        this.logger.info('Processing result analysis request', { provider: activeProvider.name })
 
         try {
-            const response = await activeProvider.analyzeResult(request);
-            this.logger.info('Result analysis completed successfully');
-            return response;
+            const response = await activeProvider.analyzeResult(request)
+            this.logger.info('Result analysis completed successfully')
+            return response
 
         } catch (error) {
-            this.logger.error('Result analysis failed', error);
-            throw error;
+            this.logger.error('Result analysis failed', error)
+            throw error
         }
     }
 
@@ -633,12 +634,12 @@ export class AiAssistantService {
     async generateCommandFromSelection(): Promise<CommandResponse | null> {
         try {
             // 从当前终端获取选中文本
-            const selection = await this.terminalManager.getSelection();
+            const selection = this.terminalManager.getSelection()
             if (!selection) {
-                this.logger.warn('No text selected in terminal');
-                return null;
+                this.logger.warn('No text selected in terminal')
+                return null
             }
-            const context = this.terminalContext.getCurrentContext();
+            const context = this.terminalContext.getCurrentContext()
 
             const request: CommandRequest = {
                 naturalLanguage: selection || '帮我执行上一个命令',
@@ -646,14 +647,14 @@ export class AiAssistantService {
                     currentDirectory: context?.session.cwd,
                     operatingSystem: context?.systemInfo.platform,
                     shell: context?.session.shell,
-                    environment: context?.session.environment
-                }
-            };
+                    environment: context?.session.environment,
+                },
+            }
 
-            return this.generateCommand(request);
+            return await this.generateCommand(request)
         } catch (error) {
-            this.logger.error('Failed to generate command from selection', error);
-            return null;
+            this.logger.error('Failed to generate command from selection', error)
+            return null
         }
     }
 
@@ -663,25 +664,25 @@ export class AiAssistantService {
     async explainCommandFromSelection(): Promise<ExplainResponse | null> {
         try {
             // 从当前终端获取选中文本
-            const selection = await this.terminalManager.getSelection();
+            const selection = this.terminalManager.getSelection()
             if (!selection) {
-                this.logger.warn('No text selected in terminal');
-                return null;
+                this.logger.warn('No text selected in terminal')
+                return null
             }
 
-            const context = this.terminalContext.getCurrentContext();
+            const context = this.terminalContext.getCurrentContext()
             const request: ExplainRequest = {
                 command: selection,
                 context: {
                     currentDirectory: context?.session.cwd,
-                    operatingSystem: context?.systemInfo.platform
-                }
-            };
+                    operatingSystem: context?.systemInfo.platform,
+                },
+            }
 
-            return this.explainCommand(request);
+            return await this.explainCommand(request)
         } catch (error) {
-            this.logger.error('Failed to explain command from selection', error);
-            return null;
+            this.logger.error('Failed to explain command from selection', error)
+            return null
         }
     }
 
@@ -690,139 +691,139 @@ export class AiAssistantService {
      * 使用延迟注入获取 AiSidebarService 以避免循环依赖
      */
     openChatInterface(): void {
-        this.logger.info('Opening chat interface');
+        this.logger.info('Opening chat interface')
         // 延迟获取 AiSidebarService 以打破循环依赖
-        const { AiSidebarService } = require('../chat/ai-sidebar.service');
-        const sidebarService = this.injector.get(AiSidebarService) as AiSidebarService;
-        sidebarService.show();
+        const { AiSidebarService } = require('../chat/ai-sidebar.service')
+        const sidebarService = this.injector.get(AiSidebarService) as AiSidebarService
+        sidebarService.show()
     }
 
     /**
      * 获取提供商状态
      */
     getProviderStatus(): any {
-        const activeProvider = this.providerManager.getActiveProvider();
-        const allProviders = this.providerManager.getAllProviderInfo();
+        const activeProvider = this.providerManager.getActiveProvider()
+        const allProviders = this.providerManager.getAllProviderInfo()
 
         return {
             active: activeProvider?.getInfo(),
             all: allProviders,
-            count: allProviders.length
-        };
+            count: allProviders.length,
+        }
     }
 
     /**
      * 切换提供商
      */
     switchProvider(providerName: string): boolean {
-        const success = this.providerManager.setActiveProvider(providerName);
+        const success = this.providerManager.setActiveProvider(providerName)
         if (success) {
-            this.config.setDefaultProvider(providerName);
-            this.logger.info('Provider switched successfully', { provider: providerName });
+            this.config.setDefaultProvider(providerName)
+            this.logger.info('Provider switched successfully', { provider: providerName })
         } else {
-            this.logger.error('Failed to switch provider', { provider: providerName });
+            this.logger.error('Failed to switch provider', { provider: providerName })
         }
-        return success;
+        return success
     }
 
     /**
      * 获取下一个提供商
      */
     switchToNextProvider(): boolean {
-        return this.providerManager.switchToNextProvider();
+        return this.providerManager.switchToNextProvider()
     }
 
     /**
      * 获取上一个提供商
      */
     switchToPreviousProvider(): boolean {
-        return this.providerManager.switchToPreviousProvider();
+        return this.providerManager.switchToPreviousProvider()
     }
 
     /**
      * 健康检查
      */
     async healthCheck(): Promise<{ provider: string; status: string; latency?: number }[]> {
-        this.logger.info('Performing health check on all providers');
-        return this.providerManager.checkAllProvidersHealth();
+        this.logger.info('Performing health check on all providers')
+        return this.providerManager.checkAllProvidersHealth()
     }
 
     /**
      * 验证配置
      */
     async validateConfig(): Promise<{ name: string; valid: boolean; errors: string[] }[]> {
-        this.logger.info('Validating all provider configurations');
-        return this.providerManager.validateAllProviders();
+        this.logger.info('Validating all provider configurations')
+        return this.providerManager.validateAllProviders()
     }
 
     /**
      * 获取当前上下文感知提示
      */
     getContextAwarePrompt(basePrompt: string): string {
-        const context = this.terminalContext.getCurrentContext();
-        const error = this.terminalContext.getLastError();
+        const context = this.terminalContext.getCurrentContext()
+        const error = this.terminalContext.getLastError()
 
-        let enhancedPrompt = basePrompt;
+        let enhancedPrompt = basePrompt
 
         if (context) {
-            enhancedPrompt += `\n\n当前环境：\n`;
-            enhancedPrompt += `- 目录：${context.session.cwd}\n`;
-            enhancedPrompt += `- Shell：${context.session.shell}\n`;
-            enhancedPrompt += `- 系统：${context.systemInfo.platform}\n`;
+            enhancedPrompt += `\n\n当前环境：\n`
+            enhancedPrompt += `- 目录：${context.session.cwd}\n`
+            enhancedPrompt += `- Shell：${context.session.shell}\n`
+            enhancedPrompt += `- 系统：${context.systemInfo.platform}\n`
 
             if (context.recentCommands.length > 0) {
-                enhancedPrompt += `- 最近命令：${context.recentCommands.slice(0, 3).join(' → ')}\n`;
+                enhancedPrompt += `- 最近命令：${context.recentCommands.slice(0, 3).join(' → ')}\n`
             }
 
             if (error) {
-                enhancedPrompt += `\n当前错误：\n`;
-                enhancedPrompt += `- 错误：${error.message}\n`;
-                enhancedPrompt += `- 命令：${error.command}\n`;
+                enhancedPrompt += `\n当前错误：\n`
+                enhancedPrompt += `- 错误：${error.message}\n`
+                enhancedPrompt += `- 命令：${error.command}\n`
             }
         }
 
-        return enhancedPrompt;
+        return enhancedPrompt
     }
 
     /**
      * 获取建议命令
      */
     async getSuggestedCommands(input: string): Promise<string[]> {
-        const activeProvider = this.providerManager.getActiveProvider();
+        const activeProvider = this.providerManager.getActiveProvider()
         if (!activeProvider) {
-            return [];
+            return []
         }
 
         try {
-            const context = this.terminalContext.getCurrentContext();
-            const suggestions: string[] = [];
+            const context = this.terminalContext.getCurrentContext()
+            const suggestions: string[] = []
 
             // 1. 基于当前目录的智能建议
             if (context?.session.cwd) {
-                const dirSuggestions = this.getDirectoryBasedSuggestions(context.session.cwd);
-                suggestions.push(...dirSuggestions);
+                const dirSuggestions = this.getDirectoryBasedSuggestions(context.session.cwd)
+                suggestions.push(...dirSuggestions)
             }
 
             // 2. 基于最近命令的建议
             if (context?.recentCommands) {
-                const historySuggestions = this.getHistoryBasedSuggestions(context.recentCommands, input);
-                suggestions.push(...historySuggestions);
+                const historySuggestions = this.getHistoryBasedSuggestions(context.recentCommands, input)
+                suggestions.push(...historySuggestions)
             }
 
             // 3. 基于当前输入的模糊匹配建议
             if (input.length > 0) {
-                const inputSuggestions = this.getInputBasedSuggestions(input, suggestions);
-                suggestions.push(...inputSuggestions);
+                const inputSuggestions = this.getInputBasedSuggestions(input, suggestions)
+                suggestions.push(...inputSuggestions)
             }
 
             // 去重并限制数量
-            const uniqueSuggestions = [...new Set(suggestions)].slice(0, 8);
+            const uniqueSuggestions = [...new Set(suggestions)].slice(0, 8)
 
-            return uniqueSuggestions;
+            return uniqueSuggestions
 
         } catch (error) {
-            this.logger.error('Failed to get suggested commands', error);
-            return [];
+            this.logger.error('Failed to get suggested commands', error)
+            return []
         }
     }
 
@@ -830,7 +831,7 @@ export class AiAssistantService {
      * 基于当前目录的智能建议
      */
     private getDirectoryBasedSuggestions(cwd: string): string[] {
-        const suggestions: string[] = [];
+        const suggestions: string[] = []
 
         // Git相关建议
         if (cwd.includes('.git') || this.isGitRepository(cwd)) {
@@ -840,8 +841,8 @@ export class AiAssistantService {
                 'git add .',
                 'git commit -m ""',
                 'git log --oneline',
-                'git checkout -b '
-            );
+                'git checkout -b ',
+            )
         }
 
         // Node.js项目建议
@@ -853,8 +854,8 @@ export class AiAssistantService {
                 'npm test',
                 'npm run lint',
                 'yarn install',
-                'pnpm install'
-            );
+                'pnpm install',
+            )
         }
 
         // Python项目建议
@@ -864,8 +865,8 @@ export class AiAssistantService {
                 'pip install -r requirements.txt',
                 'python main.py',
                 'pytest',
-                'python -m pip install --upgrade pip'
-            );
+                'python -m pip install --upgrade pip',
+            )
         }
 
         // Docker项目建议
@@ -875,8 +876,8 @@ export class AiAssistantService {
                 'docker-compose up',
                 'docker-compose down',
                 'docker ps',
-                'docker images'
-            );
+                'docker images',
+            )
         }
 
         // Kubernetes项目建议
@@ -886,48 +887,48 @@ export class AiAssistantService {
                 'kubectl get svc',
                 'kubectl apply -f ',
                 'kubectl describe pod ',
-                'kubectl logs -f '
-            );
+                'kubectl logs -f ',
+            )
         }
 
-        return suggestions;
+        return suggestions
     }
 
     /**
      * 基于历史的智能建议
      */
     private getHistoryBasedSuggestions(recentCommands: string[], input: string): string[] {
-        const suggestions: string[] = [];
+        const suggestions: string[] = []
 
         // 提取最近使用过的相关命令
         for (const cmd of recentCommands.slice(0, 10)) {
             // 如果输入与历史命令开头匹配，添加完整命令
             if (cmd.toLowerCase().startsWith(input.toLowerCase()) && cmd !== input) {
-                suggestions.push(cmd);
+                suggestions.push(cmd)
             }
 
             // 添加相似类别的新命令
             if (input.length > 2 && cmd.toLowerCase().includes(input.toLowerCase())) {
-                const baseCmd = cmd.split(' ')[0];
+                const baseCmd = cmd.split(' ')[0]
                 if (!suggestions.includes(baseCmd)) {
-                    suggestions.push(baseCmd);
+                    suggestions.push(baseCmd)
                 }
             }
         }
 
-        return suggestions;
+        return suggestions
     }
 
     /**
      * 基于输入的模糊建议
      */
     private getInputBasedSuggestions(input: string, existingSuggestions: string[]): string[] {
-        const suggestions: string[] = [];
-        const lowerInput = input.toLowerCase();
+        const suggestions: string[] = []
+        const lowerInput = input.toLowerCase()
 
         // 常用命令模板
-        const commandTemplates: { [key: string]: string[] } = {
-            'git': [
+        const commandTemplates: Record<string, string[]> = {
+            git: [
                 'git status',
                 'git add .',
                 'git commit -m ""',
@@ -937,65 +938,65 @@ export class AiAssistantService {
                 'git stash',
                 'git stash pop',
                 'git diff',
-                'git log --oneline'
+                'git log --oneline',
             ],
-            'npm': [
+            npm: [
                 'npm install ',
                 'npm run ',
                 'npm list',
                 'npm outdated',
                 'npm update',
                 'npm run dev',
-                'npm run build'
+                'npm run build',
             ],
-            'docker': [
+            docker: [
                 'docker build -t ',
                 'docker run -it ',
                 'docker-compose up',
                 'docker-compose down',
                 'docker ps',
-                'docker images'
+                'docker images',
             ],
-            'kubectl': [
+            kubectl: [
                 'kubectl get ',
                 'kubectl describe ',
                 'kubectl apply -f ',
                 'kubectl delete -f ',
-                'kubectl logs '
+                'kubectl logs ',
             ],
-            'ls': [
+            ls: [
                 'ls -la',
                 'ls -lh',
-                'ls -R'
+                'ls -R',
             ],
-            'cd': [
+            cd: [
                 'cd ..',
                 'cd /',
-                'cd ~'
+                'cd ~',
             ],
-            'grep': [
+            grep: [
                 'grep -r "" .',
                 'grep -n "" .',
-                'grep -E "" .'
+                'grep -E "" .',
             ],
-            'find': [
+            find: [
                 'find . -name ""',
-                'find . -type f -name ""'
-            ]
-        };
+                'find . -type f -name ""',
+            ],
+        }
 
         // 查找匹配的命令模板
         for (const [prefix, templates] of Object.entries(commandTemplates)) {
             if (lowerInput.startsWith(prefix) || lowerInput.includes(prefix)) {
                 for (const template of templates) {
                     if (!existingSuggestions.includes(template)) {
-                        suggestions.push(template);
+                        suggestions.push(template)
                     }
                 }
             }
         }
 
-        return suggestions;
+        return suggestions
     }
 
     /**
@@ -1003,7 +1004,7 @@ export class AiAssistantService {
      */
     private isGitRepository(path: string): boolean {
         return path.includes('.git') ||
-            this.hasFile(path, '.git');
+            this.hasFile(path, '.git')
     }
 
     /**
@@ -1011,7 +1012,7 @@ export class AiAssistantService {
      */
     private isNodeProject(path: string): boolean {
         return this.hasFile(path, 'package.json') ||
-            this.hasFile(path, 'node_modules');
+            this.hasFile(path, 'node_modules')
     }
 
     /**
@@ -1021,7 +1022,7 @@ export class AiAssistantService {
         return this.hasFile(path, 'requirements.txt') ||
             this.hasFile(path, 'pyproject.toml') ||
             this.hasFile(path, 'setup.py') ||
-            this.hasFile(path, 'venv');
+            this.hasFile(path, 'venv')
     }
 
     /**
@@ -1030,7 +1031,7 @@ export class AiAssistantService {
     private hasDockerFiles(path: string): boolean {
         return this.hasFile(path, 'Dockerfile') ||
             this.hasFile(path, 'docker-compose.yml') ||
-            this.hasFile(path, 'docker-compose.yaml');
+            this.hasFile(path, 'docker-compose.yaml')
     }
 
     /**
@@ -1040,7 +1041,7 @@ export class AiAssistantService {
         return this.hasFile(path, 'k8s') ||
             this.hasFile(path, 'kubernetes') ||
             path.includes('k8s') ||
-            path.includes('kubernetes');
+            path.includes('kubernetes')
     }
 
     /**
@@ -1050,30 +1051,30 @@ export class AiAssistantService {
         // 这里应该是实际的文件系统检查
         // 由于无法直接访问文件系统，返回false
         // 实际实现应该使用Node.js的fs模块
-        return path.includes(filename);
+        return path.includes(filename)
     }
 
     /**
      * 分析终端错误并提供修复建议
      */
-    async getErrorFix(error: any): Promise<CommandResponse | null> {
+    async getErrorFix(error: unknown): Promise<CommandResponse | null> {
         try {
-            const context = this.terminalContext.getCurrentContext();
+            const context = this.terminalContext.getCurrentContext()
 
             const request: CommandRequest = {
-                naturalLanguage: `修复这个错误：${error.message}`,
+                naturalLanguage: `修复这个错误：${error instanceof Error ? error.message : String(error)}`,
                 context: {
                     currentDirectory: context?.session.cwd,
                     operatingSystem: context?.systemInfo.platform,
                     shell: context?.session.shell,
-                    environment: context?.session.environment
-                }
-            };
+                    environment: context?.session.environment,
+                },
+            }
 
-            return this.generateCommand(request);
+            return await this.generateCommand(request)
         } catch (err) {
-            this.logger.error('Failed to get error fix', err);
-            return null;
+            this.logger.error('Failed to get error fix', err)
+            return null
         }
     }
 
@@ -1087,20 +1088,20 @@ export class AiAssistantService {
             '切换成功', '执行成功', '写入成功', '读取成功',
             '现在切换', '现在执行', '已经为您切换', '已经为您执行',
             '我将切换', '我会切换', '已经切换到', '已经执行了',
-            '终端已切换', '命令已执行', '操作已完成'
-        ];
+            '终端已切换', '命令已执行', '操作已完成',
+        ]
 
-        const hasActionClaim = actionKeywords.some(keyword => response.text.includes(keyword));
+        const hasActionClaim = actionKeywords.some(keyword => response.text.includes(keyword))
 
         if (hasActionClaim && response.toolCallCount === 0) {
             this.logger.warn('AI Hallucination detected', {
                 textPreview: response.text.substring(0, 100),
-                toolCallCount: response.toolCallCount
-            });
-            return true;
+                toolCallCount: response.toolCallCount,
+            })
+            return true
         }
 
-        return false;
+        return false
     }
 
     // ============================================================================
@@ -1114,26 +1115,26 @@ export class AiAssistantService {
      */
     chatStreamWithAgentLoop(
         request: ChatRequest,
-        config: AgentLoopConfig = {}
+        config: AgentLoopConfig = {},
     ): Observable<AgentStreamEvent> {
         // 🔥 入口日志 - 确认方法被调用
         this.logger.info('🔥 chatStreamWithAgentLoop CALLED', {
             messagesCount: request.messages?.length,
             maxRounds: config.maxRounds,
-            timeoutMs: config.timeoutMs
-        });
+            timeoutMs: config.timeoutMs,
+        })
 
         // 配置参数
-        const maxRounds = config.maxRounds || 15;
-        const timeoutMs = config.timeoutMs || 120000;  // 默认 2 分钟
-        const repeatThreshold = config.repeatThreshold || 5;  // 重复调用阈值（提高到 5，避免正常多次调用被误判）
-        const failureThreshold = config.failureThreshold || 2;  // 连续失败阈值
+        const maxRounds = config.maxRounds ?? 15
+        const timeoutMs = config.timeoutMs ?? 120000  // 默认 2 分钟
+        const repeatThreshold = config.repeatThreshold ?? 5  // 重复调用阈值（提高到 5，避免正常多次调用被误判）
+        const failureThreshold = config.failureThreshold ?? 2  // 连续失败阈值
 
         const callbacks = {
             onRoundStart: config.onRoundStart,
             onRoundEnd: config.onRoundEnd,
-            onAgentComplete: config.onAgentComplete
-        };
+            onAgentComplete: config.onAgentComplete,
+        }
 
         // Agent 状态追踪
         const agentState: AgentState = {
@@ -1141,66 +1142,66 @@ export class AiAssistantService {
             startTime: Date.now(),
             toolCallHistory: [],
             lastAiResponse: '',
-            isActive: true
-        };
+            isActive: true,
+        }
 
         return new Observable<AgentStreamEvent>((subscriber) => {
             // 消息历史副本（用于多轮对话）
-            const conversationMessages: ChatMessage[] = [...(request.messages || [])];
+            const conversationMessages: ChatMessage[] = [...(request.messages || [])]
 
             // === 新增：添加 Agent 执行规则系统提示 ===
             const taskContextMessage: ChatMessage = {
                 id: this.generateId(),
                 role: MessageRole.SYSTEM,
                 content: this.buildAgentSystemPrompt(),
-                timestamp: new Date()
-            };
+                timestamp: new Date(),
+            }
 
             // 将任务强调消息插入到消息列表最前面
-            conversationMessages.unshift(taskContextMessage);
+            conversationMessages.unshift(taskContextMessage)
 
             // 递归执行单轮对话
             const runSingleRound = async (): Promise<void> => {
-                if (!agentState.isActive) return;
+                if (!agentState.isActive) {return}
 
-                agentState.currentRound++;
+                agentState.currentRound++
 
                 // 发送 round_start 事件
-                subscriber.next({ type: 'round_start', round: agentState.currentRound });
-                callbacks.onRoundStart?.(agentState.currentRound);
-                this.logger.info(`Agent round ${agentState.currentRound} started`);
+                subscriber.next({ type: 'round_start', round: agentState.currentRound })
+                callbacks.onRoundStart?.(agentState.currentRound)
+                this.logger.info(`Agent round ${agentState.currentRound} started`)
 
                 // 本轮收集的工具调用
-                const pendingToolCalls: ToolCall[] = [];
-                let roundTextContent = '';
+                const pendingToolCalls: ToolCall[] = []
+                let roundTextContent = ''
 
                 return new Promise<void>((resolve, reject) => {
                     // 构建当前轮次的请求
                     const roundRequest: ChatRequest = {
                         ...request,
                         messages: conversationMessages,
-                        enableTools: true
-                    };
+                        enableTools: true,
+                    }
 
                     // 调用流式 API
-                    const activeProvider = this.providerManager.getActiveProvider() as any;
+                    const activeProvider = this.providerManager.getActiveProvider() as any
                     if (!activeProvider) {
-                        const error = new Error('No active AI provider available');
-                        subscriber.next({ type: 'error', error: error.message });
-                        reject(error);
-                        return;
+                        const error = new Error('No active AI provider available')
+                        subscriber.next({ type: 'error', error: error.message })
+                        reject(error)
+                        return
                     }
 
                     // 添加工具定义
-                    roundRequest.tools = this.terminalTools.getToolDefinitions();
+                    roundRequest.tools = this.terminalTools.getToolDefinitions()
 
                     // 🔴 调试日志：打印本轮请求的消息历史
                     this.logger.warn(`DEBUG ROUND ${agentState.currentRound}: Round request messages`, {
                         messageCount: roundRequest.messages.length,
                         roles: roundRequest.messages.map((m: any) => m.role),
                         lastMessageRole: roundRequest.messages[roundRequest.messages.length - 1]?.role,
-                        hasToolResults: roundRequest.messages.some((m: any) => m.toolResults)
-                    });
+                        hasToolResults: roundRequest.messages.some((m: any) => m.toolResults),
+                    })
 
                     // 直接订阅 provider 的流（不使用 merge，否则需要所有源都 complete）
                     activeProvider.chatStream(roundRequest).subscribe({
@@ -1209,82 +1210,82 @@ export class AiAssistantService {
                                 case 'text_delta':
                                     // 转发文本增量
                                     if (event.textDelta) {
-                                        roundTextContent += event.textDelta;
+                                        roundTextContent += event.textDelta
                                         subscriber.next({
                                             type: 'text_delta',
-                                            textDelta: event.textDelta
-                                        });
+                                            textDelta: event.textDelta,
+                                        })
                                     }
-                                    break;
+                                    break
 
                                 case 'message_end': {
                                     // 兼容只在 message_end 返回完整内容的 Provider
-                                    const messageContent = event?.message?.content || '';
+                                    const messageContent = event?.message?.content || ''
                                     if (messageContent) {
                                         if (!roundTextContent) {
-                                            roundTextContent = messageContent;
+                                            roundTextContent = messageContent
                                             subscriber.next({
                                                 type: 'text_delta',
-                                                textDelta: messageContent
-                                            });
+                                                textDelta: messageContent,
+                                            })
                                         } else if (messageContent.length > roundTextContent.length) {
-                                            const delta = messageContent.slice(roundTextContent.length);
-                                            roundTextContent = messageContent;
+                                            const delta = messageContent.slice(roundTextContent.length)
+                                            roundTextContent = messageContent
                                             if (delta) {
                                                 subscriber.next({
                                                     type: 'text_delta',
-                                                    textDelta: delta
-                                                });
+                                                    textDelta: delta,
+                                                })
                                             }
                                         }
                                     }
-                                    break;
+                                    break
                                 }
 
                                 case 'tool_use_start':
                                     // 转发工具开始
                                     subscriber.next({
                                         type: 'tool_use_start',
-                                        toolCall: event.toolCall
-                                    });
-                                    break;
+                                        toolCall: event.toolCall,
+                                    })
+                                    break
 
                                 case 'tool_use_end':
                                     // 收集工具调用
                                     if (event.toolCall) {
-                                        pendingToolCalls.push(event.toolCall as ToolCall);
+                                        pendingToolCalls.push(event.toolCall as ToolCall)
                                         // 🔴 调试日志
                                         this.logger.warn(`DEBUG: tool_use_end collected, pendingToolCalls count: ${pendingToolCalls.length}`, {
                                             toolCallId: event.toolCall.id,
                                             toolCallName: event.toolCall.name,
-                                            totalPending: pendingToolCalls.length
-                                        });
+                                            totalPending: pendingToolCalls.length,
+                                        })
                                         subscriber.next({
                                             type: 'tool_use_end',
-                                            toolCall: event.toolCall
-                                        });
+                                            toolCall: event.toolCall,
+                                        })
                                     }
-                                    break;
+                                    break
 
                                 case 'error':
-                                    subscriber.next({ type: 'error', error: event.error });
-                                    break;
+                                    subscriber.next({ type: 'error', error: event.error })
+                                    break
                             }
                         },
                         error: (error) => {
                             subscriber.next({
                                 type: 'error',
-                                error: error instanceof Error ? error.message : String(error)
-                            });
-                            reject(error);
+                                error: error instanceof Error ? error.message : String(error),
+                            })
+                            reject(error)
                         },
                         complete: () => {
                             // 使用 IIFE 确保异步操作被正确执行
                             (async () => {
                                 // 发送 round_end 事件
-                                subscriber.next({ type: 'round_end', round: agentState.currentRound });
-                                callbacks.onRoundEnd?.(agentState.currentRound);
-                                this.logger.debug(`Round ${agentState.currentRound} ended, messages in conversation: ${conversationMessages.length}`);
+                                subscriber.next({ type: 'round_end', round: agentState.currentRound })
+                                callbacks.onRoundEnd?.(agentState.currentRound)
+                                this.logger.debug(`Round ${agentState.currentRound} ended, messages in conversation: ${conversationMessages.length}`)
 
                                 // 将本轮 AI 回复添加到消息历史
                                 // 关键修复：即使没有文本内容，只要有工具调用也必须添加 assistant 消息
@@ -1299,11 +1300,11 @@ export class AiAssistantService {
                                         toolCalls: pendingToolCalls.map(tc => ({
                                             id: tc.id,
                                             name: tc.name,
-                                            input: tc.input
-                                        }))
-                                    });
+                                            input: tc.input,
+                                        })),
+                                    })
                                     // 更新 Agent 状态的 lastAiResponse
-                                    agentState.lastAiResponse = roundTextContent || '';
+                                    agentState.lastAiResponse = roundTextContent || ''
                                 }
 
                                 // 执行智能终止检测 (AI 响应后)
@@ -1312,8 +1313,8 @@ export class AiAssistantService {
                                     pendingToolCalls,
                                     [],
                                     { maxRounds, timeoutMs, repeatThreshold, failureThreshold },
-                                    'after_ai_response'
-                                );
+                                    'after_ai_response',
+                                )
 
                                 // 【新增】检测 AI 输出 <invoke> 文本但没有实际工具调用的情况
                                 // 这通常是 AI 模仿了 XML 格式而不是真正调用工具
@@ -1321,79 +1322,79 @@ export class AiAssistantService {
                                     roundTextContent.includes('<invoke') ||
                                     roundTextContent.includes('<parameter') ||
                                     roundTextContent.includes('</invoke>')
-                                );
-                                const noActualToolCalls = pendingToolCalls.length === 0;
+                                )
+                                const noActualToolCalls = pendingToolCalls.length === 0
 
                                 if (hasInvokeText && noActualToolCalls && agentState.currentRound < maxRounds) {
                                     this.logger.warn('Detected <invoke> text without actual tool calls, forcing retry', {
                                         round: agentState.currentRound,
-                                        textPreview: roundTextContent.slice(0, 200)
-                                    });
+                                        textPreview: roundTextContent.slice(0, 200),
+                                    })
 
                                     // 添加纠正提示到消息历史
                                     conversationMessages.push({
                                         id: this.generateId(),
                                         role: MessageRole.USER,
                                         content: `【系统提示】你输出了 <invoke> 格式的文本，但这不是正确的工具调用方式。请直接调用工具，不要用文本描述工具调用。系统会自动处理你的工具调用请求。`,
-                                        timestamp: new Date()
-                                    });
+                                        timestamp: new Date(),
+                                    })
 
                                     // 发送重试事件
                                     subscriber.next({
                                         type: 'text_delta',
-                                        textDelta: '\n\n[系统：检测到格式错误，正在重试...]\n'
-                                    });
+                                        textDelta: '\n\n[系统：检测到格式错误，正在重试...]\n',
+                                    })
 
                                     // 强制重试
                                     try {
-                                        await runSingleRound();
+                                        await runSingleRound()
                                     } catch (retryError) {
-                                        this.logger.error('Retry round error', retryError);
+                                        this.logger.error('Retry round error', retryError)
                                     }
-                                    return;
+                                    return
                                 }
 
                                 if (termination.shouldTerminate) {
-                                    this.logger.info('Agent terminated by smart detector', { reason: termination.reason });
+                                    this.logger.info('Agent terminated by smart detector', { reason: termination.reason })
                                     subscriber.next({
                                         type: 'agent_complete',
                                         reason: termination.reason,
                                         totalRounds: agentState.currentRound,
-                                        terminationMessage: termination.message
-                                    });
-                                    callbacks.onAgentComplete?.(termination.reason, agentState.currentRound);
-                                    subscriber.complete();
-                                    resolve();
-                                    return;
+                                        terminationMessage: termination.message,
+                                    })
+                                    callbacks.onAgentComplete?.(termination.reason, agentState.currentRound)
+                                    subscriber.complete()
+                                    resolve()
+                                    return
                                 }
 
                                 // 检查是否有待执行的工具
                                 if (pendingToolCalls.length > 0) {
-                                    this.logger.info(`Round ${agentState.currentRound}: ${pendingToolCalls.length} tools to execute`);
+                                    this.logger.info(`Round ${agentState.currentRound}: ${pendingToolCalls.length} tools to execute`)
 
                                     // 执行所有工具
                                     const toolResults = await this.executeToolsSequentially(
                                         pendingToolCalls,
                                         subscriber,
-                                        agentState
-                                    );
+                                        agentState,
+                                    )
 
                                     // 将工具结果添加到消息历史（每个工具结果作为独立消息）
-                                    const toolResultMessages = this.buildToolResultMessages(toolResults);
+                                    const toolResultMessages = this.buildToolResultMessages(toolResults)
 
                                     // 🔴 调试日志：打印 tool 结果消息
                                     this.logger.warn(`DEBUG: Built ${toolResultMessages.length} tool result messages`, {
                                         messageRoles: toolResultMessages.map((m: any) => m.role),
-                                        toolUseIds: toolResultMessages.map((m: any) => m.tool_use_id)
-                                    });
+                                        toolUseIds: toolResultMessages.map((m: any) => m.tool_use_id),
+                                    })
 
-                                    conversationMessages.push(...toolResultMessages);
+                                    conversationMessages.push(...toolResultMessages)
 
                                     this.logger.info('Tool results added to conversation, starting next round', {
                                         round: agentState.currentRound,
                                         totalMessages: conversationMessages.length,
-                                        toolResultCount: toolResultMessages.length
-                                    });
+                                        toolResultCount: toolResultMessages.length,
+                                    })
 
                                     // 执行工具后的终止检测 (不检查 no_tools)
                                     const postToolTermination = this.checkTermination(
@@ -1401,85 +1402,85 @@ export class AiAssistantService {
                                         [],
                                         toolResults,
                                         { maxRounds, timeoutMs, repeatThreshold, failureThreshold },
-                                        'after_tool_execution'
-                                    );
+                                        'after_tool_execution',
+                                    )
 
                                     if (postToolTermination.shouldTerminate) {
-                                        this.logger.info('Agent terminated after tool execution', { reason: postToolTermination.reason });
+                                        this.logger.info('Agent terminated after tool execution', { reason: postToolTermination.reason })
                                         subscriber.next({
                                             type: 'agent_complete',
                                             reason: postToolTermination.reason,
                                             totalRounds: agentState.currentRound,
-                                            terminationMessage: postToolTermination.message
-                                        });
-                                        callbacks.onAgentComplete?.(postToolTermination.reason, agentState.currentRound);
-                                        subscriber.complete();
-                                        resolve();
-                                        return;
+                                            terminationMessage: postToolTermination.message,
+                                        })
+                                        callbacks.onAgentComplete?.(postToolTermination.reason, agentState.currentRound)
+                                        subscriber.complete()
+                                        resolve()
+                                        return
                                     }
 
                                     // 继续下一轮（添加递归安全保护）
                                     try {
-                                        await runSingleRound();
+                                        await runSingleRound()
                                     } catch (recursionError) {
-                                        this.logger.error('Recursive round error', recursionError);
+                                        this.logger.error('Recursive round error', recursionError)
                                         subscriber.next({
                                             type: 'error',
-                                            error: `执行循环中断: ${recursionError instanceof Error ? recursionError.message : 'Unknown error'}`
-                                        });
-                                        subscriber.error(recursionError);
+                                            error: `执行循环中断: ${recursionError instanceof Error ? recursionError.message : 'Unknown error'}`,
+                                        })
+                                        subscriber.error(recursionError)
                                     }
                                 } else {
                                     // 没有工具调用
                                     // 如果 checkTermination 返回 shouldTerminate: false（检测到未完成暗示），继续下一轮
                                     if (!termination.shouldTerminate) {
-                                        this.logger.info(`No tools but incomplete hint detected (${termination.reason}), continuing to next round`);
+                                        this.logger.info(`No tools but incomplete hint detected (${termination.reason}), continuing to next round`)
                                         try {
-                                            await runSingleRound();
+                                            await runSingleRound()
                                         } catch (recursionError) {
-                                            this.logger.error('Recursive round error', recursionError);
+                                            this.logger.error('Recursive round error', recursionError)
                                             subscriber.next({
                                                 type: 'error',
-                                                error: `执行循环中断: ${recursionError instanceof Error ? recursionError.message : 'Unknown error'}`
-                                            });
-                                            subscriber.error(recursionError);
+                                                error: `执行循环中断: ${recursionError instanceof Error ? recursionError.message : 'Unknown error'}`,
+                                            })
+                                            subscriber.error(recursionError)
                                         }
                                     } else {
                                         // 真正完成，终止 Agent
-                                        this.logger.info(`Agent completed: ${agentState.currentRound} rounds, reason: ${termination.reason}`);
+                                        this.logger.info(`Agent completed: ${agentState.currentRound} rounds, reason: ${termination.reason}`)
                                         subscriber.next({
                                             type: 'agent_complete',
                                             reason: termination.reason,
                                             totalRounds: agentState.currentRound,
-                                            terminationMessage: termination.message
-                                        });
-                                        callbacks.onAgentComplete?.(termination.reason, agentState.currentRound);
-                                        subscriber.complete();
+                                            terminationMessage: termination.message,
+                                        })
+                                        callbacks.onAgentComplete?.(termination.reason, agentState.currentRound)
+                                        subscriber.complete()
                                     }
                                 }
 
-                                resolve();
+                                resolve()
                             })().catch(error => {
-                                this.logger.error('Error in complete handler', error);
-                                subscriber.next({ type: 'error', error: error.message });
-                                reject(error);
-                            });
-                        }
-                    });
-                });
-            };
+                                this.logger.error('Error in complete handler', error)
+                                subscriber.next({ type: 'error', error: error.message })
+                                reject(error)
+                            })
+                        },
+                    })
+                })
+            }
 
             // 开始第一轮
             runSingleRound().catch(error => {
-                subscriber.error(error);
-            });
+                subscriber.error(error)
+            })
 
             // 返回取消函数
             return () => {
-                agentState.isActive = false;
-                this.logger.info('Agent loop cancelled by subscriber');
-            };
-        });
+                agentState.isActive = false
+                this.logger.info('Agent loop cancelled by subscriber')
+            }
+        })
     }
 
     /**
@@ -1491,9 +1492,9 @@ export class AiAssistantService {
     private async executeToolsSequentially(
         toolCalls: ToolCall[],
         subscriber: { next: (event: AgentStreamEvent) => void },
-        agentState?: AgentState
+        agentState?: AgentState,
     ): Promise<ToolResult[]> {
-        const results: ToolResult[] = [];
+        const results: ToolResult[] = []
 
         for (const toolCall of toolCalls) {
             // 发送 tool_executing 事件
@@ -1502,45 +1503,45 @@ export class AiAssistantService {
                 toolCall: {
                     id: toolCall.id,
                     name: toolCall.name,
-                    input: toolCall.input
-                }
-            });
+                    input: toolCall.input,
+                },
+            })
 
-            const startTime = Date.now();
+            const startTime = Date.now()
 
             try {
                 // 对 write_to_terminal 工具进行安全验证
                 if (toolCall.name === 'write_to_terminal' && toolCall.input?.command) {
-                    const command = toolCall.input.command;
+                    const command = toolCall.input.command
                     const validation = await this.securityValidator.validateAndConfirm(
                         command,
-                        'AI 请求执行此命令'
-                    );
+                        'AI 请求执行此命令',
+                    )
 
                     if (!validation.approved) {
                         // 用户拒绝执行
-                        const duration = Date.now() - startTime;
+                        const duration = Date.now() - startTime
                         subscriber.next({
                             type: 'tool_executed',
                             toolCall: {
                                 id: toolCall.id,
                                 name: toolCall.name,
-                                input: toolCall.input
+                                input: toolCall.input,
                             },
                             toolResult: {
                                 tool_use_id: toolCall.id,
-                                content: `⚠️ 命令被拒绝: ${validation.reason || '用户取消'}`,
+                                content: `⚠️ 命令被拒绝: ${validation.reason ?? '用户取消'}`,
                                 is_error: true,
-                                duration
-                            }
-                        });
+                                duration,
+                            },
+                        })
 
                         results.push({
                             tool_use_id: toolCall.id,
                             name: toolCall.name,
-                            content: `命令被用户拒绝: ${validation.reason || '用户取消'}`,
-                            is_error: true
-                        });
+                            content: `命令被用户拒绝: ${validation.reason ?? '用户取消'}`,
+                            is_error: true,
+                        })
 
                         // 记录到 Agent 状态历史
                         if (agentState) {
@@ -1549,24 +1550,24 @@ export class AiAssistantService {
                                 input: toolCall.input,
                                 inputHash: this.hashInput(toolCall.input),
                                 success: false,
-                                timestamp: Date.now()
-                            });
+                                timestamp: Date.now(),
+                            })
                         }
 
-                        continue; // 跳过此工具的执行
+                        continue // 跳过此工具的执行
                     }
 
-                    this.logger.info('Command approved by user', { command, riskLevel: validation.riskLevel });
+                    this.logger.info('Command approved by user', { command, riskLevel: validation.riskLevel })
                 }
 
-                const result = await this.terminalTools.executeToolCall(toolCall);
-                const duration = Date.now() - startTime;
+                const result = await this.terminalTools.executeToolCall(toolCall)
+                const duration = Date.now() - startTime
 
                 // 添加工具名称到结果中
                 results.push({
                     ...result,
-                    name: toolCall.name  // 添加工具名称
-                });
+                    name: toolCall.name,  // 添加工具名称
+                })
 
                 // 记录到 Agent 状态历史
                 if (agentState) {
@@ -1575,8 +1576,8 @@ export class AiAssistantService {
                         input: toolCall.input,
                         inputHash: this.hashInput(toolCall.input),
                         success: !result.is_error,
-                        timestamp: Date.now()
-                    });
+                        timestamp: Date.now(),
+                    })
                 }
 
                 // 发送 tool_executed 事件
@@ -1585,25 +1586,25 @@ export class AiAssistantService {
                     toolCall: {
                         id: toolCall.id,
                         name: toolCall.name,
-                        input: toolCall.input
+                        input: toolCall.input,
                     },
                     toolResult: {
                         tool_use_id: result.tool_use_id,
                         content: result.content,
                         is_error: !!result.is_error,
-                        duration
-                    }
-                });
+                        duration,
+                    },
+                })
 
                 this.logger.info('Tool executed', {
                     name: toolCall.name,
                     duration,
-                    success: !result.is_error
-                });
+                    success: !result.is_error,
+                })
 
             } catch (error) {
-                const duration = Date.now() - startTime;
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const duration = Date.now() - startTime
+                const errorMessage = error instanceof Error ? error.message : String(error)
 
                 // 发送 tool_error 事件
                 subscriber.next({
@@ -1611,22 +1612,22 @@ export class AiAssistantService {
                     toolCall: {
                         id: toolCall.id,
                         name: toolCall.name,
-                        input: toolCall.input
+                        input: toolCall.input,
                     },
                     toolResult: {
                         tool_use_id: toolCall.id,
                         content: `工具执行失败: ${errorMessage}`,
                         is_error: true,
-                        duration
-                    }
-                });
+                        duration,
+                    },
+                })
 
                 // 添加错误结果以便 AI 知道
                 results.push({
                     tool_use_id: toolCall.id,
                     content: `工具执行失败: ${errorMessage}`,
-                    is_error: true
-                });
+                    is_error: true,
+                })
 
                 // 记录失败的调用到历史
                 if (agentState) {
@@ -1635,15 +1636,15 @@ export class AiAssistantService {
                         input: toolCall.input,
                         inputHash: this.hashInput(toolCall.input),
                         success: false,
-                        timestamp: Date.now()
-                    });
+                        timestamp: Date.now(),
+                    })
                 }
 
-                this.logger.error('Tool execution failed', { name: toolCall.name, error });
+                this.logger.error('Tool execution failed', { name: toolCall.name, error })
             }
         }
 
-        return results;
+        return results
     }
 
     /**
@@ -1654,19 +1655,19 @@ export class AiAssistantService {
     private buildToolResultMessages(results: ToolResult[]): ChatMessage[] {
         // 为每个工具结果创建独立的 ChatMessage
         return results.map((r, index) => {
-            const toolName = r.name || r.tool_use_id || `tool_${index}`;
-            const status = r.is_error ? '执行失败' : '执行成功';
+            const toolName = r.name ?? r.tool_use_id ?? `tool_${index}`
+            const status = r.is_error ? '执行失败' : '执行成功'
 
             // 判断是否还有后续结果
-            const isLast = index === results.length - 1;
-            const remainingCount = results.length - index - 1;
+            const isLast = index === results.length - 1
+            const remainingCount = results.length - index - 1
 
             // 提示语根据是否为最后一个结果
             const continuationHint = isLast
                 ? '\n\n请检查用户的原始请求，如果还有未完成的任务，请继续调用相应工具完成。如果所有任务都已完成，请总结结果回复用户。'
                 : remainingCount > 0
                     ? `\n\n（还有 ${remainingCount} 个工具结果待处理...）`
-                    : '';
+                    : ''
 
             return {
                 id: this.generateId(),
@@ -1678,19 +1679,19 @@ export class AiAssistantService {
                 // 保留 toolResults 字段供 transformMessages 识别（单个结果）
                 toolResults: [{
                     tool_use_id: r.tool_use_id || '',
-                    name: r.name || '',
+                    name: r.name ?? '',
                     content: r.content || '',
-                    is_error: r.is_error || false
-                }]
-            };
-        });
+                    is_error: r.is_error ?? false,
+                }],
+            }
+        })
     }
 
     /**
      * 生成唯一 ID
      */
     private generateId(): string {
-        return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     // ============================================================================
@@ -1715,59 +1716,59 @@ export class AiAssistantService {
             repeatThreshold: number;
             failureThreshold: number;
         },
-        phase: 'after_ai_response' | 'after_tool_execution' = 'after_ai_response'
+        phase: 'after_ai_response' | 'after_tool_execution' = 'after_ai_response',
     ): TerminationResult {
         this.logger.debug('Checking termination conditions', {
             currentRound: state.currentRound,
             maxRounds: config.maxRounds,
             toolCallsCount: currentToolCalls.length,
             historyCount: state.toolCallHistory.length,
-            phase
-        });
+            phase,
+        })
 
         // 1. 检查 task_complete 工具调用 (两个场景都检查)
-        const taskCompleteResult = toolResults.find(r => (r as any).isTaskComplete);
+        const taskCompleteResult = toolResults.find(r => (r as any).isTaskComplete)
         if (taskCompleteResult) {
-            const terminationMessage = (taskCompleteResult as any).content || '任务完成';
+            const terminationMessage = (taskCompleteResult as any).content || '任务完成'
             return {
                 shouldTerminate: true,
                 reason: 'task_complete',
-                message: terminationMessage
-            };
+                message: terminationMessage,
+            }
         }
 
         // 2. 无工具调用检测 (只在 AI 响应后检查)
         if (phase === 'after_ai_response') {
             if (currentToolCalls.length === 0) {
-                const responseText = state.lastAiResponse || '';
-                const trimmedResponse = responseText.trim();
+                const responseText = state.lastAiResponse || ''
+                const trimmedResponse = responseText.trim()
 
                 // 没有文本且无工具调用，直接结束
                 if (!trimmedResponse) {
                     return {
                         shouldTerminate: true,
                         reason: 'no_tools',
-                        message: '本轮无工具调用，且未收到文本回复'
-                    };
+                        message: '本轮无工具调用，且未收到文本回复',
+                    }
                 }
 
-                const hasToolHistory = state.toolCallHistory.length > 0;
-                const shortResponse = trimmedResponse.length < 200;
+                const hasToolHistory = state.toolCallHistory.length > 0
+                const shortResponse = trimmedResponse.length < 200
 
                 // === 检查 AI 是否提到了工具名但没调用 ===
                 if (this.mentionsToolWithoutCalling(trimmedResponse) && shortResponse) {
                     this.logger.warn('AI mentioned tool but did not call it, continuing', {
-                        response: trimmedResponse.substring(0, 100)
-                    });
-                    return { shouldTerminate: false, reason: 'mentioned_tool' };
+                        response: trimmedResponse.substring(0, 100),
+                    })
+                    return { shouldTerminate: false, reason: 'mentioned_tool' }
                 }
 
                 // 仅在尚未执行过工具时，才允许因“未完成暗示”继续
                 if (!hasToolHistory && shortResponse && this.hasIncompleteHint(trimmedResponse)) {
                     this.logger.warn('AI indicated incomplete task but no tools called', {
-                        response: trimmedResponse.substring(0, 100)
-                    });
-                    return { shouldTerminate: false, reason: 'no_tools' };
+                        response: trimmedResponse.substring(0, 100),
+                    })
+                    return { shouldTerminate: false, reason: 'no_tools' }
                 }
 
                 // 检查总结关键词
@@ -1775,58 +1776,58 @@ export class AiAssistantService {
                     return {
                         shouldTerminate: true,
                         reason: 'summarizing',
-                        message: '检测到 AI 正在总结，任务已完成'
-                    };
+                        message: '检测到 AI 正在总结，任务已完成',
+                    }
                 }
 
                 // 默认无工具调用结束
                 return {
                     shouldTerminate: true,
                     reason: 'no_tools',
-                    message: '本轮无工具调用，任务完成'
-                };
+                    message: '本轮无工具调用，任务完成',
+                }
             }
         }
 
         // 3. 重复工具调用检测 (两个场景都检查)
         if (currentToolCalls.length > 0) {
-            const recentHistory = state.toolCallHistory.slice(-config.repeatThreshold * 2);
+            const recentHistory = state.toolCallHistory.slice(-config.repeatThreshold * 2)
 
             for (const tc of currentToolCalls) {
-                const inputHash = this.hashInput(tc.input);
+                const inputHash = this.hashInput(tc.input)
                 const repeatCount = recentHistory.filter(h =>
-                    h.name === tc.name && h.inputHash === inputHash
-                ).length;
+                    h.name === tc.name && h.inputHash === inputHash,
+                ).length
 
                 if (repeatCount >= config.repeatThreshold - 1) {  // 加上本次
                     return {
                         shouldTerminate: true,
                         reason: 'repeated_tool',
-                        message: `工具 ${tc.name} 被重复调用 ${repeatCount + 1} 次，可能陷入循环`
-                    };
+                        message: `工具 ${tc.name} 被重复调用 ${repeatCount + 1} 次，可能陷入循环`,
+                    }
                 }
             }
         }
 
         // 4. 连续失败检测 (两个场景都检查)
-        const recentResults = state.toolCallHistory.slice(-config.failureThreshold * 2);
-        const failureCount = recentResults.filter(r => !r.success).length;
+        const recentResults = state.toolCallHistory.slice(-config.failureThreshold * 2)
+        const failureCount = recentResults.filter(r => !r.success).length
         if (failureCount >= config.failureThreshold) {
             return {
                 shouldTerminate: true,
                 reason: 'high_failure_rate',
-                message: `连续 ${failureCount} 次工具调用失败，停止执行`
-            };
+                message: `连续 ${failureCount} 次工具调用失败，停止执行`,
+            }
         }
 
         // 5. 超时检测 (两个场景都检查)
-        const elapsedTime = Date.now() - state.startTime;
+        const elapsedTime = Date.now() - state.startTime
         if (elapsedTime > config.timeoutMs) {
             return {
                 shouldTerminate: true,
                 reason: 'timeout',
-                message: `任务执行超时 (${Math.round(elapsedTime / 1000)}s)`
-            };
+                message: `任务执行超时 (${Math.round(elapsedTime / 1000)}s)`,
+            }
         }
 
         // 6. 安全保底 - 最大轮数检测 (两个场景都检查)
@@ -1834,11 +1835,11 @@ export class AiAssistantService {
             return {
                 shouldTerminate: true,
                 reason: 'max_rounds',
-                message: `达到最大执行轮数 (${config.maxRounds}轮)`
-            };
+                message: `达到最大执行轮数 (${config.maxRounds}轮)`,
+            }
         }
 
-        return { shouldTerminate: false, reason: 'no_tools' };
+        return { shouldTerminate: false, reason: 'no_tools' }
     }
 
     /**
@@ -1846,18 +1847,18 @@ export class AiAssistantService {
      * 使用正则表达式匹配更多变体
      */
     private hasIncompleteHint(text: string): boolean {
-        if (!text || text.length < 2) return false;  // 边界情况检查
+        if (!text || text.length < 2) {return false}  // 边界情况检查
 
-        return AiAssistantService.INCOMPLETE_PATTERNS.some(p => p.test(text));
+        return AiAssistantService.INCOMPLETE_PATTERNS.some(p => p.test(text))
     }
 
     /**
      * 检测 AI 回复中的「总结暗示」
      */
     private hasSummaryHint(text: string): boolean {
-        if (!text || text.length < 2) return false;  // 边界情况检查
+        if (!text || text.length < 2) {return false}  // 边界情况检查
 
-        return AiAssistantService.SUMMARY_PATTERNS.some(p => p.test(text));
+        return AiAssistantService.SUMMARY_PATTERNS.some(p => p.test(text))
     }
 
     // ============================================================================
@@ -1998,7 +1999,7 @@ export class AiAssistantService {
         /(OK|ok|Okay|okay)[，, ]?(我|让我)/,                          // OK，我来
         /(明白|懂了)[，, ]?(我|让我|我来)/,                            // 明白，我来
         /(收到|收到)[，, ]?(我|让我|我来)/,                            // 收到，我来
-    ];
+    ]
 
     // 总结暗示模式
     private static readonly SUMMARY_PATTERNS: RegExp[] = [
@@ -2054,14 +2055,14 @@ export class AiAssistantService {
         /\bfeel free to ask\b/i,
         /\bhave a great day\b/i,
         /\bhappy (coding|terminal|computing)\b/i,
-    ];
+    ]
 
     /**
      * 检测 AI 回复中是否提到了工具但没有调用
      * 用于防止 AI 说要执行工具但实际没调用的情况
      */
     private mentionsToolWithoutCalling(text: string): boolean {
-        if (!text || text.length < 2) return false;
+        if (!text || text.length < 2) {return false}
 
         // 检测 MCP 工具提及
         const mcpPatterns = [
@@ -2069,7 +2070,7 @@ export class AiAssistantService {
             /MCP.{0,10}(工具|浏览器|服务)/,       // MCP工具、MCP浏览器
             /浏览器.{0,5}工具/,                   // 浏览器工具
             /使用.{0,10}工具.{0,10}(访问|查询|获取)/, // 使用xxx工具访问
-        ];
+        ]
 
         // 检测内置工具提及
         const builtinToolPatterns = [
@@ -2077,11 +2078,11 @@ export class AiAssistantService {
             /read_terminal_output/i,
             /focus_terminal/i,
             /get_terminal_list/i,
-        ];
+        ]
 
-        const allPatterns = [...mcpPatterns, ...builtinToolPatterns];
+        const allPatterns = [...mcpPatterns, ...builtinToolPatterns]
 
-        return allPatterns.some(p => p.test(text));
+        return allPatterns.some(p => p.test(text))
     }
 
     /**
@@ -2104,7 +2105,7 @@ export class AiAssistantService {
 
 ### 提示
 - 你的工具调用由系统自动处理，不需要手动描述格式
-- 如果看到 tool_result，那是真实的执行结果`;
+- 如果看到 tool_result，那是真实的执行结果`
     }
 
     /**
@@ -2112,16 +2113,16 @@ export class AiAssistantService {
      */
     private hashInput(input: any): string {
         try {
-            const str = JSON.stringify(input);
-            let hash = 0;
+            const str = JSON.stringify(input)
+            let hash = 0
             for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;  // 转换为 32 位整数
+                const char = str.charCodeAt(i)
+                hash = ((hash << 5) - hash) + char
+                hash = hash & hash  // 转换为 32 位整数
             }
-            return hash.toString(36);
+            return hash.toString(36)
         } catch {
-            return Math.random().toString(36);
+            return Math.random().toString(36)
         }
     }
 }

@@ -1,31 +1,31 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core'
 
 @Component({
     selector: 'app-error-message',
     standalone: false,
     templateUrl: './error-message.component.html',
-    styleUrls: ['./error-message.component.scss']
+    styleUrls: ['./error-message.component.scss'],
 })
 export class ErrorMessageComponent {
-    @Input() type: 'error' | 'warning' | 'info' | 'success' = 'error';
-    @Input() title: string = '';
-    @Input() message: string = '';
-    @Input() details: string = '';
-    @Input() dismissible: boolean = false;
+    @Input() type: 'error' | 'warning' | 'info' | 'success' = 'error'
+    @Input() title = ''
+    @Input() message = ''
+    @Input() details = ''
+    @Input() dismissible = false
 
-    @Output() dismissed = new EventEmitter<void>();
+    @Output() dismissed = new EventEmitter<void>()
 
     getIconClass(): string {
-        const icons: { [key: string]: string } = {
-            'error': 'icon-error',
-            'warning': 'icon-warning',
-            'info': 'icon-info',
-            'success': 'icon-success'
-        };
-        return icons[this.type] || 'icon-error';
+        const icons: Record<string, string> = {
+            error: 'icon-error',
+            warning: 'icon-warning',
+            info: 'icon-info',
+            success: 'icon-success',
+        }
+        return icons[this.type] || 'icon-error'
     }
 
     onDismiss(): void {
-        this.dismissed.emit();
+        this.dismissed.emit()
     }
 }

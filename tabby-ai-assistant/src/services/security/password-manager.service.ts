@@ -1,37 +1,37 @@
-import { Injectable } from '@angular/core';
-import * as CryptoJS from 'crypto-js';
-import { PasswordValidationResult } from '../../types/security.types';
-import { LoggerService } from '../core/logger.service';
-import { FileStorageService } from '../core/file-storage.service';
+import { Injectable } from '@angular/core'
+import * as CryptoJS from 'crypto-js'
+import { PasswordValidationResult } from '../../types/security.types'
+import { LoggerService } from '../core/logger.service'
+import { FileStorageService } from '../core/file-storage.service'
 
 @Injectable({ providedIn: 'root' })
 export class PasswordManagerService {
-    private readonly STORAGE_KEY = 'ai-assistant-password-hash';
-    private readonly STATE_KEY = 'ai-assistant-password-state';
-    private readonly MAX_ATTEMPTS = 5;
-    private readonly LOCKOUT_TIME = 15 * 60 * 1000; // 15分钟
+    private readonly STORAGE_KEY = 'ai-assistant-password-hash'
+    private readonly STATE_KEY = 'ai-assistant-password-state'
+    private readonly MAX_ATTEMPTS = 5
+    private readonly LOCKOUT_TIME = 15 * 60 * 1000 // 15分钟
 
-    private attempts = 0;
-    private lockoutUntil: number | null = null;
+    private attempts = 0
+    private lockoutUntil: number | null = null
 
     /** 文件存储键名 */
-    private readonly PASSWORD_FILENAME = 'password';
-    private readonly PASSWORD_STATE_FILENAME = 'password-state';
+    private readonly PASSWORD_FILENAME = 'password'
+    private readonly PASSWORD_STATE_FILENAME = 'password-state'
 
     constructor(
         private logger: LoggerService,
-        private fileStorage: FileStorageService
+        private fileStorage: FileStorageService,
     ) {
-        this.loadState();
+        this.loadState()
     }
 
     /**
      * 设置密码
      */
     setPassword(password: string): void {
-        const hash = this.hashPassword(password);
-        this.fileStorage.save(this.PASSWORD_FILENAME, { hash });
-        this.logger.info('Password set successfully');
+        const hash = this.hashPassword(password)
+        this.fileStorage.save(this.PASSWORD_FILENAME, { hash })
+        this.logger.info('Password set successfully')
     }
 
     /**
@@ -40,38 +40,38 @@ export class PasswordManagerService {
     async requestPassword(): Promise<boolean> {
         // 检查是否被锁定
         if (this.isLocked()) {
-            const remainingTime = this.getRemainingLockoutTime();
-            this.logger.warn('Password attempts locked', { remainingTime });
-            alert(`账户已锁定，请等待 ${Math.ceil(remainingTime / 60000)} 分钟后再试`);
-            return false;
+            const remainingTime = this.getRemainingLockoutTime()
+            this.logger.warn('Password attempts locked', { remainingTime })
+            alert(`账户已锁定，请等待 ${Math.ceil(remainingTime / 60000)} 分钟后再试`)
+            return false
         }
 
         // 显示密码输入框
-        const password = prompt('请输入密码以执行此操作:');
+        const password = prompt('请输入密码以执行此操作:')
         if (password === null) {
             // 用户取消
-            return false;
+            return false
         }
 
         // 验证密码
-        const isValid = await this.verifyPassword(password);
+        const isValid = await this.verifyPassword(password)
 
         if (isValid) {
-            this.resetAttempts();
-            this.logger.info('Password verified successfully');
-            return true;
+            this.resetAttempts()
+            this.logger.info('Password verified successfully')
+            return true
         } else {
-            this.attempts++;
-            this.logger.warn('Password verification failed', { attempts: this.attempts });
+            this.attempts++
+            this.logger.warn('Password verification failed', { attempts: this.attempts })
 
             if (this.attempts >= this.MAX_ATTEMPTS) {
-                this.lockoutUntil = Date.now() + this.LOCKOUT_TIME;
-                this.saveState();
-                this.logger.error('Password attempts exceeded, account locked');
-                alert(`密码错误次数过多，账户已锁定 ${this.LOCKOUT_TIME / 60000} 分钟`);
+                this.lockoutUntil = Date.now() + this.LOCKOUT_TIME
+                this.saveState()
+                this.logger.error('Password attempts exceeded, account locked')
+                alert(`密码错误次数过多，账户已锁定 ${this.LOCKOUT_TIME / 60000} 分钟`)
             }
 
-            return false;
+            return false
         }
     }
 
@@ -79,31 +79,31 @@ export class PasswordManagerService {
      * 检查是否有密码保护
      */
     hasPassword(): boolean {
-        const data = this.fileStorage.load<{ hash: string }>(this.PASSWORD_FILENAME, { hash: '' });
-        return !!data.hash;
+        const data = this.fileStorage.load<{ hash: string }>(this.PASSWORD_FILENAME, { hash: '' })
+        return !!data.hash
     }
 
     /**
      * 清除密码
      */
     clearPassword(): void {
-        this.fileStorage.delete(this.PASSWORD_FILENAME);
-        this.resetAttempts();
-        this.logger.info('Password cleared');
+        this.fileStorage.delete(this.PASSWORD_FILENAME)
+        this.resetAttempts()
+        this.logger.info('Password cleared')
     }
 
     /**
      * 验证密码是否正确
      */
     private async verifyPassword(password: string): Promise<boolean> {
-        const data = this.fileStorage.load<{ hash: string }>(this.PASSWORD_FILENAME, { hash: '' });
+        const data = this.fileStorage.load<{ hash: string }>(this.PASSWORD_FILENAME, { hash: '' })
         if (!data.hash) {
             // 没有设置密码，允许通过
-            return true;
+            return true
         }
 
-        const inputHash = this.hashPassword(password);
-        return inputHash === data.hash;
+        const inputHash = this.hashPassword(password)
+        return inputHash === data.hash
     }
 
     /**
@@ -111,31 +111,31 @@ export class PasswordManagerService {
      */
     private hashPassword(password: string): string {
         // 使用SHA-256哈希密码
-        return CryptoJS.SHA256(password).toString();
+        return CryptoJS.SHA256(password).toString()
     }
 
     /**
      * 检查是否被锁定
      */
     private isLocked(): boolean {
-        return this.lockoutUntil !== null && Date.now() < this.lockoutUntil;
+        return this.lockoutUntil !== null && Date.now() < this.lockoutUntil
     }
 
     /**
      * 获取剩余锁定时间
      */
     private getRemainingLockoutTime(): number {
-        if (this.lockoutUntil === null) return 0;
-        return Math.max(0, this.lockoutUntil - Date.now());
+        if (this.lockoutUntil === null) {return 0}
+        return Math.max(0, this.lockoutUntil - Date.now())
     }
 
     /**
      * 重置尝试次数
      */
     private resetAttempts(): void {
-        this.attempts = 0;
-        this.lockoutUntil = null;
-        this.saveState();
+        this.attempts = 0
+        this.lockoutUntil = null
+        this.saveState()
     }
 
     /**
@@ -144,9 +144,9 @@ export class PasswordManagerService {
     private saveState(): void {
         const state = {
             attempts: this.attempts,
-            lockoutUntil: this.lockoutUntil
-        };
-        this.fileStorage.save(this.PASSWORD_STATE_FILENAME, state);
+            lockoutUntil: this.lockoutUntil,
+        }
+        this.fileStorage.save(this.PASSWORD_STATE_FILENAME, state)
     }
 
     /**
@@ -157,19 +157,19 @@ export class PasswordManagerService {
             const state = this.fileStorage.load<{
                 attempts: number;
                 lockoutUntil: number | null;
-            }>(this.PASSWORD_STATE_FILENAME, { attempts: 0, lockoutUntil: null });
+            }>(this.PASSWORD_STATE_FILENAME, { attempts: 0, lockoutUntil: null })
 
             if (state) {
-                this.attempts = state.attempts || 0;
-                this.lockoutUntil = state.lockoutUntil;
+                this.attempts = state.attempts || 0
+                this.lockoutUntil = state.lockoutUntil
 
                 // 检查锁定是否过期
                 if (this.lockoutUntil && Date.now() >= this.lockoutUntil) {
-                    this.resetAttempts();
+                    this.resetAttempts()
                 }
             }
         } catch (error) {
-            this.logger.error('Failed to load password state', error);
+            this.logger.error('Failed to load password state', error)
         }
     }
 
@@ -181,21 +181,21 @@ export class PasswordManagerService {
             valid: this.attempts === 0 && !this.isLocked(),
             attempts: this.attempts,
             locked: this.isLocked(),
-            lockExpiry: this.lockoutUntil || undefined
-        };
+            lockExpiry: this.lockoutUntil ?? undefined,
+        }
     }
 
     /**
      * 获取总尝试次数
      */
     getTotalAttempts(): number {
-        return this.attempts;
+        return this.attempts
     }
 
     /**
      * 获取失败次数
      */
     getFailedAttempts(): number {
-        return Math.max(0, this.attempts - 1);
+        return Math.max(0, this.attempts - 1)
     }
 }

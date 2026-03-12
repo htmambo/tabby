@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
-import { ConfigProvider, Platform } from 'tabby-core';
-import { ConfigProviderService } from '../../services/core/config-provider.service';
+import { Injectable } from '@angular/core'
+import { ConfigProvider, Platform } from 'tabby-core'
+import { ConfigProviderService } from '../../services/core/config-provider.service'
 
 /**
  * Tabby配置提供者
@@ -26,36 +26,36 @@ export class AiConfigProvider extends ConfigProvider {
                 openai: {
                     apiKey: '',
                     model: 'gpt-3.5-turbo',
-                    baseURL: 'https://api.openai.com/v1'
+                    baseURL: 'https://api.openai.com/v1',
                 },
                 anthropic: {
                     apiKey: '',
                     model: 'claude-3-sonnet',
-                    baseURL: 'https://api.anthropic.com'
+                    baseURL: 'https://api.anthropic.com',
                 },
                 minimax: {
                     apiKey: '',
                     model: 'MiniMax-M2',
-                    baseURL: 'https://api.minimaxi.com/anthropic'
+                    baseURL: 'https://api.minimaxi.com/anthropic',
                 },
                 glm: {
                     apiKey: '',
                     model: 'glm-4',
-                    baseURL: 'https://open.bigmodel.cn/api/paas/v4'
+                    baseURL: 'https://open.bigmodel.cn/api/paas/v4',
                 },
                 openaiCompatible: {
                     apiKey: '',
                     model: 'gpt-3.5-turbo',
-                    baseURL: ''
-                }
+                    baseURL: '',
+                },
             },
             security: {
                 passwordProtection: false,
                 riskAssessmentLevel: 'medium',
-                consentPersistenceDays: 30
-            }
-        }
-    };
+                consentPersistenceDays: 30,
+            },
+        },
+    }
 
     /**
      * 平台特定默认配置
@@ -66,14 +66,14 @@ export class AiConfigProvider extends ConfigProvider {
                 'ai-assistant-toggle': ['⌘-Shift-A'],
                 'ai-command-generation': ['⌘-Shift-G'],
                 'ai-explain-command': ['⌘-Shift-E'],
-            }
-        }
-    };
+            },
+        },
+    }
 
     constructor(
-        private configService: ConfigProviderService
+        private configService: ConfigProviderService,
     ) {
-        super();
+        super()
     }
 }
 

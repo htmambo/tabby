@@ -6,7 +6,7 @@
 /**
  * AI提供商类型
  */
-export type AIProvider = 'openai' | 'anthropic' | 'minimax' | 'glm' | 'openai-compatible';
+export type AIProvider = 'openai' | 'anthropic' | 'minimax' | 'glm' | 'openai-compatible'
 
 /**
  * 模型定价信息
@@ -61,37 +61,16 @@ const DEFAULT_PRICING: ModelPricing[] = [
     { provider: 'glm', model: 'glm-4', inputPricePerMillion: 0.5, outputPricePerMillion: 1.5 },
     { provider: 'glm', model: 'glm-4v', inputPricePerMillion: 0.5, outputPricePerMillion: 1.5 },
     { provider: 'glm', model: 'glm-3-turbo', inputPricePerMillion: 0.1, outputPricePerMillion: 0.1 },
-];
+]
 
 // 自定义定价表（可扩展）
-let customPricing: ModelPricing[] = [];
+let customPricing: ModelPricing[] = []
 
 /**
  * 设置自定义模型定价
  */
 export function setCustomPricing(pricing: ModelPricing[]): void {
-    customPricing = [...pricing];
-}
-
-/**
- * 获取模型定价信息
- */
-export function getModelPricing(provider: AIProvider, model: string): ModelPricing | undefined {
-    // 首先查找自定义定价
-    const custom = customPricing.find(p => p.provider === provider && p.model === model);
-    if (custom) {
-        return custom;
-    }
-
-    // 然后查找默认定价
-    const defaultPricing = DEFAULT_PRICING.find(p => p.provider === provider && p.model === model);
-
-    if (defaultPricing) {
-        return defaultPricing;
-    }
-
-    // 返回该提供商的通用定价
-    return getDefaultPricingForProvider(provider);
+    customPricing = [...pricing]
 }
 
 /**
@@ -99,24 +78,45 @@ export function getModelPricing(provider: AIProvider, model: string): ModelPrici
  */
 function getDefaultPricingForProvider(provider: AIProvider): ModelPricing | undefined {
     const providerDefaults: Record<AIProvider, Partial<ModelPricing>> = {
-        'openai': { inputPricePerMillion: 5, outputPricePerMillion: 15 },
-        'anthropic': { inputPricePerMillion: 3, outputPricePerMillion: 15 },
-        'minimax': { inputPricePerMillion: 0.5, outputPricePerMillion: 0.5 },
-        'glm': { inputPricePerMillion: 0.5, outputPricePerMillion: 1 },
-        'openai-compatible': { inputPricePerMillion: 1, outputPricePerMillion: 2 }
-    };
+        openai: { inputPricePerMillion: 5, outputPricePerMillion: 15 },
+        anthropic: { inputPricePerMillion: 3, outputPricePerMillion: 15 },
+        minimax: { inputPricePerMillion: 0.5, outputPricePerMillion: 0.5 },
+        glm: { inputPricePerMillion: 0.5, outputPricePerMillion: 1 },
+        'openai-compatible': { inputPricePerMillion: 1, outputPricePerMillion: 2 },
+    }
 
-    const defaults = providerDefaults[provider];
+    const defaults = providerDefaults[provider]
     if (defaults) {
         return {
             provider,
             model: 'default',
             inputPricePerMillion: defaults.inputPricePerMillion ?? 1,
-            outputPricePerMillion: defaults.outputPricePerMillion ?? 2
-        };
+            outputPricePerMillion: defaults.outputPricePerMillion ?? 2,
+        }
     }
 
-    return undefined;
+    return undefined
+}
+
+/**
+ * 获取模型定价信息
+ */
+export function getModelPricing(provider: AIProvider, model: string): ModelPricing | undefined {
+    // 首先查找自定义定价
+    const custom = customPricing.find(p => p.provider === provider && p.model === model)
+    if (custom) {
+        return custom
+    }
+
+    // 然后查找默认定价
+    const defaultPricing = DEFAULT_PRICING.find(p => p.provider === provider && p.model === model)
+
+    if (defaultPricing) {
+        return defaultPricing
+    }
+
+    // 返回该提供商的通用定价
+    return getDefaultPricingForProvider(provider)
 }
 
 /**
@@ -129,9 +129,9 @@ function getDefaultPricingForProvider(provider: AIProvider): ModelPricing | unde
 export function calculateCost(
     provider: AIProvider,
     model: string,
-    usage: TokenUsage
+    usage: TokenUsage,
 ): CostResult {
-    const pricing = getModelPricing(provider, model);
+    const pricing = getModelPricing(provider, model)
 
     if (!pricing) {
         // 未知提供商，返回零成本
@@ -140,20 +140,20 @@ export function calculateCost(
             outputCost: 0,
             totalCost: 0,
             inputPricePerMillion: 0,
-            outputPricePerMillion: 0
-        };
+            outputPricePerMillion: 0,
+        }
     }
 
-    const inputCost = (usage.inputTokens / 1000000) * pricing.inputPricePerMillion;
-    const outputCost = (usage.outputTokens / 1000000) * pricing.outputPricePerMillion;
+    const inputCost = (usage.inputTokens / 1000000) * pricing.inputPricePerMillion
+    const outputCost = (usage.outputTokens / 1000000) * pricing.outputPricePerMillion
 
     return {
         inputCost: Math.round(inputCost * 1000000) / 1000000, // 保留6位小数
         outputCost: Math.round(outputCost * 1000000) / 1000000,
         totalCost: Math.round((inputCost + outputCost) * 1000000) / 1000000,
         inputPricePerMillion: pricing.inputPricePerMillion,
-        outputPricePerMillion: pricing.outputPricePerMillion
-    };
+        outputPricePerMillion: pricing.outputPricePerMillion,
+    }
 }
 
 /**
@@ -163,10 +163,10 @@ export function calculateSummaryCost(
     provider: AIProvider,
     model: string,
     originalMessageCount: number,
-    tokensUsed: number
+    tokensUsed: number,
 ): CostResult {
     // 摘要生成主要是输入成本
-    const pricing = getModelPricing(provider, model);
+    const pricing = getModelPricing(provider, model)
 
     if (!pricing) {
         return {
@@ -174,18 +174,18 @@ export function calculateSummaryCost(
             outputCost: 0,
             totalCost: 0,
             inputPricePerMillion: 0,
-            outputPricePerMillion: 0
-        };
+            outputPricePerMillion: 0,
+        }
     }
 
     // 估算摘要的输入和输出token（假设输出占输入的5%）
-    const estimatedInputTokens = tokensUsed;
-    const estimatedOutputTokens = Math.floor(tokensUsed * 0.05);
+    const estimatedInputTokens = tokensUsed
+    const estimatedOutputTokens = Math.floor(tokensUsed * 0.05)
 
     return calculateCost(provider, model, {
         inputTokens: estimatedInputTokens,
-        outputTokens: estimatedOutputTokens
-    });
+        outputTokens: estimatedOutputTokens,
+    })
 }
 
 /**
@@ -193,11 +193,11 @@ export function calculateSummaryCost(
  */
 export function formatCost(cost: number): string {
     if (cost < 0.001) {
-        return `$${(cost * 1000000).toFixed(2)}`;
+        return `$${(cost * 1000000).toFixed(2)}`
     } else if (cost < 1) {
-        return `$${cost.toFixed(4)}`;
+        return `$${cost.toFixed(4)}`
     } else {
-        return `$${cost.toFixed(2)}`;
+        return `$${cost.toFixed(2)}`
     }
 }
 
@@ -205,16 +205,16 @@ export function formatCost(cost: number): string {
  * 格式化成本详细信息
  */
 export function formatCostDetail(result: CostResult): string {
-    const parts: string[] = [];
+    const parts: string[] = []
 
     if (result.inputCost > 0) {
-        parts.push(`输入: ${formatCost(result.inputCost)}`);
+        parts.push(`输入: ${formatCost(result.inputCost)}`)
     }
     if (result.outputCost > 0) {
-        parts.push(`输出: ${formatCost(result.outputCost)}`);
+        parts.push(`输出: ${formatCost(result.outputCost)}`)
     }
 
-    return parts.join(', ') + ` (总计: ${formatCost(result.totalCost)})`;
+    return parts.join(', ') + ` (总计: ${formatCost(result.totalCost)})`
 }
 
 /**
@@ -223,10 +223,10 @@ export function formatCostDetail(result: CostResult): string {
 export function estimateTokenCount(text: string): number {
     // 粗略估算：1个Token约等于4个字符（英文）
     // 中文：1个Token约等于1.5个字符
-    const chineseCharCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const englishCharCount = text.length - chineseCharCount;
+    const chineseCharCount = (text.match(/[\u4e00-\u9fa5]/g) ?? []).length
+    const englishCharCount = text.length - chineseCharCount
 
-    return Math.ceil(chineseCharCount / 1.5 + englishCharCount / 4);
+    return Math.ceil(chineseCharCount / 1.5 + englishCharCount / 4)
 }
 
 /**
@@ -235,15 +235,15 @@ export function estimateTokenCount(text: string): number {
 export function calculateBatchCost(
     provider: AIProvider,
     model: string,
-    requests: TokenUsage[]
+    requests: TokenUsage[],
 ): CostResult {
     const totalUsage = requests.reduce(
         (acc, usage) => ({
             inputTokens: acc.inputTokens + usage.inputTokens,
-            outputTokens: acc.outputTokens + usage.outputTokens
+            outputTokens: acc.outputTokens + usage.outputTokens,
         }),
-        { inputTokens: 0, outputTokens: 0 }
-    );
+        { inputTokens: 0, outputTokens: 0 },
+    )
 
-    return calculateCost(provider, model, totalUsage);
+    return calculateCost(provider, model, totalUsage)
 }

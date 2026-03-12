@@ -362,7 +362,7 @@ export interface TranslationKeys {
 }
 
 // 支持的语言类型
-export type SupportedLanguage = 'zh-CN' | 'en-US' | 'ja-JP';
+export type SupportedLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 
 // 语言配置
 export interface LanguageConfig {

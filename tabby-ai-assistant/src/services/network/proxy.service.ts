@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { Agent as HttpAgent } from 'http';
-import { Agent as HttpsAgent } from 'https';
-import { ConfigProviderService } from '../core/config-provider.service';
-import { LoggerService } from '../core/logger.service';
-import { ProxyConfig, DEFAULT_PROXY_CONFIG, ProxyTestResult } from '../../types/proxy.types';
+import { Injectable } from '@angular/core'
+import { Agent as HttpAgent } from 'http'
+import { Agent as HttpsAgent } from 'https'
+import { ConfigProviderService } from '../core/config-provider.service'
+import { LoggerService } from '../core/logger.service'
+import { ProxyConfig, DEFAULT_PROXY_CONFIG, ProxyTestResult } from '../../types/proxy.types'
 
 /**
  * 代理服务
@@ -13,35 +13,35 @@ import { ProxyConfig, DEFAULT_PROXY_CONFIG, ProxyTestResult } from '../../types/
 export class ProxyService {
     constructor(
         private config: ConfigProviderService,
-        private logger: LoggerService
+        private logger: LoggerService,
     ) {}
 
     /**
      * 获取代理配置
      */
     getProxyConfig(): ProxyConfig {
-        const savedConfig = this.config.get<ProxyConfig>('proxy');
-        return savedConfig ? { ...DEFAULT_PROXY_CONFIG, ...savedConfig } : { ...DEFAULT_PROXY_CONFIG };
+        const savedConfig = this.config.get<ProxyConfig>('proxy')
+        return savedConfig ? { ...DEFAULT_PROXY_CONFIG, ...savedConfig } : { ...DEFAULT_PROXY_CONFIG }
     }
 
     /**
      * 检查是否应该绕过代理
      */
     shouldBypassProxy(url: string): boolean {
-        const proxyConfig = this.getProxyConfig();
-        if (!proxyConfig.enabled) return true;
+        const proxyConfig = this.getProxyConfig()
+        if (!proxyConfig.enabled) {return true}
 
-        const noProxy = proxyConfig.noProxy || [];
-        const hostname = this.extractHostname(url);
+        const noProxy = proxyConfig.noProxy ?? []
+        const hostname = this.extractHostname(url)
 
         return noProxy.some(pattern => {
             if (pattern.startsWith('*.')) {
                 // 通配符匹配 *.local -> localhost, foo.local
-                const suffix = pattern.slice(1);
-                return hostname.endsWith(suffix) || hostname === suffix.slice(1);
+                const suffix = pattern.slice(1)
+                return hostname.endsWith(suffix) || hostname === suffix.slice(1)
             }
-            return hostname === pattern || hostname.endsWith('.' + pattern);
-        });
+            return hostname === pattern || hostname.endsWith('.' + pattern)
+        })
     }
 
     /**
@@ -49,28 +49,28 @@ export class ProxyService {
      * 返回适用于 axios 的代理配置对象
      */
     getAxiosProxyConfig(url: string): { httpAgent?: HttpAgent; httpsAgent?: HttpsAgent } {
-        const proxyConfig = this.getProxyConfig();
+        const proxyConfig = this.getProxyConfig()
 
         if (!proxyConfig.enabled || this.shouldBypassProxy(url)) {
-            return {};
+            return {}
         }
 
-        const isHttps = url.startsWith('https://');
+        const isHttps = url.startsWith('https://')
         const proxyUrl = isHttps
-            ? (proxyConfig.httpsProxy || proxyConfig.httpProxy)
-            : proxyConfig.httpProxy;
+            ? (proxyConfig.httpsProxy ?? proxyConfig.httpProxy)
+            : proxyConfig.httpProxy
 
         if (!proxyUrl) {
-            return {};
+            return {}
         }
 
-        const options = this.buildProxyOptions(proxyUrl, proxyConfig);
+        const options = this.buildProxyOptions(proxyUrl, proxyConfig)
 
         // 动态导入代理 agent
         if (isHttps) {
-            return { httpsAgent: this.createHttpsProxyAgent(proxyUrl, options) };
+            return { httpsAgent: this.createHttpsProxyAgent(proxyUrl, options) }
         } else {
-            return { httpAgent: this.createHttpProxyAgent(proxyUrl, options) };
+            return { httpAgent: this.createHttpProxyAgent(proxyUrl, options) }
         }
     }
 
@@ -79,27 +79,27 @@ export class ProxyService {
      * 注意：原生 fetch 不支持代理，需要使用 node-fetch 或 agent
      */
     getFetchProxyAgent(url: string): HttpsAgent | HttpAgent | undefined {
-        const proxyConfig = this.getProxyConfig();
+        const proxyConfig = this.getProxyConfig()
 
         if (!proxyConfig.enabled || this.shouldBypassProxy(url)) {
-            return undefined;
+            return undefined
         }
 
-        const isHttps = url.startsWith('https://');
+        const isHttps = url.startsWith('https://')
         const proxyUrl = isHttps
-            ? (proxyConfig.httpsProxy || proxyConfig.httpProxy)
-            : proxyConfig.httpProxy;
+            ? (proxyConfig.httpsProxy ?? proxyConfig.httpProxy)
+            : proxyConfig.httpProxy
 
         if (!proxyUrl) {
-            return undefined;
+            return undefined
         }
 
-        const options = this.buildProxyOptions(proxyUrl, proxyConfig);
+        const options = this.buildProxyOptions(proxyUrl, proxyConfig)
 
         if (isHttps) {
-            return this.createHttpsProxyAgent(proxyUrl, options);
+            return this.createHttpsProxyAgent(proxyUrl, options)
         } else {
-            return this.createHttpProxyAgent(proxyUrl, options);
+            return this.createHttpProxyAgent(proxyUrl, options)
         }
     }
 
@@ -109,11 +109,11 @@ export class ProxyService {
     private createHttpProxyAgent(proxyUrl: string, options: any): HttpAgent {
         // 使用 http-proxy-agent
         try {
-            const HttpProxyAgent = require('http-proxy-agent');
-            return new HttpProxyAgent(proxyUrl, options) as HttpAgent;
+            const HttpProxyAgent = require('http-proxy-agent')
+            return new HttpProxyAgent(proxyUrl, options) as HttpAgent
         } catch {
             // 回退到简单实现
-            return new HttpAgent(options) as HttpAgent;
+            return new HttpAgent(options) as HttpAgent
         }
     }
 
@@ -123,11 +123,11 @@ export class ProxyService {
     private createHttpsProxyAgent(proxyUrl: string, options: any): HttpsAgent {
         // 使用 https-proxy-agent
         try {
-            const HttpsProxyAgent = require('https-proxy-agent');
-            return new HttpsProxyAgent(proxyUrl, options) as HttpsAgent;
+            const HttpsProxyAgent = require('https-proxy-agent')
+            return new HttpsProxyAgent(proxyUrl, options) as HttpsAgent
         } catch {
             // 回退到简单实现
-            return new HttpsAgent(options) as HttpsAgent;
+            return new HttpsAgent(options) as HttpsAgent
         }
     }
 
@@ -135,12 +135,12 @@ export class ProxyService {
      * 构建代理选项
      */
     private buildProxyOptions(proxyUrl: string, proxyConfig: ProxyConfig): any {
-        const options: any = {};
+        const options: any = {}
         // 添加认证信息
         if (proxyConfig.auth?.username) {
-            options.auth = `${proxyConfig.auth.username}:${proxyConfig.auth.password || ''}`;
+            options.auth = `${proxyConfig.auth.username}:${proxyConfig.auth.password || ''}`
         }
-        return options;
+        return options
     }
 
     /**
@@ -148,9 +148,9 @@ export class ProxyService {
      */
     private extractHostname(url: string): string {
         try {
-            return new URL(url).hostname;
+            return new URL(url).hostname
         } catch {
-            return url;
+            return url
         }
     }
 
@@ -159,21 +159,21 @@ export class ProxyService {
      */
     validateProxyUrl(proxyUrl: string): { valid: boolean; message: string } {
         if (!proxyUrl || proxyUrl.trim() === '') {
-            return { valid: true, message: '' };
+            return { valid: true, message: '' }
         }
         try {
-            const url = new URL(proxyUrl);
-            const validProtocols = ['http:', 'https:', 'socks5:', 'socks4:'];
+            const url = new URL(proxyUrl)
+            const validProtocols = ['http:', 'https:', 'socks5:', 'socks4:']
 
             if (!validProtocols.includes(url.protocol)) {
                 return {
                     valid: false,
-                    message: `不支持的协议: ${url.protocol}。支持: http, https, socks5`
-                };
+                    message: `不支持的协议: ${url.protocol}。支持: http, https, socks5`,
+                }
             }
-            return { valid: true, message: '代理地址格式正确' };
+            return { valid: true, message: '代理地址格式正确' }
         } catch {
-            return { valid: false, message: '无效的代理地址格式' };
+            return { valid: false, message: '无效的代理地址格式' }
         }
     }
 
@@ -181,45 +181,45 @@ export class ProxyService {
      * 测试代理连接
      */
     async testProxyConnection(proxyUrl: string): Promise<ProxyTestResult> {
-        const testUrl = 'https://api.openai.com/v1/models';
-        const startTime = Date.now();
+        const testUrl = 'https://api.openai.com/v1/models'
+        const startTime = Date.now()
 
         try {
-            const agent = this.createHttpsProxyAgent(proxyUrl, {});
+            const agent = this.createHttpsProxyAgent(proxyUrl, {})
 
             // 使用 Node.js https 模块测试
-            const https = require('https');
+            const https = require('https')
 
-            return new Promise((resolve) => {
+            return await new Promise((resolve) => {
                 const req = https.get(testUrl, { agent, timeout: 10000 }, (res: any) => {
-                    const latency = Date.now() - startTime;
+                    const latency = Date.now() - startTime
                     resolve({
                         success: res.statusCode < 500,
                         message: `连接成功 (${res.statusCode})`,
-                        latency
-                    });
-                });
+                        latency,
+                    })
+                })
 
                 req.on('error', (err: Error) => {
                     resolve({
                         success: false,
-                        message: `连接失败: ${err.message}`
-                    });
-                });
+                        message: `连接失败: ${err.message}`,
+                    })
+                })
 
                 req.on('timeout', () => {
-                    req.destroy();
+                    req.destroy()
                     resolve({
                         success: false,
-                        message: '连接超时'
-                    });
-                });
-            });
+                        message: '连接超时',
+                    })
+                })
+            })
         } catch (error) {
             return {
                 success: false,
-                message: `测试失败: ${error instanceof Error ? error.message : String(error)}`
-            };
+                message: `测试失败: ${error instanceof Error ? error.message : String(error)}`,
+            }
         }
     }
 
@@ -227,27 +227,27 @@ export class ProxyService {
      * 从环境变量导入代理配置
      */
     importFromEnv(): ProxyConfig {
-        const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy || '';
-        const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy || '';
-        const noProxy = process.env.NO_PROXY || process.env.no_proxy || '';
+        const httpProxy = process.env.HTTP_PROXY ?? process.env.http_proxy ?? ''
+        const httpsProxy = process.env.HTTPS_PROXY ?? process.env.https_proxy ?? ''
+        const noProxy = process.env.NO_PROXY ?? process.env.no_proxy ?? ''
 
         const proxyConfig: ProxyConfig = {
             enabled: !!(httpProxy || httpsProxy),
             httpProxy,
             httpsProxy,
             noProxy: noProxy.split(',').map(s => s.trim()).filter(s => s),
-            auth: undefined
-        };
+            auth: undefined,
+        }
 
-        this.logger.info('Proxy config imported from environment', { proxyConfig });
-        return proxyConfig;
+        this.logger.info('Proxy config imported from environment', { proxyConfig })
+        return proxyConfig
     }
 
     /**
      * 保存代理配置
      */
     saveProxyConfig(config: ProxyConfig): void {
-        this.config.set('proxy', config);
-        this.logger.info('Proxy configuration saved', { enabled: config.enabled });
+        this.config.set('proxy', config)
+        this.logger.info('Proxy configuration saved', { enabled: config.enabled })
     }
 }

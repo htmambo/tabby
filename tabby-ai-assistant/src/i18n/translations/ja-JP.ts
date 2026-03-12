@@ -1,13 +1,13 @@
 /**
  * 日本語翻訳
  */
-import { TranslationKeys } from '../types';
+import { TranslationKeys } from '../types'
 
 export const jaJP: TranslationKeys = {
     common: {
         save: '保存',
         cancel: 'キャンセル',
-        delete: '削除',
+        'delete': '削除',
         confirm: '確認',
         enabled: '有効',
         disabled: '無効',
@@ -23,8 +23,8 @@ export const jaJP: TranslationKeys = {
         yes: 'はい',
         no: 'いいえ',
         reset: 'リセット',
-        default: 'デフォルト',
-        today: '今日'
+        'default': 'デフォルト',
+        today: '今日',
     },
 
     settings: {
@@ -36,7 +36,7 @@ export const jaJP: TranslationKeys = {
         chatTab: 'チャット',
         mcpTab: 'MCPサーバー',
         dataTab: 'データ管理',
-        advancedTab: '詳細設定'
+        advancedTab: '詳細設定',
     },
 
     general: {
@@ -60,7 +60,7 @@ export const jaJP: TranslationKeys = {
         shortcutGenerateDesc: '選択範囲からコマンドを生成',
         shortcutExplain: 'コマンドを解説',
         shortcutExplainDesc: '現在の選択を解説',
-        shortcutTip: 'ショートカットキーはTabby設定でカスタマイズ可能'
+        shortcutTip: 'ショートカットキーはTabby設定でカスタマイズ可能',
     },
 
     chatSettings: {
@@ -93,7 +93,7 @@ export const jaJP: TranslationKeys = {
         clearHistory: 'チャット履歴を削除',
         resetDefaults: 'デフォルトに戻す',
         clearHistoryConfirm: 'すべてのチャット記録を削除してもよろしいですか？この操作は取り消せません。',
-        resetConfirm: 'すべての設定をデフォルトに戻してもよろしいですか？'
+        resetConfirm: 'すべての設定をデフォルトに戻してもよろしいですか？',
     },
 
     security: {
@@ -118,7 +118,7 @@ export const jaJP: TranslationKeys = {
         patternPlaceholder: '危険なコマンドパターンを入力',
         saveSettings: '設定を保存',
         resetDefaults: 'デフォルトに戻す',
-        resetConfirm: 'セキュリティ設定をデフォルトに戻してもよろしいですか？'
+        resetConfirm: 'セキュリティ設定をデフォルトに戻してもよろしいですか？',
     },
 
     providers: {
@@ -136,7 +136,7 @@ export const jaJP: TranslationKeys = {
         saveConfig: '設定を保存',
         testConnection: '接続をテスト',
         detectService: 'サービスを検出',
-        delete: '削除',
+        'delete': '削除',
         deleteConfirm: 'このプロバイダー設定を削除してもよろしいですか？',
         testSuccess: '接続テスト成功！',
         testFail: '接続テスト失敗',
@@ -144,7 +144,7 @@ export const jaJP: TranslationKeys = {
         configSaved: '設定が保存されました',
         configDeleted: '設定が削除されました',
         contextWindow: 'コンテキストウィンドウ',
-        contextWindowDesc: 'モデルの最大コンテキストトークン数'
+        contextWindowDesc: 'モデルの最大コンテキストトークン数',
     },
 
     providerNames: {
@@ -154,7 +154,7 @@ export const jaJP: TranslationKeys = {
         glm: 'GLM (ChatGLM)',
         openaiCompatible: 'OpenAI互換',
         ollama: 'Ollama (ローカル)',
-        vllm: 'vLLM (ローカル)'
+        vllm: 'vLLM (ローカル)',
     },
 
     chatInterface: {
@@ -171,14 +171,14 @@ export const jaJP: TranslationKeys = {
         clearChatConfirm: 'チャットを削除してもよろしいですか？',
         exportChat: 'チャットをエクスポート',
         switchProvider: 'AIプロバイダーを切り替え',
-        providerBadge: 'プロバイダー'
+        providerBadge: 'プロバイダー',
     },
 
     riskLevel: {
         low: '低リスク',
         medium: '中リスク',
         high: '高リスク',
-        unknown: '不明'
+        unknown: '不明',
     },
 
     advancedSettings: {
@@ -192,12 +192,12 @@ export const jaJP: TranslationKeys = {
             debug: 'デバッグ',
             info: '情報',
             warn: '警告',
-            error: 'エラー'
+            error: 'エラー',
         },
         systemInfo: 'システム情報',
         pluginVersion: 'プラグインVersion',
         supportedProviders: 'サポートされているプロバイダー',
-        currentProvider: '現在のリプロバイダー'
+        currentProvider: '現在のリプロバイダー',
     },
 
     contextSettings: {
@@ -220,7 +220,7 @@ export const jaJP: TranslationKeys = {
         compactThresholdDesc: '使用率がこれを超えた場合にサマリーを生成（デフォルト：85%）',
         messagesToKeep: '保持するメッセージ数',
         messagesToKeepDesc: '圧縮時に常に保持する最新メッセージ数（デフォルト：3）',
-        configSaved: 'コンテキスト設定が保存されました'
+        configSaved: 'コンテキスト設定が保存されました',
     },
 
     mcpSettings: {
@@ -257,7 +257,7 @@ export const jaJP: TranslationKeys = {
         connect: '接続',
         disconnect: '切断',
         connecting: '接続中...',
-        retry: '再試行'
+        retry: '再試行',
     },
 
     dataSettings: {
@@ -271,7 +271,7 @@ export const jaJP: TranslationKeys = {
         lastModified: '最終更新',
         actions: '操作',
         view: '表示',
-        delete: '削除',
+        'delete': '削除',
         noFiles: 'データファイルがありません',
         statistics: '統計',
         chatSessions: 'チャットセッション',
@@ -282,7 +282,7 @@ export const jaJP: TranslationKeys = {
         importData: 'データをインポート',
         migrateData: 'ブラウザデータを移行',
         clearAll: 'すべてのデータを削除',
-        migrationNote: 'ブラウザストレージに古いデータが検出されました。「ブラウザデータを移行」をクリックしてファイルストレージに移行してください'
+        migrationNote: 'ブラウザストレージに古いデータが検出されました。「ブラウザデータを移行」をクリックしてファイルストレージに移行してください',
     },
 
     proxy: {
@@ -321,7 +321,7 @@ export const jaJP: TranslationKeys = {
         usageInfo2: 'ローカルプロバイダー（Ollama、vLLM）はデフォルトでプロキシを使用しません',
         usageInfo3: 'HTTP、HTTPS、SOCKS5プロキシプロトコルをサポート',
         optional: 'オプション',
-        recommended: '推奨'
+        recommended: '推奨',
     },
 
     systemPrompts: {
@@ -377,6 +377,6 @@ export const jaJP: TranslationKeys = {
 5. 現在の作業ディレクトリとコンテキストを考慮する
 
 常に有効なコマンドを返し、危険な操作（システムファイルの削除、ディスクのフォーマットなど）を避けてください。
-正確なコマンドを判断できない場合は、明確に述べて代替案を提供してください。`
-    }
-};
+正確なコマンドを判断できない場合は、明確に述べて代替案を提供してください。`,
+    },
+}

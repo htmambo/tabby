@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { TerminalManagerService, TerminalInfo } from './terminal-manager.service';
-import { AsyncTaskManagerService } from './async-task-manager.service';
-import { LoggerService } from '../core/logger.service';
-import { MCPClientManager } from '../mcp/mcp-client-manager.service';
+import { Injectable } from '@angular/core'
+import { TerminalManagerService, TerminalInfo } from './terminal-manager.service'
+import { AsyncTaskManagerService } from './async-task-manager.service'
+import { LoggerService } from '../core/logger.service'
+import { MCPClientManager } from '../mcp/mcp-client-manager.service'
 
 /**
  * 终端工具定义
@@ -46,71 +46,71 @@ export class TerminalToolsService {
     // 命令类型与预估等待时间映射（毫秒）
     private readonly COMMAND_WAIT_TIMES: Record<string, number> = {
         // 快速命令 (< 500ms)
-        'cd': 200,
-        'pwd': 200,
-        'echo': 200,
-        'set': 300,
+        cd: 200,
+        pwd: 200,
+        echo: 200,
+        set: 300,
         'export': 200,
-        'cls': 100,
-        'clear': 100,
-        'date': 200,
-        'time': 200,
+        cls: 100,
+        clear: 100,
+        date: 200,
+        time: 200,
 
         // 标准命令 (500-1500ms)
-        'dir': 500,
-        'ls': 500,
-        'cat': 500,
-        'type': 500,
-        'mkdir': 300,
-        'rm': 500,
-        'del': 500,
-        'copy': 800,
-        'xcopy': 1000,
-        'move': 800,
-        'ren': 300,
-        'rename': 300,
-        'tree': 1000,
-        'find': 600,
-        'grep': 500,
-        'head': 200,
-        'tail': 200,
+        dir: 500,
+        ls: 500,
+        cat: 500,
+        type: 500,
+        mkdir: 300,
+        rm: 500,
+        del: 500,
+        copy: 800,
+        xcopy: 1000,
+        move: 800,
+        ren: 300,
+        rename: 300,
+        tree: 1000,
+        find: 600,
+        grep: 500,
+        head: 200,
+        tail: 200,
 
         // 慢速命令 (1500-5000ms)
-        'git': 3000,
-        'npm': 5000,
-        'yarn': 5000,
-        'pnpm': 5000,
-        'pip': 4000,
-        'conda': 3000,
-        'docker': 4000,
-        'kubectl': 3000,
-        'terraform': 4000,
-        'make': 2000,
-        'cmake': 3000,
+        git: 3000,
+        npm: 5000,
+        yarn: 5000,
+        pnpm: 5000,
+        pip: 4000,
+        conda: 3000,
+        docker: 4000,
+        kubectl: 3000,
+        terraform: 4000,
+        make: 2000,
+        cmake: 3000,
 
         // 非常慢的命令 (> 5000ms)
-        'systeminfo': 8000,
-        'ipconfig': 2000,
-        'ifconfig': 2000,
-        'netstat': 3000,
-        'ss': 2000,
-        'ping': 10000,
-        'tracert': 15000,
-        'tracepath': 10000,
-        'nslookup': 3000,
-        'dig': 3000,
-        'choco': 5000,
-        'scoop': 5000,
+        systeminfo: 8000,
+        ipconfig: 2000,
+        ifconfig: 2000,
+        netstat: 3000,
+        ss: 2000,
+        ping: 10000,
+        tracert: 15000,
+        tracepath: 10000,
+        nslookup: 3000,
+        dig: 3000,
+        choco: 5000,
+        scoop: 5000,
         'apt-get': 5000,
-        'apt': 4000,
-        'yum': 5000,
-        'dnf': 5000,
-        'brew': 5000,
-        'pacman': 5000,
+        apt: 4000,
+        yum: 5000,
+        dnf: 5000,
+        brew: 5000,
+        pacman: 5000,
 
         // 默认等待时间
-        '__default__': 1500
-    };
+        __default__: 1500,
+    }
 
     // 工具定义
     private tools: ToolDefinition[] = [
@@ -129,19 +129,19 @@ export class TerminalToolsService {
                 properties: {
                     summary: {
                         type: 'string',
-                        description: '任务完成总结，描述做了什么、结果如何'
+                        description: '任务完成总结，描述做了什么、结果如何',
                     },
                     success: {
                         type: 'boolean',
-                        description: '是否成功完成所有任务'
+                        description: '是否成功完成所有任务',
                     },
                     next_steps: {
                         type: 'string',
-                        description: '可选，建议用户的后续操作'
-                    }
+                        description: '可选，建议用户的后续操作',
+                    },
                 },
-                required: ['summary', 'success']
-            }
+                required: ['summary', 'success'],
+            },
         },
         // ========== 终端操作工具 ==========
         {
@@ -152,15 +152,15 @@ export class TerminalToolsService {
                 properties: {
                     lines: {
                         type: 'number',
-                        description: '要读取的行数，默认为 50'
+                        description: '要读取的行数，默认为 50',
                     },
                     terminal_index: {
                         type: 'number',
-                        description: '目标终端索引。如不指定则读取活动终端。'
-                    }
+                        description: '目标终端索引。如不指定则读取活动终端。',
+                    },
                 },
-                required: []
-            }
+                required: [],
+            },
         },
         {
             name: 'write_to_terminal',
@@ -170,19 +170,19 @@ export class TerminalToolsService {
                 properties: {
                     command: {
                         type: 'string',
-                        description: '要写入的命令'
+                        description: '要写入的命令',
                     },
                     execute: {
                         type: 'boolean',
-                        description: '是否立即执行命令（添加回车），默认为 true'
+                        description: '是否立即执行命令（添加回车），默认为 true',
                     },
                     terminal_index: {
                         type: 'number',
-                        description: '目标终端索引（从 0 开始）。如不指定则使用当前活动终端。'
-                    }
+                        description: '目标终端索引（从 0 开始）。如不指定则使用当前活动终端。',
+                    },
                 },
-                required: ['command']
-            }
+                required: ['command'],
+            },
         },
         {
             name: 'get_terminal_list',
@@ -190,8 +190,8 @@ export class TerminalToolsService {
             parameters: {
                 type: 'object',
                 properties: {},
-                required: []
-            }
+                required: [],
+            },
         },
         {
             name: 'get_terminal_cwd',
@@ -199,8 +199,8 @@ export class TerminalToolsService {
             parameters: {
                 type: 'object',
                 properties: {},
-                required: []
-            }
+                required: [],
+            },
         },
         {
             name: 'get_terminal_selection',
@@ -208,8 +208,8 @@ export class TerminalToolsService {
             parameters: {
                 type: 'object',
                 properties: {},
-                required: []
-            }
+                required: [],
+            },
         },
         {
             name: 'focus_terminal',
@@ -219,11 +219,11 @@ export class TerminalToolsService {
                 properties: {
                     terminal_index: {
                         type: 'number',
-                        description: '目标终端索引（从 0 开始）'
-                    }
+                        description: '目标终端索引（从 0 开始）',
+                    },
                 },
-                required: ['terminal_index']
-            }
+                required: ['terminal_index'],
+            },
         },
         // ========== 异步任务工具 ==========
         {
@@ -244,19 +244,19 @@ export class TerminalToolsService {
                 properties: {
                     command: {
                         type: 'string',
-                        description: '要执行的命令'
+                        description: '要执行的命令',
                     },
                     terminal_index: {
                         type: 'number',
-                        description: '目标终端索引（可选，默认使用活动终端）'
+                        description: '目标终端索引（可选，默认使用活动终端）',
                     },
                     timeout_seconds: {
                         type: 'number',
-                        description: '超时时间（秒），默认 300 秒（5分钟）'
-                    }
+                        description: '超时时间（秒），默认 300 秒（5分钟）',
+                    },
                 },
-                required: ['command']
-            }
+                required: ['command'],
+            },
         },
         {
             name: 'check_task_status',
@@ -277,27 +277,27 @@ export class TerminalToolsService {
                 properties: {
                     task_id: {
                         type: 'string',
-                        description: '要查询的任务 ID'
+                        description: '要查询的任务 ID',
                     },
                     full_output: {
                         type: 'boolean',
-                        description: '是否获取完整输出，默认 false（只获取最新部分）'
-                    }
+                        description: '是否获取完整输出，默认 false（只获取最新部分）',
+                    },
                 },
-                required: ['task_id']
-            }
-        }
-    ];
+                required: ['task_id'],
+            },
+        },
+    ]
 
     // 终端输出缓存
-    private outputBuffer: string[] = [];
-    private maxBufferLines = 500;
+    private outputBuffer: string[] = []
+    private maxBufferLines = 500
 
     constructor(
         private terminalManager: TerminalManagerService,
         private asyncTaskManager: AsyncTaskManagerService,
         private logger: LoggerService,
-        private mcpManager: MCPClientManager
+        private mcpManager: MCPClientManager,
     ) {
         // 不再需要静态订阅输出，直接从 xterm buffer 动态读取
     }
@@ -310,95 +310,94 @@ export class TerminalToolsService {
         const mcpTools = this.mcpManager.getAllToolsWithPrefix().map(tool => ({
             name: tool.name,
             description: tool.description,
-            parameters: tool.inputSchema
-        }));
+            parameters: tool.inputSchema,
+        }))
 
         // 合并内置工具和 MCP 工具
-        return [...this.tools, ...mcpTools];
+        return [...this.tools, ...mcpTools]
     }
 
     /**
      * 执行工具调用
      */
     async executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
-        this.logger.info('Executing tool call', { name: toolCall.name, input: toolCall.input });
+        this.logger.info('Executing tool call', { name: toolCall.name, input: toolCall.input })
 
         try {
-            let result: string;
-            let isTaskComplete = false;
+            let result = ''
+            let isTaskComplete = false
 
             switch (toolCall.name) {
                 // ========== 任务完成工具 ==========
                 case 'task_complete': {
-                    const input = toolCall.input;
-                    const successStatus = input.success ? '成功' : '未能';
+                    const input = toolCall.input
+                    const successStatus = input.success ? '成功' : '未能'
                     const nextStepsText = input.next_steps
                         ? `\n\n建议后续操作：${input.next_steps}`
-                        : '';
-                    result = `任务${successStatus}完成。\n\n${input.summary}${nextStepsText}`;
-                    isTaskComplete = true;
-                    this.logger.info('Task completed via task_complete tool', { success: input.success });
-                    break;
+                        : ''
+                    result = `任务${successStatus}完成。\n\n${input.summary}${nextStepsText}`
+                    isTaskComplete = true
+                    this.logger.info('Task completed via task_complete tool', { success: input.success })
+                    break
                 }
                 // ========== 终端操作工具 ==========
                 case 'read_terminal_output':
                     result = this.readTerminalOutput(
                         toolCall.input.lines || 50,
-                        toolCall.input.terminal_index
-                    );
-                    break;
+                        toolCall.input.terminal_index,
+                    )
+                    break
                 case 'write_to_terminal':
                     result = await this.writeToTerminal(
                         toolCall.input.command,
                         toolCall.input.execute ?? true,
-                        toolCall.input.terminal_index
-                    );
-                    break;
+                        toolCall.input.terminal_index,
+                    )
+                    break
                 case 'get_terminal_list':
-                    result = this.getTerminalList();
-                    break;
+                    result = this.getTerminalList()
+                    break
                 case 'get_terminal_cwd':
-                    result = this.getTerminalCwd();
-                    break;
+                    result = this.getTerminalCwd()
+                    break
                 case 'get_terminal_selection':
-                    result = this.getTerminalSelection();
-                    break;
+                    result = this.getTerminalSelection()
+                    break
                 case 'focus_terminal':
-                    result = this.focusTerminal(toolCall.input.terminal_index);
-                    break;
+                    result = this.focusTerminal(toolCall.input.terminal_index)
+                    break
                 // ========== 异步任务工具 ==========
                 case 'async_terminal_command': {
-                    const command = toolCall.input.command;
-                    const terminalIndex = toolCall.input.terminal_index;
-                    const timeoutSeconds = toolCall.input.timeout_seconds || 300;
-                    
+                    const command = toolCall.input.command
+                    const timeoutSeconds = toolCall.input.timeout_seconds || 300
+
                     // 创建异步任务
                     const task = this.asyncTaskManager.createTask({
                         command,
-                        timeout: timeoutSeconds * 1000
-                    });
-                    
+                        timeout: timeoutSeconds * 1000,
+                    })
+
                     result = JSON.stringify({
                         success: true,
                         task_id: task.taskId,
                         message: `命令已在后台启动，请使用 check_task_status 工具查询任务状态`,
                         command: command,
-                        timeout_seconds: timeoutSeconds
-                    }, null, 2);
-                    break;
+                        timeout_seconds: timeoutSeconds,
+                    }, null, 2)
+                    break
                 }
                 case 'check_task_status': {
-                    const taskId = toolCall.input.task_id;
-                    const fullOutput = toolCall.input.full_output || false;
-                    
-                    const taskResult = this.asyncTaskManager.getTaskResult(taskId, fullOutput);
-                    
+                    const taskId = toolCall.input.task_id
+                    const fullOutput = toolCall.input.full_output || false
+
+                    const taskResult = this.asyncTaskManager.getTaskResult(taskId, fullOutput)
+
                     if (!taskResult) {
                         result = JSON.stringify({
                             success: false,
                             error: `找不到任务 ${taskId}`,
-                            hint: '任务可能已完成并被清理，或 task_id 无效'
-                        }, null, 2);
+                            hint: '任务可能已完成并被清理，或 task_id 无效',
+                        }, null, 2)
                     } else {
                         result = JSON.stringify({
                             success: true,
@@ -408,37 +407,37 @@ export class TerminalToolsService {
                             output: taskResult.output,
                             is_complete: taskResult.isComplete,
                             exit_code: taskResult.exitCode,
-                            error: taskResult.errorMessage
-                        }, null, 2);
+                            error: taskResult.errorMessage,
+                        }, null, 2)
                     }
-                    break;
+                    break
                 }
                 default:
                     // 检查是否是 MCP 工具
                     if (toolCall.name.startsWith('mcp_')) {
-                        result = await this.mcpManager.executeMCPTool(toolCall.name, toolCall.input);
-                        this.logger.info('MCP tool executed', { name: toolCall.name });
+                        result = await this.mcpManager.executeMCPTool(toolCall.name, toolCall.input)
+                        this.logger.info('MCP tool executed', { name: toolCall.name })
                     } else {
-                        throw new Error(`Unknown tool: ${toolCall.name}`);
+                        throw new Error(`Unknown tool: ${toolCall.name}`)
                     }
             }
 
-            this.logger.info('Tool call completed', { name: toolCall.name, resultLength: result.length });
+            this.logger.info('Tool call completed', { name: toolCall.name, resultLength: result.length })
 
             return {
                 tool_use_id: toolCall.id,
                 content: result,
-                isTaskComplete
-            };
+                isTaskComplete,
+            }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.logger.error('Tool call failed', { name: toolCall.name, error: errorMessage });
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            this.logger.error('Tool call failed', { name: toolCall.name, error: errorMessage })
 
             return {
                 tool_use_id: toolCall.id,
                 content: `错误: ${errorMessage}`,
-                is_error: true
-            };
+                is_error: true,
+            }
         }
     }
 
@@ -458,92 +457,86 @@ export class TerminalToolsService {
                 hasXterm: !!terminal?.frontend?.xterm,
                 xtermType: terminal?.frontend?.xterm?.constructor?.name,
                 hasBuffer: !!terminal?.frontend?.xterm?.buffer,
-                bufferActive: !!terminal?.frontend?.xterm?.buffer?.active
-            });
+                bufferActive: !!terminal?.frontend?.xterm?.buffer?.active,
+            })
 
             // 尝试多种可能的 xterm buffer 访问路径
-            let buffer: any = null;
-            let bufferSource = '';
+            let buffer: any = null
+            let bufferSource = ''
 
             // 路径1: frontend.xterm.buffer.active (xterm.js 标准)
             if (terminal.frontend?.xterm?.buffer?.active) {
-                buffer = terminal.frontend.xterm.buffer.active;
-                bufferSource = 'frontend.xterm.buffer.active';
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource);
-            }
-            // 路径2: frontend.buffer (可能是直接暴露)
-            else if (terminal.frontend?.buffer?.active) {
-                buffer = terminal.frontend.buffer.active;
-                bufferSource = 'frontend.buffer.active';
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource);
-            }
-            // 路径3: frontend._core.buffer (私有属性)
-            else if (terminal.frontend?._core?.buffer?.active) {
-                buffer = terminal.frontend._core.buffer.active;
-                bufferSource = 'frontend._core.buffer.active';
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource);
-            }
-            // 路径4: 尝试通过 terminal 上的其他属性
-            else {
+                buffer = terminal.frontend.xterm.buffer.active
+                bufferSource = 'frontend.xterm.buffer.active'
+                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+            } else if (terminal.frontend?.buffer?.active) {
+                buffer = terminal.frontend.buffer.active
+                bufferSource = 'frontend.buffer.active'
+                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+            } else if (terminal.frontend?._core?.buffer?.active) {
+                buffer = terminal.frontend._core.buffer.active
+                bufferSource = 'frontend._core.buffer.active'
+                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+            } else {
                 this.logger.warn('【DEBUG】No standard buffer path found, trying alternatives', {
                     hasContent: !!terminal.content,
                     hasContent$: !!terminal.content$,
                     hasSession: !!terminal.session,
-                    allFrontendKeys: terminal?.frontend ? Object.keys(terminal.frontend) : []
-                });
+                    allFrontendKeys: terminal?.frontend ? Object.keys(terminal.frontend) : [],
+                })
 
                 // 如果有 content 属性，尝试使用它
                 if (terminal.content) {
-                    return `[DEBUG] 终端内容:\n${terminal.content}`;
+                    return `[DEBUG] 终端内容:\n${terminal.content}`
                 }
 
-                return '(无法访问终端 buffer，请检查终端是否就绪)';
+                return '(无法访问终端 buffer，请检查终端是否就绪)'
             }
 
             if (!buffer) {
-                this.logger.warn('【DEBUG】Buffer is null after all path attempts');
-                return '(无法访问终端 buffer，buffer 为空)';
+                this.logger.warn('【DEBUG】Buffer is null after all path attempts')
+                return '(无法访问终端 buffer，buffer 为空)'
             }
 
-            const totalLines = buffer.length || 0;
+            const totalLines = buffer.length || 0
             this.logger.info('【DEBUG】Buffer info', {
                 totalLines,
                 requestedLines: lines,
-                bufferSource
-            });
+                bufferSource,
+            })
 
             if (totalLines === 0) {
-                return '(终端 buffer 为空)';
+                return '(终端 buffer 为空)'
             }
 
-            const startLine = Math.max(0, totalLines - lines);
-            const result: string[] = [];
+            const startLine = Math.max(0, totalLines - lines)
+            const result: string[] = []
 
             for (let i = startLine; i < totalLines; i++) {
                 try {
-                    const line = buffer.getLine(i);
+                    const line = buffer.getLine(i)
                     if (line && typeof line.translateToString === 'function') {
-                        result.push(line.translateToString(true));
+                        result.push(line.translateToString(true))
                     }
                 } catch (e) {
-                    this.logger.warn('【DEBUG】Failed to read line ' + i, e);
+                    this.logger.warn('【DEBUG】Failed to read line ' + i, e)
                     // 跳过无法读取的行
                 }
             }
 
-            const finalOutput = result.join('\n') || '(终端输出为空)';
+            const finalOutput = result.join('\n') || '(终端输出为空)'
             this.logger.info('【DEBUG】Read completed', {
                 linesRead: result.length,
-                outputLength: finalOutput.length
-            });
+                outputLength: finalOutput.length,
+            })
 
-            return finalOutput;
+            return finalOutput
         } catch (error) {
             this.logger.error('【DEBUG】Failed to read xterm buffer', {
                 error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : ''
-            });
-            return '(读取终端失败，请重试)';
+                stack: error instanceof Error ? error.stack : '',
+            })
+            return '(读取终端失败，请重试)'
         }
     }
 
@@ -553,81 +546,78 @@ export class TerminalToolsService {
     private readTerminalOutput(lines: number, terminalIndex?: number): string {
         // 尝试从缓冲区获取
         if (this.outputBuffer.length > 0) {
-            const recentLines = this.outputBuffer.slice(-lines);
-            return recentLines.join('\n');
+            const recentLines = this.outputBuffer.slice(-lines)
+            return recentLines.join('\n')
         }
 
         // 直接从指定终端的 xterm buffer 读取
-        const terminals = this.terminalManager.getAllTerminals();
+        const terminals = this.terminalManager.getAllTerminals()
         const terminal = terminalIndex !== undefined
             ? terminals[terminalIndex]
-            : this.terminalManager.getActiveTerminal();
+            : this.terminalManager.getActiveTerminal()
 
         if (!terminal) {
-            return '(无可用终端)';
+            return '(无可用终端)'
         }
 
-        return this.readFromXtermBuffer(terminal, lines);
+        return this.readFromXtermBuffer(terminal, lines)
     }
 
     /**
      * 写入终端 - 带执行反馈和智能等待
      */
     private async writeToTerminal(command: string, execute: boolean, terminalIndex?: number): Promise<string> {
-        this.logger.info('writeToTerminal called', { command, execute, terminalIndex });
+        this.logger.info('writeToTerminal called', { command, execute, terminalIndex })
 
-        let success: boolean;
-        let targetTerminalIndex: number;
+        let success: boolean
 
         if (terminalIndex !== undefined) {
             // 向指定索引的终端写入
-            this.logger.info('Sending command to terminal index', { terminalIndex });
-            success = this.terminalManager.sendCommandToIndex(terminalIndex, command, execute);
-            targetTerminalIndex = terminalIndex;
-            this.logger.info('sendCommandToIndex result', { success });
+            this.logger.info('Sending command to terminal index', { terminalIndex })
+            success = this.terminalManager.sendCommandToIndex(terminalIndex, command, execute)
+            this.logger.info('sendCommandToIndex result', { success })
         } else {
             // 向当前活动终端写入
-            this.logger.info('Sending command to active terminal');
-            success = this.terminalManager.sendCommand(command, execute);
-            targetTerminalIndex = 0; // 默认活动终端
-            this.logger.info('sendCommand result', { success });
+            this.logger.info('Sending command to active terminal')
+            success = this.terminalManager.sendCommand(command, execute)
+            this.logger.info('sendCommand result', { success })
         }
 
         if (!success) {
             throw new Error(terminalIndex !== undefined
                 ? `无法写入终端 ${terminalIndex}，索引无效或终端不可用`
-                : '无法写入终端，请确保有活动的终端窗口');
+                : '无法写入终端，请确保有活动的终端窗口')
         }
 
         // ========== 智能等待机制 ==========
-        const baseCommand = this.extractBaseCommand(command);
-        const waitTime = this.getWaitTimeForCommand(baseCommand);
+        const baseCommand = this.extractBaseCommand(command)
+        const waitTime = this.getWaitTimeForCommand(baseCommand)
 
-        this.logger.info('Smart wait for command', { command, baseCommand, waitTime });
+        this.logger.info('Smart wait for command', { command, baseCommand, waitTime })
 
         // 初始等待
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise(resolve => setTimeout(resolve, waitTime))
 
         // 直接从 xterm buffer 读取
-        const terminals = this.terminalManager.getAllTerminals();
+        const terminals = this.terminalManager.getAllTerminals()
         const terminal = terminalIndex !== undefined
             ? terminals[terminalIndex]
-            : this.terminalManager.getActiveTerminal();
+            : this.terminalManager.getActiveTerminal()
 
-        let output = '(终端输出为空)';
+        let output = '(终端输出为空)'
         if (terminal) {
-            output = this.readFromXtermBuffer(terminal, 50);
+            output = this.readFromXtermBuffer(terminal, 50)
 
             // 对于慢命令，轮询检查是否完成
             if (waitTime >= 3000) {
-                let retryCount = 0;
-                const maxRetries = 3;
+                let retryCount = 0
+                const maxRetries = 3
 
                 while (retryCount < maxRetries && !this.isCommandComplete(output)) {
-                    this.logger.info(`Command still running, retry ${retryCount + 1}/${maxRetries}`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    output = this.readFromXtermBuffer(terminal, 50);
-                    retryCount++;
+                    this.logger.info(`Command still running, retry ${retryCount + 1}/${maxRetries}`)
+                    await new Promise(resolve => setTimeout(resolve, 1000))
+                    output = this.readFromXtermBuffer(terminal, 50)
+                    retryCount++
                 }
             }
         }
@@ -639,27 +629,27 @@ export class TerminalToolsService {
             '',
             '=== 终端输出 ===',
             output,
-            '=== 输出结束 ==='
-        ].join('\n');
+            '=== 输出结束 ===',
+        ].join('\n')
     }
 
     /**
      * 提取命令基础名称
      */
     private extractBaseCommand(command: string): string {
-        const trimmed = command.trim().toLowerCase();
+        const trimmed = command.trim().toLowerCase()
         // 处理 Windows 路径 (如 C:\Windows\System32\systeminfo.exe)
-        const parts = trimmed.split(/[\s\/\\]+/);
-        const executable = parts[0].replace(/\.exe$/i, '');
+        const parts = trimmed.split(/[\s\/\\]+/)
+        const executable = parts[0].replace(/\.exe$/i, '')
         // 移除常见前缀
-        return executable.replace(/^(winpty|busybox|gtimeout|command|-)/, '');
+        return executable.replace(/^(winpty|busybox|gtimeout|command|-)/, '')
     }
 
     /**
      * 获取命令等待时间
      */
     private getWaitTimeForCommand(baseCommand: string): number {
-        return this.COMMAND_WAIT_TIMES[baseCommand] || this.COMMAND_WAIT_TIMES['__default__'];
+        return this.COMMAND_WAIT_TIMES[baseCommand] || this.COMMAND_WAIT_TIMES['__default__']
     }
 
     /**
@@ -673,43 +663,42 @@ export class TerminalToolsService {
             /\n.*@.*:\~.*\$\s*$/,           // bash: user@host:~$
             /PS\s+[A-Za-z]:.*>\s*$/,        // PowerShell: PS C:\>
             /\[.*@\S+\s+.*\]\$\s*$/,        // modern bash
-        ];
+        ]
 
-        return promptPatterns.some(pattern => pattern.test(output));
+        return promptPatterns.some(pattern => pattern.test(output))
     }
 
     /**
      * 获取终端列表
      */
     private getTerminalList(): string {
-        const terminals: TerminalInfo[] = this.terminalManager.getAllTerminalInfo();
+        const terminals: TerminalInfo[] = this.terminalManager.getAllTerminalInfo()
         if (terminals.length === 0) {
-            return '(没有打开的终端)';
+            return '(没有打开的终端)'
         }
 
         // 检测操作系统
-        const platform = process.platform;
-        const isWindows = platform === 'win32';
-        const osInfo = isWindows ? 'Windows' : (platform === 'darwin' ? 'macOS' : 'Linux');
+        const platform = process.platform
+        const isWindows = platform === 'win32'
+        const osInfo = isWindows ? 'Windows' : (platform === 'darwin' ? 'macOS' : 'Linux')
 
         const list = terminals.map((t, i) =>
-            `[${i}] ${t.title}${t.isActive ? ' (活动)' : ''}${t.cwd ? ` - ${t.cwd}` : ''}`
-        ).join('\n');
+            `[${i}] ${t.title}${t.isActive ? ' (活动)' : ''}${t.cwd ? ` - ${t.cwd}` : ''}`,
+        ).join('\n')
 
-        return `操作系统: ${osInfo}\n共 ${terminals.length} 个终端:\n${list}\n\n注意: ${isWindows ? '请使用 Windows 命令 (如 dir, cd, type 等)' : '请使用 Unix 命令 (如 ls, cd, cat 等)'}`;
+        return `操作系统: ${osInfo}\n共 ${terminals.length} 个终端:\n${list}\n\n注意: ${isWindows ? '请使用 Windows 命令 (如 dir, cd, type 等)' : '请使用 Unix 命令 (如 ls, cd, cat 等)'}`
     }
-
 
 
     /**
      * 获取终端工作目录
      */
     private getTerminalCwd(): string {
-        const cwd = this.terminalManager.getTerminalCwd();
+        const cwd = this.terminalManager.getTerminalCwd()
         if (cwd) {
-            return `当前工作目录: ${cwd}`;
+            return `当前工作目录: ${cwd}`
         } else {
-            return '(无法获取工作目录)';
+            return '(无法获取工作目录)'
         }
     }
 
@@ -717,11 +706,11 @@ export class TerminalToolsService {
      * 获取终端选中文本
      */
     private getTerminalSelection(): string {
-        const selection = this.terminalManager.getSelection();
+        const selection = this.terminalManager.getSelection()
         if (selection) {
-            return selection;
+            return selection
         } else {
-            return '(没有选中的文本)';
+            return '(没有选中的文本)'
         }
     }
 
@@ -729,11 +718,11 @@ export class TerminalToolsService {
      * 切换终端焦点
      */
     private focusTerminal(index: number): string {
-        const success = this.terminalManager.focusTerminal(index);
+        const success = this.terminalManager.focusTerminal(index)
         if (success) {
-            return `✅ 已切换到终端 ${index}`;
+            return `✅ 已切换到终端 ${index}`
         } else {
-            return `❌ 无法切换到终端 ${index}，索引无效`;
+            return `❌ 无法切换到终端 ${index}，索引无效`
         }
     }
 }

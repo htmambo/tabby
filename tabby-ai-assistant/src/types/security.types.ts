@@ -7,7 +7,7 @@ export enum RiskLevel {
     LOW = 'low',
     MEDIUM = 'medium',
     HIGH = 'high',
-    CRITICAL = 'critical'
+    CRITICAL = 'critical',
 }
 
 // 风险评估结果

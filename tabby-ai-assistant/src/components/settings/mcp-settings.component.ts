@@ -1,21 +1,20 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy } from '@angular/core'
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
 import {
     MCPServerConfig,
     MCPServerWithStatus,
     MCPServerStatus,
-    MCPTransportType
-} from '../../services/mcp/mcp-message.types';
-import { MCPClientManager } from '../../services/mcp/mcp-client-manager.service';
-import { LoggerService } from '../../services/core/logger.service';
-import { ToastService } from '../../services/core/toast.service';
-import { TranslateService } from '../../i18n';
+} from '../../services/mcp/mcp-message.types'
+import { MCPClientManager } from '../../services/mcp/mcp-client-manager.service'
+import { LoggerService } from '../../services/core/logger.service'
+import { ToastService } from '../../services/core/toast.service'
+import { TranslateService } from '../../i18n'
 
 /**
  * 服务器编辑器模式
  */
-type EditorMode = 'add' | 'edit' | null;
+type EditorMode = 'add' | 'edit' | null
 
 /**
  * MCP 设置组件
@@ -665,72 +664,72 @@ type EditorMode = 'add' | 'edit' | null;
         .help-link a:hover {
             text-decoration: underline;
         }
-    `]
+    `],
 })
 export class MCPSettingsComponent implements OnInit, OnDestroy {
-    private destroy$ = new Subject<void>();
+    private destroy$ = new Subject<void>()
 
     /** 服务器列表 */
-    servers: MCPServerWithStatus[] = [];
+    servers: MCPServerWithStatus[] = []
 
     /** 编辑器模式 */
-    editorMode: EditorMode = null;
+    editorMode: EditorMode = null
 
     /** 当前编辑的服务器 */
-    editingServer: MCPServerConfig = this.createEmptyServer();
+    editingServer: MCPServerConfig = this.createEmptyServer()
 
     /** 是否显示导入对话框 */
-    showImport = false;
+    showImport = false
 
     /** 导入的 JSON 文本 */
-    importJsonText = '';
+    importJsonText = ''
 
     /** 翻译对象 */
-    t: any;
+    t: any
 
     constructor(
         private mcpManager: MCPClientManager,
         private logger: LoggerService,
         private toast: ToastService,
-        private translate: TranslateService
+        private translate: TranslateService,
     ) { }
 
     ngOnInit(): void {
         // 订阅翻译变化
         this.translate.translation$.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(translation => {
-            this.t = translation;
-        });
+            this.t = translation
+        })
 
         // 加载服务器列表
-        this.loadServers();
+        this.loadServers()
 
         // 订阅状态变化
         this.mcpManager.onStatusChanged.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(() => {
-            this.loadServers();
-        });
+            this.loadServers()
+        })
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.destroy$.next()
+        this.destroy$.complete()
     }
 
     /**
      * 加载服务器列表
      */
     loadServers(): void {
-        this.servers = this.mcpManager.getAllServers();
+        this.servers = this.mcpManager.getAllServers()
     }
 
     /**
      * 显示编辑器
      */
     showEditor(mode: EditorMode, server?: MCPServerWithStatus): void {
-        this.editorMode = mode;
+        this.editorMode = mode
 
         if (mode === 'edit' && server) {
             this.editingServer = {
@@ -739,14 +738,14 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
                 transport: server.transport,
                 enabled: server.enabled,
                 command: server.command,
-                args: [...(server.args || [])],
-                env: { ...(server.env || {}) },
+                args: [...(server.args ?? [])],
+                env: { ...(server.env ?? {}) },
                 cwd: server.cwd,
                 url: server.url,
-                headers: { ...(server.headers || {}) }
-            };
+                headers: { ...(server.headers ?? {}) },
+            }
         } else {
-            this.editingServer = this.createEmptyServer();
+            this.editingServer = this.createEmptyServer()
         }
     }
 
@@ -754,15 +753,15 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      * 隐藏编辑器
      */
     hideEditor(): void {
-        this.editorMode = null;
-        this.editingServer = this.createEmptyServer();
+        this.editorMode = null
+        this.editingServer = this.createEmptyServer()
     }
 
     /**
      * 编辑服务器
      */
     editServer(server: MCPServerWithStatus): void {
-        this.showEditor('edit', server);
+        this.showEditor('edit', server)
     }
 
     /**
@@ -770,21 +769,21 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     async saveServer(): Promise<void> {
         if (!this.isValidServer()) {
-            this.toast.error(this.t?.mcpSettings?.validationError || '请填写所有必填字段');
-            return;
+            this.toast.error(this.t?.mcpSettings?.validationError || '请填写所有必填字段')
+            return
         }
 
         try {
             if (this.editorMode === 'add') {
-                await this.mcpManager.addServer(this.editingServer);
+                await this.mcpManager.addServer(this.editingServer)
             } else {
-                await this.mcpManager.updateServer(this.editingServer);
+                await this.mcpManager.updateServer(this.editingServer)
             }
 
-            this.toast.success(this.t?.common?.saveSuccess || '保存成功');
-            this.hideEditor();
+            this.toast.success(this.t?.common?.saveSuccess || '保存成功')
+            this.hideEditor()
         } catch (error: any) {
-            this.toast.error(error.message || (this.t?.common?.saveError || '保存失败'));
+            this.toast.error(error.message || (this.t?.common?.saveError || '保存失败'))
         }
     }
 
@@ -794,10 +793,10 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     async deleteServer(server: MCPServerWithStatus): Promise<void> {
         if (confirm((this.t?.mcpSettings?.deleteConfirm || '确定要删除服务器 "%s" 吗？').replace('%s', server.name))) {
             try {
-                await this.mcpManager.deleteServer(server.id);
-                this.toast.success(this.t?.common?.deleteSuccess || '删除成功');
+                await this.mcpManager.deleteServer(server.id)
+                this.toast.success(this.t?.common?.deleteSuccess || '删除成功')
             } catch (error: any) {
-                this.toast.error(error.message || (this.t?.common?.deleteError || '删除失败'));
+                this.toast.error(error.message || (this.t?.common?.deleteError || '删除失败'))
             }
         }
     }
@@ -808,84 +807,84 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     async toggleConnection(server: MCPServerWithStatus): Promise<void> {
         try {
             if (server.status === 'connected') {
-                await this.mcpManager.disconnect(server.id);
-                this.toast.success(this.t?.mcpSettings?.disconnected || '已断开连接');
+                await this.mcpManager.disconnect(server.id)
+                this.toast.success(this.t?.mcpSettings?.disconnected || '已断开连接')
             } else if (server.status === 'disconnected' || server.status === 'error') {
                 // 显示正在连接提示
-                this.toast.info(this.t?.mcpSettings?.connecting || '正在连接...');
+                this.toast.info(this.t?.mcpSettings?.connecting || '正在连接...')
 
                 // 重新加载配置并连接
-                const fullServer = this.mcpManager.getServer(server.id);
+                const fullServer = this.mcpManager.getServer(server.id)
                 if (fullServer) {
-                    await this.mcpManager.connect(fullServer);
+                    await this.mcpManager.connect(fullServer)
                     // 连接成功的提示在 MCPClientManager.connect 中已处理
                 } else {
-                    this.toast.error(this.t?.mcpSettings?.serverNotFound || '服务器配置未找到');
+                    this.toast.error(this.t?.mcpSettings?.serverNotFound || '服务器配置未找到')
                 }
             }
             // 刷新服务器列表
-            this.loadServers();
+            this.loadServers()
         } catch (error: any) {
-            this.logger.error('Failed to toggle connection', { serverId: server.id, error });
-            this.toast.error(error.message || (this.t?.mcpSettings?.connectionError || '连接失败'));
-            this.loadServers();
+            this.logger.error('Failed to toggle connection', { serverId: server.id, error })
+            this.toast.error(error.message || (this.t?.mcpSettings?.connectionError || '连接失败'))
+            this.loadServers()
         }
     }
 
     /**
      * 更新参数
      */
-    updateArgs(event: any): void {
-        const value = event.target.value.trim();
-        this.editingServer.args = value ? value.split(/\s+/) : [];
+    updateArgs(event: Event): void {
+        const value = (event.target as HTMLInputElement).value.trim()
+        this.editingServer.args = value ? value.split(/\s+/) : []
     }
 
     /**
      * 更新环境变量
      */
-    updateEnvVars(event: any): void {
-        const value = event.target.value.trim();
+    updateEnvVars(event: Event): void {
+        const value = (event.target as HTMLTextAreaElement).value.trim()
         if (!value) {
-            this.editingServer.env = {};
-            return;
+            this.editingServer.env = {}
+            return
         }
 
-        const env: Record<string, string> = {};
+        const env: Record<string, string> = {}
         for (const line of value.split('\n')) {
-            const [key, ...valueParts] = line.split('=');
+            const [key, ...valueParts] = line.split('=')
             if (key && valueParts.length > 0) {
-                env[key.trim()] = valueParts.join('=').trim();
+                env[key.trim()] = valueParts.join('=').trim()
             }
         }
-        this.editingServer.env = env;
+        this.editingServer.env = env
     }
 
     /**
      * 更新请求头
      */
-    updateHeaders(event: any): void {
-        const value = event.target.value.trim();
+    updateHeaders(event: Event): void {
+        const value = (event.target as HTMLTextAreaElement).value.trim()
         if (!value) {
-            this.editingServer.headers = {};
-            return;
+            this.editingServer.headers = {}
+            return
         }
 
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {}
         for (const line of value.split('\n')) {
-            const [key, ...valueParts] = line.split(':');
+            const [key, ...valueParts] = line.split(':')
             if (key && valueParts.length > 0) {
-                headers[key.trim()] = valueParts.join(':').trim();
+                headers[key.trim()] = valueParts.join(':').trim()
             }
         }
-        this.editingServer.headers = headers;
+        this.editingServer.headers = headers
     }
 
     /**
      * 格式化环境变量/请求头
      */
     formatEnvVars(obj?: Record<string, string>): string {
-        if (!obj) return '';
-        return Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n');
+        if (!obj) {return ''}
+        return Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n')
     }
 
     /**
@@ -893,11 +892,11 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     getTransportLabel(transport: MCPServerConfig['transport']): string {
         const labels: Record<string, string> = {
-            'stdio': 'Stdio',
-            'sse': 'SSE',
-            'streamable-http': 'HTTP'
-        };
-        return labels[transport] || transport;
+            stdio: 'Stdio',
+            sse: 'SSE',
+            'streamable-http': 'HTTP',
+        }
+        return labels[transport] || transport
     }
 
     /**
@@ -905,26 +904,26 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     getConnectionButtonText(status: MCPServerStatus): string {
         const texts: Record<string, string> = {
-            'connected': this.t?.mcpSettings?.disconnect || '断开',
-            'connecting': this.t?.mcpSettings?.connecting || '连接中...',
-            'error': this.t?.mcpSettings?.retry || '重试',
-            'disconnected': this.t?.mcpSettings?.connect || '连接'
-        };
-        return texts[status] || texts.disconnected;
+            connected: this.t?.mcpSettings?.disconnect || '断开',
+            connecting: this.t?.mcpSettings?.connecting || '连接中...',
+            error: this.t?.mcpSettings?.retry || '重试',
+            disconnected: this.t?.mcpSettings?.connect || '连接',
+        }
+        return texts[status] || texts.disconnected
     }
 
     /**
      * 验证服务器配置
      */
     isValidServer(): boolean {
-        if (!this.editingServer.name?.trim()) return false;
-        if (!this.editingServer.transport) return false;
+        if (!this.editingServer.name?.trim()) {return false}
+        if (!this.editingServer.transport) {return false}
 
         if (this.editingServer.transport === 'stdio') {
-            return !!this.editingServer.command?.trim();
+            return !!this.editingServer.command?.trim()
         }
 
-        return !!this.editingServer.url?.trim();
+        return !!this.editingServer.url?.trim()
     }
 
     /**
@@ -940,24 +939,24 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
             args: [],
             env: {},
             url: '',
-            headers: {}
-        };
+            headers: {},
+        }
     }
 
     /**
      * 显示导入对话框
      */
     showImportDialog(): void {
-        this.showImport = true;
-        this.importJsonText = '';
+        this.showImport = true
+        this.importJsonText = ''
     }
 
     /**
      * 隐藏导入对话框
      */
     hideImportDialog(): void {
-        this.showImport = false;
-        this.importJsonText = '';
+        this.showImport = false
+        this.importJsonText = ''
     }
 
     /**
@@ -965,22 +964,22 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     async importFromJson(): Promise<void> {
         if (!this.importJsonText.trim()) {
-            this.toast.error(this.t?.mcpSettings?.emptyJson || '请输入 JSON 配置');
-            return;
+            this.toast.error(this.t?.mcpSettings?.emptyJson || '请输入 JSON 配置')
+            return
         }
 
         try {
-            const json = JSON.parse(this.importJsonText);
+            const json = JSON.parse(this.importJsonText)
 
             // 支持两种格式：
             // 1. Claude Desktop 格式: { "mcpServers": { "name": { ... } } }
             // 2. 直接服务器对象: { "name": { ... } }
 
-            const serversObj = json.mcpServers || json;
-            let importedCount = 0;
+            const serversObj = json.mcpServers || json
+            let importedCount = 0
 
             for (const [name, config] of Object.entries(serversObj)) {
-                const serverConfig = config as any;
+                const serverConfig = config as any
 
                 // 创建服务器配置
                 const newServer: MCPServerConfig = {
@@ -991,31 +990,31 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
                     command: serverConfig.command || '',
                     args: serverConfig.args || [],
                     env: serverConfig.env || {},
-                    cwd: serverConfig.cwd
-                };
+                    cwd: serverConfig.cwd,
+                }
 
                 // 检测传输类型
                 if (serverConfig.url) {
-                    newServer.transport = serverConfig.url.includes('sse') ? 'sse' : 'streamable-http';
-                    newServer.url = serverConfig.url;
-                    newServer.headers = serverConfig.headers || {};
+                    newServer.transport = serverConfig.url.includes('sse') ? 'sse' : 'streamable-http'
+                    newServer.url = serverConfig.url
+                    newServer.headers = serverConfig.headers || {}
                 }
 
                 // 添加服务器
-                await this.mcpManager.addServer(newServer);
-                importedCount++;
+                await this.mcpManager.addServer(newServer)
+                importedCount++
             }
 
             this.toast.success(
-                (this.t?.mcpSettings?.importSuccess || '成功导入 %d 个服务器').replace('%d', importedCount.toString())
-            );
-            this.hideImportDialog();
-            this.loadServers();
+                (this.t?.mcpSettings?.importSuccess || '成功导入 %d 个服务器').replace('%d', importedCount.toString()),
+            )
+            this.hideImportDialog()
+            this.loadServers()
         } catch (error: any) {
-            this.logger.error('Failed to import JSON', error);
+            this.logger.error('Failed to import JSON', error)
             this.toast.error(
-                (this.t?.mcpSettings?.importError || '导入失败: %s').replace('%s', error.message)
-            );
+                (this.t?.mcpSettings?.importError || '导入失败: %s').replace('%s', error.message),
+            )
         }
     }
 
@@ -1030,7 +1029,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
     }
   }
-}`;
+}`
     }
 
     /**
@@ -1038,17 +1037,17 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     getExampleJson(): string {
         return JSON.stringify({
-            "mcpServers": {
-                "filesystem": {
-                    "command": "npx",
-                    "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"]
+            mcpServers: {
+                filesystem: {
+                    command: 'npx',
+                    args: ['-y', '@modelcontextprotocol/server-filesystem', '/path'],
                 },
-                "github": {
-                    "command": "npx",
-                    "args": ["-y", "@modelcontextprotocol/server-github"],
-                    "env": { "GITHUB_TOKEN": "your-token" }
-                }
-            }
-        }, null, 2);
+                github: {
+                    command: 'npx',
+                    args: ['-y', '@modelcontextprotocol/server-github'],
+                    env: { GITHUB_TOKEN: 'your-token' },
+                },
+            },
+        }, null, 2)
     }
 }

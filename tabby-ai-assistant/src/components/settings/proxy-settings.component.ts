@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ConfigProviderService } from '../../services/core/config-provider.service';
-import { ProxyService } from '../../services/network/proxy.service';
-import { LoggerService } from '../../services/core/logger.service';
-import { ToastService } from '../../services/core/toast.service';
-import { TranslateService } from '../../i18n';
-import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types';
+import { Component, OnInit, OnDestroy } from '@angular/core'
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
+import { ConfigProviderService } from '../../services/core/config-provider.service'
+import { ProxyService } from '../../services/network/proxy.service'
+import { LoggerService } from '../../services/core/logger.service'
+import { ToastService } from '../../services/core/toast.service'
+import { TranslateService } from '../../i18n'
+import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types'
 
 /**
  * 代理设置组件
@@ -403,7 +403,7 @@ import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types';
             border-top: 1px solid var(--border-color);
             margin-top: 12px;
         }
-    `]
+    `],
 })
 export class ProxySettingsComponent implements OnInit, OnDestroy {
     proxyConfig: ProxyConfig = {
@@ -411,49 +411,49 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
         httpProxy: '',
         httpsProxy: '',
         noProxy: ['localhost', '127.0.0.1', '::1'],
-        auth: undefined
-    };
+        auth: undefined,
+    }
 
-    showAuthFields = false;
-    isTesting = false;
-    testResult: ProxyTestResult | null = null;
+    showAuthFields = false
+    isTesting = false
+    testResult: ProxyTestResult | null = null
 
-    t: any;
-    private destroy$ = new Subject<void>();
+    t: any
+    private destroy$ = new Subject<void>()
 
     constructor(
         private config: ConfigProviderService,
         private proxyService: ProxyService,
         private logger: LoggerService,
         private toast: ToastService,
-        private translate: TranslateService
+        private translate: TranslateService,
     ) {
-        this.t = this.translate.t;
+        this.t = this.translate.t
     }
 
     ngOnInit(): void {
         this.translate.translation$.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(translation => {
-            this.t = translation;
-        });
+            this.t = translation
+        })
 
-        this.loadConfig();
+        this.loadConfig()
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.destroy$.next()
+        this.destroy$.complete()
     }
 
     /**
      * 加载配置
      */
     private loadConfig(): void {
-        const savedConfig = this.config.getProxyConfig();
+        const savedConfig = this.config.getProxyConfig()
         if (savedConfig) {
-            this.proxyConfig = { ...savedConfig };
-            this.showAuthFields = !!(savedConfig.auth?.username);
+            this.proxyConfig = { ...savedConfig }
+            this.showAuthFields = !!(savedConfig.auth?.username)
         }
     }
 
@@ -461,37 +461,37 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
      * 切换启用状态
      */
     toggleEnabled(): void {
-        this.proxyConfig.enabled = !this.proxyConfig.enabled;
-        this.saveConfig();
+        this.proxyConfig.enabled = !this.proxyConfig.enabled
+        this.saveConfig()
     }
 
     /**
      * 切换认证字段显示
      */
     toggleAuthFields(): void {
-        this.showAuthFields = !this.showAuthFields;
+        this.showAuthFields = !this.showAuthFields
         if (!this.showAuthFields) {
-            this.proxyConfig.auth = undefined;
+            this.proxyConfig.auth = undefined
         } else if (!this.proxyConfig.auth) {
-            this.proxyConfig.auth = { username: '', password: '' };
+            this.proxyConfig.auth = { username: '', password: '' }
         }
-        this.saveConfig();
+        this.saveConfig()
     }
 
     /**
      * 更新 noProxy
      */
     updateNoProxy(event: Event): void {
-        const value = (event.target as HTMLInputElement).value;
-        this.proxyConfig.noProxy = value.split(',').map(s => s.trim()).filter(s => s);
-        this.saveConfig();
+        const value = (event.target as HTMLInputElement).value
+        this.proxyConfig.noProxy = value.split(',').map(s => s.trim()).filter(s => s)
+        this.saveConfig()
     }
 
     /**
      * 获取 noProxy 字符串
      */
     getNoProxyString(): string {
-        return this.proxyConfig.noProxy?.join(', ') || '';
+        return this.proxyConfig.noProxy?.join(', ') ?? ''
     }
 
     /**
@@ -500,53 +500,53 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
     saveConfig(): void {
         // 验证代理地址
         if (this.proxyConfig.enabled) {
-            const httpResult = this.proxyService.validateProxyUrl(this.proxyConfig.httpProxy || '');
-            const httpsResult = this.proxyService.validateProxyUrl(this.proxyConfig.httpsProxy || '');
+            const httpResult = this.proxyService.validateProxyUrl(this.proxyConfig.httpProxy ?? '')
+            const httpsResult = this.proxyService.validateProxyUrl(this.proxyConfig.httpsProxy ?? '')
 
             if (!httpResult.valid && this.proxyConfig.httpProxy) {
-                this.toast.error(`HTTP ${this.t.proxy?.testFailed || '代理'}: ${httpResult.message}`);
-                return;
+                this.toast.error(`HTTP ${this.t.proxy?.testFailed || '代理'}: ${httpResult.message}`)
+                return
             }
             if (!httpsResult.valid && this.proxyConfig.httpsProxy) {
-                this.toast.error(`HTTPS ${this.t.proxy?.testFailed || '代理'}: ${httpsResult.message}`);
-                return;
+                this.toast.error(`HTTPS ${this.t.proxy?.testFailed || '代理'}: ${httpsResult.message}`)
+                return
             }
         }
 
-        this.config.updateProxyConfig(this.proxyConfig);
-        this.toast.success(this.t.proxy?.configSaved || '代理配置已保存');
-        this.logger.info('Proxy configuration saved', { enabled: this.proxyConfig.enabled });
+        this.config.updateProxyConfig(this.proxyConfig)
+        this.toast.success(this.t.proxy?.configSaved || '代理配置已保存')
+        this.logger.info('Proxy configuration saved', { enabled: this.proxyConfig.enabled })
     }
 
     /**
      * 测试代理连接
      */
     async testConnection(): Promise<void> {
-        const proxyUrl = this.proxyConfig.httpsProxy || this.proxyConfig.httpProxy;
+        const proxyUrl = this.proxyConfig.httpsProxy ?? this.proxyConfig.httpProxy
 
         if (!proxyUrl) {
-            this.toast.error(this.t.proxy?.noProxyUrl || '请先配置代理地址');
-            return;
+            this.toast.error(this.t.proxy?.noProxyUrl || '请先配置代理地址')
+            return
         }
 
-        this.isTesting = true;
-        this.testResult = null;
+        this.isTesting = true
+        this.testResult = null
 
         try {
-            this.testResult = await this.proxyService.testProxyConnection(proxyUrl);
+            this.testResult = await this.proxyService.testProxyConnection(proxyUrl)
             if (this.testResult.success) {
-                this.toast.success(`${this.t.proxy?.testSuccess || '连接成功'} (${this.testResult.latency}ms)`);
+                this.toast.success(`${this.t.proxy?.testSuccess || '连接成功'} (${this.testResult.latency}ms)`)
             } else {
-                this.toast.error(`${this.t.proxy?.testFailed || '连接失败'}: ${this.testResult.message}`);
+                this.toast.error(`${this.t.proxy?.testFailed || '连接失败'}: ${this.testResult.message}`)
             }
         } catch (error) {
             this.testResult = {
                 success: false,
-                message: error instanceof Error ? error.message : String(error)
-            };
-            this.toast.error(this.t.proxy?.testFailed || '测试失败');
+                message: error instanceof Error ? error.message : String(error),
+            }
+            this.toast.error(this.t.proxy?.testFailed || '测试失败')
         } finally {
-            this.isTesting = false;
+            this.isTesting = false
         }
     }
 
@@ -554,14 +554,14 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
      * 从环境变量导入代理配置
      */
     importFromEnv(): void {
-        const importedConfig = this.proxyService.importFromEnv();
+        const importedConfig = this.proxyService.importFromEnv()
         if (importedConfig.enabled) {
-            this.proxyConfig = { ...importedConfig };
-            this.showAuthFields = !!(importedConfig.auth?.username);
-            this.saveConfig();
-            this.toast.success(this.t.proxy?.importSuccess || '已从环境变量导入代理配置');
+            this.proxyConfig = { ...importedConfig }
+            this.showAuthFields = !!(importedConfig.auth?.username)
+            this.saveConfig()
+            this.toast.success(this.t.proxy?.importSuccess || '已从环境变量导入代理配置')
         } else {
-            this.toast.info(this.t.proxy?.noEnvProxy || '未检测到环境变量中的代理配置');
+            this.toast.info(this.t.proxy?.noEnvProxy || '未检测到环境变量中的代理配置')
         }
     }
 }

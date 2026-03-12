@@ -1,13 +1,13 @@
 /**
  * English translations
  */
-import { TranslationKeys } from '../types';
+import { TranslationKeys } from '../types'
 
 export const enUS: TranslationKeys = {
     common: {
         save: 'Save',
         cancel: 'Cancel',
-        delete: 'Delete',
+        'delete': 'Delete',
         confirm: 'Confirm',
         enabled: 'Enabled',
         disabled: 'Disabled',
@@ -23,8 +23,8 @@ export const enUS: TranslationKeys = {
         yes: 'Yes',
         no: 'No',
         reset: 'Reset',
-        default: 'Default',
-        today: 'Today'
+        'default': 'Default',
+        today: 'Today',
     },
 
     settings: {
@@ -36,7 +36,7 @@ export const enUS: TranslationKeys = {
         chatTab: 'Chat',
         mcpTab: 'MCP Servers',
         dataTab: 'Data',
-        advancedTab: 'Advanced'
+        advancedTab: 'Advanced',
     },
 
     general: {
@@ -60,7 +60,7 @@ export const enUS: TranslationKeys = {
         shortcutGenerateDesc: 'Generate command from selection',
         shortcutExplain: 'Explain Command',
         shortcutExplainDesc: 'Explain current selection',
-        shortcutTip: 'Shortcuts can be customized in Tabby settings'
+        shortcutTip: 'Shortcuts can be customized in Tabby settings',
     },
 
     chatSettings: {
@@ -93,7 +93,7 @@ export const enUS: TranslationKeys = {
         clearHistory: 'Clear Chat History',
         resetDefaults: 'Reset to Defaults',
         clearHistoryConfirm: 'Are you sure you want to clear all chat records? This cannot be undone.',
-        resetConfirm: 'Are you sure you want to reset all settings to defaults?'
+        resetConfirm: 'Are you sure you want to reset all settings to defaults?',
     },
 
     security: {
@@ -118,7 +118,7 @@ export const enUS: TranslationKeys = {
         patternPlaceholder: 'Enter dangerous command pattern',
         saveSettings: 'Save Settings',
         resetDefaults: 'Restore Defaults',
-        resetConfirm: 'Are you sure you want to reset security settings to defaults?'
+        resetConfirm: 'Are you sure you want to reset security settings to defaults?',
     },
 
     providers: {
@@ -136,7 +136,7 @@ export const enUS: TranslationKeys = {
         saveConfig: 'Save Config',
         testConnection: 'Test Connection',
         detectService: 'Detect Service',
-        delete: 'Delete',
+        'delete': 'Delete',
         deleteConfirm: 'Are you sure you want to delete this provider configuration?',
         testSuccess: 'Connection test successful!',
         testFail: 'Connection test failed',
@@ -144,7 +144,7 @@ export const enUS: TranslationKeys = {
         configSaved: 'Configuration saved',
         configDeleted: 'Configuration deleted',
         contextWindow: 'Context Window',
-        contextWindowDesc: 'Maximum context tokens for this model'
+        contextWindowDesc: 'Maximum context tokens for this model',
     },
 
     providerNames: {
@@ -154,7 +154,7 @@ export const enUS: TranslationKeys = {
         glm: 'GLM (ChatGLM)',
         openaiCompatible: 'OpenAI Compatible',
         ollama: 'Ollama (Local)',
-        vllm: 'vLLM (Local)'
+        vllm: 'vLLM (Local)',
     },
 
     chatInterface: {
@@ -171,14 +171,14 @@ export const enUS: TranslationKeys = {
         clearChatConfirm: 'Are you sure you want to clear the chat?',
         exportChat: 'Export Chat',
         switchProvider: 'Switch AI Provider',
-        providerBadge: 'Provider'
+        providerBadge: 'Provider',
     },
 
     riskLevel: {
         low: 'Low Risk',
         medium: 'Medium Risk',
         high: 'High Risk',
-        unknown: 'Unknown'
+        unknown: 'Unknown',
     },
 
     advancedSettings: {
@@ -192,12 +192,12 @@ export const enUS: TranslationKeys = {
             debug: 'Debug',
             info: 'Info',
             warn: 'Warning',
-            error: 'Error'
+            error: 'Error',
         },
         systemInfo: 'System Information',
         pluginVersion: 'Plugin Version',
         supportedProviders: 'Supported Providers',
-        currentProvider: 'Current Provider'
+        currentProvider: 'Current Provider',
     },
 
     contextSettings: {
@@ -220,7 +220,7 @@ export const enUS: TranslationKeys = {
         compactThresholdDesc: 'Generate summary when usage exceeds this (default: 85%)',
         messagesToKeep: 'Messages to Keep',
         messagesToKeepDesc: 'Recent messages to always preserve (default: 3)',
-        configSaved: 'Context config saved'
+        configSaved: 'Context config saved',
     },
 
     mcpSettings: {
@@ -257,7 +257,7 @@ export const enUS: TranslationKeys = {
         connect: 'Connect',
         disconnect: 'Disconnect',
         connecting: 'Connecting...',
-        retry: 'Retry'
+        retry: 'Retry',
     },
 
     dataSettings: {
@@ -271,7 +271,7 @@ export const enUS: TranslationKeys = {
         lastModified: 'Last Modified',
         actions: 'Actions',
         view: 'View',
-        delete: 'Delete',
+        'delete': 'Delete',
         noFiles: 'No data files',
         statistics: 'Statistics',
         chatSessions: 'Chat Sessions',
@@ -282,7 +282,7 @@ export const enUS: TranslationKeys = {
         importData: 'Import Data',
         migrateData: 'Migrate Browser Data',
         clearAll: 'Clear All Data',
-        migrationNote: 'Old data detected in browser storage. Click "Migrate Browser Data" to transfer to file storage'
+        migrationNote: 'Old data detected in browser storage. Click "Migrate Browser Data" to transfer to file storage',
     },
 
     proxy: {
@@ -321,7 +321,7 @@ export const enUS: TranslationKeys = {
         usageInfo2: 'Local providers (Ollama, vLLM) do not use proxy by default',
         usageInfo3: 'Supports HTTP, HTTPS and SOCKS5 proxy protocols',
         optional: 'Optional',
-        recommended: 'Recommended'
+        recommended: 'Recommended',
     },
 
     systemPrompts: {
@@ -377,6 +377,6 @@ Incorrect: Only reply with text "Switched to terminal 4" (without calling tool)`
 5. Consider current working directory and context
 
 Always return valid commands, avoid dangerous operations (e.g., deleting system files, formatting disks).
-If unable to determine accurate command, clearly state and provide alternatives.`
-    }
-};
+If unable to determine accurate command, clearly state and provide alternatives.`,
+    },
+}

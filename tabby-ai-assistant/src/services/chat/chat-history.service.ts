@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { ChatMessage } from '../../types/ai.types';
-import { LoggerService } from '../core/logger.service';
-import { FileStorageService } from '../core/file-storage.service';
+import { Injectable } from '@angular/core'
+import { BehaviorSubject } from 'rxjs'
+import { ChatMessage } from '../../types/ai.types'
+import { LoggerService } from '../core/logger.service'
+import { FileStorageService } from '../core/file-storage.service'
 
 export interface SavedSession {
     sessionId: string;
@@ -19,38 +19,37 @@ export interface SavedSession {
             cacheRead: number;
             cacheWrite: number;
         };
-        compactionHistory?: Array<{
+        compactionHistory?: {
             timestamp: Date;
             type: 'prune' | 'compact' | 'truncate';
             tokensSaved: number;
             condenseId?: string;
-        }>;
+        }[];
         hasCompression?: boolean;
         lastCompactionAt?: Date;
     };
 }
 
-const STORAGE_KEY = 'tabby-ai-assistant-chat-history';
-const STORAGE_FILENAME = 'chat-sessions';
-const MAX_SESSIONS = 50;
-const MAX_MESSAGES_PER_SESSION = 1000;
+const STORAGE_FILENAME = 'chat-sessions'
+const MAX_SESSIONS = 50
+const MAX_MESSAGES_PER_SESSION = 1000
 
 /**
  * 聊天历史服务
  * 持久化存储和管理聊天会话历史
  */
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class ChatHistoryService {
-    private sessionsSubject = new BehaviorSubject<SavedSession[]>([]);
-    public sessions$ = this.sessionsSubject.asObservable();
+    private sessionsSubject = new BehaviorSubject<SavedSession[]>([])
+    sessions$ = this.sessionsSubject.asObservable()
 
     constructor(
         private logger: LoggerService,
-        private fileStorage: FileStorageService
+        private fileStorage: FileStorageService,
     ) {
-        this.loadSessions();
+        this.loadSessions()
     }
 
     /**
@@ -58,11 +57,11 @@ export class ChatHistoryService {
      */
     saveSession(sessionId: string, messages: ChatMessage[], title?: string): void {
         try {
-            const sessions = this.sessionsSubject.value;
-            const existingIndex = sessions.findIndex(s => s.sessionId === sessionId);
+            const sessions = this.sessionsSubject.value
+            const existingIndex = sessions.findIndex(s => s.sessionId === sessionId)
 
-            const sessionTitle = title || this.generateSessionTitle(messages);
-            const now = new Date();
+            const sessionTitle = title ?? this.generateSessionTitle(messages)
+            const now = new Date()
 
             const session: SavedSession = {
                 sessionId,
@@ -70,25 +69,25 @@ export class ChatHistoryService {
                 messages: this.trimMessages(messages),
                 createdAt: existingIndex >= 0 ? sessions[existingIndex].createdAt : now,
                 updatedAt: now,
-                messageCount: messages.length
-            };
+                messageCount: messages.length,
+            }
 
             if (existingIndex >= 0) {
-                sessions[existingIndex] = session;
+                sessions[existingIndex] = session
             } else {
-                sessions.unshift(session);
+                sessions.unshift(session)
             }
 
             // 限制会话数量
-            const trimmedSessions = sessions.slice(0, MAX_SESSIONS);
-            this.sessionsSubject.next(trimmedSessions);
-            this.saveToStorage(trimmedSessions);
+            const trimmedSessions = sessions.slice(0, MAX_SESSIONS)
+            this.sessionsSubject.next(trimmedSessions)
+            this.saveToStorage(trimmedSessions)
 
-            this.logger.info('Session saved', { sessionId, title: sessionTitle });
+            this.logger.info('Session saved', { sessionId, title: sessionTitle })
 
         } catch (error) {
-            this.logger.error('Failed to save session', { error, sessionId });
-            throw error;
+            this.logger.error('Failed to save session', { error, sessionId })
+            throw error
         }
     }
 
@@ -96,51 +95,51 @@ export class ChatHistoryService {
      * 加载会话
      */
     loadSession(sessionId: string): SavedSession | undefined {
-        const sessions = this.sessionsSubject.value;
-        return sessions.find(s => s.sessionId === sessionId);
+        const sessions = this.sessionsSubject.value
+        return sessions.find(s => s.sessionId === sessionId)
     }
 
     /**
      * 删除会话
      */
     deleteSession(sessionId: string): void {
-        const sessions = this.sessionsSubject.value;
-        const filteredSessions = sessions.filter(s => s.sessionId !== sessionId);
-        this.sessionsSubject.next(filteredSessions);
-        this.saveToStorage(filteredSessions);
-        this.logger.info('Session deleted', { sessionId });
+        const sessions = this.sessionsSubject.value
+        const filteredSessions = sessions.filter(s => s.sessionId !== sessionId)
+        this.sessionsSubject.next(filteredSessions)
+        this.saveToStorage(filteredSessions)
+        this.logger.info('Session deleted', { sessionId })
     }
 
     /**
      * 清空所有历史
      */
     clearAllHistory(): void {
-        this.sessionsSubject.next([]);
-        this.saveToStorage([]);
-        this.logger.info('All chat history cleared');
+        this.sessionsSubject.next([])
+        this.saveToStorage([])
+        this.logger.info('All chat history cleared')
     }
 
     /**
      * 搜索会话
      */
     searchSessions(query: string): SavedSession[] {
-        const sessions = this.sessionsSubject.value;
-        const lowercaseQuery = query.toLowerCase();
+        const sessions = this.sessionsSubject.value
+        const lowercaseQuery = query.toLowerCase()
 
         return sessions.filter(session =>
             session.title.toLowerCase().includes(lowercaseQuery) ||
             session.messages.some(msg =>
-                msg.content.toLowerCase().includes(lowercaseQuery)
-            )
-        );
+                msg.content.toLowerCase().includes(lowercaseQuery),
+            ),
+        )
     }
 
     /**
      * 获取最近的会话
      */
-    getRecentSessions(count: number = 10): SavedSession[] {
-        const sessions = this.sessionsSubject.value;
-        return sessions.slice(0, count);
+    getRecentSessions(count = 10): SavedSession[] {
+        const sessions = this.sessionsSubject.value
+        return sessions.slice(0, count)
     }
 
     /**
@@ -153,35 +152,35 @@ export class ChatHistoryService {
         oldestSession?: Date;
         newestSession?: Date;
     } {
-        const sessions = this.sessionsSubject.value;
-        const totalSessions = sessions.length;
-        const totalMessages = sessions.reduce((sum, s) => sum + s.messageCount, 0);
-        const averageMessagesPerSession = totalSessions > 0 ? totalMessages / totalSessions : 0;
+        const sessions = this.sessionsSubject.value
+        const totalSessions = sessions.length
+        const totalMessages = sessions.reduce((sum, s) => sum + s.messageCount, 0)
+        const averageMessagesPerSession = totalSessions > 0 ? totalMessages / totalSessions : 0
 
-        const dates = sessions.map(s => s.createdAt.getTime());
-        const oldestSession = dates.length > 0 ? new Date(Math.min(...dates)) : undefined;
-        const newestSession = dates.length > 0 ? new Date(Math.max(...dates)) : undefined;
+        const dates = sessions.map(s => s.createdAt.getTime())
+        const oldestSession = dates.length > 0 ? new Date(Math.min(...dates)) : undefined
+        const newestSession = dates.length > 0 ? new Date(Math.max(...dates)) : undefined
 
         return {
             totalSessions,
             totalMessages,
             averageMessagesPerSession: Math.round(averageMessagesPerSession * 100) / 100,
             oldestSession,
-            newestSession
-        };
+            newestSession,
+        }
     }
 
     /**
      * 导出所有历史
      */
     exportAllHistory(): string {
-        const sessions = this.sessionsSubject.value;
+        const sessions = this.sessionsSubject.value
         const exportData = {
             exportDate: new Date().toISOString(),
             version: '1.0',
-            sessions
-        };
-        return JSON.stringify(exportData, null, 2);
+            sessions,
+        }
+        return JSON.stringify(exportData, null, 2)
     }
 
     /**
@@ -189,88 +188,88 @@ export class ChatHistoryService {
      */
     importHistory(data: string): void {
         try {
-            const importData = JSON.parse(data);
+            const importData = JSON.parse(data)
 
             if (!importData.sessions || !Array.isArray(importData.sessions)) {
-                throw new Error('Invalid history format');
+                throw new Error('Invalid history format')
             }
 
             const sessions = importData.sessions.map((s: any) => ({
                 ...s,
                 createdAt: new Date(s.createdAt),
-                updatedAt: new Date(s.updatedAt)
-            }));
+                updatedAt: new Date(s.updatedAt),
+            }))
 
-            this.sessionsSubject.next(sessions);
-            this.saveToStorage(sessions);
+            this.sessionsSubject.next(sessions)
+            this.saveToStorage(sessions)
 
             this.logger.info('History imported', {
-                sessionCount: sessions.length
-            });
+                sessionCount: sessions.length,
+            })
 
         } catch (error) {
-            this.logger.error('Failed to import history', error);
-            throw new Error('Invalid history file format');
+            this.logger.error('Failed to import history', error)
+            throw new Error('Invalid history file format')
         }
     }
 
     private loadSessions(): void {
         try {
-            const data = this.fileStorage.load<SavedSession[]>(STORAGE_FILENAME, []);
+            const data = this.fileStorage.load<SavedSession[]>(STORAGE_FILENAME, [])
 
             if (data.length > 0) {
                 const sessions = data.map((s: any) => ({
                     ...s,
                     createdAt: new Date(s.createdAt),
-                    updatedAt: new Date(s.updatedAt)
-                }));
-                this.sessionsSubject.next(sessions);
-                this.logger.info('Loaded sessions from file storage', { count: sessions.length });
+                    updatedAt: new Date(s.updatedAt),
+                }))
+                this.sessionsSubject.next(sessions)
+                this.logger.info('Loaded sessions from file storage', { count: sessions.length })
             }
         } catch (error) {
-            this.logger.error('Failed to load sessions from storage', error);
-            this.sessionsSubject.next([]);
+            this.logger.error('Failed to load sessions from storage', error)
+            this.sessionsSubject.next([])
         }
     }
 
     private saveToStorage(sessions: SavedSession[]): void {
-        this.fileStorage.save(STORAGE_FILENAME, sessions);
+        this.fileStorage.save(STORAGE_FILENAME, sessions)
     }
 
     private generateSessionTitle(messages: ChatMessage[]): string {
-        const firstUserMessage = messages.find(m => m.role === 'user');
+        const firstUserMessage = messages.find(m => m.role === 'user')
         if (!firstUserMessage) {
-            return `会话 ${new Date().toLocaleString()}`;
+            return `会话 ${new Date().toLocaleString()}`
         }
 
-        const content = firstUserMessage.content;
-        return content.length > 50 ? content.substring(0, 50) + '...' : content;
+        const content = firstUserMessage.content
+        return content.length > 50 ? content.substring(0, 50) + '...' : content
     }
 
     private trimMessages(messages: ChatMessage[]): ChatMessage[] {
         if (messages.length <= MAX_MESSAGES_PER_SESSION) {
-            return messages;
+            return messages
         }
 
         // 保留最近的messages
-        return messages.slice(-MAX_MESSAGES_PER_SESSION);
+        return messages.slice(-MAX_MESSAGES_PER_SESSION)
     }
 
     /**
      * 更新会话的上下文信息（压缩标记支持）
      */
     updateContextInfo(sessionId: string, contextInfo: SavedSession['contextInfo']): void {
-        const sessions = this.sessionsSubject.value;
-        const existingIndex = sessions.findIndex(s => s.sessionId === sessionId);
+        const sessions = this.sessionsSubject.value
+        const existingIndex = sessions.findIndex(s => s.sessionId === sessionId)
 
         if (existingIndex >= 0) {
             sessions[existingIndex] = {
                 ...sessions[existingIndex],
-                contextInfo
-            };
-            this.sessionsSubject.next([...sessions]);
-            this.saveToStorage(sessions);
-            this.logger.info('Context info updated', { sessionId });
+                contextInfo,
+            }
+            this.sessionsSubject.next([...sessions])
+            this.saveToStorage(sessions)
+            this.logger.info('Context info updated', { sessionId })
         }
     }
 
@@ -278,9 +277,9 @@ export class ChatHistoryService {
      * 导出会话（包含压缩状态）
      */
     exportSessionWithContext(sessionId: string): string | undefined {
-        const session = this.loadSession(sessionId);
+        const session = this.loadSession(sessionId)
         if (!session) {
-            return undefined;
+            return undefined
         }
 
         const exportData = {
@@ -288,26 +287,26 @@ export class ChatHistoryService {
             version: '2.0',
             session: {
                 ...session,
-                contextInfo: session.contextInfo || {}
-            }
-        };
-        return JSON.stringify(exportData, null, 2);
+                contextInfo: session.contextInfo ?? {},
+            },
+        }
+        return JSON.stringify(exportData, null, 2)
     }
 
     /**
      * 导出会话历史（包含所有压缩状态）
      */
     exportAllHistoryWithContext(): string {
-        const sessions = this.sessionsSubject.value;
+        const sessions = this.sessionsSubject.value
         const exportData = {
             exportDate: new Date().toISOString(),
             version: '2.0',
             sessions: sessions.map(s => ({
                 ...s,
-                contextInfo: s.contextInfo || {}
-            }))
-        };
-        return JSON.stringify(exportData, null, 2);
+                contextInfo: s.contextInfo ?? {},
+            })),
+        }
+        return JSON.stringify(exportData, null, 2)
     }
 
     /**
@@ -315,30 +314,30 @@ export class ChatHistoryService {
      */
     importSessionWithContext(data: string): void {
         try {
-            const importData = JSON.parse(data);
+            const importData = JSON.parse(data)
 
             if (!importData.session && !importData.sessions) {
-                throw new Error('Invalid session format');
+                throw new Error('Invalid session format')
             }
 
-            const sessions = this.sessionsSubject.value;
+            const sessions = this.sessionsSubject.value
 
             if (importData.session) {
                 // 导入单个会话
-                const session = importData.session;
-                const existingIndex = sessions.findIndex(s => s.sessionId === session.sessionId);
+                const session = importData.session
+                const existingIndex = sessions.findIndex(s => s.sessionId === session.sessionId)
 
                 const processedSession = {
                     ...session,
                     createdAt: new Date(session.createdAt),
                     updatedAt: new Date(session.updatedAt),
-                    contextInfo: session.contextInfo || undefined
-                };
+                    contextInfo: session.contextInfo || undefined,
+                }
 
                 if (existingIndex >= 0) {
-                    sessions[existingIndex] = processedSession;
+                    sessions[existingIndex] = processedSession
                 } else {
-                    sessions.unshift(processedSession);
+                    sessions.unshift(processedSession)
                 }
             } else if (importData.sessions) {
                 // 批量导入会话
@@ -346,29 +345,29 @@ export class ChatHistoryService {
                     ...s,
                     createdAt: new Date(s.createdAt),
                     updatedAt: new Date(s.updatedAt),
-                    contextInfo: s.contextInfo || undefined
-                }));
+                    contextInfo: s.contextInfo || undefined,
+                }))
 
                 // 合并现有会话，避免重复
-                const mergedSessions = [...sessions];
+                const mergedSessions = [...sessions]
                 importedSessions.forEach(imported => {
-                    const existingIndex = mergedSessions.findIndex(s => s.sessionId === imported.sessionId);
+                    const existingIndex = mergedSessions.findIndex(s => s.sessionId === imported.sessionId)
                     if (existingIndex >= 0) {
-                        mergedSessions[existingIndex] = imported;
+                        mergedSessions[existingIndex] = imported
                     } else {
-                        mergedSessions.unshift(imported);
+                        mergedSessions.unshift(imported)
                     }
-                });
+                })
 
                 // 限制会话数量
-                this.sessionsSubject.next(mergedSessions.slice(0, MAX_SESSIONS));
-                this.saveToStorage(mergedSessions.slice(0, MAX_SESSIONS));
+                this.sessionsSubject.next(mergedSessions.slice(0, MAX_SESSIONS))
+                this.saveToStorage(mergedSessions.slice(0, MAX_SESSIONS))
             }
 
-            this.logger.info('Session(s) with context imported successfully');
+            this.logger.info('Session(s) with context imported successfully')
         } catch (error) {
-            this.logger.error('Failed to import session with context', error);
-            throw new Error('Invalid session file format');
+            this.logger.error('Failed to import session with context', error)
+            throw new Error('Invalid session file format')
         }
     }
 
@@ -376,30 +375,30 @@ export class ChatHistoryService {
      * 清理压缩数据
      */
     cleanupCompressedData(sessionId?: string): void {
-        const sessions = this.sessionsSubject.value;
+        const sessions = this.sessionsSubject.value
 
         if (sessionId) {
             // 清理指定会话的压缩数据
-            const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId);
+            const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId)
             if (sessionIndex >= 0 && sessions[sessionIndex].contextInfo) {
                 sessions[sessionIndex] = {
                     ...sessions[sessionIndex],
-                    contextInfo: undefined
-                };
-                this.sessionsSubject.next([...sessions]);
-                this.saveToStorage(sessions);
-                this.logger.info('Compressed data cleaned for session', { sessionId });
+                    contextInfo: undefined,
+                }
+                this.sessionsSubject.next([...sessions])
+                this.saveToStorage(sessions)
+                this.logger.info('Compressed data cleaned for session', { sessionId })
             }
         } else {
             // 清理所有会话的压缩数据
             sessions.forEach(session => {
                 if (session.contextInfo) {
-                    session.contextInfo = undefined;
+                    session.contextInfo = undefined
                 }
-            });
-            this.sessionsSubject.next([...sessions]);
-            this.saveToStorage(sessions);
-            this.logger.info('All compressed data cleaned');
+            })
+            this.sessionsSubject.next([...sessions])
+            this.saveToStorage(sessions)
+            this.logger.info('All compressed data cleaned')
         }
     }
 
@@ -412,41 +411,41 @@ export class ChatHistoryService {
         totalTokensSaved: number;
         averageTokensSaved: number;
         lastCompactionAt?: Date;
-        compactionHistory: Array<{
+        compactionHistory: {
             sessionId: string;
             type: 'prune' | 'compact' | 'truncate';
             timestamp: Date;
             tokensSaved: number;
-        }>;
+        }[];
     } {
-        const sessions = this.sessionsSubject.value;
-        const sessionsWithCompression = sessions.filter(s => s.contextInfo?.hasCompression);
-        let totalTokensSaved = 0;
-        const allCompactionEvents: Array<{
+        const sessions = this.sessionsSubject.value
+        const sessionsWithCompression = sessions.filter(s => s.contextInfo?.hasCompression)
+        let totalTokensSaved = 0
+        const allCompactionEvents: {
             sessionId: string;
             type: 'prune' | 'compact' | 'truncate';
             timestamp: Date;
             tokensSaved: number;
-        }> = [];
-        let lastCompactionAt: Date | undefined;
+        }[] = []
+        let lastCompactionAt: Date | undefined = undefined
 
         sessionsWithCompression.forEach(session => {
             if (session.contextInfo?.compactionHistory) {
                 session.contextInfo.compactionHistory.forEach(event => {
-                    totalTokensSaved += event.tokensSaved;
+                    totalTokensSaved += event.tokensSaved
                     allCompactionEvents.push({
                         sessionId: session.sessionId,
                         type: event.type,
                         timestamp: event.timestamp,
-                        tokensSaved: event.tokensSaved
-                    });
+                        tokensSaved: event.tokensSaved,
+                    })
 
                     if (!lastCompactionAt || event.timestamp > lastCompactionAt) {
-                        lastCompactionAt = event.timestamp;
+                        lastCompactionAt = event.timestamp
                     }
-                });
+                })
             }
-        });
+        })
 
         return {
             totalSessions: sessions.length,
@@ -456,8 +455,8 @@ export class ChatHistoryService {
                 ? Math.round(totalTokensSaved / sessionsWithCompression.length)
                 : 0,
             lastCompactionAt,
-            compactionHistory: allCompactionEvents
-        };
+            compactionHistory: allCompactionEvents,
+        }
     }
 
     /**
@@ -467,22 +466,22 @@ export class ChatHistoryService {
         sessionId: string,
         type: 'prune' | 'compact' | 'truncate',
         tokensSaved: number,
-        condenseId?: string
+        condenseId?: string,
     ): void {
-        const sessions = this.sessionsSubject.value;
-        const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId);
+        const sessions = this.sessionsSubject.value
+        const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId)
 
         if (sessionIndex >= 0) {
-            const session = sessions[sessionIndex];
-            const contextInfo = session.contextInfo || {};
+            const session = sessions[sessionIndex]
+            const contextInfo = session.contextInfo ?? {}
 
-            const compactionHistory = contextInfo.compactionHistory || [];
+            const compactionHistory = contextInfo.compactionHistory ?? []
             compactionHistory.push({
                 timestamp: new Date(),
                 type,
                 tokensSaved,
-                condenseId
-            });
+                condenseId,
+            })
 
             sessions[sessionIndex] = {
                 ...session,
@@ -490,13 +489,13 @@ export class ChatHistoryService {
                     ...contextInfo,
                     hasCompression: true,
                     lastCompactionAt: new Date(),
-                    compactionHistory
-                }
-            };
+                    compactionHistory,
+                },
+            }
 
-            this.sessionsSubject.next([...sessions]);
-            this.saveToStorage(sessions);
-            this.logger.info('Compaction event recorded', { sessionId, type, tokensSaved });
+            this.sessionsSubject.next([...sessions])
+            this.saveToStorage(sessions)
+            this.logger.info('Compaction event recorded', { sessionId, type, tokensSaved })
         }
     }
 
@@ -504,21 +503,21 @@ export class ChatHistoryService {
      * 检查会话是否有压缩标记
      */
     hasCompressionMarkers(sessionId: string): boolean {
-        const session = this.loadSession(sessionId);
-        return session?.contextInfo?.hasCompression || false;
+        const session = this.loadSession(sessionId)
+        return session?.contextInfo?.hasCompression ?? false
     }
 
     /**
      * 获取会话的压缩历史
      */
-    getCompactionHistory(sessionId: string): Array<{
+    getCompactionHistory(sessionId: string): {
         timestamp: Date;
         type: 'prune' | 'compact' | 'truncate';
         tokensSaved: number;
         condenseId?: string;
-    }> {
-        const session = this.loadSession(sessionId);
-        return session?.contextInfo?.compactionHistory || [];
+    }[] {
+        const session = this.loadSession(sessionId)
+        return session?.contextInfo?.compactionHistory ?? []
     }
 
     /**
@@ -530,20 +529,20 @@ export class ChatHistoryService {
         cacheRead: number;
         cacheWrite: number;
     }): void {
-        const sessions = this.sessionsSubject.value;
-        const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId);
+        const sessions = this.sessionsSubject.value
+        const sessionIndex = sessions.findIndex(s => s.sessionId === sessionId)
 
         if (sessionIndex >= 0) {
-            const session = sessions[sessionIndex];
+            const session = sessions[sessionIndex]
             sessions[sessionIndex] = {
                 ...session,
                 contextInfo: {
                     ...session.contextInfo,
-                    tokenUsage
-                }
-            };
-            this.sessionsSubject.next([...sessions]);
-            this.saveToStorage(sessions);
+                    tokenUsage,
+                },
+            }
+            this.sessionsSubject.next([...sessions])
+            this.saveToStorage(sessions)
         }
     }
 }

@@ -2,17 +2,17 @@
  * AI提供商相关类型定义
  */
 
-import { Observable } from 'rxjs';
-import { ProviderCapability, HealthStatus, ValidationResult } from './ai.types';
-import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse } from './ai.types';
+import { Observable } from 'rxjs'
+import { ProviderCapability, HealthStatus, ValidationResult , ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse } from './ai.types'
+
 
 // 重新导出相关类型
-export { ProviderCapability, HealthStatus, ValidationResult };
-export { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse };
+export { ProviderCapability, HealthStatus, ValidationResult }
+export { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse }
 
 // ==================== 认证配置 ====================
 
-export type AuthType = 'apiKey' | 'bearer' | 'basic' | 'oauth' | 'none';
+export type AuthType = 'apiKey' | 'bearer' | 'basic' | 'oauth' | 'none'
 
 export interface AuthConfig {
     type: AuthType;
@@ -60,7 +60,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 128000,
-        authConfig: { type: 'bearer', credentials: {} }
+        authConfig: { type: 'bearer', credentials: {} },
     },
     anthropic: {
         baseURL: 'https://api.anthropic.com',
@@ -70,7 +70,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 200000,
-        authConfig: { type: 'bearer', credentials: {} }
+        authConfig: { type: 'bearer', credentials: {} },
     },
     minimax: {
         baseURL: 'https://api.minimaxi.com/anthropic',
@@ -80,7 +80,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 128000,
-        authConfig: { type: 'bearer', credentials: {} }
+        authConfig: { type: 'bearer', credentials: {} },
     },
     glm: {
         baseURL: 'https://open.bigmodel.cn/api/anthropic',
@@ -90,7 +90,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 128000,
-        authConfig: { type: 'bearer', credentials: {} }
+        authConfig: { type: 'bearer', credentials: {} },
     },
     ollama: {
         baseURL: 'http://localhost:11434/v1',
@@ -100,7 +100,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 8192,
-        authConfig: { type: 'none', credentials: {} }
+        authConfig: { type: 'none', credentials: {} },
     },
     vllm: {
         baseURL: 'http://localhost:8000/v1',
@@ -110,7 +110,7 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 8192,
-        authConfig: { type: 'bearer', credentials: {} }
+        authConfig: { type: 'bearer', credentials: {} },
     },
     'openai-compatible': {
         baseURL: 'http://localhost:11434/v1',
@@ -120,82 +120,81 @@ export const PROVIDER_DEFAULTS: Record<string, ProviderDefaults> = {
         timeout: 30000,
         retries: 3,
         contextWindow: 128000,
-        authConfig: { type: 'bearer', credentials: {} }
-    }
-};
+        authConfig: { type: 'bearer', credentials: {} },
+    },
+}
 
 // 配置工具函数
-export namespace ProviderConfigUtils {
+export const ProviderConfigUtils = {
     /**
      * 使用默认值填充配置
      */
-    export function fillDefaults(config: Partial<ProviderConfig>, providerName: string): ProviderConfig {
-        const defaults = PROVIDER_DEFAULTS[providerName];
+    fillDefaults(config: Partial<ProviderConfig>, providerName: string): ProviderConfig {
+        const defaults = PROVIDER_DEFAULTS[providerName]
         if (!defaults) {
-            throw new Error(`Unknown provider: ${providerName}`);
+            throw new Error(`Unknown provider: ${providerName}`)
         }
 
         return {
-            name: config.name || providerName,
-            displayName: config.displayName || providerName,
+            name: config.name ?? providerName,
+            displayName: config.displayName ?? providerName,
             apiKey: config.apiKey,
-            baseURL: config.baseURL || defaults.baseURL,
-            model: config.model || defaults.model,
+            baseURL: config.baseURL ?? defaults.baseURL,
+            model: config.model ?? defaults.model,
             maxTokens: config.maxTokens ?? defaults.maxTokens,
             temperature: config.temperature ?? defaults.temperature,
             timeout: config.timeout ?? defaults.timeout,
             retries: config.retries ?? defaults.retries,
-            authConfig: config.authConfig || defaults.authConfig,
+            authConfig: config.authConfig ?? defaults.authConfig,
             enabled: config.enabled ?? true,
             contextWindow: config.contextWindow ?? defaults.contextWindow,
-            disableStreaming: config.disableStreaming ?? false  // ✅ 新增
-        };
-    }
+            disableStreaming: config.disableStreaming ?? false,
+        }
+    },
 
     /**
      * 检查配置是否完整（可用于API调用）
      */
-    export function isConfigComplete(config: ProviderConfig): boolean {
+    isConfigComplete(config: ProviderConfig): boolean {
         return !!(
             config.name &&
             config.displayName &&
-            // API key 不是必需的（如本地服务）
-            (config.apiKey || config.authConfig?.type === 'none') &&
+            ((config.apiKey?.length ?? 0) > 0 || config.authConfig?.type === 'none') &&
             config.baseURL
-        );
-    }
+        )
+    },
 
     /**
      * 克隆配置（深拷贝，移除敏感信息）
      */
-    export function cloneConfig(config: ProviderConfig, maskApiKey = true): ProviderConfig {
-        const clone = { ...config };
+    cloneConfig(config: ProviderConfig, maskApiKey = true): ProviderConfig {
+        const clone = { ...config }
         if (maskApiKey && clone.apiKey) {
-            clone.apiKey = '***MASKED***';
+            clone.apiKey = '***MASKED***'
         }
-        return clone;
-    }
+        return clone
+    },
 
     /**
      * 获取提供商默认配置
      */
-    export function getDefaults(providerName: string): ProviderDefaults | undefined {
-        return PROVIDER_DEFAULTS[providerName];
-    }
+    getDefaults(providerName: string): ProviderDefaults | undefined {
+        return PROVIDER_DEFAULTS[providerName]
+    },
 
     /**
      * 获取所有已知提供商名称
      */
-    export function getKnownProviders(): string[] {
-        return Object.keys(PROVIDER_DEFAULTS);
-    }
+    getKnownProviders(): string[] {
+        return Object.keys(PROVIDER_DEFAULTS)
+    },
 
     /**
      * 检查是否为已知提供商
      */
-    export function isKnownProvider(name: string): boolean {
-        return name in PROVIDER_DEFAULTS;
-    }
+    isKnownProvider(name: string): boolean {
+        return name in PROVIDER_DEFAULTS
+    },
 }
 
 // ==================== 提供商信息 ====================
@@ -231,38 +230,38 @@ export interface IBaseAiProvider {
     readonly authConfig: AuthConfig;
 
     // 配置与状态
-    configure(config: ProviderConfig): void;
-    getConfig(): ProviderConfig | null;
-    isConfigured(): boolean;
-    isEnabled(): boolean;
+    configure: (config: ProviderConfig) => void;
+    getConfig: () => ProviderConfig | null;
+    isConfigured: () => boolean;
+    isEnabled: () => boolean;
 
     // 核心功能
-    chat(request: ChatRequest): Promise<ChatResponse>;
-    chatStream(request: ChatRequest): Observable<any>;
-    generateCommand(request: CommandRequest): Promise<CommandResponse>;
-    explainCommand(request: ExplainRequest): Promise<ExplainResponse>;
-    analyzeResult(request: AnalysisRequest): Promise<AnalysisResponse>;
+    chat: (request: ChatRequest) => Promise<ChatResponse>;
+    chatStream: (request: ChatRequest) => Observable<any>;
+    generateCommand: (request: CommandRequest) => Promise<CommandResponse>;
+    explainCommand: (request: ExplainRequest) => Promise<ExplainResponse>;
+    analyzeResult: (request: AnalysisRequest) => Promise<AnalysisResponse>;
 
     // 健康与验证
-    healthCheck(): Promise<HealthStatus>;
-    validateConfig(): ValidationResult;
+    healthCheck: () => Promise<HealthStatus>;
+    validateConfig: () => ValidationResult;
 
     // 信息查询
-    getInfo(): ProviderInfo;
-    supportsCapability(capability: ProviderCapability): boolean;
+    getInfo: () => ProviderInfo;
+    supportsCapability: (capability: ProviderCapability) => boolean;
 }
 
 // ==================== 提供商管理器 ====================
 
 export interface ProviderManager {
-    registerProvider(provider: IBaseAiProvider): void;
-    unregisterProvider(name: string): void;
-    getProvider(name: string): IBaseAiProvider | undefined;
-    getAllProviders(): IBaseAiProvider[];
-    getActiveProvider(): IBaseAiProvider | undefined;
-    setActiveProvider(name: string): boolean;
-    getProviderInfo(name: string): ProviderInfo | undefined;
-    getAllProviderInfo(): ProviderInfo[];
+    registerProvider: (provider: IBaseAiProvider) => void;
+    unregisterProvider: (name: string) => void;
+    getProvider: (name: string) => IBaseAiProvider | undefined;
+    getAllProviders: () => IBaseAiProvider[];
+    getActiveProvider: () => IBaseAiProvider | undefined;
+    setActiveProvider: (name: string) => boolean;
+    getProviderInfo: (name: string) => ProviderInfo | undefined;
+    getAllProviderInfo: () => ProviderInfo[];
 }
 
 // ==================== 提供商事件 ====================
@@ -274,8 +273,10 @@ export interface ProviderEvent {
     data?: any;
 }
 
-export type ProviderEventListener = (event: ProviderEvent) => void;
+export type ProviderEventListener = (event: ProviderEvent) => void
 
 // ==================== 便利类型 ====================
 
-export type BaseAiProvider = IBaseAiProvider;
+export interface BaseAiProvider extends IBaseAiProvider {
+    readonly __baseAiProviderBrand?: never
+}

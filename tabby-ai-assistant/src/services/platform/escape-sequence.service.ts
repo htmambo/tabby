@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
-import { LoggerService } from '../core/logger.service';
-import { PlatformDetectionService, OSType, TerminalType } from './platform-detection.service';
+import { Injectable } from '@angular/core'
+import { LoggerService } from '../core/logger.service'
+import { PlatformDetectionService, OSType, TerminalType } from './platform-detection.service'
 
 /**
  * 转义序列类型
@@ -12,7 +12,7 @@ export enum EscapeSequenceType {
     STYLE = 'style',
     SCROLL = 'scroll',
     TITLE = 'title',
-    BELL = 'bell'
+    BELL = 'bell',
 }
 
 /**
@@ -62,10 +62,10 @@ export interface EscapeSequenceMapping {
  * 处理跨平台的ANSI转义序列和终端控制代码
  */
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class EscapeSequenceService {
-    private platformInfo: { os: OSType; terminal: TerminalType } | null = null;
+    private platformInfo: { os: OSType; terminal: TerminalType } | null = null
 
     // 颜色代码映射
     private readonly COLOR_CODES: Record<string, EscapeSequenceMapping> = {
@@ -88,8 +88,8 @@ export class EscapeSequenceService {
         brightCyan: { linux: '\\033[96m', windows: '\\033[96m', macos: '\\033[96m' },
         brightWhite: { linux: '\\033[97m', windows: '\\033[97m', macos: '\\033[97m' },
         // 重置
-        reset: { linux: '\\033[0m', windows: '\\033[0m', macos: '\\033[0m' }
-    };
+        reset: { linux: '\\033[0m', windows: '\\033[0m', macos: '\\033[0m' },
+    }
 
     // 样式代码映射
     private readonly STYLE_CODES: Record<string, EscapeSequenceMapping> = {
@@ -99,8 +99,8 @@ export class EscapeSequenceService {
         underline: { linux: '\\033[4m', windows: '\\033[4m', macos: '\\033[4m' },
         blink: { linux: '\\033[5m', windows: '\\033[5m', macos: '\\033[5m' },
         reverse: { linux: '\\033[7m', windows: '\\033[7m', macos: '\\033[7m' },
-        hidden: { linux: '\\033[8m', windows: '\\033[8m', macos: '\\033[8m' }
-    };
+        hidden: { linux: '\\033[8m', windows: '\\033[8m', macos: '\\033[8m' },
+    }
 
     // 光标控制映射
     private readonly CURSOR_CODES: Record<string, EscapeSequenceMapping> = {
@@ -116,49 +116,49 @@ export class EscapeSequenceService {
         hide: { linux: '\\033[?25l', windows: '\\033[?25l', macos: '\\033[?25l' },
         show: { linux: '\\033[?25h', windows: '\\033[?25h', macos: '\\033[?25h' },
         clear: { linux: '\\033[2J', windows: '\\033[2J', macos: '\\033[2J' },
-        clearLine: { linux: '\\033[2K', windows: '\\033[2K', macos: '\\033[2K' }
-    };
+        clearLine: { linux: '\\033[2K', windows: '\\033[2K', macos: '\\033[2K' },
+    }
 
     // 清屏序列映射
     private readonly CLEAR_CODES: Record<string, EscapeSequenceMapping> = {
         screen: { linux: '\\033[2J\\033[H', windows: '\\033[2J\\033[H', macos: '\\033[2J\\033[H' },
         line: { linux: '\\033[2K', windows: '\\033[2K', macos: '\\033[2K' },
         fromCursor: { linux: '\\033[1J', windows: '\\033[1J', macos: '\\033[1J' },
-        toCursor: { linux: '\\033[0J', windows: '\\033[0J', macos: '\\033[0J' }
-    };
+        toCursor: { linux: '\\033[0J', windows: '\\033[0J', macos: '\\033[0J' },
+    }
 
     constructor(
         private logger: LoggerService,
-        private platformDetection: PlatformDetectionService
+        private platformDetection: PlatformDetectionService,
     ) {
         this.platformInfo = {
             os: this.platformDetection.detectOS(),
-            terminal: this.platformDetection.detectTerminal()
-        };
-        this.logger.info('EscapeSequenceService initialized', { platformInfo: this.platformInfo });
+            terminal: this.platformDetection.detectTerminal(),
+        }
+        this.logger.info('EscapeSequenceService initialized', { platformInfo: this.platformInfo })
     }
 
     /**
      * 映射颜色代码
      */
     mapColorCode(color: string): string {
-        const platformKey = this.getPlatformKey();
-        const colorCode = this.COLOR_CODES[color.toLowerCase()];
+        const platformKey = this.getPlatformKey()
+        const colorCode = this.COLOR_CODES[color.toLowerCase()]
 
         if (!colorCode) {
-            this.logger.warn('Unknown color code', { color });
-            return '';
+            this.logger.warn('Unknown color code', { color })
+            return ''
         }
 
-        return colorCode[platformKey] || colorCode.linux;
+        return colorCode[platformKey] || colorCode.linux
     }
 
     /**
      * 映射光标控制
      */
     mapCursorControl(control: string, value?: number): string {
-        const platformKey = this.getPlatformKey();
-        let code = '';
+        const platformKey = this.getPlatformKey()
+        let code = ''
 
         switch (control) {
             case 'up':
@@ -169,20 +169,20 @@ export class EscapeSequenceService {
             case 'previousLine':
             case 'horizontalTab':
                 if (value) {
-                    code = `\\033[${value}${control.charAt(0).toUpperCase()}`;
+                    code = `\\033[${value}${control.charAt(0).toUpperCase()}`
                 } else {
-                    code = this.CURSOR_CODES[control][platformKey];
+                    code = this.CURSOR_CODES[control][platformKey]
                 }
-                break;
+                break
 
             case 'position':
                 if (value) {
                     // value 编码了 x,y 位置
-                    const x = value % 256;
-                    const y = Math.floor(value / 256);
-                    code = `\\033[${y};${x}H`;
+                    const x = value % 256
+                    const y = Math.floor(value / 256)
+                    code = `\\033[${y};${x}H`
                 }
-                break;
+                break
 
             case 'save':
             case 'restore':
@@ -190,157 +190,157 @@ export class EscapeSequenceService {
             case 'show':
             case 'clear':
             case 'clearLine':
-                code = this.CURSOR_CODES[control][platformKey];
-                break;
+                code = this.CURSOR_CODES[control][platformKey]
+                break
 
             default:
-                this.logger.warn('Unknown cursor control', { control });
+                this.logger.warn('Unknown cursor control', { control })
         }
 
-        return code;
+        return code
     }
 
     /**
      * 映射清屏序列
      */
     mapClearSequence(options: ClearOptions): string {
-        const platformKey = this.getPlatformKey();
-        const sequences: string[] = [];
+        const platformKey = this.getPlatformKey()
+        const sequences: string[] = []
 
         if (options.screen) {
-            sequences.push(this.CLEAR_CODES.screen[platformKey]);
+            sequences.push(this.CLEAR_CODES.screen[platformKey])
         } else if (options.line) {
-            sequences.push(this.CLEAR_CODES.line[platformKey]);
+            sequences.push(this.CLEAR_CODES.line[platformKey])
         } else if (options.fromCursor) {
-            sequences.push(this.CLEAR_CODES.fromCursor[platformKey]);
+            sequences.push(this.CLEAR_CODES.fromCursor[platformKey])
         } else if (options.toCursor) {
-            sequences.push(this.CLEAR_CODES.toCursor[platformKey]);
+            sequences.push(this.CLEAR_CODES.toCursor[platformKey])
         }
 
-        return sequences.join('');
+        return sequences.join('')
     }
 
     /**
      * 映射样式代码
      */
     mapStyleCode(style: string): string {
-        const platformKey = this.getPlatformKey();
-        const styleCode = this.STYLE_CODES[style.toLowerCase()];
+        const platformKey = this.getPlatformKey()
+        const styleCode = this.STYLE_CODES[style.toLowerCase()]
 
         if (!styleCode) {
-            this.logger.warn('Unknown style code', { style });
-            return '';
+            this.logger.warn('Unknown style code', { style })
+            return ''
         }
 
-        return styleCode[platformKey] || styleCode.linux;
+        return styleCode[platformKey] || styleCode.linux
     }
 
     /**
      * 生成颜色文本
      */
     colorize(text: string, color: ColorCode): string {
-        const platformKey = this.getPlatformKey();
-        let result = '';
+        const platformKey = this.getPlatformKey()
+        let result = ''
 
         // 设置前景色
         if (color.foreground) {
-            const colorCode = this.COLOR_CODES[color.foreground.toLowerCase()];
+            const colorCode = this.COLOR_CODES[color.foreground.toLowerCase()]
             if (colorCode) {
-                result += colorCode[platformKey];
+                result += colorCode[platformKey]
             }
         }
 
         // 设置背景色
         if (color.background) {
-            const bgColor = 'bg' + color.background.charAt(0).toUpperCase() + color.background.slice(1);
-            const bgCode = this.COLOR_CODES[bgColor.toLowerCase()];
+            const bgColor = 'bg' + color.background.charAt(0).toUpperCase() + color.background.slice(1)
+            const bgCode = this.COLOR_CODES[bgColor.toLowerCase()]
             if (bgCode) {
-                result += bgCode[platformKey];
+                result += bgCode[platformKey]
             }
         }
 
         // 添加文本
-        result += text;
+        result += text
 
         // 重置
-        result += this.COLOR_CODES.reset[platformKey];
+        result += this.COLOR_CODES.reset[platformKey]
 
-        return result;
+        return result
     }
 
     /**
      * 生成样式文本
      */
     stylize(text: string, styles: string[]): string {
-        const platformKey = this.getPlatformKey();
-        let result = '';
+        const platformKey = this.getPlatformKey()
+        let result = ''
 
         // 应用样式
         styles.forEach(style => {
-            const styleCode = this.STYLE_CODES[style.toLowerCase()];
+            const styleCode = this.STYLE_CODES[style.toLowerCase()]
             if (styleCode) {
-                result += styleCode[platformKey];
+                result += styleCode[platformKey]
             }
-        });
+        })
 
         // 添加文本
-        result += text;
+        result += text
 
         // 重置
-        result += this.COLOR_CODES.reset[platformKey];
+        result += this.COLOR_CODES.reset[platformKey]
 
-        return result;
+        return result
     }
 
     /**
      * 移动光标
      */
     moveCursor(control: CursorControl): string {
-        const platformKey = this.getPlatformKey();
-        let sequence = '';
+        const platformKey = this.getPlatformKey()
+        let sequence = ''
 
         if (control.save) {
-            sequence += this.CURSOR_CODES.save[platformKey];
+            sequence += this.CURSOR_CODES.save[platformKey]
         }
 
         if (control.position) {
-            sequence += `\\033[${control.position.y};${control.position.x}H`;
+            sequence += `\\033[${control.position.y};${control.position.x}H`
         }
 
         if (control.up) {
-            sequence += `\\033[${control.up}A`;
+            sequence += `\\033[${control.up}A`
         }
 
         if (control.down) {
-            sequence += `\\033[${control.down}B`;
+            sequence += `\\033[${control.down}B`
         }
 
         if (control.forward) {
-            sequence += `\\033[${control.forward}C`;
+            sequence += `\\033[${control.forward}C`
         }
 
         if (control.backward) {
-            sequence += `\\033[${control.backward}D`;
+            sequence += `\\033[${control.backward}D`
         }
 
         if (control.restore) {
-            sequence += this.CURSOR_CODES.restore[platformKey];
+            sequence += this.CURSOR_CODES.restore[platformKey]
         }
 
         if (control.visible === false) {
-            sequence += this.CURSOR_CODES.hide[platformKey];
+            sequence += this.CURSOR_CODES.hide[platformKey]
         } else if (control.visible === true) {
-            sequence += this.CURSOR_CODES.show[platformKey];
+            sequence += this.CURSOR_CODES.show[platformKey]
         }
 
-        return sequence;
+        return sequence
     }
 
     /**
      * 清屏
      */
     clear(options: ClearOptions = { screen: true }): string {
-        return this.mapClearSequence(options);
+        return this.mapClearSequence(options)
     }
 
     /**
@@ -348,8 +348,8 @@ export class EscapeSequenceService {
      */
     stripAnsi(text: string): string {
         // 匹配ANSI转义序列的正则表达式
-        const ansiEscapeSequence = /\\x1b\[[0-9;]*[mGKHF]?/g;
-        return text.replace(ansiEscapeSequence, '');
+        const ansiEscapeSequence = /\\x1b\[[0-9;]*[mGKHF]?/g
+        return text.replace(ansiEscapeSequence, '')
     }
 
     /**
@@ -362,30 +362,30 @@ export class EscapeSequenceService {
         supportsUnicode: boolean;
         colorLevel: number;
     } {
-        const capabilities = this.platformDetection.checkCapabilities();
+        const capabilities = this.platformDetection.checkCapabilities()
 
         return {
             supportsColors: capabilities.colors >= 8,
             supportsTrueColor: capabilities.trueColor,
             supportsMouse: capabilities.mouse,
             supportsUnicode: capabilities.unicode,
-            colorLevel: capabilities.colors
-        };
+            colorLevel: capabilities.colors,
+        }
     }
 
     /**
      * 适配输出
      */
     adaptOutput(output: string, targetPlatform?: OSType): string {
-        const platform = targetPlatform || this.platformInfo?.os || OSType.LINUX;
+        const platform = targetPlatform ?? this.platformInfo?.os ?? OSType.LINUX
 
         // 如果是Windows CMD，可能不支持某些转义序列
         if (platform === OSType.WINDOWS) {
             // 移除不支持的序列或替换为兼容序列
-            output = this.adaptForWindows(output);
+            output = this.adaptForWindows(output)
         }
 
-        return output;
+        return output
     }
 
     /**
@@ -394,20 +394,20 @@ export class EscapeSequenceService {
     createProgressBar(
         current: number,
         total: number,
-        width: number = 50,
-        color: string = 'green'
+        width = 50,
+        color = 'green',
     ): string {
-        const percentage = Math.floor((current / total) * 100);
-        const filledWidth = Math.floor((current / total) * width);
-        const emptyWidth = width - filledWidth;
+        const percentage = Math.floor((current / total) * 100)
+        const filledWidth = Math.floor((current / total) * width)
+        const emptyWidth = width - filledWidth
 
-        const fillChar = '█';
-        const emptyChar = '░';
+        const fillChar = '█'
+        const emptyChar = '░'
 
-        const progressBar = `${this.colorize(fillChar.repeat(filledWidth), { foreground: color })}${emptyChar.repeat(emptyWidth)}`;
-        const text = `${current}/${total} (${percentage}%)`;
+        const progressBar = `${this.colorize(fillChar.repeat(filledWidth), { foreground: color })}${emptyChar.repeat(emptyWidth)}`
+        const text = `${current}/${total} (${percentage}%)`
 
-        return `${progressBar} ${text}`;
+        return `${progressBar} ${text}`
     }
 
     /**
@@ -417,44 +417,44 @@ export class EscapeSequenceService {
         colorizeHeaders?: boolean;
         borderColor?: string;
     }): string {
-        const borderColor = options?.borderColor || 'blue';
-        const headerColor = options?.colorizeHeaders ? { foreground: borderColor } : undefined;
+        const borderColor = options?.borderColor ?? 'blue'
+        const headerColor = options?.colorizeHeaders ? { foreground: borderColor } : undefined
 
         // 计算列宽
         const columnWidths = headers.map((header, index) => {
             const maxContentWidth = Math.max(
                 header.length,
-                ...rows.map(row => (row[index] || '').length)
-            );
-            return Math.min(maxContentWidth, 50); // 最大宽度限制
-        });
+                ...rows.map(row => (row[index] || '').length),
+            )
+            return Math.min(maxContentWidth, 50) // 最大宽度限制
+        })
 
         // 创建边框
-        const border = '+' + columnWidths.map(width => '-'.repeat(width + 2)).join('+') + '+';
+        const border = '+' + columnWidths.map(width => '-'.repeat(width + 2)).join('+') + '+'
 
         // 创建表格
-        let table = border + '\n';
+        let table = border + '\n'
 
         // 表头
         const headerRow = '|' + headers.map((header, index) => {
-            const padded = header.padEnd(columnWidths[index]);
-            return ' ' + (headerColor ? this.colorize(padded, headerColor) : padded) + ' ';
-        }).join('|') + '|';
-        table += headerRow + '\n';
-        table += border + '\n';
+            const padded = header.padEnd(columnWidths[index])
+            return ' ' + (headerColor ? this.colorize(padded, headerColor) : padded) + ' '
+        }).join('|') + '|'
+        table += headerRow + '\n'
+        table += border + '\n'
 
         // 数据行
         rows.forEach(row => {
             const dataRow = '|' + row.map((cell, index) => {
-                const padded = (cell || '').padEnd(columnWidths[index]);
-                return ' ' + padded + ' ';
-            }).join('|') + '|';
-            table += dataRow + '\n';
-        });
+                const padded = (cell || '').padEnd(columnWidths[index])
+                return ' ' + padded + ' '
+            }).join('|') + '|'
+            table += dataRow + '\n'
+        })
 
-        table += border;
+        table += border
 
-        return table;
+        return table
     }
 
     // ==================== 私有方法 ====================
@@ -463,18 +463,18 @@ export class EscapeSequenceService {
         if (!this.platformInfo) {
             this.platformInfo = {
                 os: this.platformDetection.detectOS(),
-                terminal: this.platformDetection.detectTerminal()
-            };
+                terminal: this.platformDetection.detectTerminal(),
+            }
         }
 
         switch (this.platformInfo.os) {
             case OSType.WINDOWS:
-                return 'windows';
+                return 'windows'
             case OSType.MACOS:
-                return 'macos';
+                return 'macos'
             case OSType.LINUX:
             default:
-                return 'linux';
+                return 'linux'
         }
     }
 
@@ -484,16 +484,16 @@ export class EscapeSequenceService {
 
         // 移除TrueColor序列（如果不支持）
         if (!this.checkTerminalCapabilities().supportsTrueColor) {
-            output = output.replace(/\\033\[38;2;\d+;\d+;\d+m/g, '');
-            output = output.replace(/\\033\[48;2;\d+;\d+;\d+m/g, '');
+            output = output.replace(/\\033\[38;2;\d+;\d+;\d+m/g, '')
+            output = output.replace(/\\033\[48;2;\d+;\d+;\d+m/g, '')
         }
 
         // 移除256色序列（如果不支持）
         if (this.checkTerminalCapabilities().colorLevel < 256) {
-            output = output.replace(/\\033\[38;5;\d+m/g, '');
-            output = output.replace(/\\033\[48;5;\d+m/g, '');
+            output = output.replace(/\\033\[38;5;\d+m/g, '')
+            output = output.replace(/\\033\[48;5;\d+m/g, '')
         }
 
-        return output;
+        return output
     }
 }

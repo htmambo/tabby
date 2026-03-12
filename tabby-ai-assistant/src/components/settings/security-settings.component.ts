@@ -1,16 +1,16 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ConfigProviderService } from '../../services/core/config-provider.service';
-import { LoggerService } from '../../services/core/logger.service';
-import { TranslateService } from '../../i18n';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
+import { ConfigProviderService } from '../../services/core/config-provider.service'
+import { LoggerService } from '../../services/core/logger.service'
+import { TranslateService } from '../../i18n'
 
 @Component({
     selector: 'app-security-settings',
     standalone: false,
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
 })
 export class SecuritySettingsComponent implements OnInit, OnDestroy {
     settings = {
@@ -21,75 +21,75 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
         consentExpiryDays: 30,
         autoApproveLowRisk: true,
         promptForMediumRisk: true,
-        requirePasswordForHighRisk: true
-    };
+        requirePasswordForHighRisk: true,
+    }
 
     // 缺失的变量
-    password: string = '';
-    newPattern: string = '';
+    password = ''
+    newPattern = ''
 
     dangerousPatterns = [
         'rm -rf /',
         'sudo rm',
         'format',
         'dd if=',
-        'fork('
-    ];
+        'fork(',
+    ]
 
     // 翻译对象
-    t: any;
+    t: any
 
-    private destroy$ = new Subject<void>();
+    private destroy$ = new Subject<void>()
 
     constructor(
         private config: ConfigProviderService,
         private logger: LoggerService,
-        private translate: TranslateService
+        private translate: TranslateService,
     ) {
-        this.t = this.translate.t;
+        this.t = this.translate.t
     }
 
     ngOnInit(): void {
         // 监听语言变化
         this.translate.translation$.pipe(
-            takeUntil(this.destroy$)
+            takeUntil(this.destroy$),
         ).subscribe(translation => {
-            this.t = translation;
-        });
+            this.t = translation
+        })
 
-        this.loadSettings();
+        this.loadSettings()
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.destroy$.next()
+        this.destroy$.complete()
     }
 
     private loadSettings(): void {
-        const securityConfig = this.config.getSecurityConfig();
-        this.settings = { ...this.settings, ...securityConfig };
+        const securityConfig = this.config.getSecurityConfig()
+        this.settings = { ...this.settings, ...securityConfig }
     }
 
-    updateSetting(key: string, value: any): void {
-        (this.settings as any)[key] = value;
-        this.config.updateSecurityConfig({ [key]: value });
-        this.logger.debug('Security setting updated', { key, value });
+    updateSetting(key: string, value: unknown): void {
+        (this.settings as any)[key] = value
+        this.config.updateSecurityConfig({ [key]: value })
+        this.logger.debug('Security setting updated', { key, value })
     }
 
     addDangerousPattern(pattern: string): void {
         if (pattern && !this.dangerousPatterns.includes(pattern)) {
-            this.dangerousPatterns.push(pattern);
-            this.newPattern = '';
+            this.dangerousPatterns.push(pattern)
+            this.newPattern = ''
         }
     }
 
     removeDangerousPattern(index: number): void {
-        this.dangerousPatterns.splice(index, 1);
+        this.dangerousPatterns.splice(index, 1)
     }
 
     saveSettings(): void {
-        this.config.updateSecurityConfig(this.settings);
-        this.logger.info('Security settings saved', this.settings);
+        this.config.updateSecurityConfig(this.settings)
+        this.logger.info('Security settings saved', this.settings)
     }
 
     resetToDefaults(): void {
@@ -102,9 +102,9 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
                 consentExpiryDays: 30,
                 autoApproveLowRisk: true,
                 promptForMediumRisk: true,
-                requirePasswordForHighRisk: true
-            };
-            this.config.updateSecurityConfig(this.settings);
+                requirePasswordForHighRisk: true,
+            }
+            this.config.updateSecurityConfig(this.settings)
         }
     }
 }

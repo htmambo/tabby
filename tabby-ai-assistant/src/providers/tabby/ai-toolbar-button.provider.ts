@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { ToolbarButtonProvider, ToolbarButton, AppService } from 'tabby-core';
-import { SettingsTabComponent } from 'tabby-settings';
-import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
-import { AiSettingsViewService } from '../../services/core/ai-settings-view.service';
+import { Injectable } from '@angular/core'
+import { ToolbarButtonProvider, ToolbarButton, AppService } from 'tabby-core'
+import { SettingsTabComponent } from 'tabby-settings'
+import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
+import { AiSettingsViewService } from '../../services/core/ai-settings-view.service'
 
 /**
  * Tabby工具栏按钮提供者
@@ -14,9 +14,9 @@ export class AiToolbarButtonProvider extends ToolbarButtonProvider {
     constructor(
         private app: AppService,
         private sidebarService: AiSidebarService,
-        private settingsView: AiSettingsViewService
+        private settingsView: AiSettingsViewService,
     ) {
-        super();
+        super()
     }
 
     provide(): ToolbarButton[] {
@@ -30,38 +30,38 @@ export class AiToolbarButtonProvider extends ToolbarButtonProvider {
                 title: 'AI 助手',
                 touchBarTitle: 'AI',
                 click: () => {
-                    this.sidebarService.toggle();
+                    this.sidebarService.toggle()
                 },
                 submenu: async () => [
                     {
                         title: this.sidebarService.visible ? '隐藏侧边栏' : '显示侧边栏',
-                        click: () => this.sidebarService.toggle()
+                        click: () => this.sidebarService.toggle(),
                     },
                     {
                         title: '设置...',
-                        click: () => this.openSettings()
-                    }
-                ]
-            }
-        ];
+                        click: () => this.openSettings(),
+                    },
+                ],
+            },
+        ]
     }
 
     /**
      * 打开设置页面
      */
     private openSettings(): void {
-        this.settingsView.requestTab('providers');
+        this.settingsView.requestTab('providers')
 
-        const settingsTab = this.app.tabs.find(tab => tab instanceof SettingsTabComponent) as SettingsTabComponent | undefined;
+        const settingsTab = this.app.tabs.find(tab => tab instanceof SettingsTabComponent) as SettingsTabComponent | undefined
         if (settingsTab) {
-            settingsTab.activeTab = 'ai-assistant';
-            this.app.selectTab(settingsTab);
-            return;
+            settingsTab.activeTab = 'ai-assistant'
+            this.app.selectTab(settingsTab)
+            return
         }
 
         this.app.openNewTabRaw({
             type: SettingsTabComponent,
-            inputs: { activeTab: 'ai-assistant' }
-        });
+            inputs: { activeTab: 'ai-assistant' },
+        })
     }
 }

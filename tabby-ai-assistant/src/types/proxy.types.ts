@@ -38,8 +38,8 @@ export const DEFAULT_PROXY_CONFIG: ProxyConfig = {
     httpProxy: '',
     httpsProxy: '',
     noProxy: ['localhost', '127.0.0.1', '::1', '*.local'],
-    auth: undefined
-};
+    auth: undefined,
+}
 
 /**
  * 代理测试结果

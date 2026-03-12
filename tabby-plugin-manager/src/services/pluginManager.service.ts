@@ -15,9 +15,9 @@ interface NPMRegistrySearchPackage {
     author?: {
         name?: string
     } | string
-    maintainers?: Array<{
+    maintainers?: {
         username?: string
-    }>
+    }[]
     publisher?: {
         username?: string
     }
@@ -149,7 +149,11 @@ export class PluginManagerService {
             author: this.getPluginAuthor(info),
             isOfficial: info.publisher?.username === OFFICIAL_NPM_ACCOUNT,
             isBuiltin: false,
-            isLegacy: info.name.startsWith('terminus-') || info.keywords?.includes('terminus-plugin') || info.keywords?.includes('terminus-builtin-plugin') || false,
+            isLegacy: [
+                info.name.startsWith('terminus-'),
+                info.keywords?.includes('terminus-plugin') ?? false,
+                info.keywords?.includes('terminus-builtin-plugin') ?? false,
+            ].some(Boolean),
         }
     }
 

@@ -6,7 +6,7 @@
 /**
  * MCP 传输类型
  */
-export type MCPTransportType = 'stdio' | 'sse' | 'streamable-http';
+export type MCPTransportType = 'stdio' | 'sse' | 'streamable-http'
 
 /**
  * MCP 服务器配置
@@ -95,11 +95,11 @@ export interface MCPResource {
 export interface MCPPrompt {
     name: string;
     description?: string;
-    arguments?: Array<{
+    arguments?: {
         name: string;
         description?: string;
         required?: boolean;
-    }>;
+    }[];
 }
 
 /**
@@ -127,13 +127,13 @@ export interface MCPInitializeParams {
  * MCP 工具调用结果
  */
 export interface MCPToolResult {
-    content: Array<{
+    content: {
         type: 'text' | 'image' | 'audio' | 'resource';
         text?: string;
         data?: string;
         mimeType?: string;
         uri?: string;
-    }>;
+    }[];
     isError?: boolean;
 }
 
@@ -149,7 +149,7 @@ export interface MCPResourceContent {
 /**
  * MCP 服务器状态
  */
-export type MCPServerStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type MCPServerStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 /**
  * 带状态的 MCP 服务器

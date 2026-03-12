@@ -1,21 +1,21 @@
-import { Component, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core';
-import { ChatMessage } from '../../types/ai.types';
-import { ToastService } from '../../services/core/toast.service';
+import { Component, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core'
+import { ChatMessage } from '../../types/ai.types'
+import { ToastService } from '../../services/core/toast.service'
 
 @Component({
     selector: 'app-chat-message',
     standalone: false,
     templateUrl: './chat-message.component.html',
     styleUrls: ['./chat-message.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
 })
 export class ChatMessageComponent {
-    @Input() message!: ChatMessage;
-    @Input() showAvatar = true;
-    @Input() showTimestamp = true;
-    @Input() isGrouped = false; // 是否与上一条消息分组
-    @Output() messageClick = new EventEmitter<ChatMessage>();
-    @Output() messageAction = new EventEmitter<{ action: string; message: ChatMessage }>();
+    @Input() message!: ChatMessage
+    @Input() showAvatar = true
+    @Input() showTimestamp = true
+    @Input() isGrouped = false // 是否与上一条消息分组
+    @Output() messageClick = new EventEmitter<ChatMessage>()
+    @Output() messageAction = new EventEmitter<{ action: string; message: ChatMessage }>()
 
     constructor(private toastService: ToastService) {}
 
@@ -23,14 +23,14 @@ export class ChatMessageComponent {
      * 处理消息点击
      */
     onMessageClick(): void {
-        this.messageClick.emit(this.message);
+        this.messageClick.emit(this.message)
     }
 
     /**
      * 处理消息操作
      */
     onAction(action: string): void {
-        this.messageAction.emit({ action, message: this.message });
+        this.messageAction.emit({ action, message: this.message })
     }
 
     /**
@@ -38,10 +38,10 @@ export class ChatMessageComponent {
      */
     copyMessage(): void {
         navigator.clipboard.writeText(this.message.content).then(() => {
-            this.toastService.success('已复制到剪贴板', 2000);
-        }).catch(error => {
-            this.toastService.error('复制失败，请重试');
-        });
+            this.toastService.success('已复制到剪贴板', 2000)
+        }).catch(_error => {
+            this.toastService.error('复制失败，请重试')
+        })
     }
 
     /**
@@ -49,7 +49,7 @@ export class ChatMessageComponent {
      */
     regenerateResponse(): void {
         if (this.message.role === 'assistant') {
-            this.onAction('regenerate');
+            this.onAction('regenerate')
         }
     }
 
@@ -57,14 +57,14 @@ export class ChatMessageComponent {
      * 标记为有用
      */
     markAsHelpful(): void {
-        this.onAction('helpful');
+        this.onAction('helpful')
     }
 
     /**
      * 标记为无用
      */
     markAsNotHelpful(): void {
-        this.onAction('not-helpful');
+        this.onAction('not-helpful')
     }
 
     /**
@@ -73,28 +73,28 @@ export class ChatMessageComponent {
     formatTime(timestamp: Date): string {
         return timestamp.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
-            minute: '2-digit'
-        });
+            minute: '2-digit',
+        })
     }
 
     /**
      * 检查是否为用户消息
      */
     isUserMessage(): boolean {
-        return this.message.role === 'user';
+        return this.message.role === 'user'
     }
 
     /**
      * 检查是否为AI消息
      */
     isAssistantMessage(): boolean {
-        return this.message.role === 'assistant';
+        return this.message.role === 'assistant'
     }
 
     /**
      * 检查是否为系统消息
      */
     isSystemMessage(): boolean {
-        return this.message.role === 'system';
+        return this.message.role === 'system'
     }
 }

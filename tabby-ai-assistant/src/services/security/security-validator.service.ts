@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { RiskLevel, ValidationResult } from '../../types/security.types';
-import { RiskAssessmentService } from './risk-assessment.service';
-import { ConsentManagerService } from './consent-manager.service';
-import { PasswordManagerService } from './password-manager.service';
-import { LoggerService } from '../core/logger.service';
+import { Injectable } from '@angular/core'
+import { RiskLevel, ValidationResult } from '../../types/security.types'
+import { RiskAssessmentService } from './risk-assessment.service'
+import { ConsentManagerService } from './consent-manager.service'
+import { PasswordManagerService } from './password-manager.service'
+import { LoggerService } from '../core/logger.service'
 
 @Injectable({ providedIn: 'root' })
 export class SecurityValidatorService {
@@ -11,7 +11,7 @@ export class SecurityValidatorService {
         private riskAssessment: RiskAssessmentService,
         private consentManager: ConsentManagerService,
         private passwordManager: PasswordManagerService,
-        private logger: LoggerService
+        private logger: LoggerService,
     ) {}
 
     /**
@@ -20,78 +20,78 @@ export class SecurityValidatorService {
     async validateAndConfirm(
         command: string,
         explanation: string,
-        _context?: any
+        _context?: any,
     ): Promise<ValidationResult> {
-        this.logger.info('Validating command', { command });
+        this.logger.info('Validating command', { command })
 
         try {
             // 1. 风险评估
-            const assessment = await this.riskAssessment.performAssessment(command);
-            const riskLevel = assessment.level;
+            const assessment = await this.riskAssessment.performAssessment(command)
+            const riskLevel = assessment.level
 
-            this.logger.debug('Risk assessment completed', { riskLevel, score: assessment.score });
+            this.logger.debug('Risk assessment completed', { riskLevel, score: assessment.score })
 
             // 2. 检查用户同意
-            const hasConsent = await this.consentManager.hasConsent(command, riskLevel);
+            const hasConsent = await this.consentManager.hasConsent(command, riskLevel)
             if (hasConsent) {
-                this.logger.info('User consent found, skipping confirmation', { command });
+                this.logger.info('User consent found, skipping confirmation', { command })
                 return {
                     approved: true,
                     riskLevel,
                     skipConfirmation: true,
-                    timestamp: new Date()
-                };
+                    timestamp: new Date(),
+                }
             }
 
             // 3. 根据风险级别进行验证
             if (riskLevel === RiskLevel.CRITICAL || riskLevel === RiskLevel.HIGH) {
                 // 高风险需要密码确认
-                this.logger.warn('High risk command detected, requesting password', { command });
-                const passwordValid = await this.passwordManager.requestPassword();
+                this.logger.warn('High risk command detected, requesting password', { command })
+                const passwordValid = await this.passwordManager.requestPassword()
                 if (!passwordValid) {
                     return {
                         approved: false,
                         riskLevel,
                         reason: 'Invalid password',
-                        timestamp: new Date()
-                    };
+                        timestamp: new Date(),
+                    }
                 }
             } else if (riskLevel === RiskLevel.MEDIUM) {
                 // 中风险需要显式确认
-                this.logger.info('Medium risk command, requesting user confirmation', { command });
+                this.logger.info('Medium risk command, requesting user confirmation', { command })
                 const confirmed = await this.consentManager.requestConsent(
                     command,
                     explanation,
-                    riskLevel
-                );
+                    riskLevel,
+                )
                 if (!confirmed) {
                     return {
                         approved: false,
                         riskLevel,
                         reason: 'User cancelled',
-                        timestamp: new Date()
-                    };
+                        timestamp: new Date(),
+                    }
                 }
             }
 
             // 4. 存储用户同意
-            await this.consentManager.storeConsent(command, riskLevel);
+            await this.consentManager.storeConsent(command, riskLevel)
 
-            this.logger.info('Command validation approved', { command, riskLevel });
+            this.logger.info('Command validation approved', { command, riskLevel })
             return {
                 approved: true,
                 riskLevel,
-                timestamp: new Date()
-            };
+                timestamp: new Date(),
+            }
 
         } catch (error) {
-            this.logger.error('Command validation failed', error);
+            this.logger.error('Command validation failed', error)
             return {
                 approved: false,
                 riskLevel: RiskLevel.HIGH,
                 reason: error instanceof Error ? error.message : 'Validation error',
-                timestamp: new Date()
-            };
+                timestamp: new Date(),
+            }
         }
     }
 
@@ -99,34 +99,34 @@ export class SecurityValidatorService {
      * 检查命令是否安全
      */
     async isCommandSafe(command: string): Promise<boolean> {
-        const assessment = await this.riskAssessment.performAssessment(command);
-        return assessment.level === RiskLevel.LOW;
+        const assessment = await this.riskAssessment.performAssessment(command)
+        return assessment.level === RiskLevel.LOW
     }
 
     /**
      * 获取风险级别
      */
     async getRiskLevel(command: string): Promise<RiskLevel> {
-        return this.riskAssessment.assessRisk(command);
+        return this.riskAssessment.assessRisk(command)
     }
 
     /**
      * 检查是否需要确认
      */
     async requiresConfirmation(command: string): Promise<boolean> {
-        const assessment = await this.riskAssessment.performAssessment(command);
-        const hasConsent = await this.consentManager.hasConsent(command, assessment.level);
+        const assessment = await this.riskAssessment.performAssessment(command)
+        const hasConsent = await this.consentManager.hasConsent(command, assessment.level)
         return !hasConsent && (assessment.level === RiskLevel.MEDIUM ||
                                 assessment.level === RiskLevel.HIGH ||
-                                assessment.level === RiskLevel.CRITICAL);
+                                assessment.level === RiskLevel.CRITICAL)
     }
 
     /**
      * 清除所有用户同意
      */
     async clearAllConsents(): Promise<void> {
-        await this.consentManager.clearAllConsents();
-        this.logger.info('All user consents cleared');
+        await this.consentManager.clearAllConsents()
+        this.logger.info('All user consents cleared')
     }
 
     /**
@@ -137,7 +137,7 @@ export class SecurityValidatorService {
             totalValidations: await this.consentManager.getTotalValidations(),
             activeConsents: await this.consentManager.getActiveConsentsCount(),
             passwordAttempts: await this.passwordManager.getTotalAttempts(),
-            failedAttempts: await this.passwordManager.getFailedAttempts()
-        };
+            failedAttempts: await this.passwordManager.getFailedAttempts(),
+        }
     }
 }

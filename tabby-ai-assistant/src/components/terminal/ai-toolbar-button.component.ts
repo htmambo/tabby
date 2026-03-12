@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
+import { Component, Input } from '@angular/core'
+import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 
 /**
  * AI工具栏按钮组件
@@ -9,16 +9,16 @@ import { AiSidebarService } from '../../services/chat/ai-sidebar.service';
     selector: 'ai-toolbar-button',
     standalone: false,
     templateUrl: './ai-toolbar-button.component.html',
-    styleUrls: ['./ai-toolbar-button.component.scss']
+    styleUrls: ['./ai-toolbar-button.component.scss'],
 })
 export class AiToolbarButtonComponent {
-    @Input() label: string = 'AI Assistant';
-    @Input() tooltip: string = 'Open AI Assistant';
-    @Input() showLabel: boolean = true;
+    @Input() label = 'AI Assistant'
+    @Input() tooltip = 'Open AI Assistant'
+    @Input() showLabel = true
 
     constructor(private sidebarService: AiSidebarService) {}
 
     onClick(): void {
-        this.sidebarService.toggle();
+        this.sidebarService.toggle()
     }
 }

@@ -7,7 +7,7 @@ export enum MessageRole {
     USER = 'user',
     ASSISTANT = 'assistant',
     SYSTEM = 'system',
-    TOOL = 'tool'      // 工具结果角色（部分 AI 需要）
+    TOOL = 'tool',      // 工具结果角色（部分 AI 需要）
 }
 
 // 聊天消息
@@ -18,7 +18,7 @@ export interface ChatMessage {
     timestamp: Date;
     metadata?: Record<string, any>;
     // UI 渲染块（用于结构化渲染工具调用）
-    uiBlocks?: Array<{
+    uiBlocks?: {
         type: 'text' | 'tool' | 'divider' | 'status' | 'task_summary' | 'async_task';
         id?: string;
         name?: string;
@@ -48,20 +48,20 @@ export interface ChatMessage {
         command?: string;
         outputPreview?: string;
         expanded?: boolean;
-    }>;
+    }[];
     // 工具调用相关字段（用于 Agent 循环和消息转换）
-    toolCalls?: Array<{
+    toolCalls?: {
         id: string;
         name: string;
         input?: Record<string, any>;
-    }>;
+    }[];
     // 工具结果相关字段（供 transformMessages 识别）
-    toolResults?: Array<{
+    toolResults?: {
         tool_use_id: string;
         name?: string;
         content: string;
         is_error?: boolean;
-    }>;
+    }[];
     tool_use_id?: string;  // 简单工具 ID 标识
     // 摘要标记（用于上下文压缩）
     isSummary?: boolean;
@@ -166,14 +166,14 @@ export enum ProviderCapability {
     COMMAND_EXPLANATION = 'command_explanation',
     REASONING = 'reasoning',
     FUNCTION_CALL = 'function_call',
-    STREAMING = 'streaming'
+    STREAMING = 'streaming',
 }
 
 // 健康状态
 export enum HealthStatus {
     HEALTHY = 'healthy',
     DEGRADED = 'degraded',
-    UNHEALTHY = 'unhealthy'
+    UNHEALTHY = 'unhealthy',
 }
 
 // 验证结果
@@ -257,8 +257,8 @@ export const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
     pruneThreshold: 0.70,
     messagesToKeep: 3,
     bufferPercentage: 0.10,
-    summaryPrompt: '请用一句话总结以下对话的要点，保留关键信息和用户意图：'
-};
+    summaryPrompt: '请用一句话总结以下对话的要点，保留关键信息和用户意图：',
+}
 export interface CompactionResult {
     success: boolean;
     messages: ApiMessage[];
@@ -381,7 +381,7 @@ export type AgentEventType =
     | 'round_start'          // 新一轮开始
     | 'round_end'            // 一轮结束
     | 'agent_complete'       // Agent 循环完成
-    | 'error';               // 错误
+    | 'error'               // 错误
 
 // Agent 流式事件
 export interface AgentStreamEvent {
@@ -446,7 +446,7 @@ export type TerminationReason =
     | 'high_failure_rate'  // 连续失败率过高
     | 'timeout'            // 总时间超时
     | 'max_rounds'         // 达到最大轮数（安全保底）
-    | 'user_cancel';       // 用户取消
+    | 'user_cancel'       // 用户取消
 
 // Agent 状态追踪
 export interface AgentState {
