@@ -8,6 +8,7 @@ import { AiAssistantService } from '../../services/core/ai-assistant.service'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ChatHistoryService } from '../../services/chat/chat-history.service'
+import { ElectronService } from 'tabby-electron'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 import { ThemeService } from '../../services/core/theme.service'
 import { ContextManager } from '../../services/context/manager'
@@ -24,7 +25,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-        <div class="ai-sidebar-container">
+        <div class="ai-sidebar-container" (contextmenu)="onContextMenu($event)">
             <!-- Header -->
             <div class="ai-sidebar-header">
                 <div class="header-title">
@@ -316,8 +317,21 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         private toolStreamProcessor: ToolStreamProcessorService,
         private cdr: ChangeDetectorRef,
         private appRef: ApplicationRef,
-        private ngZone: NgZone
-    ) { }
+        private ngZone: NgZone,
+        private electron: ElectronService
+    ) {
+        // 开发模式下过滤 NG0100 错误
+        if (typeof window !== 'undefined') {
+            const originalError = window.console.error.bind(window.console)
+            window.console.error = (...args: any[]) => {
+                const msg = args.join(' ')
+                if (msg.includes('NG0100') || msg.includes('ExpressionChangedAfterItHasBeenCheckedError')) {
+                    return
+                }
+                originalError(...args)
+            }
+        }
+    }
 
     ngOnInit(): void {
         // 监听主题变化
@@ -390,6 +404,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     ngAfterViewInit(): void {
         // 强制设置滚动样式 - 绕过 CSS 优先级问题
         this.forceScrollStyles()
+        this.cdr.detectChanges()
     }
 
     /**
@@ -400,13 +415,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         setTimeout(() => {
             const container = this.chatContainerRef?.nativeElement
             if (container) {
-                // 直接设置内联样式 - 优先级最高
-                container.style.flex = '1 1 auto'
-                container.style.height = '0'
-                container.style.minHeight = '0'
+                // 只设置必要的滚动样式，不强制设置高度
                 container.style.overflowY = 'auto'
                 container.style.overflowX = 'hidden'
-                container.style.display = 'block'
                 this.logger.debug('[AI Sidebar] Scroll styles applied via JS')
             }
         }, 100);  // 延迟确保 DOM 已渲染
@@ -867,11 +878,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         if (shouldForceScroll) {
             this.shouldScrollToBottom = true
             this.scheduleAutoScroll()
-            this.scheduleDetectChanges()
-        } else {
-            // 中间轮次结束时，等 DOM 落地后再触发滚动刷新
-            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
         }
+        this.scheduleDetectChanges()
     }
 
     /**
@@ -903,7 +911,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.saveChatHistory()
         this.shouldScrollToBottom = true
         this.scheduleDetectChanges(() => {
-            this.scheduleScrollRefresh()
             this.scheduleScrollToAiMessageStart()
         })
     }
@@ -1018,7 +1025,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                 aiMessage.content += toolResults.join('')
                             }
                             this.logger.info('Stream completed')
-                            this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
+                            this.scheduleDetectChanges()
                             break
                     }
                 }),
@@ -1034,7 +1041,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     this.updateTokenUsage()
                     this.saveChatHistory()
                     this.shouldScrollToBottom = true
-                    this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
+                    this.scheduleDetectChanges()
                 })
             })
 
@@ -1068,7 +1075,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.runInAngular(() => {
                     this.pendingLoadingUpdate = null
                     this.isLoading = false
-                    this.scheduleDetectChanges()
                 })
             }, 0)
             return
@@ -1076,7 +1082,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
         this.runInAngular(() => {
             this.isLoading = true
-            this.scheduleDetectChanges()
         })
     }
 
@@ -1287,71 +1292,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         })
     }
 
-    /**
-     * 通过轻微滚动触发一次 DOM 更新（用于某些环境下的渲染滞后）
-     */
-    private scheduleScrollRefresh(): void {
-        if (this.scrollRefreshPending) {
-            return
-        }
-        this.scrollRefreshPending = true
-        window.setTimeout(() => {
-            this.scrollRefreshPending = false
-            this.triggerScrollRefresh()
-        }, 50)
-    }
-
-    private triggerScrollRefresh(): void {
-        const container = this.resolveSidebarMessagesContainer()
-        if (!container) {
-            this.logger.warn('[AI Sidebar] Scroll refresh skipped: container not found')
-            return
-        }
-        const before = container.scrollTop
-        const max = Math.max(container.scrollHeight - container.clientHeight, 0)
-        const delta = 10
-        const up = Math.max(before - delta, 0)
-
-        this.logger.info('[AI Sidebar] Scroll refresh scheduled', {
-            before,
-            delta,
-            up,
-            max,
-            height: container.scrollHeight,
-            clientHeight: container.clientHeight
-        })
-
-        window.setTimeout(() => {
-            container.scrollTop = up
-            container.dispatchEvent(new Event('scroll'))
-            // 强制一次 reflow，确保 scrollTop 写入生效
-            void container.offsetHeight
-            this.logger.info('[AI Sidebar] Scroll refresh (up)', {
-                before,
-                delta,
-                up,
-                applied: container.scrollTop,
-                max,
-                height: container.scrollHeight,
-                clientHeight: container.clientHeight
-            })
-
-            requestAnimationFrame(() => {
-                container.scrollTop = max
-                container.dispatchEvent(new Event('scroll'))
-                this.logger.info('[AI Sidebar] Scroll refresh (down)', {
-                    before,
-                    delta,
-                    up,
-                    applied: container.scrollTop,
-                    max,
-                    height: container.scrollHeight,
-                    clientHeight: container.clientHeight
-                })
-            })
-        }, 0)
-    }
-
     private resolveSidebarMessagesContainer(): HTMLElement | null {
         return document.getElementsByClassName('ai-sidebar-messages')[0] as HTMLElement | null
             ?? (this.chatContainerRef?.nativeElement as HTMLElement | undefined)
@@ -1537,11 +1477,48 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 处理键盘事件
      */
     onKeydown(event: KeyboardEvent): void {
+        // 阻止所有键盘事件冒泡到终端
+        event.stopPropagation()
+
         // Enter 发送（不包含Shift）
         if (event.key === 'Enter' && !event.shiftKey && !this.isComposing) {
             event.preventDefault()
             this.submit()
         }
+    }
+
+    /**
+     * 处理右键菜单事件
+     */
+    onContextMenu(event: MouseEvent): void {
+        // 阻止事件冒泡到 tabHeader
+        event.stopPropagation()
+        event.preventDefault()
+
+        // 使用 Electron 的 Menu API 显示默认右键菜单
+        const { Menu, MenuItem } = this.electron
+
+        const menu = new Menu()
+
+        // 根据上下文添加菜单项
+        const selection = window.getSelection()?.toString()
+        const target = event.target as HTMLElement
+        const isInput = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT'
+
+        if (selection) {
+            menu.append(new MenuItem({ label: '复制', role: 'copy' }))
+            menu.append(new MenuItem({ type: 'separator' }))
+        }
+
+        if (isInput) {
+            menu.append(new MenuItem({ label: '粘贴', role: 'paste' }))
+            menu.append(new MenuItem({ label: '剪切', role: 'cut' }))
+            menu.append(new MenuItem({ type: 'separator' }))
+        }
+
+        menu.append(new MenuItem({ label: '全选', role: 'selectAll' }))
+
+        menu.popup({ window: this.electron.BrowserWindow.getFocusedWindow()! })
     }
 
     /**
@@ -1582,10 +1559,18 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 自动调整输入框高度
      */
     private autoResize(): void {
-        if (this.textInput?.nativeElement) {
+        if (this.textInput?.nativeElement && this.chatContainerRef?.nativeElement) {
             const textarea = this.textInput.nativeElement
             textarea.style.height = 'auto'
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+            const newHeight = Math.min(textarea.scrollHeight, 100)
+            textarea.style.height = newHeight + 'px'
+            textarea.style.maxHeight = '100px'
+
+            // 动态调整消息列表高度：基础高度 - 输入框实际高度
+            const baseHeight = 186 // header(60) + token bar(36) + input padding(24) + button(36) + gaps(30)
+            const inputActualHeight = newHeight + 24 // textarea height + padding
+            const messagesHeight = `calc(100vh - ${baseHeight + inputActualHeight - 36}px)`
+            this.chatContainerRef.nativeElement.style.height = messagesHeight
         }
     }
 

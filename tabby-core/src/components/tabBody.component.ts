@@ -22,9 +22,8 @@ export class TabBodyComponent implements OnChanges {
     ngOnChanges (changes) {
         if (changes.tab) {
             this.placeholder?.detach()
-            setImmediate(() => {
+            Promise.resolve().then(() => {
                 this.placeholder?.insert(this.tab.hostView)
-                this.tab.hostView.detectChanges()
             })
         }
     }

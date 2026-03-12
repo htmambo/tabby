@@ -1,6 +1,6 @@
 {
   "name": "tabby-ai-assistant",
-  "version": "1.0.1-nightly.11",
+  "version": "1.0.1-nightly.2",
   "description": "Tabby terminal AI assistant plugin with multi-provider support and MCP integration",
   "keywords": [
     "tabby-builtin-plugin",

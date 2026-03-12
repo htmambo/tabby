@@ -2,10 +2,11 @@
 // 使用 CSS 变量支持主题切换
 
 :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
     height: 100%;
     width: 100%;
-    min-height: 0;
+    overflow: hidden;
 }
 
 .ai-sidebar-container {
@@ -14,12 +15,12 @@
     height: 100%;
     background: var(--ai-bg-primary, #1a1a1a);
     color: var(--ai-text-primary, #f8f9fa);
-    position: relative;
-    min-height: 0;
+    overflow: hidden;
 }
 
 // Header
 .ai-sidebar-header {
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -110,6 +111,7 @@
 
 // Token 使用进度条
 .token-usage-bar {
+    flex-shrink: 0;
     position: relative;
     height: 20px;
     background: rgba(255, 255, 255, 0.08);
@@ -153,8 +155,8 @@
 
 // Messages container
 .ai-sidebar-messages {
-    flex: 1 1 auto !important;
-    height: calc(100vh - 186px) !important; // 100% - header(60px) - token bar(36px) - input area(90px)
+    flex: 1 1 auto;
+    height: calc(100vh - 186px); // 100% - header(60px) - token bar(36px) - input area(90px)
     min-height: 0;
     overflow-y: auto !important;
     overflow-x: hidden !important;
@@ -512,6 +514,7 @@
 
 // Input area
 .ai-sidebar-input {
+    flex-shrink: 0;
     padding: 12px;
     background: var(--ai-bg-secondary, #2d2d2d);
     border-top: 1px solid var(--ai-border, #4a4a4a);
