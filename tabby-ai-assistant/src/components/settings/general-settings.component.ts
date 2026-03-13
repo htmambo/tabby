@@ -3,7 +3,7 @@ import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
-import { ThemeService, ThemeType } from '../../services/core/theme.service'
+import { ThemeService } from '../../services/core/theme.service'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types'
 import { TranslateService, SupportedLanguage } from '../../i18n'
@@ -24,7 +24,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     selectedProvider = ''
     isEnabled = true
     language = 'zh-CN'
-    theme = 'auto'
     sidebarPosition: 'left' | 'right' = 'right'
 
     // 翻译对象
@@ -44,15 +43,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     sidebarPositions = [
         { value: 'left', label: '左侧', icon: 'fa-arrow-left' },
         { value: 'right', label: '右侧', icon: 'fa-arrow-right' },
-    ]
-
-    themes = [
-        { value: 'auto', label: '跟随系统' },
-        { value: 'light', label: '浅色主题' },
-        { value: 'dark', label: '深色主题' },
-        { value: 'pixel', label: '像素复古' },
-        { value: 'tech', label: '赛博科技' },
-        { value: 'parchment', label: '羊皮卷' },
     ]
 
     // 提供商模板，用于显示名称
@@ -82,33 +72,17 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
             takeUntil(this.destroy$),
         ).subscribe(translation => {
             this.t = translation
-            // 更新主题翻译
-            this.updateThemeLabels()
         })
 
         this.loadSettings()
         this.loadProviders()
         // 应用当前主题
-        this.applyTheme(this.theme)
+        this.themeService.applyTheme('tech')
     }
 
     ngOnDestroy(): void {
         this.destroy$.next()
         this.destroy$.complete()
-    }
-
-    /**
-     * 更新主题标签翻译
-     */
-    private updateThemeLabels(): void {
-        this.themes = [
-            { value: 'auto', label: this.t.general.themeAuto },
-            { value: 'light', label: this.t.general.themeLight },
-            { value: 'dark', label: this.t.general.themeDark },
-            { value: 'pixel', label: this.t.general.themePixel ?? '像素复古' },
-            { value: 'tech', label: this.t.general.themeTech ?? '赛博科技' },
-            { value: 'parchment', label: this.t.general.themeParchment ?? '羊皮卷' },
-        ]
     }
 
     /**
@@ -118,7 +92,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
         this.selectedProvider = this.config.getDefaultProvider() ?? ''
         this.isEnabled = this.config.isEnabled() ?? true
         this.language = this.config.get('language', 'zh-CN') ?? 'zh-CN'
-        this.theme = this.config.get('theme', 'auto') ?? 'auto'
         this.sidebarPosition = this.sidebarService.getSidebarPosition()
     }
 
@@ -344,23 +317,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
         this.language = language
         this.translate.setLanguage(language as SupportedLanguage)
         this.logger.info('Language updated', { language })
-    }
-
-    /**
-     * 更新主题
-     */
-    updateTheme(theme: string): void {
-        this.theme = theme
-        this.config.set('theme', theme)
-        this.themeService.applyTheme(theme as ThemeType)
-        this.logger.info('Theme updated', { theme })
-    }
-
-    /**
-     * 应用主题 - 使用 ThemeService
-     */
-    private applyTheme(theme: string): void {
-        this.themeService.applyTheme(theme as ThemeType)
     }
 
     private getEffectiveProviderConfig(providerName: string): ProviderConfig | null {

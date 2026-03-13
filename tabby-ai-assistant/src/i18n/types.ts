@@ -48,12 +48,7 @@ export interface GeneralTranslations {
     providerCount: string;  // "已配置 {count} 个提供商，当前使用"
     language: string;
     theme: string;
-    themeAuto: string;
-    themeLight: string;
-    themeDark: string;
-    themePixel: string;
     themeTech: string;
-    themeParchment: string;
     shortcuts: string;
     shortcutOpenChat: string;
     shortcutOpenChatDesc: string;

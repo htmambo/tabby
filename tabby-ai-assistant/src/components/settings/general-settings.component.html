@@ -156,17 +156,6 @@
                 </div>
             </div>
 
-            <!-- 第二行：主题 -->
-            <div class="form-group theme-group">
-                <label>{{ t.general.theme }}</label>
-                <div class="theme-selector">
-                    <button *ngFor="let themeOption of themes" class="theme-btn"
-                        [class.active]="theme === themeOption.value" (click)="updateTheme(themeOption.value)" type="button">
-                        <div class="theme-preview" [attr.data-theme]="themeOption.value"></div>
-                        <span>{{ themeOption.label }}</span>
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 

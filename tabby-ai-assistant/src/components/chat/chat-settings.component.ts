@@ -3,7 +3,6 @@ import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
-import { ThemeService, ThemeType } from '../../services/core/theme.service'
 import { TranslateService } from '../../i18n'
 
 @Component({
@@ -30,7 +29,7 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
             chatHistoryEnabled: true,
             maxChatHistory: 100,
             autoSaveChat: true,
-            theme: 'auto',
+            theme: 'tech',
             fontSize: 14,
             compactMode: false,
             showTimestamps: true,
@@ -51,7 +50,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
         private config: ConfigProviderService,
         private logger: LoggerService,
         private translate: TranslateService,
-        private themeService: ThemeService,
     ) {
         this.t = this.translate.t
     }
@@ -62,7 +60,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
             takeUntil(this.destroy$),
         ).subscribe(translation => {
             this.t = translation
-            this.updateThemeLabels()
         })
 
         this.loadSettings()
@@ -74,33 +71,13 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * 更新主题标签翻译
-     */
-    private updateThemeLabels(): void {
-        this.settings.theme = this.config.get('theme', 'auto') ?? 'auto'
-    }
-
-    /**
-     * 获取主题选项
-     */
-    get themes(): { value: string; label: string }[] {
-        return [
-            { value: 'auto', label: this.t.general.themeAuto },
-            { value: 'light', label: this.t.general.themeLight },
-            { value: 'dark', label: this.t.general.themeDark },
-            { value: 'pixel', label: this.t.general.themePixel || '像素复古' },
-            { value: 'tech', label: this.t.general.themeTech || '赛博科技' },
-        ]
-    }
-
-    /**
      * 加载设置
      */
     private loadSettings(): void {
         this.settings.chatHistoryEnabled = this.config.get('chatHistoryEnabled', true) ?? true
         this.settings.maxChatHistory = this.config.get('maxChatHistory', 100) ?? 100
         this.settings.autoSaveChat = this.config.get('autoSaveChat', true) ?? true
-        this.settings.theme = this.config.get('theme', 'auto') ?? 'auto'
+        this.settings.theme = this.config.get('theme', 'tech') ?? 'tech'
         this.settings.fontSize = this.config.get('ui.fontSize', 14) ?? 14
         this.settings.compactMode = this.config.get('ui.compactMode', false) ?? false
         this.settings.showTimestamps = this.config.get('ui.showTimestamps', true) ?? true
@@ -120,15 +97,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
         } catch (error) {
             this.logger.error('Failed to save chat setting', error)
         }
-    }
-
-    /**
-     * 更新主题
-     */
-    updateTheme(theme: string): void {
-        this.settings.theme = theme
-        this.saveSetting('theme', theme)
-        this.themeService.applyTheme(theme as ThemeType)
     }
 
     /**
@@ -187,7 +155,7 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
                 chatHistoryEnabled: true,
                 maxChatHistory: 100,
                 autoSaveChat: true,
-                theme: 'auto',
+                theme: 'tech',
                 fontSize: 14,
                 compactMode: false,
                 showTimestamps: true,
