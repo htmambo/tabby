@@ -79,7 +79,9 @@ export class Application {
             app.commandLine.appendSwitch('disable-dev-shm-usage')
             if ((this.configStore.appearance?.opacity || 1) !== 1) {
                 app.commandLine.appendSwitch('enable-transparent-visuals')
-                app.disableHardwareAcceleration()
+                // 不再自动禁用硬件加速，让透明背景也能使用 GPU 加速
+                // 如果遇到透明背景渲染问题，可通过 hacks.disableGPU 手动禁用
+                // app.disableHardwareAcceleration()
             }
         }
         if (this.configStore.hacks?.disableGPU) {
