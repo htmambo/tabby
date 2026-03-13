@@ -8,41 +8,42 @@ import { ConfigProviderService } from './config-provider.service'
 
 export type ThemeType = 'tech'
 
-// 主题变量定义
+// 主题变量定义 — 配色跟随项目自身 CSS 变量（--theme-* / --bs-*）
+// 这样只需修改项目配色方案，AI 助手即可自动同步
 const THEME_VARIABLES: Record<ThemeType, Record<string, string>> = {
     tech: {
-        // 主色调 - 霓虹赛博朋克
-        'ai-primary': '#00fff9',
-        'ai-primary-hover': '#00e6e0',
-        'ai-secondary': '#adb5bd',
-        'ai-success': '#00ff88',
-        'ai-warning': '#ff00ff',
-        'ai-danger': '#ff3366',
-        'ai-info': '#00bfff',
+        // 主色调 - 跟随项目配色
+        'ai-primary': 'var(--theme-primary, var(--bs-primary, #007bff))',
+        'ai-primary-hover': 'var(--theme-primary-less, var(--bs-primary, #0069d9))',
+        'ai-secondary': 'var(--theme-secondary, var(--bs-secondary, #6c757d))',
+        'ai-success': 'var(--theme-success, var(--bs-success, #28a745))',
+        'ai-warning': 'var(--theme-warning, var(--bs-warning, #ffc107))',
+        'ai-danger': 'var(--theme-danger, var(--bs-danger, #dc3545))',
+        'ai-info': 'var(--theme-info, var(--bs-info, #17a2b8))',
         // 风险级别颜色
-        'ai-risk-low': '#00ff88',
-        'ai-risk-medium': '#ff00ff',
-        'ai-risk-high': '#ff6600',
-        'ai-risk-critical': '#ff3366',
+        'ai-risk-low': 'var(--theme-success, var(--bs-success, #28a745))',
+        'ai-risk-medium': 'var(--theme-warning, var(--bs-warning, #ffc107))',
+        'ai-risk-high': 'var(--theme-warning-more, var(--bs-warning, #fd7e14))',
+        'ai-risk-critical': 'var(--theme-danger, var(--bs-danger, #dc3545))',
         // 聊天消息颜色
-        'ai-user-message': 'rgba(0, 255, 249, 0.1)',
-        'ai-assistant-message': 'rgba(255, 0, 255, 0.1)',
-        'ai-system-message': 'rgba(0, 255, 136, 0.1)',
+        'ai-user-message': 'var(--theme-primary-active-fg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.15))',
+        'ai-assistant-message': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
+        'ai-system-message': 'var(--theme-warning-active-fg, var(--theme-bg-more-2, #3a3a3a))',
         // 背景和边框
-        'ai-bg-primary': '#0a0a0f',
-        'ai-bg-secondary': '#12121a',
-        'ai-bg-tertiary': '#1a1a2e',
-        'ai-text-primary': '#00fff9',
-        'ai-text-secondary': 'rgba(0, 255, 249, 0.7)',
-        'ai-border': 'rgba(0, 255, 249, 0.3)',
-        'ai-border-radius': '4px',
-        'ai-box-shadow': '0 0 20px rgba(0, 255, 249, 0.2)',
-        // 字体 - 科幻感
-        'ai-font-family': '\'Segoe UI\', \'Share Tech Mono\', monospace',
-        'ai-font-size-base': '14px',
+        'ai-bg-primary': 'var(--body-bg, var(--bs-body-bg, #1e1e1e))',
+        'ai-bg-secondary': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
+        'ai-bg-tertiary': 'var(--theme-bg-more-2, var(--bs-tertiary-bg, #3d3d3d))',
+        'ai-text-primary': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
+        'ai-text-secondary': 'var(--theme-fg-more, var(--bs-secondary-color, #adb5bd))',
+        'ai-border': 'var(--bs-border-color, var(--theme-bg-more-2, #4a4a4a))',
+        'ai-border-radius': 'var(--bs-border-radius, 0.375rem)',
+        'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.18)',
+        // 字体
+        'ai-font-family': 'var(--bs-body-font-family, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif)',
+        'ai-font-size-base': 'var(--bs-body-font-size, 14px)',
         // 其他
-        'ai-dark': '#0a0a0f',
-        'ai-light': '#12121a',
+        'ai-dark': 'var(--theme-bg, var(--bs-body-bg, #1e1e1e))',
+        'ai-light': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
         'ai-transition-duration': '0.3s',
     },
 }
@@ -158,24 +159,25 @@ ${this.containerSelectors.join(',\n')} {
         0deg,
         transparent,
         transparent 2px,
-        rgba(0, 255, 249, 0.03) 2px,
-        rgba(0, 255, 249, 0.03) 4px
+        color-mix(in srgb, var(--ai-primary) 3%, transparent) 2px,
+        color-mix(in srgb, var(--ai-primary) 3%, transparent) 4px
     ) !important;
 
     /* 发光按钮 */
     .btn {
         background: linear-gradient(135deg, var(--ai-bg-secondary) 0%, var(--ai-bg-tertiary) 100%) !important;
-        border: 1px solid var(--ai-primary) !important;
+        border: 1px solid var(--ai-border) !important;
         color: var(--ai-text-primary) !important;
         box-shadow:
-            0 0 10px rgba(0, 255, 249, 0.2),
-            inset 0 0 10px rgba(0, 255, 249, 0.05) !important;
+            0 0 10px color-mix(in srgb, var(--ai-primary) 20%, transparent),
+            inset 0 0 10px color-mix(in srgb, var(--ai-primary) 5%, transparent) !important;
     }
 
     .btn:hover {
+        border-color: var(--ai-primary) !important;
         box-shadow:
-            0 0 20px rgba(0, 255, 249, 0.4),
-            inset 0 0 20px rgba(0, 255, 249, 0.1) !important;
+            0 0 20px color-mix(in srgb, var(--ai-primary) 40%, transparent),
+            inset 0 0 20px color-mix(in srgb, var(--ai-primary) 10%, transparent) !important;
     }
 
     /* 发光输入框 */
@@ -185,7 +187,7 @@ ${this.containerSelectors.join(',\n')} {
         border: 1px solid var(--ai-primary) !important;
         background: var(--ai-bg-primary) !important;
         color: var(--ai-text-primary) !important;
-        box-shadow: 0 0 10px rgba(0, 255, 249, 0.1) !important;
+        box-shadow: 0 0 10px color-mix(in srgb, var(--ai-primary) 10%, transparent) !important;
     }
 
     input:focus,
@@ -194,12 +196,13 @@ ${this.containerSelectors.join(',\n')} {
         outline: none !important;
         border-color: var(--ai-primary) !important;
         box-shadow:
-            0 0 20px rgba(0, 255, 249, 0.3),
-            inset 0 0 10px rgba(0, 255, 249, 0.05) !important;
+            0 0 20px color-mix(in srgb, var(--ai-primary) 30%, transparent),
+            inset 0 0 10px color-mix(in srgb, var(--ai-primary) 5%, transparent) !important;
     }
 
     /* 霓虹标题 */
     h2, h3, h4 {
+        color: var(--ai-text-primary) !important;
         text-shadow:
             0 0 10px var(--ai-primary),
             0 0 20px var(--ai-primary) !important;
@@ -213,7 +216,7 @@ ${this.containerSelectors.join(',\n')} {
 
     ::-webkit-scrollbar-thumb {
         background: var(--ai-primary) !important;
-        border-radius: 0 !important;
+        border-radius: var(--ai-border-radius) !important;
         box-shadow: 0 0 10px var(--ai-primary) !important;
     }
 }
