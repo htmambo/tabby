@@ -18,29 +18,29 @@
     <!-- 操作按钮 -->
     <div class="input-actions">
         <!-- 清空按钮 -->
-        <button *ngIf="inputValue && !disabled" class="btn-icon" (click)="clear()" title="清空">
+        <button *ngIf="inputValue && !disabled" class="btn-icon" (click)="clear()" [title]="'Reset' | translate">
             <i class="fa fa-times"></i>
         </button>
 
         <!-- 发送按钮 -->
         <button class="btn-send" [disabled]="!inputValue.trim() || disabled || isOverLimit()" (click)="submit()"
-            title="发送 (Enter)">
+            [title]="('Send' | translate) + ' (Enter)'">
             <i class="fa fa-paper-plane"></i>
-            <span class="btn-text">发送</span>
+            <span class="btn-text">{{ 'Send' | translate }}</span>
         </button>
     </div>
 
     <!-- 帮助提示 -->
     <div class="input-hints">
         <span class="hint-item">
-            <kbd>Enter</kbd> 发送
+            <kbd>Enter</kbd> {{ 'Send' | translate }}
         </span>
         <span class="hint-item">
-            <kbd>Shift + Enter</kbd> 换行
+            <kbd>Shift + Enter</kbd> {{ 'New Line' | translate }}
         </span>
         <span class="hint-item" *ngIf="isNearLimit()">
             <i class="fa fa-exclamation-triangle"></i>
-            接近字符限制
+            {{ 'Near character limit' | translate }}
         </span>
     </div>
 </div>

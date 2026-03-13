@@ -1,5 +1,8 @@
-import { Component, Input } from '@angular/core'
+import { Component, Input, OnInit, OnDestroy } from '@angular/core'
+import { Subject } from 'rxjs'
+import { takeUntil } from 'rxjs/operators'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
+import { TranslateService } from 'tabby-core'
 
 /**
  * AI工具栏按钮组件
@@ -11,12 +14,34 @@ import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
     templateUrl: './ai-toolbar-button.component.html',
     styleUrls: ['./ai-toolbar-button.component.scss'],
 })
-export class AiToolbarButtonComponent {
+export class AiToolbarButtonComponent implements OnInit, OnDestroy {
     @Input() label = 'AI Assistant'
     @Input() tooltip = 'Open AI Assistant'
     @Input() showLabel = true
 
-    constructor(private sidebarService: AiSidebarService) {}
+    private destroy$ = new Subject<void>()
+
+    constructor(
+        private sidebarService: AiSidebarService,
+        private translate: TranslateService,
+    ) {
+        this.label = this.translate.instant('AI Assistant')
+        this.tooltip = this.translate.instant('Open AI Assistant')
+    }
+
+    ngOnInit(): void {
+        this.translate.onLangChange.pipe(
+            takeUntil(this.destroy$),
+        ).subscribe(() => {
+            this.label = this.translate.instant('AI Assistant')
+            this.tooltip = this.translate.instant('Open AI Assistant')
+        })
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next()
+        this.destroy$.complete()
+    }
 
     onClick(): void {
         this.sidebarService.toggle()

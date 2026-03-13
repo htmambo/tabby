@@ -6,9 +6,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 // 全局样式
 import './styles/ai-assistant.scss'
 
-// i18n Services
-import { TranslateService } from './i18n'
-
 // Tabby modules
 import TabbyCoreModule, { AppService, ConfigService, ToolbarButtonProvider, ConfigProvider, HotkeyProvider, HotkeysService } from 'tabby-core'
 import TabbyTerminalModule from 'tabby-terminal'
@@ -75,6 +72,7 @@ import { ChatInterfaceComponent } from './components/chat/chat-interface.compone
 import { ChatMessageComponent } from './components/chat/chat-message.component'
 import { ChatInputComponent } from './components/chat/chat-input.component'
 import { ChatSettingsComponent } from './components/chat/chat-settings.component'
+import { AiSidebarComponent } from './components/chat/ai-sidebar.component'
 
 import { AiSettingsTabComponent } from './components/settings/ai-settings-tab.component'
 import { ProviderConfigComponent } from './components/settings/provider-config.component'
@@ -109,6 +107,7 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         TabbyCoreModule,
         TabbyTerminalModule,
         NgbModule,
+        // TranslateModule is exported by TabbyCoreModule
     ],
     providers: [
         // Core Services
@@ -116,9 +115,6 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         AiProviderManagerService,
         ConfigProviderService,
         LoggerService,
-
-        // i18n Services
-        TranslateService,
 
         // Network Services
         ProxyService,
@@ -184,6 +180,7 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         ChatMessageComponent,
         ChatInputComponent,
         ChatSettingsComponent,
+        AiSidebarComponent,
 
         // Settings Components
         AiSettingsTabComponent,

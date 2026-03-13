@@ -3035,3 +3035,128 @@ msgstr "{count} 个窗格 · {orientation}"
 #: tabby-core/src/services/tabRecovery.service.ts:293
 msgid "{count} panes · {orientation}"
 msgstr "{count} 个窗格 · {orientation}"
+
+# AI Assistant translations
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI Assistant"
+msgstr "AI助手"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Open AI Assistant"
+msgstr "打开AI助手"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Hide Sidebar"
+msgstr "隐藏侧边栏"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Open Settings"
+msgstr "打开设置"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Clear Chat"
+msgstr "清空聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Export Chat"
+msgstr "导出聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Scroll to Top"
+msgstr "回到顶部"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Scroll to Bottom"
+msgstr "回到底部"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Send Message"
+msgstr "发送消息"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Stop Generating"
+msgstr "停止生成"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "User"
+msgstr "用户"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI"
+msgstr "AI"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "System"
+msgstr "系统"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Executing..."
+msgstr "执行中..."
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Output:"
+msgstr "输出:"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "...(truncated)"
+msgstr "...(已截断)"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Unknown Tool"
+msgstr "未知工具"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Round {n}"
+msgstr "第 {n} 轮"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Task Completed"
+msgstr "任务完成"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Task Failed"
+msgstr "任务未能完成"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "(Not Configured)"
+msgstr "(未配置)"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "(Disabled)"
+msgstr "(已禁用)"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI is thinking..."
+msgstr "AI 正在思考..."
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Enter your question or describe the command you want to execute..."
+msgstr "输入您的问题或描述要执行的命令..."
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Send"
+msgstr "发送"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "New Line"
+msgstr "换行"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Near character limit"
+msgstr "接近字符限制"
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Copy"
+msgstr "复制"
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Regenerate"
+msgstr "重新生成"
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Helpful"
+msgstr "有用"
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Not Helpful"
+msgstr "无用"

@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core'
+import { Component, Input, Output, EventEmitter, ViewEncapsulation, OnDestroy } from '@angular/core'
+import { Subject } from 'rxjs'
 import { ChatMessage } from '../../types/ai.types'
 import { ToastService } from '../../services/core/toast.service'
+import { TranslateService } from 'tabby-core'
 
 @Component({
     selector: 'app-chat-message',
@@ -9,15 +11,25 @@ import { ToastService } from '../../services/core/toast.service'
     styleUrls: ['./chat-message.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class ChatMessageComponent {
+export class ChatMessageComponent implements OnDestroy {
     @Input() message!: ChatMessage
     @Input() showAvatar = true
     @Input() showTimestamp = true
-    @Input() isGrouped = false // 是否与上一条消息分组
+    @Input() isGrouped = false
     @Output() messageClick = new EventEmitter<ChatMessage>()
     @Output() messageAction = new EventEmitter<{ action: string; message: ChatMessage }>()
 
-    constructor(private toastService: ToastService) {}
+    private destroy$ = new Subject<void>()
+
+    constructor(
+        private toastService: ToastService,
+        private translate: TranslateService,
+    ) {}
+
+    ngOnDestroy(): void {
+        this.destroy$.next()
+        this.destroy$.complete()
+    }
 
     /**
      * 处理消息点击
@@ -38,9 +50,9 @@ export class ChatMessageComponent {
      */
     copyMessage(): void {
         navigator.clipboard.writeText(this.message.content).then(() => {
-            this.toastService.success('已复制到剪贴板', 2000)
+            this.toastService.success(this.translate.instant('Copied to clipboard'), 2000)
         }).catch(_error => {
-            this.toastService.error('复制失败，请重试')
+            this.toastService.error(this.translate.instant('Copy failed, please try again'))
         })
     }
 

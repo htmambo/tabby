@@ -9,7 +9,7 @@ import {
 import { MCPClientManager } from '../../services/mcp/mcp-client-manager.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 /**
  * 服务器编辑器模式
@@ -684,9 +684,6 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     /** 导入的 JSON 文本 */
     importJsonText = ''
 
-    /** 翻译对象 */
-    t: any
-
     constructor(
         private mcpManager: MCPClientManager,
         private logger: LoggerService,
@@ -695,13 +692,6 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit(): void {
-        // 订阅翻译变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         // 加载服务器列表
         this.loadServers()
 
@@ -769,7 +759,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     async saveServer(): Promise<void> {
         if (!this.isValidServer()) {
-            this.toast.error(this.t?.mcpSettings?.validationError || '请填写所有必填字段')
+            this.toast.error(this.translate.instant('Please fill in all required fields'))
             return
         }
 
@@ -780,10 +770,10 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
                 await this.mcpManager.updateServer(this.editingServer)
             }
 
-            this.toast.success(this.t?.common?.saveSuccess || '保存成功')
+            this.toast.success(this.translate.instant('Saved successfully'))
             this.hideEditor()
         } catch (error: any) {
-            this.toast.error(error.message || (this.t?.common?.saveError || '保存失败'))
+            this.toast.error(error.message || this.translate.instant('Save failed'))
         }
     }
 
@@ -791,12 +781,12 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      * 删除服务器
      */
     async deleteServer(server: MCPServerWithStatus): Promise<void> {
-        if (confirm((this.t?.mcpSettings?.deleteConfirm || '确定要删除服务器 "%s" 吗？').replace('%s', server.name))) {
+        if (confirm(this.translate.instant('Are you sure you want to delete server "{name}"?').replace('{name}', server.name))) {
             try {
                 await this.mcpManager.deleteServer(server.id)
-                this.toast.success(this.t?.common?.deleteSuccess || '删除成功')
+                this.toast.success(this.translate.instant('Deleted successfully'))
             } catch (error: any) {
-                this.toast.error(error.message || (this.t?.common?.deleteError || '删除失败'))
+                this.toast.error(error.message || this.translate.instant('Delete failed'))
             }
         }
     }
@@ -808,10 +798,10 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
         try {
             if (server.status === 'connected') {
                 await this.mcpManager.disconnect(server.id)
-                this.toast.success(this.t?.mcpSettings?.disconnected || '已断开连接')
+                this.toast.success(this.translate.instant('Disconnected'))
             } else if (server.status === 'disconnected' || server.status === 'error') {
                 // 显示正在连接提示
-                this.toast.info(this.t?.mcpSettings?.connecting || '正在连接...')
+                this.toast.info(this.translate.instant('Connecting...'))
 
                 // 重新加载配置并连接
                 const fullServer = this.mcpManager.getServer(server.id)
@@ -819,14 +809,14 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
                     await this.mcpManager.connect(fullServer)
                     // 连接成功的提示在 MCPClientManager.connect 中已处理
                 } else {
-                    this.toast.error(this.t?.mcpSettings?.serverNotFound || '服务器配置未找到')
+                    this.toast.error(this.translate.instant('Server configuration not found'))
                 }
             }
             // 刷新服务器列表
             this.loadServers()
         } catch (error: any) {
             this.logger.error('Failed to toggle connection', { serverId: server.id, error })
-            this.toast.error(error.message || (this.t?.mcpSettings?.connectionError || '连接失败'))
+            this.toast.error(error.message || this.translate.instant('Connection failed'))
             this.loadServers()
         }
     }
@@ -904,10 +894,10 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     getConnectionButtonText(status: MCPServerStatus): string {
         const texts: Record<string, string> = {
-            connected: this.t?.mcpSettings?.disconnect || '断开',
-            connecting: this.t?.mcpSettings?.connecting || '连接中...',
-            error: this.t?.mcpSettings?.retry || '重试',
-            disconnected: this.t?.mcpSettings?.connect || '连接',
+            connected: this.translate.instant('Disconnect'),
+            connecting: this.translate.instant('Connecting...'),
+            error: this.translate.instant('Retry'),
+            disconnected: this.translate.instant('Connect'),
         }
         return texts[status] || texts.disconnected
     }
@@ -964,7 +954,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
      */
     async importFromJson(): Promise<void> {
         if (!this.importJsonText.trim()) {
-            this.toast.error(this.t?.mcpSettings?.emptyJson || '请输入 JSON 配置')
+            this.toast.error(this.translate.instant('Please enter JSON configuration'))
             return
         }
 
@@ -1006,14 +996,14 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
             }
 
             this.toast.success(
-                (this.t?.mcpSettings?.importSuccess || '成功导入 %d 个服务器').replace('%d', importedCount.toString()),
+                this.translate.instant('Successfully imported {count} servers').replace('{count}', importedCount.toString()),
             )
             this.hideImportDialog()
             this.loadServers()
         } catch (error: any) {
             this.logger.error('Failed to import JSON', error)
             this.toast.error(
-                (this.t?.mcpSettings?.importError || '导入失败: %s').replace('%s', error.message),
+                this.translate.instant('Import failed: {error}').replace('{error}', error.message),
             )
         }
     }

@@ -5,7 +5,7 @@ import { ConfigProviderService } from '../../services/core/config-provider.servi
 import { ProxyService } from '../../services/network/proxy.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types'
 
 /**
@@ -418,7 +418,6 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
     isTesting = false
     testResult: ProxyTestResult | null = null
 
-    t: any
     private destroy$ = new Subject<void>()
 
     constructor(
@@ -427,17 +426,9 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
         private logger: LoggerService,
         private toast: ToastService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadConfig()
     }
 
@@ -504,17 +495,17 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
             const httpsResult = this.proxyService.validateProxyUrl(this.proxyConfig.httpsProxy ?? '')
 
             if (!httpResult.valid && this.proxyConfig.httpProxy) {
-                this.toast.error(`HTTP ${this.t.proxy?.testFailed || '代理'}: ${httpResult.message}`)
+                this.toast.error(`HTTP ${this.translate.instant('Proxy')}: ${httpResult.message}`)
                 return
             }
             if (!httpsResult.valid && this.proxyConfig.httpsProxy) {
-                this.toast.error(`HTTPS ${this.t.proxy?.testFailed || '代理'}: ${httpsResult.message}`)
+                this.toast.error(`HTTPS ${this.translate.instant('Proxy')}: ${httpsResult.message}`)
                 return
             }
         }
 
         this.config.updateProxyConfig(this.proxyConfig)
-        this.toast.success(this.t.proxy?.configSaved || '代理配置已保存')
+        this.toast.success(this.translate.instant('Proxy configuration saved'))
         this.logger.info('Proxy configuration saved', { enabled: this.proxyConfig.enabled })
     }
 
@@ -525,7 +516,7 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
         const proxyUrl = this.proxyConfig.httpsProxy ?? this.proxyConfig.httpProxy
 
         if (!proxyUrl) {
-            this.toast.error(this.t.proxy?.noProxyUrl || '请先配置代理地址')
+            this.toast.error(this.translate.instant('Please configure proxy address first'))
             return
         }
 
@@ -535,16 +526,16 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
         try {
             this.testResult = await this.proxyService.testProxyConnection(proxyUrl)
             if (this.testResult.success) {
-                this.toast.success(`${this.t.proxy?.testSuccess || '连接成功'} (${this.testResult.latency}ms)`)
+                this.toast.success(`${this.translate.instant('Connection successful')} (${this.testResult.latency}ms)`)
             } else {
-                this.toast.error(`${this.t.proxy?.testFailed || '连接失败'}: ${this.testResult.message}`)
+                this.toast.error(`${this.translate.instant('Connection failed')}: ${this.testResult.message}`)
             }
         } catch (error) {
             this.testResult = {
                 success: false,
                 message: error instanceof Error ? error.message : String(error),
             }
-            this.toast.error(this.t.proxy?.testFailed || '测试失败')
+            this.toast.error(this.translate.instant('Test failed'))
         } finally {
             this.isTesting = false
         }
@@ -559,9 +550,9 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
             this.proxyConfig = { ...importedConfig }
             this.showAuthFields = !!(importedConfig.auth?.username)
             this.saveConfig()
-            this.toast.success(this.t.proxy?.importSuccess || '已从环境变量导入代理配置')
+            this.toast.success(this.translate.instant('Imported proxy configuration from environment variables'))
         } else {
-            this.toast.info(this.t.proxy?.noEnvProxy || '未检测到环境变量中的代理配置')
+            this.toast.info(this.translate.instant('No proxy configuration detected in environment variables'))
         }
     }
 }

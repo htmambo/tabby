@@ -2846,3 +2846,128 @@ msgstr ""
 #: tabby-core/src/services/tabRecovery.service.ts:293
 msgid "{count} panes · {orientation}"
 msgstr ""
+
+# AI Assistant translations
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI Assistant"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Open AI Assistant"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Hide Sidebar"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Open Settings"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Clear Chat"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Export Chat"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Scroll to Top"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Scroll to Bottom"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Send Message"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Stop Generating"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "User"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "System"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Executing..."
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Output:"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "...(truncated)"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Unknown Tool"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Round {n}"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Task Completed"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Task Failed"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "(Not Configured)"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "(Disabled)"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI is thinking..."
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Enter your question or describe the command you want to execute..."
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Send"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "New Line"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Near character limit"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Copy"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Regenerate"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Helpful"
+msgstr ""
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Not Helpful"
+msgstr ""

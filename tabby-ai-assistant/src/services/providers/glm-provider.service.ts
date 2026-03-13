@@ -7,7 +7,7 @@ import { ProviderCapability, ProviderConfig, ValidationResult } from '../../type
 import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, MessageRole, StreamEvent } from '../../types/ai.types'
 import { LoggerService } from '../core/logger.service'
 import { ProxyService } from '../network/proxy.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 /**
  * GLM (ChatGLM) AI提供商

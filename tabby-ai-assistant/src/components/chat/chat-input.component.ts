@@ -3,6 +3,7 @@ import { Subject } from 'rxjs'
 import { debounceTime, takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { AiAssistantService } from '../../services/core/ai-assistant.service'
+import { TranslateService } from 'tabby-core'
 
 @Component({
     selector: 'app-chat-input',
@@ -13,7 +14,7 @@ import { AiAssistantService } from '../../services/core/ai-assistant.service'
 })
 export class ChatInputComponent implements OnInit, OnDestroy {
     @Input() disabled = false
-    @Input() placeholder = '输入您的问题或描述要执行的命令...'
+    @Input() placeholder = ''
     @Output() send = new EventEmitter<string>()
 
     @ViewChild('textInput', { 'static': false }) textInput!: ElementRef<HTMLTextAreaElement>
@@ -24,6 +25,12 @@ export class ChatInputComponent implements OnInit, OnDestroy {
     isComposing = false // 用于处理中文输入法
     enterToSend = true // Enter键发送
 
+    // 输入历史相关
+    private inputHistory: string[] = []
+    private historyIndex = -1
+    private tempInput = ''
+    private readonly maxHistory = 50
+
     // 智能建议相关
     suggestions: string[] = []
     showSuggestions = false
@@ -31,7 +38,10 @@ export class ChatInputComponent implements OnInit, OnDestroy {
     constructor(
         private config: ConfigProviderService,
         private aiService: AiAssistantService,
-    ) {}
+        private translate: TranslateService,
+    ) {
+        this.placeholder = this.translate.instant('Enter your question or describe the command you want to execute...')
+    }
 
     ngOnInit(): void {
         // 读取 Enter 发送设置
@@ -42,7 +52,6 @@ export class ChatInputComponent implements OnInit, OnDestroy {
             debounceTime(300),
             takeUntil(this.destroy$),
         ).subscribe(value => {
-            // 这里可以触发自动完成或其他功能
             this.onInputChange(value)
         })
     }
@@ -88,13 +97,29 @@ export class ChatInputComponent implements OnInit, OnDestroy {
      * 处理键盘事件
      */
     onKeydown(event: KeyboardEvent): void {
+        if (this.isComposing) {
+            return
+        }
+
         // Enter 发送（根据配置决定）
-        if (event.key === 'Enter' && !event.shiftKey && !this.isComposing) {
+        if (event.key === 'Enter' && !event.shiftKey) {
             if (this.enterToSend) {
                 event.preventDefault()
                 this.submit()
             }
-            // 如果 enterToSend 为 false，Enter 会插入换行符
+            return
+        }
+
+        // ArrowUp / ArrowDown 切换输入历史
+        if (this.inputHistory.length === 0) {
+            return
+        }
+        if (event.key === 'ArrowUp' && this.isCursorOnFirstLine()) {
+            event.preventDefault()
+            this.navigateHistory(-1)
+        } else if (event.key === 'ArrowDown' && this.isCursorOnLastLine()) {
+            event.preventDefault()
+            this.navigateHistory(1)
         }
     }
 
@@ -129,6 +154,16 @@ export class ChatInputComponent implements OnInit, OnDestroy {
     submit(): void {
         const message = this.inputValue.trim()
         if (message && !this.disabled) {
+            // 记录到输入历史（避免连续重复）
+            if (this.inputHistory[0] !== message) {
+                this.inputHistory.unshift(message)
+                if (this.inputHistory.length > this.maxHistory) {
+                    this.inputHistory.pop()
+                }
+            }
+            this.historyIndex = -1
+            this.tempInput = ''
+
             this.send.emit(message)
             this.inputValue = ''
             setTimeout(() => this.autoResize(), 0)
@@ -182,6 +217,67 @@ export class ChatInputComponent implements OnInit, OnDestroy {
      */
     isOverLimit(): boolean {
         return this.getCharCount() > this.getCharLimit()
+    }
+
+    /**
+     * 判断光标是否在第一行
+     */
+    private isCursorOnFirstLine(): boolean {
+        const textarea = this.textInput?.nativeElement
+        if (!textarea) {
+            return true
+        }
+        const pos = textarea.selectionStart
+        return !textarea.value.substring(0, pos).includes('\n')
+    }
+
+    /**
+     * 判断光标是否在最后一行
+     */
+    private isCursorOnLastLine(): boolean {
+        const textarea = this.textInput?.nativeElement
+        if (!textarea) {
+            return true
+        }
+        const pos = textarea.selectionStart
+        return !textarea.value.substring(pos).includes('\n')
+    }
+
+    /**
+     * 在输入历史中导航
+     * direction: -1 表示向上翻（更早的记录），1 表示向下翻（更近的记录）
+     */
+    private navigateHistory(direction: number): void {
+        const newIndex = this.historyIndex + (direction === -1 ? 1 : -1)
+
+        // 向上翻到顶
+        if (newIndex >= this.inputHistory.length) {
+            return
+        }
+
+        // 首次进入历史时，暂存当前输入
+        if (this.historyIndex === -1 && direction === -1) {
+            this.tempInput = this.inputValue
+        }
+
+        this.historyIndex = newIndex
+
+        if (this.historyIndex < 0) {
+            this.historyIndex = -1
+            this.inputValue = this.tempInput
+        } else {
+            this.inputValue = this.inputHistory[this.historyIndex]
+        }
+
+        // 同步 textarea 原生值并将光标移至末尾
+        const textarea = this.textInput?.nativeElement
+        if (textarea) {
+            textarea.value = this.inputValue
+            setTimeout(() => {
+                textarea.selectionStart = textarea.selectionEnd = this.inputValue.length
+                this.autoResize()
+            }, 0)
+        }
     }
 
     /**

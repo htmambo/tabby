@@ -4,7 +4,7 @@ import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 interface ProviderField {
     key: string
@@ -47,9 +47,6 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
     expandedProvider = ''
     localStatus: Record<string, boolean> = {}
     passwordVisibility: Record<string, Record<string, boolean>> = {}
-
-    // 翻译对象
-    t: any
 
     // API Key 格式校验规则
     private apiKeyPatterns: Record<string, RegExp> = {
@@ -153,18 +150,9 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         private logger: LoggerService,
         private toast: ToastService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadConfigs()
         // 检测本地供应商状态
         this.checkLocalProviderStatus()
@@ -278,11 +266,11 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         const baseURL = this.configs[providerName]?.baseURL || template?.defaultURL
 
         if (!baseURL) {
-            this.toast.error(this.t.providers.baseURL + ': ' + this.t.providers.testError)
+            this.toast.error(this.translate.instant('Base URL') + ': ' + this.translate.instant('Connection test failed'))
             return
         }
 
-        const testingMessage = `${this.t.providers.testConnection} ${template.name}...`
+        const testingMessage = `${this.translate.instant('Testing connection to')} ${template.name}...`
         this.logger.info(testingMessage)
 
         try {
@@ -292,16 +280,16 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
             })
 
             if (response.ok) {
-                this.toast.success(`${template.name}: ${this.t.providers.testSuccess}`)
+                this.toast.success(`${template.name}: ${this.translate.instant('Connection successful')}`)
                 this.localStatus[providerName] = true
                 this.logger.info('Local provider test successful', { provider: providerName })
             } else {
-                this.toast.error(`${this.t.providers.testFail}: ${response.status}`)
+                this.toast.error(`${this.translate.instant('Connection test failed')}: ${response.status}`)
                 this.localStatus[providerName] = false
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : this.t.providers.testError
-            this.toast.error(`${template.name}\n\n${this.t.providers.testError}\n${errorMessage}`)
+            const errorMessage = error instanceof Error ? error.message : this.translate.instant('Connection test failed')
+            this.toast.error(`${template.name}\n\n${this.translate.instant('Connection test failed')}\n${errorMessage}`)
             this.localStatus[providerName] = false
             this.logger.error('Local provider test failed', { provider: providerName, error: errorMessage })
         }
@@ -315,7 +303,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         if (providerConfig) {
             this.config.setProviderConfig(providerName, providerConfig)
             this.logger.info('Provider config saved', { provider: providerName })
-            this.toast.success(`${this.getProviderTemplate(providerName)?.name ?? providerName} ${this.t.providers.configSaved ?? '配置已保存'}`)
+            this.toast.success(`${this.getProviderTemplate(providerName)?.name ?? providerName} ${this.translate.instant('Configuration saved')}`)
         }
     }
 
@@ -346,7 +334,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
      * 删除提供商
      */
     removeProvider(providerName: string): void {
-        if (confirm(this.t.providers.deleteConfirm)) {
+        if (confirm(this.translate.instant('Delete provider configuration?'))) {
             this.configs = Object.fromEntries(
                 Object.entries(this.configs).filter(([name]) => name !== providerName),
             )
@@ -371,7 +359,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
     async testConnection(providerName: string): Promise<void> {
         const providerConfig = this.configs[providerName]
         if (!providerConfig) {
-            this.toast.error(this.t.providers.testError)
+            this.toast.error(this.translate.instant('Connection test failed'))
             return
         }
 
@@ -385,7 +373,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         const baseURL = providerConfig.baseURL
 
         if (!apiKey) {
-            this.toast.error(this.t.providers.apiKey + ': ' + this.t.providers.testError)
+            this.toast.error(this.translate.instant('API Key') + ': ' + this.translate.instant('Connection test failed'))
             return
         }
 
@@ -393,7 +381,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         const providerDisplayName = template?.name || providerName
 
         // 显示测试中状态
-        const testingMessage = `${this.t.providers.testConnection} ${providerDisplayName}...`
+        const testingMessage = `${this.translate.instant('Testing connection to')} ${providerDisplayName}...`
         this.logger.info(testingMessage)
 
         try {
@@ -408,16 +396,16 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
             })
 
             if (response.ok) {
-                this.toast.success(this.t.providers.testSuccess)
+                this.toast.success(this.translate.instant('Connection successful'))
                 this.logger.info('Connection test successful', { provider: providerName })
             } else {
                 const errorData = await response.text()
-                this.toast.error(`${this.t.providers.testFail}\n\nStatus: ${response.status}\n${errorData.substring(0, 200)}`)
+                this.toast.error(`${this.translate.instant('Connection test failed')}\n\nStatus: ${response.status}\n${errorData.substring(0, 200)}`)
                 this.logger.error('Connection test failed', { provider: providerName, status: response.status })
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : this.t.providers.testError
-            this.toast.error(`${this.t.providers.testFail}\n\n${errorMessage}`)
+            const errorMessage = error instanceof Error ? error.message : this.translate.instant('Connection test failed')
+            this.toast.error(`${this.translate.instant('Connection test failed')}\n\n${errorMessage}`)
             this.logger.error('Connection test error', { provider: providerName, error: errorMessage })
         }
     }
@@ -598,18 +586,18 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
      */
     validateApiKeyFormat(providerName: string, apiKey: string): { valid: boolean; message: string } {
         if (!apiKey || apiKey.trim().length === 0) {
-            return { valid: false, message: this.t?.providers?.apiKeyRequired || 'API Key 不能为空' }
+            return { valid: false, message: this.translate.instant('API Key cannot be empty') }
         }
 
         const pattern = this.apiKeyPatterns[providerName]
         if (pattern && !pattern.test(apiKey)) {
             const hints: Record<string, string> = {
-                openai: 'OpenAI API Key 应以 sk- 开头',
-                anthropic: 'Anthropic API Key 应以 sk-ant- 开头',
-                minimax: 'Minimax API Key 应为 32 位以上的字母数字',
-                glm: 'GLM API Key 格式不正确',
+                openai: this.translate.instant('OpenAI API Key should start with sk-'),
+                anthropic: this.translate.instant('Anthropic API Key should start with sk-ant-'),
+                minimax: this.translate.instant('Minimax API Key should be 32+ alphanumeric characters'),
+                glm: this.translate.instant('GLM API Key format is incorrect'),
             }
-            return { valid: false, message: hints[providerName] || 'API Key 格式可能不正确' }
+            return { valid: false, message: hints[providerName] || this.translate.instant('API Key format may be incorrect') }
         }
 
         return { valid: true, message: '' }

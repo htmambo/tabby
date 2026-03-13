@@ -3,7 +3,7 @@ import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 @Component({
     selector: 'app-chat-settings',
@@ -39,9 +39,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
             agentMaxRounds: 50,
         }
 
-    // 翻译对象
-    t: any
-
     fontSizes = [12, 14, 16, 18, 20]
 
     private destroy$ = new Subject<void>()
@@ -50,18 +47,9 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
         private config: ConfigProviderService,
         private logger: LoggerService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadSettings()
     }
 
@@ -121,10 +109,10 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
      * 清空聊天历史
      */
     clearChatHistory(): void {
-        if (confirm(this.t.chatSettings.clearHistoryConfirm)) {
+        if (confirm(this.translate.instant('Clear chat history?'))) {
             localStorage.removeItem('ai-assistant-chat-history')
             this.logger.info('Chat history cleared')
-            alert(this.t.providers.configDeleted)
+            alert(this.translate.instant('Configuration deleted'))
         }
     }
 
@@ -150,7 +138,7 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
      * 重置为默认设置
      */
     resetToDefaults(): void {
-        if (confirm(this.t.chatSettings.resetConfirm)) {
+        if (confirm(this.translate.instant('Reset to defaults?'))) {
             this.settings = {
                 chatHistoryEnabled: true,
                 maxChatHistory: 100,
@@ -174,7 +162,7 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
             this.saveSetting('agentMaxRounds', this.settings.agentMaxRounds)
 
             this.logger.info('Chat settings reset to defaults')
-            alert(this.t.providers.configSaved)
+            alert(this.translate.instant('Configuration saved'))
         }
     }
 }

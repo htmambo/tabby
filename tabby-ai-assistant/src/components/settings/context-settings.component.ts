@@ -4,7 +4,7 @@ import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { ContextManager } from '../../services/context/manager'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 import { ContextConfig, DEFAULT_CONTEXT_CONFIG } from '../../types/ai.types'
 
 @Component({
@@ -22,9 +22,6 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
     // 当前供应商的上下文限制
     activeProviderContextWindow = 200000
 
-    // 翻译对象
-    t: any
-
     private destroy$ = new Subject<void>()
 
     constructor(
@@ -32,17 +29,9 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
         private contextManager: ContextManager,
         private toast: ToastService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadConfig()
     }
 
@@ -70,7 +59,7 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
     saveConfig(): void {
         this.configService.setContextConfig(this.config)
         this.contextManager.updateConfig(this.config)
-        this.toast.success(this.t?.contextSettings?.configSaved || '上下文配置已保存')
+        this.toast.success(this.translate.instant('Context configuration saved'))
     }
 
     toggleAutoCompact(): void {
@@ -78,8 +67,8 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
         this.configService.setAutoCompactEnabled(this.autoCompactEnabled)
         this.toast.info(
             this.autoCompactEnabled
-                ? (this.t?.contextSettings?.autoCompactEnabled || '自动压缩已启用')
-                : (this.t?.contextSettings?.autoCompactDisabled || '自动压缩已禁用'),
+                ? this.translate.instant('Auto-compact enabled')
+                : this.translate.instant('Auto-compact disabled'),
         )
     }
 
@@ -87,6 +76,6 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
         this.config = { ...DEFAULT_CONTEXT_CONFIG }
         this.autoCompactEnabled = true
         this.saveConfig()
-        this.toast.info(this.t?.common?.resetToDefault || '已重置为默认配置')
+        this.toast.info(this.translate.instant('Reset to defaults'))
     }
 }

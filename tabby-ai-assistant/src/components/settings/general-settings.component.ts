@@ -6,7 +6,7 @@ import { LoggerService } from '../../services/core/logger.service'
 import { ThemeService } from '../../services/core/theme.service'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types'
-import { TranslateService, SupportedLanguage } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 @Component({
     selector: 'app-general-settings',
@@ -25,9 +25,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     isEnabled = true
     language = 'zh-CN'
     sidebarPosition: 'left' | 'right' = 'right'
-
-    // 翻译对象
-    t: any
 
     // 本地供应商状态缓存
     private localProviderStatus: Record<string, { text: string; color: string; icon: string; time: number }> = {}
@@ -62,18 +59,9 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
         private translate: TranslateService,
         private themeService: ThemeService,
         private sidebarService: AiSidebarService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadSettings()
         this.loadProviders()
         // 应用当前主题
@@ -315,7 +303,7 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
      */
     updateLanguage(language: string): void {
         this.language = language
-        this.translate.setLanguage(language as SupportedLanguage)
+        this.translate.use(language)
         this.logger.info('Language updated', { language })
     }
 

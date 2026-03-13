@@ -1,6 +1,4 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core'
-import { CommonModule } from '@angular/common'
-import { FormsModule } from '@angular/forms'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types'
@@ -22,8 +20,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
  */
 @Component({
     selector: 'app-ai-sidebar',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
+    standalone: false,
     template: `
         <div class="ai-sidebar-container" (contextmenu)="onContextMenu($event)">
             <!-- Header -->
@@ -33,35 +30,35 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                         <select class="provider-select"
                                 [ngModel]="selectedProvider"
                                 (ngModelChange)="onProviderSelectionChange($event)"
-                                [title]="t?.advancedSettings?.currentProvider || '当前提供商'">
+                                [title]="'Current Provider' | translate">
                             <option *ngFor="let provider of providerOptions"
                                     [ngValue]="provider.name"
                                     [disabled]="!provider.enabled || !provider.configured">
-                                {{ provider.displayName }}{{ provider.configured ? '' : ' (未配置)' }}{{ provider.enabled ? '' : ' (已禁用)' }}
+                                {{ provider.displayName }}{{ provider.configured ? '' : ('(Not Configured)' | translate) }}{{ provider.enabled ? '' : ('(Disabled)' | translate) }}
                             </option>
                         </select>
                         <i class="fa fa-exchange-alt" aria-hidden="true"></i>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" title="隐藏侧边栏">
+                    <button class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" [title]="'Hide Sidebar' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="openSettings()" title="打开设置">
+                    <button class="btn btn-link btn-sm" (click)="openSettings()" [title]="'Open Settings' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
                             <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.292A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="clearChat()" title="清空聊天">
+                    <button class="btn btn-link btn-sm" (click)="clearChat()" [title]="'Clear Chat' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="exportChat()" title="导出聊天">
+                    <button class="btn btn-link btn-sm" (click)="exportChat()" [title]="'Export Chat' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                             <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
@@ -98,7 +95,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                     <div class="message-content">
                         <div class="message-header">
                             <span class="message-role">
-                                {{ message.role === 'user' ? '用户' : message.role === 'assistant' ? 'AI' : '系统' }}
+                                {{ message.role === 'user' ? ('User' | translate) : message.role === 'assistant' ? ('AI' | translate) : ('System' | translate) }}
                             </span>
                             <span class="message-time">{{ formatTimestamp(message.timestamp) }}</span>
                         </div>
@@ -135,15 +132,15 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                                                 <ng-container *ngSwitchDefault>🔧</ng-container>
                                             </ng-container>
                                         </span>
-                                        <span class="tool-name">{{ block.name || '未知工具' }}</span>
-                                        <span class="tool-status" *ngIf="block.status === 'executing'">执行中...</span>
+                                        <span class="tool-name">{{ block.name || ('Unknown Tool' | translate) }}</span>
+                                        <span class="tool-status" *ngIf="block.status === 'executing'">{{ 'Executing...' | translate }}</span>
                                         <span class="tool-duration" *ngIf="block.status !== 'executing' && block.duration">{{ block.duration }}ms</span>
                                     </div>
                                     <!-- 工具输出 -->
                                     <div *ngIf="block.output && block.output.content" class="tool-output">
-                                        <div class="tool-output-header">输出:</div>
+                                        <div class="tool-output-header">{{ 'Output:' | translate }}</div>
                                         <pre class="tool-output-content">{{ block.output.content }}</pre>
-                                        <div *ngIf="block.output.truncated" class="tool-output-truncated">...(已截断)</div>
+                                        <div *ngIf="block.output.truncated" class="tool-output-truncated">{{ '...(truncated)' | translate }}</div>
                                     </div>
                                     <!-- 错误消息 -->
                                     <div *ngIf="block.status === 'error' && block.errorMessage" class="tool-output tool-error-message">
@@ -153,7 +150,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
 
                                 <!-- 3. 分隔线块 -->
                                 <div *ngIf="block.type === 'divider'" class="round-divider">
-                                    <span>--- 第 {{ block.round }} 轮 ---</span>
+                                    <span>--- {{ 'Round {n}' | translate:{n: block.round} }} ---</span>
                                 </div>
 
                                 <!-- 4. 状态块 -->
@@ -170,7 +167,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                                      }">
                                     <div class="ai-task-summary__header">
                                         <span class="ai-task-summary__icon">{{ block.success ? '✅' : '❌' }}</span>
-                                        <span class="ai-task-summary__title">{{ block.success ? '任务完成' : '任务未能完成' }}</span>
+                                        <span class="ai-task-summary__title">{{ block.success ? ('Task Completed' | translate) : ('Task Failed' | translate) }}</span>
                                     </div>
                                     <div class="ai-task-summary__content" [innerHTML]="formatMessage(block.summary)"></div>
                                     <div class="ai-task-summary__next-steps" *ngIf="block.nextSteps">
@@ -202,12 +199,12 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
             </div>
 
             <!-- Scroll buttons -->
-            <button *ngIf="showScrollTop" class="scroll-btn scroll-top" (click)="scrollToTop()" title="回到顶部">
+            <button *ngIf="showScrollTop" class="scroll-btn scroll-top" (click)="scrollToTop()" [title]="'Scroll to Top' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
                 </svg>
             </button>
-            <button *ngIf="showScrollBottom" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" title="回到底部">
+            <button *ngIf="showScrollBottom" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" [title]="'Scroll to Bottom' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L7.293 8 1.646 2.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
@@ -221,7 +218,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                         class="message-input"
                         [(ngModel)]="inputValue"
                         [disabled]="isLoading"
-                        [placeholder]="isLoading ? 'AI 正在思考...' : '输入您的问题或描述要执行的命令...'"
+                        [placeholder]="isLoading ? ('AI is thinking...' | translate) : ('Enter your question or describe the command you want to execute...' | translate)"
                         (keydown)="onKeydown($event)"
                         (input)="onInput($event)"
                         (compositionstart)="isComposing = true"
@@ -233,7 +230,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                         class="send-btn"
                         [disabled]="!inputValue.trim()"
                         (click)="submit()"
-                        title="发送消息">
+                        [title]="'Send Message' | translate">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
                         </svg>
@@ -242,7 +239,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                         *ngIf="isLoading"
                         class="send-btn stop-btn"
                         (click)="cancelRequest()"
-                        title="停止生成">
+                        [title]="'Stop Generating' | translate">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M3 3h10v10H3z"/>
                         </svg>
@@ -285,6 +282,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     inputValue = ''
     isComposing = false
     charLimit = 4000
+
+    // 输入历史
+    private inputHistory: string[] = []
+    private historyIndex = -1
+    private tempInput = ''
+    private readonly maxHistory = 50
 
     // Agent 模式配置
     /** Agent 模式最多保留的历史消息数量（不包含系统消息） */
@@ -1561,10 +1564,27 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         // 阻止所有键盘事件冒泡到终端
         event.stopPropagation()
 
+        if (this.isComposing) {
+            return
+        }
+
         // Enter 发送（不包含Shift）
-        if (event.key === 'Enter' && !event.shiftKey && !this.isComposing) {
+        if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault()
             this.submit()
+            return
+        }
+
+        // ArrowUp / ArrowDown 切换输入历史
+        if (this.inputHistory.length === 0) {
+            return
+        }
+        if (event.key === 'ArrowUp' && this.isCursorOnFirstLine()) {
+            event.preventDefault()
+            this.navigateHistory(-1)
+        } else if (event.key === 'ArrowDown' && this.isCursorOnLastLine()) {
+            event.preventDefault()
+            this.navigateHistory(1)
         }
     }
 
@@ -1617,7 +1637,16 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     submit(): void {
         const message = this.inputValue.trim()
         if (message && !this.isLoading) {
-            // 使用 Agent 循环模式发送消息（支持多轮工具调用）
+            // 记录到输入历史（避免连续重复）
+            if (this.inputHistory[0] !== message) {
+                this.inputHistory.unshift(message)
+                if (this.inputHistory.length > this.maxHistory) {
+                    this.inputHistory.pop()
+                }
+            }
+            this.historyIndex = -1
+            this.tempInput = ''
+
             this.onSendMessageWithAgent(message)
             this.inputValue = ''
             setTimeout(() => this.autoResize(), 0)
@@ -1653,6 +1682,54 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             const messagesHeight = `calc(100vh - ${baseHeight + inputActualHeight - 36}px)`
             this.chatContainerRef.nativeElement.style.height = messagesHeight
         }
+    }
+
+    private isCursorOnFirstLine(): boolean {
+        const textarea = this.textInput?.nativeElement
+        if (!textarea) {
+            return true
+        }
+        const pos = textarea.selectionStart
+        return !textarea.value.substring(0, pos).includes('\n')
+    }
+
+    private isCursorOnLastLine(): boolean {
+        const textarea = this.textInput?.nativeElement
+        if (!textarea) {
+            return true
+        }
+        const pos = textarea.selectionStart
+        return !textarea.value.substring(pos).includes('\n')
+    }
+
+    private navigateHistory(direction: number): void {
+        const newIndex = this.historyIndex + (direction === -1 ? 1 : -1)
+
+        if (newIndex >= this.inputHistory.length) {
+            return
+        }
+
+        if (this.historyIndex === -1 && direction === -1) {
+            this.tempInput = this.inputValue
+        }
+
+        this.historyIndex = newIndex
+
+        if (this.historyIndex < 0) {
+            this.historyIndex = -1
+            this.inputValue = this.tempInput
+        } else {
+            this.inputValue = this.inputHistory[this.historyIndex]
+        }
+
+        // 等 Angular 完成 ngModel 绑定后再定位光标
+        setTimeout(() => {
+            const textarea = this.textInput?.nativeElement
+            if (textarea) {
+                textarea.selectionStart = textarea.selectionEnd = this.inputValue.length
+            }
+            this.autoResize()
+        }, 0)
     }
 
     /**

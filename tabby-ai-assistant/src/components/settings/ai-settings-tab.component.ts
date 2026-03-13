@@ -6,7 +6,7 @@ import { ConfigProviderService } from '../../services/core/config-provider.servi
 import { AiSettingsViewService, AiSettingsTabId } from '../../services/core/ai-settings-view.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 declare const __TABBY_BUILD_VERSION__: string
 const PLUGIN_VERSION = __TABBY_BUILD_VERSION__
@@ -24,9 +24,6 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
     currentProvider = ''
     providerStatus: any = {}
     pluginVersion: string = PLUGIN_VERSION
-
-    // 翻译对象
-    t: any
 
     // Tab 定义（使用翻译 key）
     tabs: { id: AiSettingsTabId; labelKey: string; icon: string }[] = [
@@ -50,20 +47,11 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
         private logger: LoggerService,
         private toast: ToastService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
         this.activeTab = this.settingsView.consumeRequestedTab(this.activeTab)
         this.ensureActiveTab()
-
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
 
         this.settingsView.requestedTab$.pipe(
             takeUntil(this.destroy$),
@@ -177,7 +165,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
      * 获取提供商状态文本
      */
     getProviderStatusText(healthy: boolean): string {
-        return healthy ? this.t.common.enabled : this.t.common.disabled
+        return healthy ? this.translate.instant('Enabled') : this.translate.instant('Disabled')
     }
 
     /**
@@ -189,13 +177,13 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
             const invalidProviders = results.filter(r => !r.valid)
 
             if (invalidProviders.length > 0) {
-                this.toast.warning(`${this.t.advancedSettings.validateConfig}: ${invalidProviders.length} 个提供商存在配置问题`)
+                this.toast.warning(`${this.translate.instant('Validate configuration')}: ${invalidProviders.length} providers have configuration issues`)
             } else {
-                this.toast.success(this.t.providers.testSuccess)
+                this.toast.success(this.translate.instant('Connection successful'))
             }
         } catch (error) {
             this.logger.error('Failed to validate config', error)
-            this.toast.error(this.t.chatInterface.errorPrefix)
+            this.toast.error(this.translate.instant('Error occurred'))
         }
     }
 
@@ -228,11 +216,11 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
                     try {
                         const config = e.target?.result as string
                         this.config.importConfig(config)
-                        this.toast.success(this.t.providers.configSaved)
+                        this.toast.success(this.translate.instant('Configuration saved'))
                         this.loadSettings()
                         this.loadProviderStatus()
                     } catch (error) {
-                        this.toast.error(this.t.chatInterface.errorPrefix)
+                        this.toast.error(this.translate.instant('Error occurred'))
                     }
                 }
                 reader.readAsText(file)
@@ -245,12 +233,12 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
      * 重置为默认配置
      */
     resetToDefaults(): void {
-        if (confirm(this.t.chatSettings.resetConfirm)) {
+        if (confirm(this.translate.instant('Reset to defaults?'))) {
             this.config.reset()
             this.loadSettings()
             this.loadProviderStatus()
             this.activeTab = 'providers'
-            this.toast.success(this.t.advancedSettings.resetDefaults || '已重置为默认配置')
+            this.toast.success(this.translate.instant('Reset to defaults'))
         }
     }
 }

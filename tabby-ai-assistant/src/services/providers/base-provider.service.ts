@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { IBaseAiProvider, ProviderConfig, AuthConfig, ProviderCapability, HealthStatus, ValidationResult, ProviderInfo, PROVIDER_DEFAULTS } from '../../types/provider.types'
 import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, StreamEvent, MessageRole } from '../../types/ai.types'
 import { LoggerService } from '../core/logger.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 /**
  * 基础AI提供商抽象类
@@ -632,6 +632,6 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      * 获取默认系统提示 - 子类可重写
      */
     protected getDefaultSystemPrompt(): string {
-        return this.translate.t.systemPrompts?.assistantRole || `You are a professional terminal command assistant running in Tabby terminal.`
+        return this.translate.instant('systemPrompts.assistantRole') || `You are a professional terminal command assistant running in Tabby terminal.`
     }
 }

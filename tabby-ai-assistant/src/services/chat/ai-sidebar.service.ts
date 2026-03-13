@@ -1,4 +1,4 @@
-import { Injectable, ComponentFactoryResolver, ApplicationRef, Injector, EmbeddedViewRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core'
+import { Injectable, ApplicationRef, Injector, EmbeddedViewRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core'
 import { Subject, Observable } from 'rxjs'
 import { AppService, ConfigService } from 'tabby-core'
 import { AiSidebarComponent } from '../../components/chat/ai-sidebar.component'
@@ -63,7 +63,6 @@ export class AiSidebarService {
     }
 
     constructor(
-        private componentFactoryResolver: ComponentFactoryResolver,
         private appRef: ApplicationRef,
         private injector: Injector,
         private environmentInjector: EnvironmentInjector,
@@ -203,8 +202,7 @@ export class AiSidebarService {
      * 这样不改变任何现有元素的 flex 布局
      */
     private createSidebar(): void {
-        // 使用 createComponent API (Angular 14+)，传入 EnvironmentInjector
-        // 这确保组件能正确解析所有 root 级服务依赖
+        // 使用 createComponent API，传入 EnvironmentInjector 以正确解析模块级依赖
         this.sidebarComponentRef = createComponent(AiSidebarComponent, {
             environmentInjector: this.environmentInjector,
             elementInjector: this.injector,

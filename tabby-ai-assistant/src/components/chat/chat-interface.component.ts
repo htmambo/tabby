@@ -7,7 +7,7 @@ import { ConfigProviderService } from '../../services/core/config-provider.servi
 import { LoggerService } from '../../services/core/logger.service'
 import { ChatHistoryService } from '../../services/chat/chat-history.service'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 import { ToolStreamProcessorService } from '../../services/tools/tool-stream-processor.service'
 import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.types'
 
@@ -35,9 +35,6 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     compactMode = false
     fontSize = 14
 
-    // 翻译对象
-    t: any
-
     private destroy$ = new Subject<void>()
     private shouldScrollToBottom = false
     private activeAiMessageId: string | null = null
@@ -56,22 +53,9 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         private chatHistory: ChatHistoryService,
         private translate: TranslateService,
         private toolStreamProcessor: ToolStreamProcessorService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-            // 如果有欢迎消息，重新发送以更新语言
-            if (this.messages.length > 0 && this.messages[0].role === MessageRole.ASSISTANT) {
-                this.sendWelcomeMessage()
-            }
-        })
-
         // 生成或加载会话 ID
         this.currentSessionId = this.generateSessionId()
 
@@ -194,7 +178,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         const welcomeMessage: ChatMessage = {
             id: this.generateId(),
             role: MessageRole.ASSISTANT,
-            content: `${this.t.chatInterface.welcomeMessage}\n\n${this.t.chatInterface.tipCommand}\n\n${this.t.chatInterface.tipShortcut}`,
+            content: `${this.translate.instant('chatInterface.welcomeMessage')}\n\n${this.translate.instant('chatInterface.tipCommand')}\n\n${this.translate.instant('chatInterface.tipShortcut')}`,
             timestamp: new Date(),
         }
         this.messages.push(welcomeMessage)
@@ -257,7 +241,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
         } catch (error) {
             this.logger.error('Failed to send message with agent', error)
-            aiMessage.content = `${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.t.chatInterface.tipShortcut}`
+            aiMessage.content = `${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.translate.instant('Tip: use Alt+C to open AI chat')}`
             this.isLoading = false
             setTimeout(() => this.scrollToBottom(), 0)
         }
@@ -331,7 +315,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                 break
 
             case 'error':
-                message.content += `\n\n❌ ${this.t.chatInterface.errorPrefix}: ${event.error}`
+                message.content += `\n\n❌ ${this.translate.instant('Error occurred')}: ${event.error}`
                 break
         }
 
@@ -346,7 +330,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
      */
     private handleStreamError(error: any, message: ChatMessage): void {
         this.logger.error('Agent stream error', error)
-        message.content += `\n\n❌ ${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message.content += `\n\n❌ ${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}`
         this.isLoading = false
         this.shouldScrollToBottom = true
         this.scheduleScrollToAiMessageStart()
@@ -421,7 +405,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                     } else if (event.type === 'tool_use_start') {
                         // 工具调用开始 - 显示提示
                         const toolName = event.toolCall?.name ? ` (${event.toolCall.name})` : ''
-                        aiMessage.content += `\n\n🔧 ${this.t.chatInterface.executingTool}${toolName}...`
+                        aiMessage.content += `\n\n🔧 ${this.translate.instant('Executing tool')}${toolName}...`
 
                         // 记录待执行的工具
                         if (event.toolCall?.id) {
@@ -481,7 +465,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                 },
                 error: (error) => {
                     this.logger.error('Stream error', error)
-                    aiMessage.content += `\n\n${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    aiMessage.content += `\n\n${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}`
                     this.isLoading = false
                     this.shouldScrollToBottom = true
                     this.scheduleScrollRefresh()
@@ -502,7 +486,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             const errorMessage: ChatMessage = {
                 id: this.generateId(),
                 role: MessageRole.ASSISTANT,
-                content: `${this.t.chatInterface.errorPrefix}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.t.chatInterface.tipShortcut}`,
+                content: `${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.translate.instant('Tip: use Alt+C to open AI chat')}`,
                 timestamp: new Date(),
             }
             this.messages.push(errorMessage)
@@ -515,7 +499,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
      * 清空聊天记录
      */
     clearChat(): void {
-        if (confirm(this.t.chatInterface.clearChatConfirm)) {
+        if (confirm(this.translate.instant('Clear chat history?'))) {
             // 删除当前会话
             if (this.currentSessionId) {
                 this.chatHistory.deleteSession(this.currentSessionId)
@@ -573,7 +557,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             }))
 
         if (configuredProviders.length === 0) {
-            alert(this.t.providers.testError)
+            alert(this.translate.instant('No configured providers'))
             return
         }
 
@@ -583,7 +567,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         ).join('\n')
 
         const choice = prompt(
-            `${this.t.chatInterface.providerBadge}: ${this.currentProvider}\n\n${this.t.chatInterface.switchProvider}:\n${providerList}\n\n${this.t.chatInterface.inputPlaceholder}`,
+            `${this.translate.instant('Current provider')}: ${this.currentProvider}\n\n${this.translate.instant('Switch provider')}:\n${providerList}\n\n${this.translate.instant('Enter provider number')}`,
             '1',
         )
 
@@ -599,12 +583,12 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                 const systemMessage: ChatMessage = {
                     id: this.generateId(),
                     role: MessageRole.SYSTEM,
-                    content: `${this.t.chatInterface.providerBadge}: ${this.currentProvider}`,
+                    content: `${this.translate.instant('Current provider')}: ${this.currentProvider}`,
                     timestamp: new Date(),
                 }
                 this.messages.push(systemMessage)
             } else {
-                alert(this.t.chatInterface.errorPrefix)
+                alert(this.translate.instant('Error occurred'))
             }
         }
     }

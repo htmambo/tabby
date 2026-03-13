@@ -3,7 +3,7 @@ import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 @Component({
     selector: 'app-security-settings',
@@ -36,27 +36,15 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
         'fork(',
     ]
 
-    // 翻译对象
-    t: any
-
     private destroy$ = new Subject<void>()
 
     constructor(
         private config: ConfigProviderService,
         private logger: LoggerService,
         private translate: TranslateService,
-    ) {
-        this.t = this.translate.t
-    }
+    ) {}
 
     ngOnInit(): void {
-        // 监听语言变化
-        this.translate.translation$.pipe(
-            takeUntil(this.destroy$),
-        ).subscribe(translation => {
-            this.t = translation
-        })
-
         this.loadSettings()
     }
 
@@ -93,7 +81,7 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
     }
 
     resetToDefaults(): void {
-        if (confirm(this.t.security.resetConfirm)) {
+        if (confirm(this.translate.instant('Reset to defaults?'))) {
             this.settings = {
                 enablePasswordProtection: false,
                 enableRiskAssessment: true,

@@ -5,7 +5,7 @@ import { AiAssistantService } from '../core/ai-assistant.service'
 import { TerminalContextService } from '../terminal/terminal-context.service'
 import { SecurityValidatorService } from '../security/security-validator.service'
 import { LoggerService } from '../core/logger.service'
-import { TranslateService } from '../../i18n'
+import { TranslateService } from 'tabby-core'
 
 @Injectable({ providedIn: 'root' })
 export class CommandGeneratorService {
@@ -235,7 +235,7 @@ export class CommandGeneratorService {
      * 获取系统提示词
      */
     private getSystemPrompt(): string {
-        return this.translate.t.systemPrompts?.commandGeneratorRole || `You are a professional terminal command generation assistant. Your task is to:
+        return this.translate.instant('systemPrompts.commandGeneratorRole') || `You are a professional terminal command generation assistant. Your task is to:
 
 1. Convert natural language descriptions into accurate, efficient terminal commands
 2. Consider current operating system and Shell environment
