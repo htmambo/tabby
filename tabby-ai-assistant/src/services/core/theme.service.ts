@@ -30,12 +30,12 @@ const THEME_VARIABLES: Record<ThemeType, Record<string, string>> = {
         'ai-assistant-message': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
         'ai-system-message': 'var(--theme-warning-active-fg, var(--theme-bg-more-2, #3a3a3a))',
         // 背景和边框
-        'ai-bg-primary': 'var(--body-bg, var(--bs-body-bg, #1e1e1e))',
-        'ai-bg-secondary': 'var(--theme-bg-more, var(--bs-secondary-bg, #2d2d2d))',
-        'ai-bg-tertiary': 'var(--theme-bg-more-2, var(--bs-tertiary-bg, #3d3d3d))',
-        'ai-text-primary': 'var(--theme-fg, var(--bs-body-color, #f8f9fa))',
-        'ai-text-secondary': 'var(--theme-fg-more, var(--bs-secondary-color, #adb5bd))',
-        'ai-border': 'var(--bs-border-color, var(--theme-bg-more-2, #4a4a4a))',
+        'ai-bg-primary': 'var(--bs-body-bg, #1e1e1e)',
+        'ai-bg-secondary': 'var(--bs-secondary-bg, #2d2d2d)',
+        'ai-bg-tertiary': 'var(--bs-tertiary-bg, #3d3d3d)',
+        'ai-text-primary': 'var(--bs-body-color, #f8f9fa)',
+        'ai-text-secondary': 'var(--bs-secondary-color, #adb5bd)',
+        'ai-border': 'var(--theme-fg-less2, #4a4a4a)',
         'ai-border-radius': 'var(--bs-border-radius, 0.375rem)',
         'ai-box-shadow': '0 0.125rem 0.25rem rgba(0, 0, 0, 0.18)',
         // 字体
