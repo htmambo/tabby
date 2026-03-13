@@ -1061,7 +1061,7 @@ export class AppRootComponent {
         this.scheduleRoyalActiveSync()
     }
 
-    private observeRoyalTab (tab: BaseTabComponent): void {
+    private observeRoyalTab (_tab: BaseTabComponent): void {
         // No-op without split tabs
     }
 

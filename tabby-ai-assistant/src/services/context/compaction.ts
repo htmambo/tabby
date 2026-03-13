@@ -317,7 +317,6 @@ export class Compaction {
     private pruneComplexContent(message: ApiMessage, content: any[]): ApiMessage & { tokensSaved?: number; partsCompacted?: number } {
         let tokensSaved = 0
         let partsCompacted = 0
-        const originalLength = JSON.stringify(content).length
 
         // 处理每个内容块
         const prunedContent = content.map(block => {
@@ -411,7 +410,7 @@ export class Compaction {
     /**
      * 应用Prune结果到消息
      */
-    private async applyPruneResult(messages: ApiMessage[], pruneResult: PruneResult): Promise<ApiMessage[]> {
+    private async applyPruneResult(messages: ApiMessage[], _pruneResult: PruneResult): Promise<ApiMessage[]> {
         // 简化实现：假设prune已经处理了消息
         // 实际实现中需要更复杂的逻辑来处理prune结果
         return messages

@@ -1,6 +1,5 @@
 import { Component, Output, EventEmitter, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ThemeService } from '../../services/core/theme.service'
@@ -32,7 +31,7 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     private readonly localProviders = ['ollama', 'vllm']
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { general: {}, providers: {}, security: {}, settings: {} }
         }

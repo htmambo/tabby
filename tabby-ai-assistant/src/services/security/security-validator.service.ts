@@ -20,7 +20,7 @@ export class SecurityValidatorService {
     async validateAndConfirm(
         command: string,
         explanation: string,
-        _context?: any,
+        _context?: unknown,
     ): Promise<ValidationResult> {
         this.logger.info('Validating command', { command })
 
@@ -136,8 +136,8 @@ export class SecurityValidatorService {
         return {
             totalValidations: await this.consentManager.getTotalValidations(),
             activeConsents: await this.consentManager.getActiveConsentsCount(),
-            passwordAttempts: await this.passwordManager.getTotalAttempts(),
-            failedAttempts: await this.passwordManager.getFailedAttempts(),
+            passwordAttempts: this.passwordManager.getTotalAttempts(),
+            failedAttempts: this.passwordManager.getFailedAttempts(),
         }
     }
 }

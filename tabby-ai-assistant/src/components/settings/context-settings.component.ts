@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { ContextManager } from '../../services/context/manager'
 import { ToastService } from '../../services/core/toast.service'
@@ -24,7 +23,7 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { contextSettings: {}, common: {}, providers: {} }
         }

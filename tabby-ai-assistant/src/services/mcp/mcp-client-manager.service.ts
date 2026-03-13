@@ -328,7 +328,7 @@ export class MCPClientManager implements OnDestroy {
             error: lastError?.message,
         })
 
-        throw lastError ?? new Error("Tool call failed")
+        throw lastError ?? new Error('Tool call failed')
     }
 
     /**

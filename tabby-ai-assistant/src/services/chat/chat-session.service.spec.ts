@@ -60,7 +60,7 @@ describe('ChatSessionService', () => {
 
         it('should initialize with empty messages', () => {
             service.createSession()
-            service.messages$.subscribe(currentMessagesAfter => {
+            service.messages$.subscribe(_currentMessagesAfter => {
                 expect(messages).toEqual([])
             })
         })
@@ -84,7 +84,6 @@ describe('ChatSessionService', () => {
         it('should create session if none exists', async () => {
             await service.sendMessage('Test message')
 
-            const _sessionId = service.getCurrentSessionId()
             expect(sessionId).toBeDefined()
         })
 
@@ -138,9 +137,9 @@ describe('ChatSessionService', () => {
             const messageId = currentMessages[0].id
             service.deleteMessage(messageId)
 
-            service.messages$.subscribe(messages => {
-                expect(currentMessagesAfter.length).toBe(3)
-                expect(currentMessagesAfter.find(m => m.id === messageId)).toBeUndefined()
+            service.messages$.subscribe(_messages => {
+                expect(_messages.length).toBe(3)
+                expect(_messages.find(m => m.id === messageId)).toBeUndefined()
             })
         })
     })
@@ -191,7 +190,6 @@ describe('ChatSessionService', () => {
     describe('switchToSession', () => {
         it('should switch to specified session', () => {
             service.createSession()
-            const _sessionId = service.getCurrentSessionId()
 
             service.switchToSession('new-session-id')
 
@@ -209,7 +207,7 @@ describe('ChatSessionService', () => {
             await service.sendMessage('Test message')
 
             const currentMessages = service.getCurrentMessages()
-            expect(messages.length).toBe(2)
+            expect(currentMessages.length).toBe(2)
         })
     })
 
@@ -232,7 +230,7 @@ describe('ChatSessionService', () => {
             service.createSession()
             mockAiService.chat = jest.fn().mockRejectedValue(new Error('Test error'))
 
-            let errorMessage = 
+            let errorMessage = ''
             service.error$.subscribe(error => {
                 errorMessage = error
             })

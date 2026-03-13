@@ -211,7 +211,7 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         })
     }
 
-    async switchTabProfile (tab: BaseTabComponent) {
+    async switchTabProfile (tab: BaseTabComponent): Promise<void> {
         const profile = await this.profilesService.showProfileSelector().catch(() => null)
         if (!profile) {
             return

@@ -182,6 +182,10 @@ export class ToolStreamProcessorService {
                     // 可选：发送工具执行中状态更新
                     break
 
+                case 'tool_use_end':
+                    // 工具使用结束，暂无特殊处理
+                    break
+
                 case 'tool_executed':
                     this.processToolComplete(event, timestamp)
                     break
@@ -413,7 +417,7 @@ export class ToolStreamProcessorService {
     /**
      * 处理 Agent 完成
      */
-    private processAgentComplete(event: AgentStreamEvent, timestamp: number): void {
+    private processAgentComplete(event: AgentStreamEvent, _timestamp: number): void {
         this.emitAgentDone(
             event.reason as AgentDoneReason || 'no_tools',
             event.totalRounds ?? 0,

@@ -569,7 +569,7 @@ export class TerminalToolsService {
     private async writeToTerminal(command: string, execute: boolean, terminalIndex?: number): Promise<string> {
         this.logger.info('writeToTerminal called', { command, execute, terminalIndex })
 
-        let success: boolean
+        let success = false
 
         if (terminalIndex !== undefined) {
             // 向指定索引的终端写入

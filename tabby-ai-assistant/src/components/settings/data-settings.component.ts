@@ -722,7 +722,7 @@ export interface DataFileInfo {
 export class DataSettingsComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { dataSettings: {} }
         }

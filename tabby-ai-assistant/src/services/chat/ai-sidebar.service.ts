@@ -433,20 +433,8 @@ export class AiSidebarService {
      * 设置 resize handle 拖动逻辑
      */
     private setupResizeHandler(handle: HTMLElement, wrapper: HTMLElement): void {
-        let startX: number
-        let startWidth: number
-
-        const onMouseDown = (e: MouseEvent) => {
-            e.preventDefault()
-            this.isResizing = true
-            startX = e.clientX
-            startWidth = this.currentWidth
-
-            document.addEventListener('mousemove', onMouseMove)
-            document.addEventListener('mouseup', onMouseUp)
-            document.body.style.cursor = 'ew-resize'
-            document.body.style.userSelect = 'none'
-        }
+        let startX = 0
+        let startWidth = 0
 
         const onMouseMove = (e: MouseEvent) => {
             if (!this.isResizing) {return}
@@ -475,6 +463,18 @@ export class AiSidebarService {
 
             // 保存宽度到配置
             this.saveSidebarWidth(this.currentWidth)
+        }
+
+        const onMouseDown = (e: MouseEvent) => {
+            e.preventDefault()
+            this.isResizing = true
+            startX = e.clientX
+            startWidth = this.currentWidth
+
+            document.addEventListener('mousemove', onMouseMove)
+            document.addEventListener('mouseup', onMouseUp)
+            document.body.style.cursor = 'ew-resize'
+            document.body.style.userSelect = 'none'
         }
 
         handle.addEventListener('mousedown', onMouseDown)

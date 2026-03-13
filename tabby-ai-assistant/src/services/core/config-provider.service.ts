@@ -3,7 +3,7 @@ import { Subject, Observable } from 'rxjs'
 import { LoggerService } from './logger.service'
 import { FileStorageService } from './file-storage.service'
 import { SecurityConfig } from '../../types/security.types'
-import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../types/provider.types'
+import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types'
 import { ContextConfig } from '../../types/ai.types'
 import { ProxyConfig, DEFAULT_PROXY_CONFIG } from '../../types/proxy.types'
 
@@ -205,7 +205,9 @@ export class ConfigProviderService {
      * 删除提供商配置
      */
     deleteProviderConfig(name: string): void {
-        delete this.config.providers[name]
+        this.config.providers = Object.fromEntries(
+            Object.entries(this.config.providers).filter(([key]) => key !== name),
+        )
         this.saveConfig()
         this.configChange$.next({ key: `providers.${name}`, value: null })
         this.logger.info('Provider configuration deleted', { provider: name })

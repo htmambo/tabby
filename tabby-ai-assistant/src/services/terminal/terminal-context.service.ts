@@ -321,6 +321,13 @@ export class TerminalContextService {
                 suggestions.push('使用 `man <command>` 查看命令手册')
                 suggestions.push('使用 `--help` 或 `-h` 查看帮助信息')
                 break
+
+            case 'unknown':
+            case 'runtime_error':
+            case 'network_error':
+                // 通用建议
+                suggestions.push('查看完整错误信息以获取更多详情')
+                break
         }
 
         return suggestions

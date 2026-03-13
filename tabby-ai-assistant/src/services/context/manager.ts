@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core'
 import { LoggerService } from '../core/logger.service'
 import { ConfigProviderService } from '../core/config-provider.service'
-import { ChatHistoryService, SavedSession } from '../chat/chat-history.service'
+import { ChatHistoryService } from '../chat/chat-history.service'
 import { SummaryService } from './summary.service'
-import { calculateCost, formatCost } from '../../utils/cost.utils'
+import { calculateCost } from '../../utils/cost.utils'
 import {
     ApiMessage,
     ContextConfig,
@@ -12,7 +12,6 @@ import {
     CompactionResult,
     PruneResult,
     TruncationResult,
-    ChatMessage,
 } from '../../types/ai.types'
 
 /**
@@ -354,9 +353,6 @@ export class ContextManager {
                 }
             }
 
-            // 格式化消息用于摘要
-            const summaryInput = this.formatMessagesForSummary(messagesToSummarize)
-
             // 调用AI API生成摘要
             const summaryResult = await this.summaryService.generateSummary(messagesToSummarize)
             const summary = summaryResult.summary
@@ -438,7 +434,7 @@ export class ContextManager {
         let partsCompacted = 0
 
         // 简化版实现：移除过长的工具输出
-        const prunedMessages = messages.map(msg => {
+        messages.map(msg => {
             if (typeof msg.content === 'string' && msg.content.length > 1000) {
                 partsCompacted++
                 const originalLength = msg.content.length
@@ -446,11 +442,6 @@ export class ContextManager {
 
                 // 估算节省的Token数
                 tokensSaved += Math.floor((originalLength - prunedContent.length) / 4)
-
-                return {
-                    ...msg,
-                    content: prunedContent,
-                }
             }
             return msg
         })

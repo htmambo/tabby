@@ -6,6 +6,7 @@ import { Injectable, OnDestroy } from '@angular/core'
 import { Subject } from 'rxjs'
 import { ConfigProviderService } from './config-provider.service'
 
+// eslint-disable-next-line @typescript-eslint/no-type-alias
 export type ThemeType = 'tech'
 
 // 主题变量定义 — 配色跟随项目自身 CSS 变量（--theme-* / --bs-*）

@@ -669,7 +669,7 @@ type EditorMode = 'add' | 'edit' | null
 export class MCPSettingsComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { mcpSettings: {}, common: {} }
         }
@@ -685,7 +685,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
             },
             common: {
                 edit: this.translate.instant('Edit'),
-                delete: this.translate.instant('Delete'),
+                'delete': this.translate.instant('Delete'),
             },
         }
     }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import * as pako from 'pako'
 import { LoggerService } from './logger.service'
 import { FileStorageService } from './file-storage.service'
@@ -439,8 +439,8 @@ export class CheckpointManager {
      */
     private arrayBufferToBase64(buffer: Uint8Array): string {
         let binary = ''
-        for (let i = 0; i < buffer.length; i++) {
-            binary += String.fromCharCode(buffer[i])
+        for (const char of buffer) {
+            binary += String.fromCharCode(char)
         }
         return btoa(binary)
     }
@@ -550,14 +550,14 @@ export class CheckpointManager {
             sessionCounts.set(cp.sessionId, count + 1)
         })
 
-        let mostActiveSession: string | undefined
+        let mostActiveSession: string | undefined = undefined
         let maxCount = 0
-        sessionCounts.forEach((count, sessionId) => {
+        for (const [sessionId, count] of sessionCounts) {
             if (count > maxCount) {
                 maxCount = count
                 mostActiveSession = sessionId
             }
-        })
+        }
 
         return {
             totalCheckpoints,

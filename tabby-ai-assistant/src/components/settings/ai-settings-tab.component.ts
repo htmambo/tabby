@@ -42,7 +42,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
 
     private translationsCache: any = null
 
-    get t() {
+    get t(): any {
         if (this.translationsCache) {
             return this.translationsCache
         }

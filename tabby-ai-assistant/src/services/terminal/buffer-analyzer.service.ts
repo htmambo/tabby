@@ -215,9 +215,7 @@ export class BufferAnalyzerService {
                 })
 
                 commandHistory.push(fullCommand)
-            }
-            // 检测常见的命令开头
-            else if (this.COMMON_COMMANDS.some(cmd => line.startsWith(cmd + ' '))) {
+            } else if (this.COMMON_COMMANDS.some(cmd => line.startsWith(cmd + ' '))) {
                 const commandParts = this.parseCommand(line)
                 commands.push({
                     command: commandParts.command,
@@ -359,7 +357,7 @@ export class BufferAnalyzerService {
 
         // 匹配绝对路径
         const absolutePathPattern = /(\/[^\s:]+(?:\/[^\s:]+)*)/g
-        let match
+        let match: RegExpExecArray | null = null
         while ((match = absolutePathPattern.exec(buffer)) !== null) {
             const path = match[1]
             if (this.isValidFilePath(path)) {

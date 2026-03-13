@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { TranslateService } from 'tabby-core'
@@ -43,7 +42,7 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { chatSettings: {} }
         }

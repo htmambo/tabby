@@ -310,7 +310,7 @@ export class HTTPStreamTransport extends BaseTransport {
     /**
      * 从响应中提取 session ID
      */
-    private extractSessionId(response: MCPResponse): string | null {
+    private extractSessionId(_response: MCPResponse): string | null {
         // 尝试从响应头获取
         // 注意：由于我们使用 fetch，响应头可能不可用
         return null

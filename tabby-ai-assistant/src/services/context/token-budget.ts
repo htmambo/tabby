@@ -90,7 +90,6 @@ export class TokenBudget {
 
         if (this.strategy.adaptive && this.usageHistory.length > 0) {
             // 自适应策略：根据历史使用情况调整
-            const avgUsage = this.getAverageUsage()
             const usageVariation = this.calculateUsageVariation()
             const adjustmentFactor = 1 - (usageVariation * 0.1)
 
@@ -407,14 +406,10 @@ export class TokenBudget {
         if (usage.utilizationRate > 0.9) {
             this.strategy.conservative = true
             this.strategy.aggressive = false
-        }
-        // 如果使用率持续过低，转向激进策略
-        else if (usage.utilizationRate < 0.4) {
+        } else if (usage.utilizationRate < 0.4) { // 如果使用率持续过低，转向激进策略
             this.strategy.conservative = false
             this.strategy.aggressive = true
-        }
-        // 否则保持平衡
-        else {
+        } else { // 否则保持平衡
             this.strategy.conservative = false
             this.strategy.aggressive = false
         }

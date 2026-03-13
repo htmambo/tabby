@@ -1,10 +1,10 @@
 import { Injectable, NgZone } from '@angular/core'
-import { Subject, Observable, Subscription, BehaviorSubject, interval } from 'rxjs'
+import { Subject, Observable, Subscription, interval } from 'rxjs'
 import { AppService } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { LoggerService } from '../core/logger.service'
 
-// 使用 any 避免泛型版本兼容问题
+// eslint-disable-next-line @typescript-eslint/no-type-alias
 type TerminalTab = BaseTerminalTabComponent<any>
 
 /**
@@ -264,7 +264,7 @@ export class TerminalManagerService {
             const line = lines[i]
             // 匹配常见的命令提示符
             const match = line.match(/(?:[$>%#]|PS [^>]+>)\s*(.+)/)
-            if (match && match[1]) {
+            if (match?.[1]) {
                 const cmd = match[1].trim()
                 // 排除明显的非命令行
                 if (cmd && !cmd.startsWith('[') && cmd.length > 0) {
@@ -368,7 +368,6 @@ export class TerminalManagerService {
      * 切换到指定终端
      */
     focusTerminal(index: number): boolean {
-        const allTabs = this.app.tabs || []
         const terminals = this.getAllTerminals()
 
         if (index < 0 || index >= terminals.length) {

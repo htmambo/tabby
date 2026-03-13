@@ -1,6 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
@@ -58,7 +57,7 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
 
     private destroy$ = new Subject<void>()
 
-    get t() {
+    get t(): any {
         if (!this.translate) {
             return { providers: {}, providerNames: {}, common: {} }
         }
