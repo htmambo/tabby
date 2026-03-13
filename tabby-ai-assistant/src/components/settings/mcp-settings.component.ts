@@ -25,8 +25,8 @@ type EditorMode = 'add' | 'edit' | null
     standalone: false,
     template: `
         <div class="mcp-settings">
-            <h3>{{ t.mcpSettings?.title || 'MCP 服务器' }}</h3>
-            <p class="description">{{ t.mcpSettings?.description || '配置 MCP 服务器以扩展 AI 助手的功能' }}</p>
+            <h3>{{ t.mcpSettings.title }}</h3>
+            <p class="description">{{ t.mcpSettings.description }}</p>
 
             <!-- 服务器列表 -->
             <div class="server-list" *ngIf="servers.length > 0">
@@ -42,7 +42,7 @@ type EditorMode = 'add' | 'edit' | null
                         </div>
                         <div class="server-meta">
                             <span class="tool-count" *ngIf="server.toolCount > 0">
-                                {{ server.toolCount }} {{ t.mcpSettings?.toolsAvailable || '工具' }}
+                                {{ server.toolCount }} {{ t.mcpSettings.toolsAvailable }}
                             </span>
                         </div>
                     </div>
@@ -66,10 +66,10 @@ type EditorMode = 'add' | 'edit' | null
                             {{ getConnectionButtonText(server.status) }}
                         </button>
                         <button class="btn btn-sm btn-secondary" (click)="editServer(server)">
-                            {{ t.common?.edit || '编辑' }}
+                            {{ t.common.edit }}
                         </button>
                         <button class="btn btn-sm btn-danger" (click)="deleteServer(server)">
-                            {{ t.common?.delete || '删除' }}
+                            {{ t.common.delete }}
                         </button>
                     </div>
                 </div>
@@ -78,19 +78,19 @@ type EditorMode = 'add' | 'edit' | null
             <!-- 空状态 -->
             <div class="empty-state" *ngIf="servers.length === 0">
                 <div class="empty-icon">🔌</div>
-                <p>{{ t.mcpSettings?.noServers || '暂无配置的 MCP 服务器' }}</p>
-                <p class="hint">{{ t.mcpSettings?.addServerHint || '添加一个 MCP 服务器来扩展 AI 功能' }}</p>
+                <p>{{ t.mcpSettings.noServers }}</p>
+                <p class="hint">{{ t.mcpSettings.addServerHint }}</p>
             </div>
 
             <!-- 添加服务器按钮 -->
             <div class="add-server-section">
                 <button class="btn btn-primary add-server-btn" (click)="showEditor('add')">
                     <span class="icon">+</span>
-                    {{ t.mcpSettings?.addServer || '添加 MCP 服务器' }}
+                    {{ t.mcpSettings.addServer }}
                 </button>
                 <button class="btn btn-secondary import-btn" (click)="showImportDialog()">
                     <span class="icon">📥</span>
-                    {{ t.mcpSettings?.importJson || '导入 JSON 配置' }}
+                    {{ t.mcpSettings.importJson }}
                 </button>
             </div>
 
@@ -98,11 +98,11 @@ type EditorMode = 'add' | 'edit' | null
             <div class="modal-overlay" *ngIf="showImport" (click)="hideImportDialog()">
                 <div class="modal-content" (click)="$event.stopPropagation()">
                     <div class="modal-header">
-                        <h4>{{ t.mcpSettings?.importJson || '导入 JSON 配置' }}</h4>
+                        <h4>{{ t.mcpSettings.importJson }}</h4>
                         <button class="close-btn" (click)="hideImportDialog()">×</button>
                     </div>
                     <div class="modal-body">
-                        <p class="import-hint">{{ t.mcpSettings?.importHint || '粘贴 Claude Desktop 格式的 MCP 配置:' }}</p>
+                        <p class="import-hint">{{ t.mcpSettings.importHint }}</p>
                         <textarea class="form-control json-input" rows="12"
                                   [(ngModel)]="importJsonText"
                                   [placeholder]="getImportPlaceholder()"></textarea>
@@ -668,6 +668,27 @@ type EditorMode = 'add' | 'edit' | null
 })
 export class MCPSettingsComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>()
+
+    get t() {
+        if (!this.translate) {
+            return { mcpSettings: {}, common: {} }
+        }
+        return {
+            mcpSettings: {
+                title: this.translate.instant('MCP Servers'),
+                description: this.translate.instant('Configure MCP servers to extend AI assistant functionality'),
+                toolsAvailable: this.translate.instant('tools'),
+                noServers: this.translate.instant('No MCP servers configured'),
+                addServerHint: this.translate.instant('Add an MCP server to extend AI functionality'),
+                addServer: this.translate.instant('Add MCP Server'),
+                importJson: this.translate.instant('Import JSON Config'),
+            },
+            common: {
+                edit: this.translate.instant('Edit'),
+                delete: this.translate.instant('Delete'),
+            },
+        }
+    }
 
     /** 服务器列表 */
     servers: MCPServerWithStatus[] = []

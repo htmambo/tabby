@@ -89,36 +89,13 @@ export class TerminalManagerService {
 
     /**
      * 获取当前活动终端
-     * 注意：Tabby 将终端包装在 SplitTabComponent 中
      */
     getActiveTerminal(): TerminalTab | null {
         const tab = this.app.activeTab
         if (!tab) {return null}
 
-        // 直接是终端
         if (this.isTerminalTab(tab)) {
             return tab as TerminalTab
-        }
-
-        // SplitTabComponent 包装 - 获取聚焦的子标签页
-        if (tab.constructor.name === 'SplitTabComponent') {
-            const splitTab = tab as any
-            // 尝试获取聚焦的子标签页
-            if (typeof splitTab.getFocusedTab === 'function') {
-                const focusedTab = splitTab.getFocusedTab()
-                if (focusedTab && this.isTerminalTab(focusedTab)) {
-                    return focusedTab as TerminalTab
-                }
-            }
-            // 备用：获取第一个终端
-            if (typeof splitTab.getAllTabs === 'function') {
-                const innerTabs = splitTab.getAllTabs() as any[]
-                for (const innerTab of innerTabs) {
-                    if (this.isTerminalTab(innerTab)) {
-                        return innerTab as TerminalTab
-                    }
-                }
-            }
         }
 
         return null
@@ -126,23 +103,13 @@ export class TerminalManagerService {
 
     /**
      * 获取所有终端标签
-     * 注意：Tabby 将终端包装在 SplitTabComponent 中
      */
     getAllTerminals(): TerminalTab[] {
         const allTabs = this.app.tabs || []
         const terminals: TerminalTab[] = []
 
         for (const tab of allTabs) {
-            // 如果是 SplitTabComponent，提取内部的终端
-            if (tab.constructor.name === 'SplitTabComponent' && typeof (tab as any).getAllTabs === 'function') {
-                const innerTabs = (tab as any).getAllTabs() as any[]
-                for (const innerTab of innerTabs) {
-                    if (this.isTerminalTab(innerTab)) {
-                        terminals.push(innerTab as TerminalTab)
-                    }
-                }
-            } else if (this.isTerminalTab(tab)) {
-                // 也检查直接的终端标签
+            if (this.isTerminalTab(tab)) {
                 terminals.push(tab as TerminalTab)
             }
         }
@@ -399,7 +366,6 @@ export class TerminalManagerService {
 
     /**
      * 切换到指定终端
-     * 修复：需要选择顶层 Tab (SplitTabComponent)，而非内部终端
      */
     focusTerminal(index: number): boolean {
         const allTabs = this.app.tabs || []
@@ -413,49 +379,11 @@ export class TerminalManagerService {
         const targetTerminal = terminals[index]
 
         try {
-            // 步骤1：查找包含目标终端的顶层 Tab
-            let topLevelTab: any = null
-            let splitTabRef: any = null
-
-            for (const tab of allTabs) {
-                // 情况1：直接是终端 Tab（不在 SplitTabComponent 内）
-                if (this.isTerminalTab(tab) && tab === targetTerminal) {
-                    topLevelTab = tab
-                    break
-                }
-
-                // 情况2：终端在 SplitTabComponent 内部
-                if (tab.constructor.name === 'SplitTabComponent') {
-                    const splitTab = tab as any
-                    if (typeof splitTab.getAllTabs === 'function') {
-                        const innerTabs = splitTab.getAllTabs() as any[]
-                        if (innerTabs.includes(targetTerminal)) {
-                            topLevelTab = tab       // 顶层 SplitTabComponent
-                            splitTabRef = splitTab  // 保存引用，用于内部聚焦
-                            break
-                        }
-                    }
-                }
-            }
-
-            if (!topLevelTab) {
-                this.logger.warn('Target terminal not found', { index })
-                return false
-            }
-
-            // 步骤2：在 Angular Zone 内执行 UI 变更，确保触发变更检测
             this.zone.run(() => {
-                // 1. 选择顶层 Tab（如果不是当前的，避免重复调用 selectTab）
-                if (this.app.activeTab !== topLevelTab) {
-                    this.app.selectTab(topLevelTab)
+                if (this.app.activeTab !== targetTerminal) {
+                    this.app.selectTab(targetTerminal)
                 }
 
-                // 2. 关键修复：调用 SplitTabComponent.focus() 切换内部焦点
-                if (splitTabRef && typeof splitTabRef.focus === 'function') {
-                    splitTabRef.focus(targetTerminal)
-                }
-
-                // 3. 确保终端获得输入焦点
                 const terminalAny = targetTerminal as any
                 if (typeof terminalAny.focus === 'function') {
                     terminalAny.focus()
@@ -465,7 +393,6 @@ export class TerminalManagerService {
             this.logger.info('Focused terminal', {
                 index,
                 title: targetTerminal.title,
-                isInSplitTab: !!splitTabRef,
             })
 
             return true

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
+import { TranslateService } from 'tabby-core'
 import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types'
 import { AiAssistantService } from '../../services/core/ai-assistant.service'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
@@ -327,6 +328,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         private appRef: ApplicationRef,
         private ngZone: NgZone,
         private electron: ElectronService,
+        private translate: TranslateService,
     ) {
         // 开发模式下过滤 NG0100 错误
         if (typeof window !== 'undefined') {

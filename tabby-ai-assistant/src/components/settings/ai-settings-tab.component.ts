@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
+import { Component, OnInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef } from '@angular/core'
 import { Subject } from 'rxjs'
 import { filter, takeUntil } from 'rxjs/operators'
 import { AiAssistantService } from '../../services/core/ai-assistant.service'
@@ -40,6 +40,36 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
+    private translationsCache: any = null
+
+    get t() {
+        if (this.translationsCache) {
+            return this.translationsCache
+        }
+
+        const fallback = {
+            chatInterface: { title: 'AI Assistant', exportChat: 'Export' },
+            settings: { title: 'Settings', providersTab: 'Providers', generalTab: 'General', contextTab: 'Context', securityTab: 'Security', chatTab: 'Chat', mcpTab: 'MCP', dataTab: 'Data', advancedTab: 'Advanced' },
+            common: { enabled: 'Enabled', disabled: 'Disabled', add: 'Add' },
+            general: { shortcutGenerate: 'Refresh', enableAssistantDesc: 'Enable AI Assistant to start using', enableAssistant: 'Enable' },
+            proxy: { title: 'Proxy' },
+            advancedSettings: { title: 'Advanced Settings', currentProvider: 'Current Provider', configManagement: 'Configuration', validateConfig: 'Validate', resetDefaults: 'Reset', logSettings: 'Logging', logLevel: 'Log Level', logLevels: { debug: 'Debug', info: 'Info', warn: 'Warning', error: 'Error' }, systemInfo: 'System Info', pluginVersion: 'Version', supportedProviders: 'Providers' },
+        }
+        if (!this.translate) {
+            this.translationsCache = fallback
+            return fallback
+        }
+        this.translationsCache = {
+            chatInterface: { title: this.translate.instant('AI Assistant'), exportChat: this.translate.instant('Export') },
+            settings: { title: this.translate.instant('Settings'), providersTab: this.translate.instant('Providers'), generalTab: this.translate.instant('General'), contextTab: this.translate.instant('Context'), securityTab: this.translate.instant('Security'), chatTab: this.translate.instant('Chat'), mcpTab: this.translate.instant('MCP'), dataTab: this.translate.instant('Data'), advancedTab: this.translate.instant('Advanced') },
+            common: { enabled: this.translate.instant('Enabled'), disabled: this.translate.instant('Disabled'), add: this.translate.instant('Add') },
+            general: { shortcutGenerate: this.translate.instant('Refresh'), enableAssistantDesc: this.translate.instant('Enable AI Assistant to start using'), enableAssistant: this.translate.instant('Enable') },
+            proxy: { title: this.translate.instant('Proxy') },
+            advancedSettings: { title: this.translate.instant('Advanced Settings'), currentProvider: this.translate.instant('Current Provider'), configManagement: this.translate.instant('Configuration'), validateConfig: this.translate.instant('Validate'), resetDefaults: this.translate.instant('Reset'), logSettings: this.translate.instant('Logging'), logLevel: this.translate.instant('Log Level'), logLevels: { debug: 'Debug', info: 'Info', warn: 'Warning', error: 'Error' }, systemInfo: this.translate.instant('System Info'), pluginVersion: this.translate.instant('Version'), supportedProviders: this.translate.instant('Providers') },
+        }
+        return this.translationsCache
+    }
+
     constructor(
         private aiService: AiAssistantService,
         private config: ConfigProviderService,
@@ -47,6 +77,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
         private logger: LoggerService,
         private toast: ToastService,
         private translate: TranslateService,
+        private cdr: ChangeDetectorRef,
     ) {}
 
     ngOnInit(): void {
@@ -104,6 +135,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
     switchTab(tabId: AiSettingsTabId): void {
         this.activeTab = tabId
         this.ensureActiveTab()
+        this.cdr.detectChanges()
     }
 
     /**

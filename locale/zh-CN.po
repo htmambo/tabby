@@ -3049,9 +3049,6 @@ msgstr "打开AI助手"
 msgid "Hide Sidebar"
 msgstr "隐藏侧边栏"
 
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Open Settings"
-msgstr "打开设置"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Clear Chat"
@@ -3145,9 +3142,6 @@ msgstr "换行"
 msgid "Near character limit"
 msgstr "接近字符限制"
 
-#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
-msgid "Copy"
-msgstr "复制"
 
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Regenerate"
@@ -3160,3 +3154,977 @@ msgstr "有用"
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Not Helpful"
 msgstr "无用"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Enable AI Assistant"
+msgstr "启用 AI 助手"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Enable or disable AI assistant functionality"
+msgstr "启用或禁用 AI 助手功能"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Default Provider"
+msgstr "默认提供商"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Sidebar Position"
+msgstr "侧边栏位置"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Choose whether AI sidebar appears on left or right"
+msgstr "选择 AI 侧边栏显示在窗口左侧还是右侧"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Shortcuts"
+msgstr "快捷键"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Open Chat"
+msgstr "打开聊天"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Open AI chat sidebar"
+msgstr "打开 AI 聊天侧边栏"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Generate Code"
+msgstr "生成代码"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Generate code from selection"
+msgstr "从选中内容生成代码"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Explain Code"
+msgstr "解释代码"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Explain selected code"
+msgstr "解释选中的代码"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Shortcuts can be customized in Tabby settings"
+msgstr "快捷键可在 Tabby 设置中自定义"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Not configured"
+msgstr "未配置"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Access Control"
+msgstr "访问控制"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Providers"
+msgstr "提供商"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Cloud Providers"
+msgstr "云端提供商"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Configure cloud-based AI providers"
+msgstr "配置云端 AI 提供商"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Local Providers"
+msgstr "本地提供商"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Configure locally hosted AI services"
+msgstr "配置本地部署的 AI 服务"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Display Name"
+msgstr "显示名称"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Status"
+msgstr "状态"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "API Key"
+msgstr "API 密钥"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Base URL"
+msgstr "基础 URL"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Model"
+msgstr "模型"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Save Configuration"
+msgstr "保存配置"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Test Connection"
+msgstr "测试连接"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Detect Service"
+msgstr "检测服务"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Enabled"
+msgstr "已启用"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Not Configured"
+msgstr "未配置"
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Security"
+msgstr "安全"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Password Protection"
+msgstr "密码保护"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Require password to access AI assistant"
+msgstr "访问 AI 助手需要密码"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Set Password"
+msgstr "设置密码"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Enter password"
+msgstr "输入密码"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Risk Assessment"
+msgstr "风险评估"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Automatically assess command risk level"
+msgstr "自动评估命令风险等级"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Default Risk Level"
+msgstr "默认风险等级"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Low"
+msgstr "低"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Medium"
+msgstr "中"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "High"
+msgstr "高"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "User Consent"
+msgstr "用户确认"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Remember Consent"
+msgstr "记住用户确认"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Remember user consent for"
+msgstr "将用户确认记录保留"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "days"
+msgstr "天"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Dangerous Patterns"
+msgstr "危险模式"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Enter dangerous pattern"
+msgstr "输入危险模式"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Add Pattern"
+msgstr "添加模式"
+
+
+
+
+
+
+
+
+
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Font Size"
+msgstr "字体大小"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Compact Mode"
+msgstr "紧凑模式"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Reduce spacing for more content"
+msgstr "减少间距以显示更多内容"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Behavior"
+msgstr "行为"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Enter to Send"
+msgstr "回车发送"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Press Enter to send message"
+msgstr "按回车键发送消息"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Timestamps"
+msgstr "显示时间戳"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Display message timestamps"
+msgstr "显示消息时间戳"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Avatars"
+msgstr "显示头像"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Display user and AI avatars"
+msgstr "显示用户和 AI 头像"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Sound Enabled"
+msgstr "启用声音"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Play sound on message received"
+msgstr "收到消息时播放声音"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Agent Max Rounds"
+msgstr "智能体最大轮数"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "rounds"
+msgstr "轮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Maximum conversation rounds for agent"
+msgstr "智能体的最大对话轮数"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "History"
+msgstr "聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Enable History"
+msgstr "启用聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Save chat history"
+msgstr "保存聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Max History"
+msgstr "最大历史记录数"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "messages"
+msgstr "条消息"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Auto Save"
+msgstr "自动保存"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Automatically save chat history"
+msgstr "自动保存聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export Settings"
+msgstr "导出设置"
+
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export current chat"
+msgstr "导出当前聊天"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export All"
+msgstr "导出全部"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export all chat history"
+msgstr "导出所有聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Clear History"
+msgstr "清空聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Clear all chat history"
+msgstr "清除所有聊天记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Action Buttons"
+msgstr "操作按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Copy Button"
+msgstr "显示复制按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show copy button in messages"
+msgstr "在消息中显示复制按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Regenerate Button"
+msgstr "显示重新生成按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show regenerate button for AI responses"
+msgstr "为 AI 响应显示重新生成按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Edit Button"
+msgstr "显示编辑按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show edit button for user messages"
+msgstr "为用户消息显示编辑按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Delete Button"
+msgstr "显示删除按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show delete button for messages"
+msgstr "为消息显示删除按钮"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Context Management"
+msgstr "上下文管理"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Auto Compact"
+msgstr "自动压缩"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Automatically compact history when context exceeds threshold"
+msgstr "上下文超过阈值时自动压缩历史"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Token Configuration"
+msgstr "令牌配置"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Max Context Tokens"
+msgstr "最大上下文令牌数"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "tokens"
+msgstr "令牌"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Maximum tokens for context window"
+msgstr "上下文窗口的最大令牌数"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Compact Threshold"
+msgstr "压缩阈值"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Trigger compaction at this percentage"
+msgstr "在此百分比时触发压缩"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Context Sources"
+msgstr "上下文来源"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include File Context"
+msgstr "包含文件上下文"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include current file in context"
+msgstr "在上下文中包含当前文件"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include Selection"
+msgstr "包含选中内容"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include selected text in context"
+msgstr "在上下文中包含选中的文本"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include Terminal"
+msgstr "包含终端"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include terminal output in context"
+msgstr "在上下文中包含终端输出"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include Git Diff"
+msgstr "包含 Git 差异"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include git changes in context"
+msgstr "在上下文中包含 git 更改"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy"
+msgstr "代理设置"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Access AI API endpoints through proxy server"
+msgstr "通过代理服务器访问 AI API 端点"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Enable Proxy"
+msgstr "启用代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Use proxy for AI requests"
+msgstr "AI 请求使用代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTP Proxy"
+msgstr "HTTP 代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTP proxy URL"
+msgstr "HTTP 代理 URL"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTPS Proxy"
+msgstr "HTTPS 代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTPS proxy URL"
+msgstr "HTTPS 代理 URL"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "No Proxy"
+msgstr "不走代理的地址"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Comma-separated list of hosts to bypass proxy"
+msgstr "不走代理的主机列表（用逗号分隔）"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy Authentication"
+msgstr "代理认证"
+
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy username"
+msgstr "代理用户名"
+
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy password"
+msgstr "代理密码"
+
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Test proxy connection"
+msgstr "测试代理连接"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "MCP Servers"
+msgstr "MCP 服务器"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Model Context Protocol"
+msgstr "模型上下文协议"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Configure MCP servers to extend AI assistant functionality"
+msgstr "配置 MCP 服务器以扩展 AI 助手功能"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Add MCP Server"
+msgstr "添加 MCP 服务器"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Server Name"
+msgstr "服务器名称"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Command"
+msgstr "命令"
+
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Environment Variables"
+msgstr "环境变量"
+
+
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Data Management"
+msgstr "数据管理"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Export Data"
+msgstr "导出数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Export all settings and data"
+msgstr "导出所有设置和数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Import Data"
+msgstr "导入数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Import settings and data"
+msgstr "导入设置和数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Reset Settings"
+msgstr "重置设置"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Reset all settings to default"
+msgstr "将所有设置重置为默认值"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Clear Cache"
+msgstr "清除缓存"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Clear all cached data"
+msgstr "清除所有缓存数据"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Reset Defaults"
+msgstr "恢复默认"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Enable Auto Compact"
+msgstr "启用自动压缩"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Current Provider Limit"
+msgstr "当前提供商限制"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Cannot exceed current provider context limit"
+msgstr "不能超过当前提供商的上下文限制"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Reserved Output Tokens"
+msgstr "预留输出令牌数"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Token count reserved for AI response"
+msgstr "为 AI 响应预留的令牌数"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Compression Threshold"
+msgstr "压缩阈值"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Prune Threshold"
+msgstr "修剪阈值"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Prune redundant content when usage exceeds this threshold (default: 70%)"
+msgstr "使用量超过此阈值时修剪冗余内容（默认：70%）"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Messages to Keep"
+msgstr "保留消息数"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Network Proxy"
+msgstr "网络代理"
+
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy address for HTTP requests"
+msgstr "HTTP 请求的代理地址"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Recommended"
+msgstr "推荐"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy address for HTTPS requests (most APIs use HTTPS)"
+msgstr "HTTPS 请求的代理地址（大多数 API 使用 HTTPS）"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Addresses that do not use proxy (comma separated)"
+msgstr "不使用代理的地址（逗号分隔）"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Require Authentication"
+msgstr "需要认证"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Import from Environment Variables"
+msgstr "从环境变量导入"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy Configuration"
+msgstr "代理配置"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Usage"
+msgstr "使用说明"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy settings apply to all cloud AI provider API requests"
+msgstr "代理设置应用于所有云端 AI 提供商的 API 请求"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Local providers (Ollama, vLLM) do not use proxy by default"
+msgstr "本地提供商（Ollama、vLLM）默认不使用代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Supports HTTP, HTTPS and SOCKS5 proxy protocols"
+msgstr "支持 HTTP、HTTPS 和 SOCKS5 代理协议"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Generate summary when usage exceeds this threshold (default: 85%)"
+msgstr "使用量超过此阈值时生成摘要（默认：85%）"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Number of recent messages to always keep during compaction (default: 3)"
+msgstr "压缩时始终保留的最近消息数（默认：3）"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Context configuration saved"
+msgstr "上下文配置已保存"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Auto-compact enabled"
+msgstr "自动压缩已启用"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Auto-compact disabled"
+msgstr "自动压缩已禁用"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Reset to defaults"
+msgstr "重置为默认值"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "API Key cannot be empty"
+msgstr "API 密钥不能为空"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Base URL cannot be empty"
+msgstr "基础 URL 不能为空"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Model cannot be empty"
+msgstr "模型不能为空"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Configuration saved successfully"
+msgstr "配置保存成功"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Failed to save configuration"
+msgstr "保存配置失败"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Connection test successful"
+msgstr "连接测试成功"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Connection test failed"
+msgstr "连接测试失败"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Testing connection..."
+msgstr "正在测试连接..."
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Service detected successfully"
+msgstr "服务检测成功"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Service not detected"
+msgstr "未检测到服务"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Detecting service..."
+msgstr "正在检测服务..."
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Current Cloud Provider"
+msgstr "当前云端提供商"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Edit connection parameters for current default provider directly"
+msgstr "直接编辑当前默认提供商的连接参数"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Current Local Provider"
+msgstr "当前本地提供商"
+
+
+
+
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Local service does not require API Key"
+msgstr "本地服务无需 API 密钥"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Not Set (Optional)"
+msgstr "未设置（可选）"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Please select an AI provider before continuing configuration."
+msgstr "请先选择 AI 提供商再继续配置。"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "To modify API endpoint, key or detailed connection parameters, go to AI Providers tab."
+msgstr "要修改 API 端点、密钥或详细连接参数，请前往 AI 提供商标签页。"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Current provider connection not configured. Go to AI Providers tab to fill in Base URL and model."
+msgstr "当前提供商连接未配置。请前往 AI 提供商标签页填写基础 URL 和模型。"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Current provider connection not configured. Go to AI Providers tab to fill in Base URL, Model and API Key."
+msgstr "当前提供商连接未配置。请前往 AI 提供商标签页填写基础 URL、模型和 API 密钥。"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Server name cannot be empty"
+msgstr "服务器名称不能为空"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Command cannot be empty"
+msgstr "命令不能为空"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "MCP server added successfully"
+msgstr "MCP 服务器添加成功"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Failed to add MCP server"
+msgstr "添加 MCP 服务器失败"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "MCP server removed successfully"
+msgstr "MCP 服务器移除成功"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Failed to remove MCP server"
+msgstr "移除 MCP 服务器失败"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "OpenAI API Key should start with sk-"
+msgstr "OpenAI API 密钥应以 sk- 开头"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Anthropic API Key should start with sk-ant-"
+msgstr "Anthropic API 密钥应以 sk-ant- 开头"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Minimax API Key should be 32+ alphanumeric characters"
+msgstr "Minimax API 密钥应为 32 位以上的字母数字字符"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "GLM API Key format is incorrect"
+msgstr "GLM API 密钥格式不正确"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "API Key format may be incorrect"
+msgstr "API 密钥格式可能不正确"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Connection successful"
+msgstr "连接成功"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Testing connection to"
+msgstr "正在测试连接到"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Configuration saved"
+msgstr "配置已保存"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Delete provider configuration?"
+msgstr "删除提供商配置？"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy configuration saved"
+msgstr "代理配置已保存"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Please configure proxy address first"
+msgstr "请先配置代理地址"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Connection failed"
+msgstr "连接失败"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy test successful"
+msgstr "代理测试成功"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy test failed"
+msgstr "代理测试失败"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Password cannot be empty"
+msgstr "密码不能为空"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Password set successfully"
+msgstr "密码设置成功"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Failed to set password"
+msgstr "设置密码失败"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Security settings saved"
+msgstr "安全设置已保存"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Pattern cannot be empty"
+msgstr "模式不能为空"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Pattern added successfully"
+msgstr "模式添加成功"
+
+#: tabby-ai-assistant/src/components/settings/security-settings.component.ts
+msgid "Failed to add pattern"
+msgstr "添加模式失败"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Chat settings saved"
+msgstr "聊天设置已保存"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Chat history exported"
+msgstr "聊天记录已导出"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Failed to export chat history"
+msgstr "导出聊天记录失败"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Chat history cleared"
+msgstr "聊天记录已清空"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Failed to clear chat history"
+msgstr "清空聊天记录失败"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Settings reset to defaults"
+msgstr "设置已重置为默认值"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "Type a message..."
+msgstr "输入消息..."
+
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "New Chat"
+msgstr "新建聊天"
+
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Copied to clipboard"
+msgstr "已复制到剪贴板"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Data exported successfully"
+msgstr "数据导出成功"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Failed to export data"
+msgstr "导出数据失败"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Data imported successfully"
+msgstr "数据导入成功"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Failed to import data"
+msgstr "导入数据失败"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Settings reset successfully"
+msgstr "设置重置成功"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Cache cleared successfully"
+msgstr "缓存清除成功"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Failed to clear cache"
+msgstr "清除缓存失败"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Test failed"
+msgstr "测试失败"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Imported proxy configuration from environment variables"
+msgstr "已从环境变量导入代理配置"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "No proxy configuration detected in environment variables"
+msgstr "未在环境变量中检测到代理配置"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Clear chat history?"
+msgstr "清空聊天记录？"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Configuration deleted"
+msgstr "配置已删除"
+
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Reset to defaults?"
+msgstr "重置为默认值？"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "tools"
+msgstr "工具"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Max Tokens"
+msgstr "最大令牌数"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Temperature"
+msgstr "温度"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Timeout"
+msgstr "超时时间"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Retries"
+msgstr "重试次数"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Context Window"
+msgstr "上下文窗口"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Disable Streaming"
+msgstr "禁用流式输出"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Advanced Settings"
+msgstr "高级设置"

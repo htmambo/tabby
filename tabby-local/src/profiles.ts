@@ -1,7 +1,7 @@
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import deepClone from 'clone-deep'
 import { Injectable, Inject } from '@angular/core'
-import { ProfileProvider, NewTabParameters, ConfigService, SplitTabComponent, AppService, PartialProfile } from 'tabby-core'
+import { ProfileProvider, NewTabParameters, ConfigService, AppService, PartialProfile } from 'tabby-core'
 import { TerminalTabComponent } from './components/terminalTab.component'
 import { LocalProfileSettingsComponent } from './components/localProfileSettings.component'
 import { ShellProvider, Shell, SessionOptions, LocalProfile } from './api'
@@ -52,13 +52,6 @@ export class LocalProfilesService extends ProfileProvider<LocalProfile> {
         if (!profile.options.cwd) {
             if (this.app.activeTab instanceof TerminalTabComponent && this.app.activeTab.session) {
                 profile.options.cwd = await this.app.activeTab.session.getWorkingDirectory() ?? null
-            }
-            if (this.app.activeTab instanceof SplitTabComponent) {
-                const focusedTab = this.app.activeTab.getFocusedTab()
-
-                if (focusedTab instanceof TerminalTabComponent && focusedTab.session) {
-                    profile.options.cwd = await focusedTab.session.getWorkingDirectory() ?? null
-                }
             }
         }
 

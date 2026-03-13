@@ -43,6 +43,43 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { chatSettings: {} }
+        }
+        return {
+            chatSettings: {
+                title: this.translate.instant('Chat Settings'),
+                appearance: this.translate.instant('Appearance'),
+                fontSize: this.translate.instant('Font Size'),
+                compactMode: this.translate.instant('Compact Mode'),
+                compactModeDesc: this.translate.instant('Reduce spacing for more content'),
+                behavior: this.translate.instant('Behavior'),
+                enterToSend: this.translate.instant('Enter to Send'),
+                enterToSendDesc: this.translate.instant('Press Enter to send message'),
+                showTimestamps: this.translate.instant('Show Timestamps'),
+                showTimestampsDesc: this.translate.instant('Display message timestamps'),
+                showAvatars: this.translate.instant('Show Avatars'),
+                showAvatarsDesc: this.translate.instant('Display user and AI avatars'),
+                soundEnabled: this.translate.instant('Sound Enabled'),
+                soundEnabledDesc: this.translate.instant('Play sound on message received'),
+                agentMaxRounds: this.translate.instant('Agent Max Rounds'),
+                agentMaxRoundsUnit: this.translate.instant('rounds'),
+                agentMaxRoundsDesc: this.translate.instant('Maximum conversation rounds for agent'),
+                history: this.translate.instant('History'),
+                enableHistory: this.translate.instant('Enable History'),
+                enableHistoryDesc: this.translate.instant('Save chat history'),
+                maxHistory: this.translate.instant('Max History'),
+                maxHistoryUnit: this.translate.instant('messages'),
+                autoSave: this.translate.instant('Auto Save'),
+                autoSaveDesc: this.translate.instant('Automatically save chat history'),
+                exportSettings: this.translate.instant('Export Settings'),
+                clearHistory: this.translate.instant('Clear History'),
+                resetDefaults: this.translate.instant('Reset Defaults'),
+            },
+        }
+    }
+
     constructor(
         private config: ConfigProviderService,
         private logger: LoggerService,

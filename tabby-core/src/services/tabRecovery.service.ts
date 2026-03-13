@@ -8,7 +8,6 @@ import { ConfigService } from './config.service'
 import { NewTabParameters } from './tabs.service'
 
 const ACTIVE_TOP_LEVEL_MARKER = '__tabbyActiveTopLevel'
-const SPLIT_FOCUSED_CHILD_MARKER = '__tabbySplitFocusedChild'
 
 interface RecoveryEntryDetails {
     detail: string
@@ -218,8 +217,6 @@ export class TabRecoveryService {
                     detail: this.getTelnetRecoveryEntryDetail(options),
                     secondaryDetail: null,
                 }
-            case 'app:split-tab':
-                return this.getSplitRecoveryEntryDetails(token)
             default:
                 return {
                     detail: this.humanizeRecoveryType(token.type),
@@ -256,90 +253,6 @@ export class TabRecoveryService {
             return this.translate.instant(_('Telnet session'))
         }
         return `${options.host}:${options.port ?? 23}`
-    }
-
-    private getSplitRecoveryEntryDetails (token: RecoveryToken): RecoveryEntryDetails {
-        const splitDetail = this.getSplitRecoveryEntryDetail(token)
-        const focusedLeaf = this.findFocusedSplitLeafToken(token?.children ?? [])
-        const fallbackLeaf = focusedLeaf ?? this.findFirstSplitLeafToken(token?.children ?? [])
-
-        if (!fallbackLeaf) {
-            return {
-                detail: splitDetail,
-                secondaryDetail: null,
-            }
-        }
-
-        const leafDetails = this.getRecoveryEntryDetails(fallbackLeaf)
-        return {
-            detail: leafDetails.detail,
-            secondaryDetail: splitDetail,
-        }
-    }
-
-    private getSplitRecoveryEntryDetail (token: RecoveryToken): string {
-        const paneCount = this.countSplitPanes(token?.children ?? [])
-        const orientation = token?.orientation === 'v'
-            ? this.translate.instant(_('Vertical split'))
-            : token?.orientation === 'h'
-                ? this.translate.instant(_('Horizontal split'))
-                : this.translate.instant(_('Split layout'))
-
-        if (!paneCount) {
-            return orientation
-        }
-
-        return this.translate.instant(
-            paneCount === 1 ? _('{count} pane · {orientation}') : _('{count} panes · {orientation}'),
-            { count: paneCount, orientation },
-        )
-    }
-
-    private findFocusedSplitLeafToken (children: RecoveryToken[]): RecoveryToken|null {
-        for (const child of children) {
-            if (!child) {
-                continue
-            }
-            if (child?.[SPLIT_FOCUSED_CHILD_MARKER] && child.type !== 'app:split-tab') {
-                return child
-            }
-            if (child.type === 'app:split-tab') {
-                const nested = this.findFocusedSplitLeafToken(child.children ?? [])
-                if (nested) {
-                    return nested
-                }
-            }
-        }
-        return null
-    }
-
-    private findFirstSplitLeafToken (children: RecoveryToken[]): RecoveryToken|null {
-        for (const child of children) {
-            if (!child) {
-                continue
-            }
-            if (child.type === 'app:split-tab') {
-                const nested = this.findFirstSplitLeafToken(child.children ?? [])
-                if (nested) {
-                    return nested
-                }
-                continue
-            }
-            return child
-        }
-        return null
-    }
-
-    private countSplitPanes (children: RecoveryToken[]): number {
-        let count = 0
-        for (const child of children) {
-            if (child?.type === 'app:split-tab') {
-                count += this.countSplitPanes(child.children ?? [])
-            } else if (child) {
-                count++
-            }
-        }
-        return count
     }
 
     private humanizeRecoveryType (type: string): string {

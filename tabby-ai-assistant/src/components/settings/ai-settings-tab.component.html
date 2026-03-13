@@ -13,7 +13,7 @@
                 </div>
                 <div class="provider-info" *ngIf="currentProvider">
                     <i class="fa fa-cloud"></i>
-                    <span>{{ t.advancedSettings?.currentProvider || '当前提供商' }}: {{ currentProvider }}</span>
+                    <span>{{ t.advancedSettings?.currentProvider }}: {{ currentProvider }}</span>
                 </div>
             </div>
         </div>
@@ -41,7 +41,7 @@
              [attr.data-tab]="tab.id"
              (click)="switchTab(tab.id)">
             <i [class]="tab.icon"></i>
-            <span *ngIf="tab.id === 'proxy'">{{ t.proxy?.title || '代理设置' }}</span>
+            <span *ngIf="tab.id === 'proxy'">{{ t.proxy.title }}</span>
             <span *ngIf="tab.id !== 'proxy'">{{ t.settings?.[tab.labelKey.split('.')[1]] || tab.labelKey }}</span>
         </div>
     </div>

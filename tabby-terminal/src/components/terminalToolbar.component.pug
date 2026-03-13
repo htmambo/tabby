@@ -2,14 +2,6 @@
     cdkDropList
     cdkAutoDropGroup='app-tabs'
 )
-    i.fas.fa-grip-vertical.drag-handle(
-        *ngIf='shouldShowDragHandle',
-        cdkDrag,
-        [cdkDragData]='tab',
-        (cdkDragStarted)='onTabDragStart()',
-        (cdkDragEnded)='onTabDragEnd()'
-    )
-
     ng-content
 
     button.btn.btn-sm.btn-link(

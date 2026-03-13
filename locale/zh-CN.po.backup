@@ -1,224 +1,234 @@
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Crowdin-Project: tabby\n"
+"X-Crowdin-Project-ID: 493349\n"
+"X-Crowdin-Language: zh-CN\n"
+"X-Crowdin-File: /locale/app.pot\n"
+"X-Crowdin-File-ID: 75\n"
+"Project-Id-Version: tabby\n"
+"Language-Team: Chinese Simplified\n"
+"Language: zh_CN\n"
+"PO-Revision-Date: 2025-01-22 22:02\n"
 
 #: tabby-local/src/components/terminalTab.component.ts:113
 msgid "\"{command}\" is still running. Close?"
-msgstr ""
+msgstr "\"{command}\" 仍在运行。是否需要关闭？"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:78
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:88
 msgid "{name} copy"
-msgstr ""
+msgstr "{name} 副本"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:77
 msgid "A second font family used to display characters missing in the main font"
-msgstr ""
+msgstr "首选字体缺失时使用备选字体显示字符"
 
 #: tabby-core/src/components/transfersMenu.component.ts:49
 msgid "Abort all"
-msgstr ""
+msgstr "中止全部"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:24
 msgid "Accept and remember key"
-msgstr ""
+msgstr "接受并记住密钥"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:25
 msgid "Accept just this once"
-msgstr ""
+msgstr "只接受本次"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:84
 msgid "Accessibility"
-msgstr ""
+msgstr "辅助功能"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:27
 msgid "Acrylic background"
-msgstr ""
+msgstr "毛玻璃背景"
 
 #: locale/tmp-html/tabby-local/src/components/commandLineEditor.component.html:24
 #: locale/tmp-html/tabby-local/src/components/environmentEditor.component.html:11
 msgid "Add"
-msgstr ""
+msgstr "添加"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:16
 msgid "Add a port forward"
-msgstr ""
+msgstr "添加端口转发"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:115
 msgid "Add a private key"
-msgstr ""
+msgstr "添加私钥"
 
 #: locale/tmp-html/tabby-settings/src/components/multiHotkeyInput.component.html:8
 msgid "Add..."
-msgstr ""
+msgstr "添加…"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:84
 msgid "Additional space between lines"
-msgstr ""
+msgstr "行间距"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:22
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:61
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:64
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:124
 msgid "Advanced"
-msgstr ""
+msgstr "高级设置"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:90
 msgid "Agent"
-msgstr ""
+msgstr "代理"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:134
 msgid "Agent forwarding"
-msgstr ""
+msgstr "Agent 转发"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:35
 msgid "Agent pipe path"
-msgstr ""
+msgstr "Agent pipe 路径"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:24
 msgid "Agent type"
-msgstr ""
+msgstr "Agent 类型"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:169
 msgid "Allows opening .bat files in tabs, but breaks some shells"
-msgstr ""
+msgstr "允许在标签页中打开.bat文件，但会中断某些shell"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:60
 msgid "Allows quickly opening a terminal in the selected folder"
-msgstr ""
+msgstr "允许在选定的文件夹中快速打开终端"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:25
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:11
 msgid "Always dark"
-msgstr ""
+msgstr "始终使用暗色"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:27
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:13
 msgid "Always light"
-msgstr ""
+msgstr "始终使用亮色"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:2
 #: tabby-terminal/src/settings.ts:14
 msgid "Appearance"
-msgstr ""
+msgstr "外观"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:4
 msgid "Application"
-msgstr ""
+msgstr "应用"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:47
 msgid "Application settings"
-msgstr ""
+msgstr "应用程序设置"
 
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
-msgstr ""
+msgstr "您确定要关闭 Tabby 吗？您可以在 设置 -> 窗口 中关闭此提示。"
 
 #: tabby-core/src/services/config.service.ts:440
 msgid "Are you sure?"
-msgstr ""
+msgstr "您确定吗？"
 
 #: locale/tmp-html/tabby-local/src/components/commandLineEditor.component.html:18
 msgid "Arguments"
-msgstr ""
+msgstr "参数"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:26
 msgid "Ask a question"
-msgstr ""
+msgstr "提出问题"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:20
 msgid "Ask before closing the browser tab"
-msgstr ""
+msgstr "关闭标签页前询问"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:141
 msgid "Audible"
-msgstr ""
+msgstr "有声"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:74
 msgid "Authentication method"
-msgstr ""
+msgstr "身份验证方法"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:79
 msgid "Author"
-msgstr ""
+msgstr "作者"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:50
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:78
 msgid "Auto"
-msgstr ""
+msgstr "自动"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:153
 msgid "Auto-open a terminal on app start"
-msgstr ""
+msgstr "在应用程序启动时自动打开一个终端窗口"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:13
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:53
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:28
 msgid "Automatic"
-msgstr ""
+msgstr "自动"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:73
 msgid "Automatic Updates"
-msgstr ""
+msgstr "自动更新"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:54
 msgid "Automatically upload changes and check for updates every minute"
-msgstr ""
+msgstr "每分钟自动上传更改，并自动检查更新"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:10
 msgid "Available"
-msgstr ""
+msgstr "可用"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:35
 msgid "Background type"
-msgstr ""
+msgstr "背景类型"
 
 #: locale/tmp-html/tabby-terminal/src/components/inputProcessingSettings.component.html:4
 msgid "Backspace key mode"
-msgstr ""
+msgstr "背空键模式"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:14
 #: tabby-serial/src/components/serialTab.component.ts:93
 #: tabby-serial/src/profiles.ts:88
 msgid "Baud rate"
-msgstr ""
+msgstr "波特率"
 
 #: tabby-terminal/src/hotkeys.ts:22
 msgid "Beginning of the line"
-msgstr ""
+msgstr "行首"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:64
 msgid "Blink cursor"
-msgstr ""
+msgstr "光标闪烁"
 
 #: tabby-core/src/utils.ts:60
 msgid "Blue"
-msgstr ""
+msgstr "蓝色"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:39
 msgid "Blur"
-msgstr ""
+msgstr "模糊"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:28
 msgid "Bold font weight"
-msgstr ""
+msgstr "粗体字体粗细"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:132
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:80
 msgid "Bottom"
-msgstr ""
+msgstr "底部"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:109
 msgid "Bracketed paste (requires shell support)"
-msgstr ""
+msgstr "Bracketed 粘贴（需要 Shell 支持）"
 
 #: tabby-terminal/src/services/multifocus.service.ts:19
 msgid "Broadcast mode. Click anywhere to cancel."
-msgstr ""
+msgstr "广播模式。点击任意位置取消。"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:50
 #: tabby-core/src/services/profiles.service.ts:411
 msgid "Built-in"
-msgstr ""
+msgstr "内置"
 
 #: locale/tmp-html/tabby-core/src/components/renameTabModal.component.html:7
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:28
@@ -236,358 +246,356 @@ msgstr ""
 #: tabby-ssh/src/sftpContextMenu.ts:40
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:522
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: locale/tmp-html/tabby-serial/src/components/serialTab.component.html:4
 msgid "Change baud rate"
-msgstr ""
+msgstr "更改波特率"
 
 #: tabby-core/src/tabContextMenu.ts:133
 msgid "Change tab color"
-msgstr ""
+msgstr "更改标签颜色"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:12
 msgid "Change the master passphrase"
-msgstr ""
+msgstr "更改主密码"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:13
 msgid "Check for updates"
-msgstr ""
+msgstr "检查更新"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:172
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:176
 msgid "Ciphers"
-msgstr ""
+msgstr "加密方法"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSelector.component.html:5
 msgid "Clear"
-msgstr ""
+msgstr "清除"
 
 #: tabby-core/src/services/profiles.service.ts:248
 msgid "Clear recent profiles"
-msgstr ""
+msgstr "清除最近使用的配置"
 
 #: tabby-terminal/src/hotkeys.ts:50
 msgid "Clear terminal"
-msgstr ""
+msgstr "清空终端内容"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:58
 msgid "Clear terminal after connection"
-msgstr ""
+msgstr "连接后清空终端"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:94
 msgid "Clipboard"
-msgstr ""
+msgstr "剪贴板"
 
 #: locale/tmp-html/tabby-core/src/components/safeModeModal.component.html:7
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:53
 #: locale/tmp-html/tabby-settings/src/components/showSecretModal.component.html:10
 #: tabby-core/src/tabContextMenu.ts:33
 msgid "Close"
-msgstr ""
+msgstr "关闭"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:45
 msgid "Close and never show again"
-msgstr ""
+msgstr "关闭且不再提示"
 
 #: tabby-core/src/hotkeys.ts:240
 msgid "Close focused pane"
-msgstr ""
+msgstr "关闭已聚焦窗格"
 
 #: tabby-core/src/tabContextMenu.ts:48
 msgid "Close other tabs"
-msgstr ""
+msgstr "关闭其它标签页"
 
 #: tabby-core/src/hotkeys.ts:28
 #: tabby-core/src/tabContextMenu.ts:34
 msgid "Close tab"
-msgstr ""
+msgstr "关闭标签页"
 
 #: tabby-core/src/tabContextMenu.ts:64
 msgid "Close tabs to the left"
-msgstr ""
+msgstr "关闭左侧标签页"
 
 #: tabby-core/src/tabContextMenu.ts:56
 msgid "Close tabs to the right"
-msgstr ""
+msgstr "关闭右侧标签页"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:182
 msgid "Close the window after closing the last tab"
-msgstr ""
+msgstr "所有标签都关闭时关闭主窗口"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:33
 #: tabby-core/src/tabContextMenu.ts:132
 msgid "Color"
-msgstr ""
+msgstr "颜色"
 
 #: tabby-terminal/src/settings.ts:29
 msgid "Color scheme"
-msgstr ""
+msgstr "配色方案"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:2
 msgid "Color schemes"
-msgstr ""
+msgstr "配色方案"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:81
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:216
 msgid "Colors"
-msgstr ""
+msgstr "色彩"
 
 #: tabby-core/src/hotkeys.ts:72
 msgid "Combine all tabs into the current tab"
-msgstr ""
+msgstr "将所有标签页合并到当前页"
 
 #: locale/tmp-html/tabby-local/src/components/commandLineEditor.component.html:4
 msgid "Command line"
-msgstr ""
+msgstr "命令行"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:13
 msgid "Command's stdin/stdout is used instead of a network connection"
-msgstr ""
+msgstr "使用命令的 stdin/stdout，而不是网络连接。"
 
 #: tabby-core/src/services/commands.service.ts:105
 msgid "Commands"
-msgstr ""
+msgstr "命令"
 
 #: tabby-core/src/theme.ts:16
 msgid "Compact (legacy)"
-msgstr ""
+msgstr "紧凑模式（旧版）"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:126
 msgid "Config deleted"
-msgstr ""
+msgstr "配置已删除"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:108
 msgid "Config downloaded"
-msgstr ""
+msgstr "配置已下载"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:115
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:120
 msgid "Config file"
-msgstr ""
+msgstr "配置文件"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:2
 #: tabby-settings/src/settings.ts:73
 msgid "Config sync"
-msgstr ""
+msgstr "配置同步"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:90
 msgid "Config uploaded"
-msgstr ""
+msgstr "配置已上传"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:31
 msgid "Configs"
-msgstr ""
+msgstr "配置"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:21
 msgid "Connect through a proxy server"
-msgstr ""
+msgstr "通过代理服务器连接"
 
 #: tabby-core/src/index.ts:220
 #: tabby-core/src/services/profiles.service.ts:296
 msgid "Connect to \"%s\"..."
-msgstr ""
+msgstr "正在连接到 \"%s\"…"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:17
 msgid "Connect to a different host first and use it as a proxy"
-msgstr ""
+msgstr "首先连接至另一主机，并将其作为代理"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:19
 #: tabby-serial/src/components/serialTab.component.ts:60
 #: tabby-ssh/src/components/sshTab.component.ts:130
 #: tabby-telnet/src/components/telnetTab.component.ts:54
 msgid "Connecting"
-msgstr ""
+msgstr "正在连接"
 
 #: tabby-ssh/src/components/sshTab.component.ts:161
 #: tabby-telnet/src/session.ts:88
-msgid "Connecting to"
-msgstr ""
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:7
 msgid "Connection"
-msgstr ""
+msgstr "连接"
 
 #: tabby-ssh/src/session/ssh.ts:654
 msgid "Using saved password"
-msgstr ""
+msgstr "正在使用已保存的密码"
 
 #: tabby-ssh/src/session/ssh.ts:562
 msgid "Host key fingerprint"
-msgstr ""
+msgstr "主机密钥指纹"
 
 #: tabby-telnet/src/session.ts:93
 msgid "Socket error: {error}"
-msgstr ""
+msgstr "套接字错误：{error}"
 
 #: tabby-telnet/src/session.ts:98
 msgid "Connection closed"
-msgstr ""
+msgstr "连接已关闭"
 
 #: tabby-telnet/src/session.ts:103
 msgid "Connected"
-msgstr ""
+msgstr "已连接"
 
 #: tabby-ssh/src/components/sshTab.component.ts:182
 #: tabby-telnet/src/components/telnetTab.component.ts:42
 msgid "{host}: session closed"
-msgstr ""
+msgstr "{host}：会话已关闭"
 
 #: tabby-ssh/src/session/ssh.ts:179
 msgid "Could not load private key {name}: {error}"
-msgstr ""
+msgstr "无法加载私钥 {name}：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:194
 msgid "Expected a private key, but {path} appears to be a public key. Skipping it for private key authentication."
-msgstr ""
+msgstr "需要私钥，但 {path} 看起来是公钥。已跳过该项，不用于私钥认证。"
 
 #: tabby-ssh/src/session/ssh.ts:217
 #: tabby-ssh/src/session/ssh.ts:332
 msgid "Agent auth selected, but no running Agent process is found"
-msgstr ""
+msgstr "已选择 Agent 认证，但未找到正在运行的 Agent 进程"
 
 #: tabby-ssh/src/session/ssh.ts:240
 msgid "Loaded public key for agent auth: {path}"
-msgstr ""
+msgstr "已为 Agent 认证加载公钥：{path}"
 
 #: tabby-ssh/src/session/ssh.ts:244
 msgid "Could not load public key for agent auth from {path}: {error}. Agent-identity authentication will not be attempted for this key."
-msgstr ""
+msgstr "无法从 {path} 加载用于 Agent 认证的公钥：{error}。将不会对此密钥尝试 Agent 身份认证。"
 
 #: tabby-ssh/src/session/ssh.ts:446
 msgid "Username for {host}"
-msgstr ""
+msgstr "请输入 {host} 的用户名"
 
 #: tabby-ssh/src/session/ssh.ts:472
 msgid "Authentication rejected"
-msgstr ""
+msgstr "认证被拒绝"
 
 #: tabby-ssh/src/session/ssh.ts:498
 msgid "Rejected incoming forwarded connection for unrecognized port {host}:{port}"
-msgstr ""
+msgstr "已拒绝发往未识别端口 {host}:{port} 的传入转发连接"
 
 #: tabby-ssh/src/session/ssh.ts:510
 msgid "Could not forward the remote connection to {host}:{port}: {error}"
-msgstr ""
+msgstr "无法将远程连接转发到 {host}:{port}：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:543
 msgid "Could not connect to the X server: {error}"
-msgstr ""
+msgstr "无法连接到 X 服务器：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:544
 msgid "Tabby tried to connect to {display} based on the DISPLAY environment var ({displaySpec})"
-msgstr ""
+msgstr "Tabby 已根据 DISPLAY 环境变量（{displaySpec}）尝试连接到 {display}"
 
 #: tabby-ssh/src/session/ssh.ts:549
 msgid "To use X forwarding, you need a local X server, e.g.:"
-msgstr ""
+msgstr "要使用 X 转发，你需要本地 X 服务器，例如："
 
 #: tabby-ssh/src/session/ssh.ts:608
 msgid "Keyboard-interactive auth requested: {name}"
-msgstr ""
+msgstr "需要键盘交互式认证：{name}"
 
 #: tabby-ssh/src/session/ssh.ts:621
 msgid "The server has disconnected during authentication."
-msgstr ""
+msgstr "服务器在认证过程中断开了连接。"
 
 #: tabby-ssh/src/session/ssh.ts:622
 msgid "This may happen if too many private key authentication attemps are made."
-msgstr ""
+msgstr "如果进行了过多次私钥认证尝试，就可能发生这种情况。"
 
 #: tabby-ssh/src/session/ssh.ts:623
 msgid "You can set the specific private key for authentication in the profile settings."
-msgstr ""
+msgstr "你可以在配置设置中指定用于认证的私钥。"
 
 #: tabby-ssh/src/components/sshProfileSettings.component.ts:75
 #: tabby-ssh/src/session/ssh.ts:679
 msgid "Password for {user}@{host}"
-msgstr ""
+msgstr "请输入 {user}@{host} 的密码"
 
 #: tabby-ssh/src/session/ssh.ts:707
 msgid "Trying private key: {name}"
-msgstr ""
+msgstr "正在尝试私钥：{name}"
 
 #: tabby-ssh/src/session/ssh.ts:714
 msgid "Failed to load private key {name}: {error}"
-msgstr ""
+msgstr "加载私钥 {name} 失败：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:778
 msgid " with identity {identity}"
-msgstr ""
+msgstr "（身份 {identity}）"
 
 #: tabby-ssh/src/session/ssh.ts:780
 msgid "Failed to authenticate using agent{suffix}: {error}"
-msgstr ""
+msgstr "使用 Agent{suffix} 认证失败：{error}"
 
 #: tabby-ssh/src/components/sshTab.component.ts:138
 #: tabby-ssh/src/services/sftpTabLauncher.service.ts:81
 msgid "Could not set up port forward on {name}"
-msgstr ""
+msgstr "无法在 {name} 上建立端口转发"
 
 #: tabby-ssh/src/session/ssh.ts:806
 msgid "Remote has rejected the forwarded connection to {targetAddress}:{targetPort} via {forward}: {error}"
-msgstr ""
+msgstr "远程端已拒绝通过 {forward} 转发到 {targetAddress}:{targetPort} 的连接：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:817
 #: tabby-ssh/src/session/ssh.ts:841
 msgid "Forwarded {forward}"
-msgstr ""
+msgstr "已转发 {forward}"
 
 #: tabby-ssh/src/session/ssh.ts:820
 msgid "Failed to forward port {forward}: {error}"
-msgstr ""
+msgstr "端口转发 {forward} 失败：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:835
 msgid "Remote rejected port forwarding for {forward}: {error}"
-msgstr ""
+msgstr "远程端拒绝了 {forward} 的端口转发：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:858
 msgid "Stopped forwarding {forward}"
-msgstr ""
+msgstr "已停止转发 {forward}"
 
 #: tabby-ssh/src/session/shell.ts:50
 msgid "Make sure `xauth` is installed on the remote side"
-msgstr ""
+msgstr "请确认远程端已安装 `xauth`"
 
 #: tabby-ssh/src/session/shell.ts:52
 msgid "Remote rejected opening a shell channel: {error}"
-msgstr ""
+msgstr "远程端拒绝打开 shell 通道：{error}"
 
 #: tabby-ssh/src/session/ssh.ts:1019
 msgid "Private key passphrase"
-msgstr ""
+msgstr "请输入私钥口令"
 
 #: tabby-ssh/src/session/ssh.ts:1032
 msgid "Could not read the private key"
-msgstr ""
+msgstr "无法读取私钥"
 
 #: tabby-ssh/src/components/sftpPanel.component.ts:523
 msgid "The directory was created successfully"
-msgstr ""
+msgstr "目录创建成功"
 
 #: tabby-ssh/src/components/sftpPanel.component.ts:526
 msgid "The directory could not be created"
-msgstr ""
+msgstr "无法创建目录"
 
 #: tabby-ssh/src/services/sftpTabLauncher.service.ts:41
 msgid "Unable to connect SFTP"
-msgstr ""
+msgstr "无法连接 SFTP"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:26
 msgid "Connection failed: {error}"
-msgstr ""
+msgstr "连接失败: {error}"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:40
 msgid "Connection name will be used instead"
-msgstr ""
+msgstr "将使用连接名称代替"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:61
 msgid "Context menu"
-msgstr ""
+msgstr "右键菜单"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:14
 msgid "Controls the amount of space between elements"
-msgstr ""
+msgstr "控制元素之间的间隔"
 
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:240
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:248
@@ -595,121 +603,121 @@ msgstr ""
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:811
 #: tabby-terminal/src/tabContextMenu.ts:34
 msgid "Copied"
-msgstr ""
+msgstr "已复制"
 
 #: tabby-terminal/src/tabContextMenu.ts:30
 msgid "Copy"
-msgstr ""
+msgstr "复制"
 
 #: tabby-terminal/src/hotkeys.ts:70
 #: tabby-terminal/src/tabContextMenu.ts:70
 msgid "Copy current path"
-msgstr ""
+msgstr "复制当前路径"
 
 #: tabby-electron/src/sftpContextMenu.ts:29
 msgid "Copy full path"
-msgstr ""
+msgstr "复制完整路径"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:97
 msgid "Copy on select"
-msgstr ""
+msgstr "选中时复制"
 
 #: tabby-terminal/src/hotkeys.ts:10
 msgid "Copy to clipboard"
-msgstr ""
+msgstr "复制到剪贴板"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:103
 msgid "Copy with formatting"
-msgstr ""
+msgstr "复制带格式"
 
 #: tabby-core/src/services/config.service.ts:425
 msgid "Could not decrypt config"
-msgstr ""
+msgstr "无法解密配置"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpCreateDirectoryModal.component.html:9
 msgid "Create"
-msgstr ""
+msgstr "创建"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:7
 #: tabby-ssh/src/sftpContextMenu.ts:29
 msgid "Create directory"
-msgstr ""
+msgstr "创建文件夹"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:90
 msgid "Current"
-msgstr ""
+msgstr "当前"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsForMode.component.html:3
 msgid "Current color scheme"
-msgstr ""
+msgstr "当前配色方案"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:17
 msgid "Current host key fingerprint"
-msgstr ""
+msgstr "当前主机密钥指纹"
 
 #: tabby-core/src/tabContextMenu.ts:184
 msgid "Current process: {name}"
-msgstr ""
+msgstr "当前进程：{name}"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:51
 msgid "Cursor shape"
-msgstr ""
+msgstr "光标形状"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsForMode.component.html:46
 msgid "Custom"
-msgstr ""
+msgstr "自定义"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:90
 msgid "Custom CSS"
-msgstr ""
+msgstr "自定义 CSS"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:17
 msgid "Dark mode"
-msgstr ""
+msgstr "夜间模式"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:26
 msgid "Data bits"
-msgstr ""
+msgstr "数据位数"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:80
 msgid "Debugging"
-msgstr ""
+msgstr "调试"
 
 #: tabby-core/src/hotkeys.ts:256
 msgid "Decrease horizontal split size"
-msgstr ""
+msgstr "减少水平分割大小"
 
 #: tabby-core/src/hotkeys.ts:248
 msgid "Decrease vertical split size"
-msgstr ""
+msgstr "减少垂直分割大小"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:92
 msgid "Default \"Connect to\" type"
-msgstr ""
+msgstr "默认“连接到”类型"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:93
 msgid "Default connection type used by quick connect feature (ex. SSH, Telnet)"
-msgstr ""
+msgstr "快速连接功能使用的默认连接类型 (例如SSH, Telnet)"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:8
 msgid "Default profile for new tabs"
-msgstr ""
+msgstr "新标签页的默认配置"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:16
 msgid "Default profile group settings"
-msgstr ""
+msgstr "默认配置设置"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:101
 msgid "Default profile settings"
-msgstr ""
+msgstr "默认配置设置"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:124
 msgid "Defaults"
-msgstr ""
+msgstr "默认值"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:6
 msgid "Defaults for {type}"
-msgstr ""
+msgstr "{type} 的默认值"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:44
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:51
@@ -727,77 +735,77 @@ msgstr ""
 #: tabby-terminal/src/components/colorSchemeSettingsForMode.component.ts:92
 #: tabby-terminal/src/components/loginScriptsSettings.component.ts:32
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:128
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:213
 #: tabby-terminal/src/components/colorSchemeSettingsForMode.component.ts:90
 msgid "Delete \"{name}\"?"
-msgstr ""
+msgstr "删除\"{name}\"？"
 
 #: tabby-ssh/src/sftpContextMenu.ts:35
 msgid "Delete {fullPath}?"
-msgstr ""
+msgstr "是否删除 {fullPath} ？"
 
 #: tabby-terminal/src/hotkeys.ts:42
 msgid "Delete entire line"
-msgstr ""
+msgstr "删除整行"
 
 #: tabby-terminal/src/hotkeys.ts:46
 msgid "Delete next word"
-msgstr ""
+msgstr "删除下一个单词"
 
 #: tabby-terminal/src/hotkeys.ts:38
 msgid "Delete previous word"
-msgstr ""
+msgstr "删除上一个单词"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:114
 msgid "Delete the config on the remote side?"
-msgstr ""
+msgstr "是否删除远程配置？"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:226
 msgid "Delete the group's profiles?"
-msgstr ""
+msgstr "删除此分组所有配置？"
 
 #: tabby-terminal/src/components/loginScriptsSettings.component.ts:29
 msgid "Delete this script?"
-msgstr ""
+msgstr "删除此脚本？"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:50
 msgid "Delete vault contents?"
-msgstr ""
+msgstr "删除保险库内容？"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpDeleteModal.component.html:3
 msgid "Deleting"
-msgstr ""
+msgstr "正在删除"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:8
 msgid "Device"
-msgstr ""
+msgstr "设备"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:10
 msgid "Direct"
-msgstr ""
+msgstr "直连"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:57
 msgid "Disable"
-msgstr ""
+msgstr "禁用"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:39
 msgid "Disable dynamic tab title"
-msgstr ""
+msgstr "禁用动态标签页标题"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:218
 msgid "Disable fluent background while dragging"
-msgstr ""
+msgstr "拖动时禁用 Fluent 背景"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:204
 msgid "Disable GPU acceleration"
-msgstr ""
+msgstr "禁用 GPU 加速"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:50
 msgid "Disabled"
-msgstr ""
+msgstr "已禁用"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:26
 #: tabby-ssh/src/components/sshTab.component.ts:200
@@ -806,218 +814,218 @@ msgstr ""
 #: tabby-terminal/src/tabContextMenu.ts:106
 #: tabby-terminal/src/tabContextMenu.ts:110
 msgid "Disconnect"
-msgstr ""
+msgstr "断开连接"
 
 #: tabby-terminal/src/hotkeys.ts:106
 msgid "Disconnect current tab (Serial/Telnet/SSH)"
-msgstr ""
+msgstr "重新连接当前标签页 (Serial/Telnet/SSH)"
 
 #: tabby-ssh/src/components/sshTab.component.ts:198
 #: tabby-telnet/src/components/telnetTab.component.ts:81
 msgid "Disconnect from {host}?"
-msgstr ""
+msgstr "断开与 {host} 的连接？"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:30
 msgid "Display images via Sixel escape sequences"
-msgstr ""
+msgstr "由六像素转义序列显示图像"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:85
 msgid "Display on"
-msgstr ""
+msgstr "显示于"
 
 #: tabby-core/src/components/transfersMenu.component.ts:50
 msgid "Do not abort"
-msgstr ""
+msgstr "不要中止"
 
 #: tabby-ssh/src/components/sshTab.component.ts:201
 #: tabby-telnet/src/components/telnetTab.component.ts:84
 msgid "Do not close"
-msgstr ""
+msgstr "不要关闭"
 
 #: locale/tmp-html/tabby-core/src/components/unlockVaultModal.component.html:6
 #: locale/tmp-html/tabby-core/src/components/unlockVaultModal.component.html:8
 msgid "Do not remember"
-msgstr ""
+msgstr "不记住"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:97
 msgid "Dock always on top"
-msgstr ""
+msgstr "窗口保持置顶"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:67
 msgid "Dock the terminal"
-msgstr ""
+msgstr "停靠终端"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:104
 msgid "Docked terminal size"
-msgstr ""
+msgstr "停靠的终端大小"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:111
 msgid "Docked terminal space"
-msgstr ""
+msgstr "停靠的终端空间"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:64
 msgid "Docking"
-msgstr ""
+msgstr "停靠"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:75
 msgid "Double-click selection will stop at these characters"
-msgstr ""
+msgstr "双击选择将在这些字符处停止"
 
 #: tabby-core/src/tabContextMenu.ts:79
 msgid "Down"
-msgstr ""
+msgstr "向下"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:43
 msgid "Download"
-msgstr ""
+msgstr "下载"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:23
 msgid "Draw bold text in bright colors"
-msgstr ""
+msgstr "以亮色显示粗体"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:48
 #: tabby-core/src/tabContextMenu.ts:127
 msgid "Duplicate"
-msgstr ""
+msgstr "克隆"
 
 #: tabby-local/src/tabContextMenu.ts:72
 msgid "Duplicate as administrator"
-msgstr ""
+msgstr "以管理员身份克隆"
 
 #: tabby-core/src/hotkeys.ts:60
 #: tabby-core/src/tabContextMenu.ts:128
 msgid "Duplicate tab"
-msgstr ""
+msgstr "克隆标签页"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsForMode.component.html:6
 msgid "Edit"
-msgstr ""
+msgstr "编辑"
 
 #: tabby-electron/src/sftpContextMenu.ts:35
 msgid "Edit locally"
-msgstr ""
+msgstr "本地编辑"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:58
 msgid "Enable"
-msgstr ""
+msgstr "启用"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:32
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:66
 msgid "Enable analytics"
-msgstr ""
+msgstr "启用分析"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:87
 msgid "Enable animations"
-msgstr ""
+msgstr "开启动画效果"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:74
 msgid "Enable automatic installation of updates when they become available."
-msgstr ""
+msgstr "当更新可用时，启用自动安装"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:211
 msgid "Enable fluent background option"
-msgstr ""
+msgstr "启用Fluent背景"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:16
 msgid "Enable font ligatures"
-msgstr ""
+msgstr "启用连结字"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:39
 msgid "Enable global hotkey (Ctrl-Space)"
-msgstr ""
+msgstr "启用全局快捷键 (Ctrl-Space)"
 
 #: locale/tmp-html/tabby-local/src/components/shellSettingsTab.component.html:6
 msgid "Enables the experimental Windows ConPTY API"
-msgstr ""
+msgstr "启用实验性 Windows ConPTY API"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:37
 msgid "Encrypt config file"
-msgstr ""
+msgstr "加密配置文件"
 
 #: tabby-terminal/src/hotkeys.ts:26
 msgid "End of the line"
-msgstr ""
+msgstr "行尾"
 
 #: locale/tmp-html/tabby-local/src/components/localProfileSettings.component.html:17
 msgid "Environment"
-msgstr ""
+msgstr "环境变量"
 
 #: tabby-core/src/services/config.service.ts:429
 #: tabby-core/src/services/config.service.ts:443
 msgid "Erase config"
-msgstr ""
+msgstr "擦除配置"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:12
 msgid "Erase the Vault"
-msgstr ""
+msgstr "擦除保险库"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:6
 msgid "Error in {plugin}:"
-msgstr ""
+msgstr "{plugin} 中的错误："
 
 #: locale/tmp-html/tabby-terminal/src/components/loginScriptsSettings.component.html:10
 msgid "Exact match"
-msgstr ""
+msgstr "完全匹配"
 
 #: locale/tmp-html/tabby-local/src/components/environmentEditor.component.html:15
 msgid "Example:"
-msgstr ""
+msgstr "示例："
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:212
 msgid "Experimental Windows 10 background style known to cause issues"
-msgstr ""
+msgstr "实验性Windows 10 背景风格已知会导致问题"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:28
 msgid "Export"
-msgstr ""
+msgstr "导出"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:76
 msgid "Fallback font"
-msgstr ""
+msgstr "备用字体"
 
 #: locale/tmp-html/tabby-core/src/components/transfersMenu.component.html:3
 msgid "File transfers"
-msgstr ""
+msgstr "文件传输"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:96
 msgid "File: {description}"
-msgstr ""
+msgstr "文件： {description}"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:9
 msgid "Filter"
-msgstr ""
+msgstr "筛选"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:147
 msgid "Fixed"
-msgstr ""
+msgstr "固定"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:219
 msgid "Fluent background sometimes causes drag lag"
-msgstr ""
+msgstr "Fluent 背景有时会导致拖动延迟"
 
 #: tabby-terminal/src/tabContextMenu.ts:82
 msgid "Focus all panes"
-msgstr ""
+msgstr "聚焦所有窗格"
 
 #: tabby-terminal/src/hotkeys.ts:78
 msgid "Focus all panes at once (broadcast)"
-msgstr ""
+msgstr "同时聚焦所有窗格 (广播)"
 
 #: tabby-terminal/src/tabContextMenu.ts:75
 msgid "Focus all tabs"
-msgstr ""
+msgstr "聚焦所有标签页"
 
 #: tabby-terminal/src/hotkeys.ts:82
 msgid "Focus all tabs at once (broadcast)"
-msgstr ""
+msgstr "同时聚焦所有标签页 (广播)"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:196
 msgid "Focus follows mouse"
-msgstr ""
+msgstr "焦点跟随鼠标"
 
 #: tabby-core/src/hotkeys.ts:196
 msgid "Focus next pane"
-msgstr ""
+msgstr "聚焦下一个窗格"
 
 #: tabby-core/src/hotkeys.ts:200
 #: tabby-core/src/hotkeys.ts:204
@@ -1029,280 +1037,280 @@ msgstr ""
 #: tabby-core/src/hotkeys.ts:228
 #: tabby-core/src/hotkeys.ts:232
 msgid "Focus pane {number}"
-msgstr ""
+msgstr "焦点窗格 {number}"
 
 #: tabby-core/src/hotkeys.ts:192
 msgid "Focus previous pane"
-msgstr ""
+msgstr "聚焦上一个窗格"
 
 #: tabby-core/src/hotkeys.ts:176
 msgid "Focus the pane above"
-msgstr ""
+msgstr "聚焦上面的窗格"
 
 #: tabby-core/src/hotkeys.ts:180
 msgid "Focus the pane below"
-msgstr ""
+msgstr "聚焦下面的窗格"
 
 #: tabby-core/src/hotkeys.ts:184
 msgid "Focus the pane on the left"
-msgstr ""
+msgstr "聚焦左方的窗格"
 
 #: tabby-core/src/hotkeys.ts:188
 msgid "Focus the pane on the right"
-msgstr ""
+msgstr "聚焦右方的窗格"
 
 #: tabby-core/src/theme.ts:34
 msgid "Follow the color scheme"
-msgstr ""
+msgstr "依照配色方案"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:5
 msgid "Font"
-msgstr ""
+msgstr "字体"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:190
 msgid "For keyboard shortcuts"
-msgstr ""
+msgstr "对于键盘快捷键"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:53
 msgid "Force CR"
-msgstr ""
+msgstr "强制使用 CR"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:55
 msgid "Force CRLF"
-msgstr ""
+msgstr "强制使用 CRLF"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:54
 msgid "Force LF"
-msgstr ""
+msgstr "强制使用 LF"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:25
 msgid "Forces a specific SSH agent connection type."
-msgstr ""
+msgstr "强制特定的 SSH Agent 连接类型"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:105
 msgid "Forget"
-msgstr ""
+msgstr "忘记"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:45
 msgid "Forward port"
-msgstr ""
+msgstr "转发端口"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingModal.component.html:3
 msgid "Forwarded ports"
-msgstr ""
+msgstr "已转发端口"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:46
 msgid "From color scheme"
-msgstr ""
+msgstr "取自配色方案"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:23
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:9
 msgid "From system"
-msgstr ""
+msgstr "来自系统"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:44
 msgid "From theme"
-msgstr ""
+msgstr "取自主题"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:6
 msgid "Frontend"
-msgstr ""
+msgstr "前端"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:61
 msgid "Full"
-msgstr ""
+msgstr "完整"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:3
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:3
 #: locale/tmp-html/tabby-telnet/src/components/telnetProfileSettings.component.html:3
 msgid "General"
-msgstr ""
+msgstr "通用"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:21
 msgid "Generate a pre-filled GitHub issue"
-msgstr ""
+msgstr "生成一个预填写的 GitHub 问题"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:25
 msgid "Get"
-msgstr ""
+msgstr "获取"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:18
 msgid "Get it from your sync service settings"
-msgstr ""
+msgstr "从同步服务设置中获取"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:29
 msgid "Gives the window a blurred transparent background"
-msgstr ""
+msgstr "使窗口具有模糊透明的背景"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:24
 msgid "Go up"
-msgstr ""
+msgstr "上一级"
 
 #: tabby-core/src/utils.ts:61
 msgid "Green"
-msgstr ""
+msgstr "绿色"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:16
 msgid "Group"
-msgstr ""
+msgstr "分组"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:201
 msgid "Hacks"
-msgstr ""
+msgstr "调整"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:33
 msgid "Help track the number of Tabby installs across the world!"
-msgstr ""
+msgstr "帮助追踪 Tabby 在世界各地的安装次数！"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:50
 msgid "Help translate Tabby"
-msgstr ""
+msgstr "帮助翻译Tabby"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:32
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:45
 msgid "Hexadecimal"
-msgstr ""
+msgstr "十六进制"
 
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:473
 msgid "History restored"
-msgstr ""
+msgstr "历史记录已恢复"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:49
 msgid "Hide"
-msgstr ""
+msgstr "隐藏"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:176
 msgid "Hide tab close button"
-msgstr ""
+msgstr "隐藏标签页关闭按钮"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:158
 msgid "Hide tab index"
-msgstr ""
+msgstr "隐藏标签页索引"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:170
 msgid "Hide tab options button"
-msgstr ""
+msgstr "隐藏标签页选项按钮"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:118
 msgid "Hide window on focus loss"
-msgstr ""
+msgstr "失去聚焦时隐藏窗口"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:119
 msgid "Hides the docked terminal when you click away."
-msgstr ""
+msgstr "点击别处时隐藏停靠的终端"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:26
 msgid "Homepage"
-msgstr ""
+msgstr "主页"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:34
 #: locale/tmp-html/tabby-telnet/src/components/telnetProfileSettings.component.html:6
 msgid "Host"
-msgstr ""
+msgstr "主机"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:206
 msgid "Host key"
-msgstr ""
+msgstr "主机密钥"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:3
 msgid "Host key verification"
-msgstr ""
+msgstr "主机密钥校验"
 
 #: locale/tmp-html/tabby-settings/src/components/hotkeySettingsTab.component.html:2
 #: tabby-settings/src/settings.ts:15
 msgid "Hotkeys"
-msgstr ""
+msgstr "快捷键"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:83
 msgid "How Tabby presents itself through environment vars"
-msgstr ""
+msgstr "Tabby如何通过环境变量呈现自己"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:24
 msgid "HTTP proxy"
-msgstr ""
+msgstr "HTTP 代理"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:61
 msgid "HTTP proxy host"
-msgstr ""
+msgstr "HTTP 代理主机"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:65
 msgid "HTTP proxy port"
-msgstr ""
+msgstr "HTTP 代理端口"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:20
 msgid "Icon"
-msgstr ""
+msgstr "图标"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:145
 msgid "id.tab-width.dynamic"
-msgstr ""
+msgstr "动态"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:76
 msgid "If disabled, only custom profiles will show up in the profile selector"
-msgstr ""
+msgstr "如果禁用，则只在配置选择器中显示自定义配置"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:23
 msgid "Immediately echoes your input locally"
-msgstr ""
+msgstr "立刻在本地回显您的输入"
 
 #: tabby-core/src/hotkeys.ts:252
 msgid "Increase horizontal split size"
-msgstr ""
+msgstr "增加水平分割大小"
 
 #: tabby-core/src/hotkeys.ts:244
 msgid "Increase vertical split size"
-msgstr ""
+msgstr "增加垂直分割大小"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:91
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:226
 #: locale/tmp-html/tabby-telnet/src/components/telnetProfileSettings.component.html:21
 msgid "Input"
-msgstr ""
+msgstr "输入"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:18
 msgid "Input is sent as you type"
-msgstr ""
+msgstr "按您输入时发送"
 
 #: locale/tmp-html/tabby-terminal/src/components/streamProcessingSettings.component.html:4
 msgid "Input mode"
-msgstr ""
+msgstr "输入模式"
 
 #: locale/tmp-html/tabby-terminal/src/components/streamProcessingSettings.component.html:15
 msgid "Input newlines"
-msgstr ""
+msgstr "输入换行符"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:39
 msgid "Installed"
-msgstr ""
+msgstr "已安装"
 
 #: tabby-electron/src/services/updater.service.ts:131
 msgid "Installing the update will close all tabs and restart Tabby."
-msgstr ""
+msgstr "安装更新将关闭全部标签页并重启 Tabby。"
 
 #: tabby-terminal/src/hotkeys.ts:66
 msgid "Intelligent Ctrl-C (copy/abort)"
-msgstr ""
+msgstr "智能 Ctrl-C (复制/中止)"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:94
 msgid "Interactive"
-msgstr ""
+msgstr "交互式"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:130
 msgid "Invalid syntax"
-msgstr ""
+msgstr "无效的语法"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:16
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:43
 msgid "Jump host"
-msgstr ""
+msgstr "跳板机"
 
 #: tabby-terminal/src/hotkeys.ts:34
 msgid "Jump to next word"
-msgstr ""
+msgstr "跳到下一个单词"
 
 #: tabby-terminal/src/hotkeys.ts:30
 msgid "Jump to previous word"
-msgstr ""
+msgstr "跳到上一个单词"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:51
 #: tabby-settings/src/components/editProfileGroupModal.component.ts:39
@@ -1314,539 +1322,567 @@ msgstr ""
 #: tabby-terminal/src/components/loginScriptsSettings.component.ts:33
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:51
 msgid "Keep"
-msgstr ""
+msgstr "保留"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:154
 msgid "Keep Alive Interval (Milliseconds)"
-msgstr ""
+msgstr "保活间隔（毫秒）"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:98
 msgid "Keep docked terminal always on top"
-msgstr ""
+msgstr "保持停靠终端置顶"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:86
 msgid "Key"
-msgstr ""
+msgstr "密钥"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:186
 msgid "Key exchange"
-msgstr ""
+msgstr "密钥交换"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:36
 msgid "Keyboard"
-msgstr ""
+msgstr "键盘"
 
 #: locale/tmp-html/tabby-ssh/src/components/keyboardInteractiveAuthPanel.component.html:2
 msgid "Keyboard-interactive auth"
-msgstr ""
+msgstr "键盘交互认证"
 
 #: tabby-local/src/components/terminalTab.component.ts:117
 msgid "Kill"
-msgstr ""
+msgstr "结束进程"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:10
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:50
 msgid "Language"
-msgstr ""
+msgstr "语言"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:11
 msgid "Last known host key fingerprint"
-msgstr ""
+msgstr "最后已知的主机密钥指纹"
 
 #: tabby-ssh/src/tabContextMenu.ts:32
 msgid "Launch WinSCP"
-msgstr ""
+msgstr "启动 WinSCP"
 
 #: tabby-ssh/src/hotkeys.ts:14
 msgid "Launch WinSCP for current SSH session"
-msgstr ""
+msgstr "为当前的 SSH 会话启动 WinSCP"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:16
 #: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:7
 msgid "Learn how to allow Tabby to detect remote shell's working directory."
-msgstr ""
+msgstr "了解如何让 Tabby 检测远程 shell 的工作目录。"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:134
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:76
 #: tabby-core/src/tabContextMenu.ts:80
 msgid "Left"
-msgstr ""
+msgstr "左侧"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:40
 msgid "Lets the shell handle Meta key instead of OS"
-msgstr ""
+msgstr "使用 Shell 替代操作系统处理 Meta 键"
 
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:22
 msgid "Light mode"
-msgstr ""
+msgstr "亮色主题"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:27
 msgid "Line by line"
-msgstr ""
+msgstr "逐行"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:28
 msgid "Line editor, input is sent after you press Enter"
-msgstr ""
+msgstr "行编辑器，按回车后发送输入的内容"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:83
 msgid "Line padding"
-msgstr ""
+msgstr "行间距"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:21
 msgid "Loading"
-msgstr ""
+msgstr "加载中"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:34
 msgid "Loading configs..."
-msgstr ""
+msgstr "正在加载配置..."
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:39
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgid "Local"
-msgstr ""
+msgstr "本地"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:22
 msgid "Local echo"
-msgstr ""
+msgstr "本地回显"
 
 #: tabby-local/src/profiles.ts:12
 msgid "Local terminal"
-msgstr ""
+msgstr "本地终端"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:86
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:221
 #: locale/tmp-html/tabby-telnet/src/components/telnetProfileSettings.component.html:16
 msgid "Login scripts"
-msgstr ""
+msgstr "登录脚本"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:57
 msgid "Long-click for context menu"
-msgstr ""
+msgstr "长按右键菜单"
 
 #: tabby-core/src/services/profiles.service.ts:279
 msgid "Manage profiles"
-msgstr ""
+msgstr "管理配置"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:160
 msgid "Max Keep Alive Count"
-msgstr ""
+msgstr "最大保活次数"
 
 #: tabby-core/src/hotkeys.ts:172
 msgid "Maximize the active pane"
-msgstr ""
+msgstr "最大化活动窗格"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:93
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:70
 msgid "Minimum contrast ratio"
-msgstr ""
+msgstr "最低对比度"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:39
 msgid "Modified on {date}"
-msgstr ""
+msgstr "修改于 {date}"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:53
 msgid "Mouse"
-msgstr ""
+msgstr "鼠标"
 
 #: tabby-core/src/hotkeys.ts:48
 msgid "Move tab to the left"
-msgstr ""
+msgstr "将标签页移至左侧"
 
 #: tabby-core/src/hotkeys.ts:52
 msgid "Move tab to the right"
-msgstr ""
+msgstr "将标签页移至右侧"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:228
 msgid "Move to \"Ungrouped\""
-msgstr ""
+msgstr "移动到 “未分组”"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:197
 msgid "Moving the mouse over an inactive pane will cause it to activate"
-msgstr ""
+msgstr "鼠标移到非活动窗格时会激活它"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:9
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:12
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsForMode.component.html:13
 msgid "Name"
-msgstr ""
+msgstr "名称"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:60
 msgid "Name for the new config"
-msgstr ""
+msgstr "新配置名称"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpCreateDirectoryModal.component.html:3
 msgid "Name for the new directory"
-msgstr ""
+msgstr "为新文件夹命名"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:57
 msgid "Native"
-msgstr ""
+msgstr "原生"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:21
 msgid "New"
-msgstr ""
+msgstr "新建"
 
 #: tabby-local/src/tabContextMenu.ts:53
 msgid "New admin tab"
-msgstr ""
+msgstr "新的管理标签页"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:58
 msgid "New config on {platform}"
-msgstr ""
+msgstr "{platform} 上的新配置"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:144
 msgid "New group name"
-msgstr ""
+msgstr "新建群组名称"
 
 #: locale/tmp-html/tabby-terminal/src/components/loginScriptsSettings.component.html:16
 msgid "New item"
-msgstr ""
+msgstr "新建项"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:133
 msgid "New name"
-msgstr ""
+msgstr "新名称"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:23
 msgid "New profile"
-msgstr ""
+msgstr "新配置"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:24
 msgid "New profile Group"
-msgstr ""
+msgstr "新建配置文件组"
 
 #: tabby-terminal/src/tabContextMenu.ts:176
 msgid "New profile name"
-msgstr ""
+msgstr "新配置名称"
 
 #: tabby-local/src/hotkeys.ts:10
 msgid "New tab"
-msgstr ""
+msgstr "新标签页"
 
 #: tabby-core/src/hotkeys.ts:271
 msgid "New tab: {profile}"
-msgstr ""
+msgstr "新标签页：{profile}"
 
 #: tabby-local/src/buttonProvider.ts:20
 #: tabby-local/src/tabContextMenu.ts:27
 msgid "New terminal"
-msgstr ""
+msgstr "新终端"
 
 #: tabby-electron/src/hotkeys.ts:10
 msgid "New window"
-msgstr ""
+msgstr "新窗口"
 
 #: tabby-electron/src/services/dockMenu.service.ts:62
 msgid "New Window"
-msgstr ""
+msgstr "新建窗口"
 
 #: tabby-local/src/tabContextMenu.ts:37
 msgid "New with profile"
-msgstr ""
+msgstr "依据配置新建"
 
 #: tabby-core/src/hotkeys.ts:40
 msgid "Next tab"
-msgstr ""
+msgstr "下一个标签页"
 
 #: tabby-core/src/utils.ts:59
 msgid "No color"
-msgstr ""
+msgstr "无色"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:85
 msgid "No modifier"
-msgstr ""
+msgstr "关闭"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:41
 msgid "None"
-msgstr ""
+msgstr "无"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:17
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:40
 msgid "Normal"
-msgstr ""
+msgstr "一般"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:22
 msgid "Normal font weight"
-msgstr ""
+msgstr "正常字体粗细"
 
 #: tabby-terminal/src/components/searchPanel.component.ts:54
 #: tabby-terminal/src/components/searchPanel.component.ts:64
 msgid "Not found"
-msgstr ""
+msgstr "未找到"
 
 #: tabby-core/src/tabContextMenu.ts:209
 msgid "Notify on activity"
-msgstr ""
+msgstr "活动时通知"
 
 #: tabby-core/src/tabContextMenu.ts:187
 msgid "Notify when done"
-msgstr ""
+msgstr "完成时通知"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:17
 msgid "Number of lines kept in the buffer"
-msgstr ""
+msgstr "保存在缓冲区的行数"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:72
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:137
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:60
 msgid "Off"
-msgstr ""
+msgstr "关闭"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:81
 msgid "Official"
-msgstr ""
+msgstr "官方"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:26
 msgid "On GitHub Discussions"
-msgstr ""
+msgstr "在 GitHub 讨论"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:47
 msgid "Only close the tab when session is explicitly terminated"
-msgstr ""
+msgstr "仅当会话被明确终止时关闭标签"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:46
 msgid "Opacity"
-msgstr ""
+msgstr "不透明度"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:82
 msgid "Open DevTools"
-msgstr ""
+msgstr "开启开发者工具"
 
 #: tabby-settings/src/hotkeys.ts:11
 msgid "Open Settings"
-msgstr ""
+msgstr "打开设置"
 
 #: tabby-settings/src/hotkeys.ts:25
 msgid "Open settings tab: {tab}"
-msgstr ""
+msgstr "打开设置标签页：{tab}"
 
 #: tabby-ssh/src/tabContextMenu.ts:25
 msgid "Open SFTP panel"
-msgstr ""
+msgstr "打开 SFTP 面板"
+
+#: tabby-ssh/src/tabContextMenu.ts:30
+#: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:36
+msgid "Open SFTP tab"
+msgstr "打开 SFTP 标签页"
 
 #: locale/tmp-html/tabby-terminal/src/components/loginScriptsSettings.component.html:10
 msgid "Optional"
-msgstr ""
+msgstr "选填"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:11
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:34
 msgid "Options"
-msgstr ""
+msgstr "选项"
+
+msgid "Single expand mode"
+msgstr "单展开模式"
 
 #: tabby-core/src/utils.ts:62
 msgid "Orange"
-msgstr ""
+msgstr "橙色"
 
 #: tabby-electron/src/shells/macDefault.ts:25
 msgid "OS default"
-msgstr ""
+msgstr "系统默认"
 
 #: tabby-electron/src/shells/winDefault.ts:43
 msgid "OS default ({name})"
-msgstr ""
+msgstr "系统默认 ({name})"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:46
 msgid "Output is shown as a hexdump"
-msgstr ""
+msgstr "输出显示为十六进制转储"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:41
 msgid "Output is shown as it is received"
-msgstr ""
+msgstr "按收到的原有样式显示输出"
 
 #: locale/tmp-html/tabby-terminal/src/components/streamProcessingSettings.component.html:23
 msgid "Output mode"
-msgstr ""
+msgstr "输出模式"
 
 #: locale/tmp-html/tabby-terminal/src/components/streamProcessingSettings.component.html:34
 msgid "Output newlines"
-msgstr ""
+msgstr "输出换行符"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:42
 msgid "Override X11 display"
-msgstr ""
+msgstr "覆盖 X11 显示"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:107
+msgid "Download remote and sync"
+msgstr "下载远程并同步"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:98
 msgid "Overwrite local and sync"
-msgstr ""
+msgstr "覆盖本地并同步"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:78
 msgid "Overwrite remote and sync"
-msgstr ""
+msgstr "覆盖远程并同步"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:76
 msgid "Overwrite the config on the remote side and start syncing?"
-msgstr ""
+msgstr "覆盖远程的配置并开始同步？"
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:96
 msgid "Overwrite the local config and start syncing?"
-msgstr ""
+msgstr "覆盖本地配置并开始同步？"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:100
+msgid "Remote config \"{name}\" (ID: {id}) was modified on {remoteDate}.\nLocal sync checkpoint: {localDate}.\n\nChoose how to proceed:\n- Overwrite remote and sync local config\n- Download remote and sync local config\n- Cancel"
+msgstr "远程配置“{name}”（ID: {id}）在 {remoteDate} 被修改。\n本地同步检查点：{localDate}。\n\n请选择后续操作：\n- 覆盖远程并同步本地配置\n- 下载远程并同步到本地\n- 取消"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:99
+msgid "Sync conflict detected"
+msgstr "检测到同步冲突"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:138
+msgid "Unknown date"
+msgstr "未知时间"
+
+#: tabby-settings/src/components/configSyncSettingsTab.component.ts:101
+msgid "Unnamed config"
+msgstr "未命名配置"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:189
 msgid "Pane resize step"
-msgstr ""
+msgstr "窗格大小调整阶梯"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:186
 msgid "Panes"
-msgstr ""
+msgstr "窗格"
 
 #: tabby-core/src/theme.ts:26
 msgid "Paper (legacy)"
-msgstr ""
+msgstr "纸张（旧版）"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:38
 msgid "Parity"
-msgstr ""
+msgstr "奇偶校验"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:64
 msgid "Partial config sync is not possible when the config is encrypted via Vault."
-msgstr ""
+msgstr "当配置通过保险库加密时，部分配置同步不可用"
 
 #: tabby-terminal/src/components/inputProcessingSettings.component.ts:17
 msgid "Pass-through"
-msgstr ""
+msgstr "穿透模式"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:92
 msgid "Passphrase for a private key with hash {hash}..."
-msgstr ""
+msgstr "带哈希值 {hash} 的私钥口令..."
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:100
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:82
 msgid "Password"
-msgstr ""
+msgstr "密码"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:62
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:521
 #: tabby-terminal/src/tabContextMenu.ts:39
 msgid "Paste"
-msgstr ""
+msgstr "粘贴"
 
 #: tabby-terminal/src/hotkeys.ts:14
 msgid "Paste from clipboard"
-msgstr ""
+msgstr "从剪贴板中粘贴"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:63
 msgid "Paste if no selection, else copy"
-msgstr ""
+msgstr "未选择内容时粘贴，否则复制"
 
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:528
 msgid "Paste multiple lines?"
-msgstr ""
+msgstr "粘贴多行？"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:68
 msgid "Paste on middle-click"
-msgstr ""
+msgstr "按下鼠标滚轮（或中间按键）时粘贴"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:43
 msgid "Path or address of the local X11 socket"
-msgstr ""
+msgstr "本地 X11 socket 的路径或地址"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalToolbar.component.html:4
 msgid "Pin"
-msgstr ""
+msgstr "固定"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:3
 msgid "Plugins"
-msgstr ""
+msgstr "插件"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:4
 msgid "Plugins folder"
-msgstr ""
+msgstr "插件目录"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:38
 #: locale/tmp-html/tabby-telnet/src/components/telnetProfileSettings.component.html:10
 msgid "Port"
-msgstr ""
+msgstr "端口"
 
 #: tabby-serial/src/components/serialTab.component.ts:65
 msgid "Port opened"
-msgstr ""
+msgstr "端口已打开"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:119
 #: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:12
 msgid "Ports"
-msgstr ""
+msgstr "端口"
 
 #: tabby-terminal/src/api/connectableTerminalTab.component.ts:87
 msgid "Press any key to reconnect"
-msgstr ""
+msgstr "按任意键重新连接"
 
 #: locale/tmp-html/tabby-settings/src/components/hotkeyInputModal.component.html:3
 msgid "Press the key now"
-msgstr ""
+msgstr "请输入按键"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:21
 msgid "Prevents accidental closing"
-msgstr ""
+msgstr "防止意外关闭"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:110
 msgid "Prevents accidental execution of pasted commands"
-msgstr ""
+msgstr "防止意外执行粘贴的命令"
 
 #: tabby-core/src/hotkeys.ts:44
 msgid "Previous tab"
-msgstr ""
+msgstr "上一个标签页"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:108
 msgid "Private keys"
-msgstr ""
+msgstr "私钥"
 
 #: tabby-core/src/tabContextMenu.ts:195
 msgid "Process completed"
-msgstr ""
+msgstr "处理完成"
 
 #: tabby-core/src/tabContextMenu.ts:151
 msgid "Profile name"
-msgstr ""
+msgstr "配置名称"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:2
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:4
 #: tabby-electron/src/services/dockMenu.service.ts:40
 msgid "Profiles"
-msgstr ""
+msgstr "配置"
 
 #: tabby-core/src/commands.ts:32
 #: tabby-settings/src/settings.ts:58
 msgid "Profiles & connections"
-msgstr ""
+msgstr "配置和连接"
 
 #: locale/tmp-html/tabby-local/src/components/commandLineEditor.component.html:12
 msgid "Program"
-msgstr ""
+msgstr "程序"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:30
 msgid "Proxy command"
-msgstr ""
+msgstr "代理命令"
 
 #: tabby-core/src/utils.ts:63
 msgid "Purple"
-msgstr ""
+msgstr "紫色"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:38
 msgid "Puts all of Tabby's configuration into the vault"
-msgstr ""
+msgstr "将 Tabby 的所有配置放入保险库"
 
 #: tabby-core/src/index.ts:219
 #: tabby-core/src/services/profiles.service.ts:295
 msgid "Quick connect"
-msgstr ""
+msgstr "快速连接"
 
 #: tabby-core/src/services/config.service.ts:430
 #: tabby-core/src/services/config.service.ts:444
 msgid "Quit"
-msgstr ""
+msgstr "退出"
 
 #: tabby-telnet/src/profiles.ts:50
 msgid "Raw socket connection"
-msgstr ""
+msgstr "原始套接字连接"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:166
 msgid "Ready Timeout (Milliseconds)"
-msgstr ""
+msgstr "准备超时（毫秒）"
 
 #: tabby-core/src/services/profiles.service.ts:235
 #: tabby-core/src/services/profiles.service.ts:249
 #: tabby-electron/src/services/dockMenu.service.ts:28
 msgid "Recent"
-msgstr ""
+msgstr "最近"
 
 #: locale/tmp-html/tabby-serial/src/components/serialTab.component.html:5
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:52
@@ -1856,510 +1892,534 @@ msgstr ""
 #: tabby-terminal/src/tabContextMenu.ts:115
 #: tabby-terminal/src/tabContextMenu.ts:119
 msgid "Reconnect"
-msgstr ""
+msgstr "重新连接"
 
 #: tabby-terminal/src/hotkeys.ts:102
 msgid "Reconnect current tab (Serial/Telnet/SSH)"
-msgstr ""
+msgstr "重新连接当前标签页 (Serial/Telnet/SSH)"
 
 #: tabby-core/src/utils.ts:64
 msgid "Red"
-msgstr ""
+msgstr "红色"
 
 #: locale/tmp-html/tabby-terminal/src/components/loginScriptsSettings.component.html:10
 msgid "Regex"
-msgstr ""
+msgstr "正则表达式"
 
 #: tabby-settings/src/components/releaseNotesTab.component.ts:27
 msgid "Release notes"
-msgstr ""
+msgstr "更新日志"
 
 #: locale/tmp-html/tabby-core/src/components/unlockVaultModal.component.html:6
 msgid "Remember for {time}"
-msgstr ""
+msgstr "记住密码 {time}"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:41
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgid "Remote"
-msgstr ""
+msgstr "远程"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:124
 msgid "Remove whitespace and newlines around the copied text"
-msgstr ""
+msgstr "删除复制文本周围的空格和换行"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:26
 #: tabby-core/src/tabContextMenu.ts:120
 msgid "Rename"
-msgstr ""
+msgstr "重命名"
 
 #: tabby-core/src/hotkeys.ts:24
 #: tabby-core/src/tabContextMenu.ts:121
 msgid "Rename tab"
-msgstr ""
+msgstr "重命名标签"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:3
 msgid "Rendering"
-msgstr ""
+msgstr "渲染"
 
 #: tabby-core/src/hotkeys.ts:32
 msgid "Reopen last tab"
-msgstr ""
+msgstr "重新打开最后的标签页"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:42
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:27
 msgid "Replace"
-msgstr ""
+msgstr "替换"
 
 #: locale/tmp-html/tabby-core/src/components/startPage.component.html:11
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:21
 msgid "Report a problem"
-msgstr ""
+msgstr "报告问题"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:81
 msgid "Require a key to click links"
-msgstr ""
+msgstr "需要同时按下按键来点击链接"
 
 #: tabby-terminal/src/hotkeys.ts:62
 msgid "Reset zoom"
-msgstr ""
+msgstr "重置缩放"
 
 #: tabby-serial/src/hotkeys.ts:14
 msgid "Restart current serial session"
-msgstr ""
+msgstr "重启当前串口会话"
 
 #: tabby-ssh/src/hotkeys.ts:10
 msgid "Restart current SSH session"
-msgstr ""
+msgstr "重启当前 SSH 会话"
 
 #: tabby-telnet/src/hotkeys.ts:10
 msgid "Restart current Telnet session"
-msgstr ""
+msgstr "重启当前的 Telnet 会话"
 
 #: tabby-core/src/hotkeys.ts:64
 msgid "Restart tab"
-msgstr ""
+msgstr "重启标签页"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:140
 msgid "Restart the app to apply changes"
-msgstr ""
+msgstr "重新启动应用以使更改生效"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:316
 msgid "Restore settings to defaults ?"
-msgstr ""
+msgstr "还原为默认设置"
 
 #: tabby-settings/src/components/editProfileGroupModal.component.ts:36
 msgid "Restore settings to inherited defaults ?"
-msgstr ""
+msgstr "还原为默认设置"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:159
 msgid "Restore terminal tabs on app start"
-msgstr ""
+msgstr "应用程序启动时恢复终端标签页"
+
+#: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:168
+msgid "Recovered terminal scrollback"
+msgstr "恢复时的终端回滚缓冲"
+
+#: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:169
+msgid "Number of lines saved for terminal recovery on app restart"
+msgstr "应用重启时为终端恢复保存的行数"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:147
 msgid "Reuse session for multiple tabs"
-msgstr ""
+msgstr "为多个标签页重用会话"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:156
+msgid "SFTP remote default path"
+msgstr "SFTP 远程默认路径"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:157
+msgid "Used when opening a new SFTP session. Empty uses the current shell directory or /"
+msgstr "新建 SFTP 会话时使用。留空则使用当前 Shell 目录或 /"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:165
+msgid "SFTP local default path"
+msgstr "SFTP 本地默认路径"
+
+#: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:166
+msgid "Used when opening a new SFTP session. Supports ~ or ${home}. Empty uses the system home directory"
+msgstr "新建 SFTP 会话时使用。支持 ~ 或 ${home}。留空则使用系统主目录"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:136
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:78
 #: tabby-core/src/tabContextMenu.ts:78
 msgid "Right"
-msgstr ""
+msgstr "右侧"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:56
 msgid "Right click"
-msgstr ""
+msgstr "右键点击"
 
 #: locale/tmp-html/tabby-local/src/components/localProfileSettings.component.html:5
 msgid "Run as administrator"
-msgstr ""
+msgstr "以管理员身份运行"
 
 #: locale/tmp-html/tabby-core/src/components/renameTabModal.component.html:6
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:27
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:70
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsForMode.component.html:29
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:101
 msgid "Save a password in the keychain"
-msgstr ""
+msgstr "在钥匙串中保存密码"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:129
 msgid "Save and apply"
-msgstr ""
+msgstr "保存并应用"
 
 #: tabby-terminal/src/tabContextMenu.ts:173
 msgid "Save as profile"
-msgstr ""
+msgstr "另存为配置"
 
 #: tabby-core/src/tabContextMenu.ts:148
 msgid "Save layout as profile"
-msgstr ""
+msgstr "保存布局为配置"
 
 #: tabby-terminal/src/tabContextMenu.ts:210
 msgid "Saved"
-msgstr ""
+msgstr "已保存"
 
 #: tabby-core/src/profiles.ts:19
 msgid "Saved layout"
-msgstr ""
+msgstr "已保存的布局"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:46
 msgid "Scroll on input"
-msgstr ""
+msgstr "输入时滚动"
 
 #: tabby-terminal/src/hotkeys.ts:94
 msgid "Scroll terminal one page down"
-msgstr ""
+msgstr "向下滑动终端一页"
 
 #: tabby-terminal/src/hotkeys.ts:90
 msgid "Scroll terminal one page up"
-msgstr ""
+msgstr "向上滑动终端一页"
 
 #: tabby-terminal/src/hotkeys.ts:98
 msgid "Scroll terminal to bottom"
-msgstr ""
+msgstr "滚动终端到底部"
 
 #: tabby-terminal/src/hotkeys.ts:86
 msgid "Scroll terminal to top"
-msgstr ""
+msgstr "滑动终端到顶端"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:16
 msgid "Scrollback"
-msgstr ""
+msgstr "回滚"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:47
 msgid "Scrolls the terminal to the bottom on user input"
-msgstr ""
+msgstr "在用户输入时，将终端滚动至底部"
 
 #: tabby-terminal/src/hotkeys.ts:74
 msgid "Search"
-msgstr ""
+msgstr "搜索"
 
 #: tabby-terminal/src/components/colorSchemeSelector.component.ts:9
 #: tabby-terminal/src/components/colorSchemeSettingsForMode.component.ts:10
 msgid "Search color schemes"
-msgstr ""
+msgstr "搜索配色方案"
 
 #: tabby-settings/src/components/hotkeySettingsTab.component.ts:12
 msgid "Search hotkeys"
-msgstr ""
+msgstr "搜索快捷键"
 
 #: tabby-plugin-manager/src/components/pluginsSettingsTab.component.ts:14
 msgid "Search plugins"
-msgstr ""
+msgstr "搜索插件"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:17
 msgid "Secret sync token"
-msgstr ""
+msgstr "加密同步令牌"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:45
 #: tabby-electron/src/services/platform.service.ts:200
 msgid "Select"
-msgstr ""
+msgstr "选择"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:61
 msgid "Select a base profile to use as a template"
-msgstr ""
+msgstr "选择一个基本配置作为模板"
 
 #: tabby-terminal/src/hotkeys.ts:18
 msgid "Select all"
-msgstr ""
+msgstr "全选"
 
 #: tabby-core/src/services/fileProviders.service.ts:47
 msgid "Select file storage"
-msgstr ""
+msgstr "选择文件存储"
 
 #: tabby-core/src/index.ts:232
 msgid "Select profile"
-msgstr ""
+msgstr "选择配置"
 
 #: tabby-core/src/services/profiles.service.ts:308
 msgid "Select profile or enter an address"
-msgstr ""
+msgstr "选择配置或输入地址"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:33
 msgid "Send bytes by typing in hex values"
-msgstr ""
+msgstr "通过输入十六进制值发送字节"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:75
 msgid "Sends data one byte at a time"
-msgstr ""
+msgstr "一次发送一个字节数据"
 
 #: tabby-serial/src/profiles.ts:14
 #: tabby-serial/src/profiles.ts:74
 msgid "Serial"
-msgstr ""
+msgstr "串口"
 
 #: tabby-serial/src/profiles.ts:53
 #: tabby-serial/src/profiles.ts:64
 msgid "Serial connection"
-msgstr ""
+msgstr "串口连接"
 
 #: tabby-serial/src/profiles.ts:73
 msgid "Serial: {description}"
-msgstr ""
+msgstr "串口：{description}"
 
 #: locale/tmp-html/tabby-settings/src/components/setVaultPassphraseModal.component.html:2
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:5
 msgid "Set master passphrase"
-msgstr ""
+msgstr "设置主密码"
 
 #: locale/tmp-html/tabby-settings/src/components/setVaultPassphraseModal.component.html:11
 msgid "Set passphrase"
-msgstr ""
+msgstr "设置密码"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:104
 msgid "Set password"
-msgstr ""
+msgstr "设置密码"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:168
 msgid "Set Tabby as %COMSPEC%"
-msgstr ""
+msgstr "将 Tabby 设置为 %COMSPEC%"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:69
 msgid "Set to 0 to disable recent profiles"
-msgstr ""
+msgstr "设置为 0 以禁用最近的配置"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:36
 msgid "Sets the SSH agent's named pipe path."
-msgstr ""
+msgstr "设置 SSH agent 的命名 pipe 路径"
 
 #: tabby-settings/src/buttonProvider.ts:28
 #: tabby-settings/src/components/settingsTab.component.ts:57
 msgid "Settings"
-msgstr ""
+msgstr "设置"
 
 #: locale/tmp-html/tabby-local/src/components/shellSettingsTab.component.html:2
 msgid "Shell"
-msgstr ""
+msgstr "Shell"
 
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:593
 msgid "Shell does not support current path detection"
-msgstr ""
+msgstr "Shell 不支持当前路径检测"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:59
 msgid "Shell integration"
-msgstr ""
+msgstr "Shell 集成"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:50
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:25
 msgid "Show"
-msgstr ""
+msgstr "显示"
 
 #: tabby-core/src/hotkeys.ts:275
 msgid "Show {type} profile selector"
-msgstr ""
+msgstr "显示 {type} 配置选择器"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:117
 msgid "Show a confirmation box when pasting multiple lines"
-msgstr ""
+msgstr "当粘贴多行时，显示确认对话框"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:75
 msgid "Show built-in profiles in selector"
-msgstr ""
+msgstr "在选择器中显示内置配置"
 
 #: tabby-core/src/hotkeys.ts:12
 msgid "Show command selector"
-msgstr ""
+msgstr "显示命令选择器"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:132
 msgid "Show config file"
-msgstr ""
+msgstr "显示配置文件"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:131
 msgid "Show defaults"
-msgstr ""
+msgstr "显示默认值"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:146
 msgid "Show Mixer"
-msgstr ""
+msgstr "显示音量合成器"
 
 #: tabby-core/src/hotkeys.ts:56
 msgid "Show pane labels (for rearranging)"
-msgstr ""
+msgstr "显示窗格标签（用于重新排列）"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:164
 msgid "Show profile icon on tab"
-msgstr ""
+msgstr "在标签上显示配置文件图标"
 
 #: tabby-core/src/hotkeys.ts:16
 msgid "Show profile selector"
-msgstr ""
+msgstr "显示配置选择器"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:68
 msgid "Show recent profiles in selector"
-msgstr ""
+msgstr "在选择器中显示最近的配置"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:36
 msgid "Show release notes"
-msgstr ""
+msgstr "显示更新日志"
 
 #: tabby-serial/src/hotkeys.ts:10
 msgid "Show Serial connections"
-msgstr ""
+msgstr "显示串口连接"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:152
 msgid "Show tabs in fullscreen mode"
-msgstr ""
+msgstr "全屏模式下显示标签栏"
 
 #: tabby-terminal/src/tabContextMenu.ts:62
 msgid "Show toolbar"
-msgstr ""
+msgstr "显示工具栏"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:45
 msgid "Show vault contents"
-msgstr ""
+msgstr "显示保险库内容"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:29
 msgid "Sixel graphics support (experimental)"
-msgstr ""
+msgstr "六像素图形支持 (实验)"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:140
 msgid "Skip MoTD/banner"
-msgstr ""
+msgstr "跳过 MoTD/横幅消息"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:74
 msgid "Slow feed"
-msgstr ""
+msgstr "逐字节接收"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:68
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:86
 msgid "Snaps the window to a side of the screen"
-msgstr ""
+msgstr "将窗口贴靠至屏幕的一侧"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:22
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:9
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:20
 msgid "SOCKS proxy"
-msgstr ""
+msgstr "SOCKS 代理"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:51
 msgid "SOCKS proxy host"
-msgstr ""
+msgstr "SOCKS 代理主机"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:55
 msgid "SOCKS proxy port"
-msgstr ""
+msgstr "SOCKS 代理端口"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:130
 msgid "Sound"
-msgstr ""
+msgstr "声音"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:31
 msgid "Source code"
-msgstr ""
+msgstr "源码"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:13
 msgid "Spaciness"
-msgstr ""
+msgstr "间隔"
 
 #: tabby-core/src/tabContextMenu.ts:75
 msgid "Split"
-msgstr ""
+msgstr "拆分"
 
 #: tabby-core/src/hotkeys.ts:160
 msgid "Split to the bottom"
-msgstr ""
+msgstr "向下拆分"
 
 #: tabby-core/src/tabContextMenu.ts:85
 msgid "Split to the down"
-msgstr ""
+msgstr "向下拆分"
 
 #: tabby-core/src/hotkeys.ts:164
 #: tabby-core/src/tabContextMenu.ts:86
 msgid "Split to the left"
-msgstr ""
+msgstr "向左拆分"
 
 #: tabby-core/src/hotkeys.ts:156
 #: tabby-core/src/tabContextMenu.ts:84
 msgid "Split to the right"
-msgstr ""
+msgstr "向右拆分"
 
 #: tabby-core/src/hotkeys.ts:168
 msgid "Split to the top"
-msgstr ""
+msgstr "向上拆分"
 
 #: tabby-core/src/tabContextMenu.ts:87
 msgid "Split to the up"
-msgstr ""
+msgstr "向上拆分"
 
 #: tabby-ssh/src/profiles.ts:82
 msgid "SSH connection"
-msgstr ""
+msgstr "SSH 连接"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:47
 msgid "SSH connection management is now done through the \"Profiles & connections\" tab"
-msgstr ""
+msgstr "现在，通过“配置和连接”选项对 SSH 连接进行管理"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:89
 msgid "SSH password for {user}@{host}:{port}"
-msgstr ""
+msgstr "{user}@{host}:{port} 的 SSH 密码"
 
 #: tabby-core/src/theme.ts:8
 msgid "Standard (legacy)"
-msgstr ""
+msgstr "标准模式（旧版）"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:150
 msgid "Startup"
-msgstr ""
+msgstr "启动时"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:32
 msgid "Stop bits"
-msgstr ""
+msgstr "停止位"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:52
 msgid "Strip"
-msgstr ""
+msgstr "过滤"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:41
 msgid "Subscribe to updates"
-msgstr ""
+msgstr "订阅更新"
 
 #: locale/tmp-html/tabby-local/src/components/environmentEditor.component.html:13
 msgid "Substitutions allowed."
-msgstr ""
+msgstr "允许替换"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:19
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:5
 msgid "Switch color scheme"
-msgstr ""
+msgstr "切换配色方案"
 
 #: tabby-core/src/tabContextMenu.ts:290
 msgid "Switch profile"
-msgstr ""
+msgstr "切换配置"
 
 #: tabby-core/src/hotkeys.ts:236
 msgid "Switch profile in the active pane"
-msgstr ""
+msgstr "在活动窗格中切换配置"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:7
 msgid "Switches terminal frontend implementation (experimental)"
-msgstr ""
+msgstr "切换终端前端实现（实验性）"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:4
 msgid "Sync"
-msgstr ""
+msgstr "同步"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:53
 msgid "Sync automatically"
-msgstr ""
+msgstr "自动同步"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:8
 msgid "Sync host"
-msgstr ""
+msgstr "同步主机"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:68
 msgid "Sync hotkeys"
-msgstr ""
+msgstr "同步快捷键"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:80
 msgid "Sync Vault"
-msgstr ""
+msgstr "同步保险库"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:74
 msgid "Sync window settings"
-msgstr ""
+msgstr "同步窗口设置"
 
 #: tabby-core/src/hotkeys.ts:100
 #: tabby-core/src/hotkeys.ts:104
@@ -2382,1536 +2442,1313 @@ msgstr ""
 #: tabby-core/src/hotkeys.ts:92
 #: tabby-core/src/hotkeys.ts:96
 msgid "Tab {number}"
-msgstr ""
+msgstr "标签页 {number}"
 
 #: tabby-core/src/tabContextMenu.ts:223
 msgid "Tab activity"
-msgstr ""
+msgstr "标签页活动"
 
 #: locale/tmp-html/tabby-core/src/components/safeModeModal.component.html:3
 msgid "Tabby could not start with your plugins, so all third party plugins have been disabled in this session. The error was:"
-msgstr ""
+msgstr "Tabby 不能使用您的插件启动，因此本次会话中禁用了所有第三方插件。错误信息："
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:41
 msgid "Tabby news and updates on Twitter"
-msgstr ""
+msgstr "Tabby 在 Twitter 的新闻和更新"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:123
 msgid "Tabs"
-msgstr ""
+msgstr "标签页"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:126
 msgid "Tabs location"
-msgstr ""
+msgstr "标签页位置"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:141
 msgid "Tabs width"
-msgstr ""
+msgstr "标签页宽度"
 
 #: tabby-telnet/src/profiles.ts:34
 msgid "Telnet session"
-msgstr ""
+msgstr "Telnet 会话"
 
 #: tabby-terminal/src/api/baseTerminalTab.component.ts:210
 #: tabby-terminal/src/settings.ts:43
 msgid "Terminal"
-msgstr ""
+msgstr "终端"
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:40
 msgid "Terminal background"
-msgstr ""
+msgstr "终端背景"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:133
 msgid "Terminal bell"
-msgstr ""
+msgstr "终端提示音"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:82
 msgid "Terminal identification"
-msgstr ""
+msgstr "终端标识"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:7
 msgid "Thank you for downloading Tabby!"
-msgstr ""
+msgstr "感谢您下载 Tabby！"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:5
 msgid "Theme"
-msgstr ""
+msgstr "主题"
 
 #: tabby-core/src/components/transfersMenu.component.ts:47
 msgid "There are active file transfers"
-msgstr ""
+msgstr "当前有活动的文件传输"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:102
 msgid "There is a saved password for this connection"
-msgstr ""
+msgstr "此连接已保存密码"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:102
 msgid "These apply to all profiles of a given type"
-msgstr ""
+msgstr "应用于给定类型的所有配置文件"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:17
 msgid "These apply to all profiles of a given type in this group"
-msgstr ""
+msgstr "这些适用于此组中给定类型的所有配置文件"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:59
 msgid "Thin"
-msgstr ""
+msgstr "简约"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:205
 msgid "Tick this if you're experiencing aliasing, ghosting or other visual issues"
-msgstr ""
+msgstr "如果您遇到锯齿、重影或其他视觉问题，请打开此选项"
 
 #: tabby-core/src/hotkeys.ts:20
 msgid "Toggle fullscreen mode"
-msgstr ""
+msgstr "切换全屏模式"
 
 #: tabby-core/src/hotkeys.ts:36
 msgid "Toggle last tab"
-msgstr ""
+msgstr "切换到最后一个标签页"
 
 #: tabby-electron/src/hotkeys.ts:14
 msgid "Toggle terminal window"
-msgstr ""
+msgstr "切换终端窗口"
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:40
 msgid "Toggles the Tabby window visibility"
-msgstr ""
+msgstr "切换 Tabby 显示或隐藏"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:130
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:74
 msgid "Top"
-msgstr ""
+msgstr "顶部"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:123
 msgid "Trim whitespace and newlines"
-msgstr ""
+msgstr "缩减空格和换行"
 
 #: tabby-core/src/services/config.service.ts:428
 msgid "Try again"
-msgstr ""
+msgstr "再试一次"
 
 #: tabby-ssh/src/session/ssh.ts:476
 msgid "Trying saved password"
-msgstr ""
+msgstr "尝试已保存的密码"
 
 #: tabby-core/src/hotkeys.ts:68
 msgid "Turn current tab's panes into separate tabs"
-msgstr ""
+msgstr "将当前标签所在的窗格更改为单独的标签页"
 
 #: tabby-core/src/services/profiles.service.ts:418
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:10
 msgid "Ungrouped"
-msgstr ""
+msgstr "未分组"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:59
 msgid "Uninstall"
-msgstr ""
+msgstr "卸载"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:269
 msgid "Unknown"
-msgstr ""
+msgstr "未知"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:98
 msgid "Unknown secret of type {type} for {key}"
-msgstr ""
+msgstr "{key} 的 {type} 类型的未知密钥"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalToolbar.component.html:4
 msgid "Unpin"
-msgstr ""
+msgstr "取消固定"
 
 #: tabby-core/src/tabContextMenu.ts:81
 msgid "Up"
-msgstr ""
+msgstr "向上"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:14
 #: tabby-electron/src/services/updater.service.ts:133
 msgid "Update"
-msgstr ""
+msgstr "更新"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:52
 msgid "Upgrade to {version}"
-msgstr ""
+msgstr "升级至 {version}"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:42
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:10
 msgid "Upload"
-msgstr ""
+msgstr "上传"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:46
 msgid "Upload as a new config"
-msgstr ""
+msgstr "上传为新配置"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:39
 msgid "Use {altKeyName} as the Meta key"
-msgstr ""
+msgstr "使用 {altKeyName} 作为 Meta 键"
 
 #: locale/tmp-html/tabby-local/src/components/shellSettingsTab.component.html:5
 msgid "Use ConPTY"
-msgstr ""
+msgstr "使用 ConPTY"
 
 #: tabby-electron/src/shells/linuxDefault.ts:31
 #: tabby-electron/src/shells/linuxDefault.ts:38
 msgid "User default"
-msgstr ""
+msgstr "用户默认"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:70
 msgid "Username"
-msgstr ""
+msgstr "用户名"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:25
 msgid "Using CONNECT method"
-msgstr ""
+msgstr "使用 CONNECT 方法"
 
 #: tabby-ssh/src/session/ssh.ts:465
 msgid "Using preset password"
-msgstr ""
+msgstr "使用预设密码"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:9
 msgid "Vault"
-msgstr ""
+msgstr "保险库"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:4
 msgid "Vault is an always-encrypted container for secrets such as SSH passwords and private key passphrases."
-msgstr ""
+msgstr "保险库是一个始终加密的容器，用于存放SSH密码和私钥。"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:17
 msgid "Vault is empty"
-msgstr ""
+msgstr "保险库为空"
 
 #: locale/tmp-html/tabby-core/src/components/unlockVaultModal.component.html:4
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:44
 msgid "Vault is locked"
-msgstr ""
+msgstr "保险库已锁定"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:3
 msgid "Vault is not configured"
-msgstr ""
+msgstr "保险库未配置"
 
 #: tabby-core/src/services/fileProviders.service.ts:40
 msgid "Vault master passphrase needs to be set to allow storing secrets"
-msgstr ""
+msgstr "为允许存储密钥，您必须设置保险库的主密码"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:11
 msgid "Verify host keys when connecting"
-msgstr ""
+msgstr "连接时校验主机密钥"
 
 #: locale/tmp-html/tabby-plugin-manager/src/components/pluginsSettingsTab.component.html:75
 msgid "Version"
-msgstr ""
+msgstr "版本"
 
 #: locale/tmp-html/tabby-core/src/components/startPage.component.html:13
 msgid "Version: {version}"
-msgstr ""
+msgstr "版本：{version}"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:28
 msgid "Vibrancy"
-msgstr ""
+msgstr "鲜明"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:139
 msgid "Visual"
-msgstr ""
+msgstr "可视化"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:116
 msgid "Warn on multi-line paste"
-msgstr ""
+msgstr "多行粘贴时显示警告"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:5
 msgid "Warn when closing active connections"
-msgstr ""
+msgstr "当关闭活动连接时，显示警告"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:6
 msgid "Warning: remote host's key has suddenly changed!"
-msgstr ""
+msgstr "警告：远程主机密钥突然改变！"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:67
 msgid "We're only tracking your Tabby and OS versions."
-msgstr ""
+msgstr "我们只获取您的 Tabby 和操作系统版本信息。"
 
 #: tabby-core/src/components/welcomeTab.component.ts:25
 msgid "Welcome"
-msgstr ""
+msgstr "欢迎"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:36
 msgid "What's new"
-msgstr ""
+msgstr "最近更新"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:46
 msgid "When a session ends"
-msgstr ""
+msgstr "在会话结束时"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:82
 msgid "When enabled, links are only clickable while holding this key"
-msgstr ""
+msgstr "如果启用，链接只有在按住此键时可被点击"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:18
 msgid "When WinSCP is detected, you can launch an SCP session from the context menu."
-msgstr ""
+msgstr "检测到 WinSCP 时，您可以从右键菜单中启动一个 SCP 会话。"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:53
 msgid "Whether a custom window or an OS native window should be used"
-msgstr ""
+msgstr "使用自定义窗口或操作系统原生窗口"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:141
 msgid "Will prevent the SSH greeting from showing up"
-msgstr ""
+msgstr "不显示 SSH 问候语"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:2
 #: tabby-settings/src/settings.ts:30
 msgid "Window"
-msgstr ""
+msgstr "窗口"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:112
 msgid "Window dimension along the edge"
-msgstr ""
+msgstr "沿边缘的窗口尺寸"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:105
 msgid "Window dimension away from the edge"
-msgstr ""
+msgstr "远离边缘的窗口尺寸"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:52
 msgid "Window frame"
-msgstr ""
+msgstr "窗口框架样式"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:165
 msgid "Windows"
-msgstr ""
+msgstr "窗口"
 
 #: locale/tmp-html/tabby-local/src/components/shellSettingsTab.component.html:11
 msgid "Windows 10 build 18309 or above is recommended for ConPTY"
-msgstr ""
+msgstr "Windows 10 版本 18309 以上推荐 ConPTY"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:17
 msgid "WinSCP path"
-msgstr ""
+msgstr "WinSCP 路径"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:74
 msgid "Word separators"
-msgstr ""
+msgstr "单词分隔符"
 
 #: locale/tmp-html/tabby-local/src/components/localProfileSettings.component.html:10
 msgid "Working directory"
-msgstr ""
+msgstr "工作目录"
 
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:15
 #: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:6
 msgid "Working directory detection"
-msgstr ""
+msgstr "查找工作目录"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:145
 msgid "WSL terminal bell can only be muted via Volume Mixer"
-msgstr ""
+msgstr "WSL 终端提示音只能通过音量混合器关闭"
 
 #: locale/tmp-html/tabby-local/src/components/shellSettingsTab.component.html:14
 msgid "WSL terminal only supports TrueColor with ConPTY"
-msgstr ""
+msgstr "WSL 终端仅支持 ConPTY 真彩"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:128
 msgid "X11 forwarding"
-msgstr ""
+msgstr "X11 转发"
 
 #: tabby-core/src/utils.ts:65
 msgid "Yellow"
-msgstr ""
+msgstr "黄色"
 
 #: locale/tmp-html/tabby-settings/src/components/setVaultPassphraseModal.component.html:4
 msgid "You can change it later, but it's unrecoverable if forgotten."
-msgstr ""
+msgstr "您可以稍后更改，但在忘记时无法恢复"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:7
 msgid "You could be under a man-in-the-middle attack right now, or the host key could have just been changed."
-msgstr ""
+msgstr "您可能正在遭受中间人攻击，或您的主机密钥已经被更改。"
 
 #: tabby-terminal/src/hotkeys.ts:54
 msgid "Zoom in"
-msgstr ""
+msgstr "放大"
 
 #: tabby-terminal/src/hotkeys.ts:58
 msgid "Zoom out"
-msgstr ""
+msgstr "缩小"
+
+#: tabby-ssh/src/components/sshTab.component.ts:243
+msgid "Cannot open SFTP panel: SSH session is unavailable"
+msgstr "无法打开 SFTP 面板：SSH 会话不可用"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:23
+msgid "Local files"
+msgstr "本地文件"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:27
+msgid "Select directory"
+msgstr "选择目录"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:71
+msgid "Download selected"
+msgstr "下载选中项"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:76
+msgid "Upload files"
+msgstr "上传文件"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:80
+msgid "Upload folder"
+msgstr "上传文件夹"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:62
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:98
+#: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:14
+msgid "SFTP"
+msgstr "文件传输"
+
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:56
+#: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:139
+msgid "No files match the filter \"{{filterText}}\""
+msgstr "没有匹配筛选条件的文件"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:686
+msgid "No files match the filter \"{filter}\""
+msgstr "没有匹配筛选条件 \"{filter}\" 的文件"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:562
+msgid "Download selected ({count})"
+msgstr "下载选中项 ({count})"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:571
+#: tabby-ssh/src/components/sftpPanel.component.ts:595
+msgid "Refresh current directory"
+msgstr "刷新当前目录"
+
+#: tabby-ssh/src/components/sftpPanel.component.ts:611
+msgid "Open directory"
+msgstr "打开目录"
+
+#: tabby-ssh/src/sftpContextMenu.ts:38
+msgid "Download directory"
+msgstr "下载目录"
 
 #: tabby-core/src/components/appRoot.component.ts:324
+#: tabby-core/src/components/appRoot.component.ts:465
+msgid "Connect"
+msgstr "连接"
+
+#: tabby-core/src/components/appRoot.component.ts:474
+msgid "Connect SFTP"
+msgstr "连接 SFTP"
+
+#: tabby-core/src/components/appRoot.component.ts:484
+msgid "Close all connections"
+msgstr "关闭所有连接"
+
+#: tabby-core/src/components/appRoot.component.ts:347
 msgid "All Connections"
-msgstr ""
+msgstr "所有连接"
 
 #: tabby-core/src/components/appRoot.component.ts:328
 msgid "Active Sessions"
-msgstr ""
+msgstr "活动会话"
 
 #: tabby-core/src/components/appRoot.component.ts:308
 msgid "Explorer"
-msgstr ""
+msgstr "资源管理器"
 
 #: tabby-core/src/components/appRoot.component.ts:320
 msgid "Filter connections and sessions"
-msgstr ""
+msgstr "筛选连接和会话"
 
 #: tabby-core/src/components/appRoot.component.ts:313
 msgid "Expand navigation panel"
-msgstr ""
+msgstr "展开导航面板"
 
 #: tabby-core/src/components/appRoot.component.ts:315
 msgid "Collapse navigation panel"
-msgstr ""
+msgstr "折叠导航面板"
 
 #: tabby-core/src/components/appRoot.component.ts:394
 msgid "Production"
-msgstr ""
+msgstr "生产环境"
 
 #: tabby-core/src/components/appRoot.component.ts:400
 msgid "Lab / Stage"
-msgstr ""
+msgstr "实验 / 预发布"
 
 #: tabby-core/src/components/appRoot.component.ts:406
 msgid "Dev / Test"
-msgstr ""
+msgstr "开发 / 测试"
 
 #: tabby-core/src/components/appRoot.component.ts:412
 msgid "Other"
-msgstr ""
+msgstr "其他"
 
 #: tabby-core/src/components/appRoot.component.ts:439
 msgid "Untitled session"
-msgstr ""
+msgstr "未命名会话"
 
 #: tabby-core/src/components/appRoot.component.ts:449
 msgid "Session"
-msgstr ""
+msgstr "会话"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:43
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
 msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
-msgstr ""
+msgstr "动态端口转发"
+
+msgid "Erase the Vault and all stored secrets"
+msgstr "彻底删除保险库及其中所有机密"
+
+msgid "Erase the Vault and all stored secrets?"
+msgstr "彻底删除保险库及其中所有机密？"
+
+msgid "All Vault secrets will be permanently deleted and cannot be recovered. Saved SSH passwords stored only in the Vault will also be deleted. Config file encryption, if enabled, will also be disabled."
+msgstr "保险库中的所有机密都会被永久删除且无法恢复。仅保存在保险库中的 SSH 密码也会被删除。如果启用了配置文件加密，也会一并关闭。"
+
+msgid "Synced secrets are not configured"
+msgstr "尚未配置同步机密"
+
+msgid "Vault stores synced secrets such as SSH passwords and private key passphrases. A master passphrase is optional."
+msgstr "保险库存放可同步的机密，例如 SSH 密码和私钥口令。主密码是可选的。"
+
+msgid "Enable synced secrets"
+msgstr "启用同步机密"
+
+msgid "Set a master passphrase"
+msgstr "设置主密码"
+
+msgid "Clear the master passphrase and keep synced secrets"
+msgstr "清除主密码并保留同步机密"
+
+msgid "Clear the master passphrase and keep synced secrets?"
+msgstr "清除主密码并保留同步机密？"
+
+msgid "SSH passwords and private key passphrases will stay in the synced Vault, but Tabby will stop asking for the master passphrase on startup. Config file encryption, if enabled, will also be disabled."
+msgstr "SSH 密码和私钥口令会继续保存在可同步的保险库中，但 Tabby 启动时将不再要求输入主密码。如果启用了配置文件加密，也会一并关闭。"
+
+msgid "Set a master passphrase to encrypt the config file"
+msgstr "设置主密码以加密配置文件"
+
+msgid "Change passphrase"
+msgstr "更改密码"
+
+msgid "Abort transfer"
+msgstr "终止传输"
+
+msgid "Abort"
+msgstr "终止"
+
+msgid "Folder upload"
+msgstr "文件夹上传"
+
+msgid "Reading folder structure"
+msgstr "正在读取文件结构"
+
+msgid "Creating directory {path}"
+msgstr "正在创建目录 {path}"
+
+msgid "Uploading {path}"
+msgstr "正在上传 {path}"
+
+msgid "Failed to upload folder: {message}"
+msgstr "上传文件夹失败：{message}"
+
+msgid "Connecting to"
+msgstr "正在连接到"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:2
 msgid "Restore previous tabs"
-msgstr ""
+msgstr "恢复上次的标签页"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:5
 msgid "Choose which tabs to reopen from the previous session."
-msgstr ""
+msgstr "选择要从上一次会话中重新打开的标签页。"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:9
 msgid "Clear all"
-msgstr ""
+msgstr "取消全选"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:24
 msgid "Skip restore"
-msgstr ""
+msgstr "跳过恢复"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:25
 msgid "Restore selected"
-msgstr ""
+msgstr "恢复所选"
 
 #: tabby-core/src/components/startupTabsRecoveryModal.component.pug:20
 msgid "Active"
-msgstr ""
+msgstr "活动"
 
 #: tabby-core/src/components/appRoot.component.pug:142
 msgid "Card view"
-msgstr ""
+msgstr "卡片视图"
 
 #: tabby-core/src/components/appRoot.component.pug:145
 msgid "Tree view"
-msgstr ""
+msgstr "树状视图"
 
 #: tabby-core/src/services/tabRecovery.service.ts:232
 msgid "Local shell"
-msgstr ""
+msgstr "本地终端"
 
 #: tabby-core/src/services/tabRecovery.service.ts:237
 msgid "SSH session"
-msgstr ""
+msgstr "SSH 会话"
 
 #: tabby-core/src/services/tabRecovery.service.ts:246
 msgid "Serial session"
-msgstr ""
+msgstr "串口会话"
 
 #: tabby-core/src/services/tabRecovery.service.ts:283
 msgid "Vertical split"
-msgstr ""
+msgstr "垂直分割"
 
 #: tabby-core/src/services/tabRecovery.service.ts:285
 msgid "Horizontal split"
-msgstr ""
+msgstr "水平分割"
 
 #: tabby-core/src/services/tabRecovery.service.ts:286
 msgid "Split layout"
-msgstr ""
+msgstr "分割布局"
 
 #: tabby-core/src/services/tabRecovery.service.ts:293
 msgid "{count} pane · {orientation}"
-msgstr ""
+msgstr "{count} 个窗格 · {orientation}"
 
 #: tabby-core/src/services/tabRecovery.service.ts:293
 msgid "{count} panes · {orientation}"
-msgstr ""
+msgstr "{count} 个窗格 · {orientation}"
 
 # AI Assistant translations
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "AI Assistant"
-msgstr ""
+msgstr "AI助手"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Open AI Assistant"
-msgstr ""
+msgstr "打开AI助手"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Hide Sidebar"
-msgstr ""
+msgstr "隐藏侧边栏"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Open Settings"
-msgstr ""
+msgstr "打开设置"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Clear Chat"
-msgstr ""
+msgstr "清空聊天记录"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Export Chat"
-msgstr ""
+msgstr "导出聊天记录"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Scroll to Top"
-msgstr ""
+msgstr "回到顶部"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Scroll to Bottom"
-msgstr ""
+msgstr "回到底部"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Send Message"
-msgstr ""
+msgstr "发送消息"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Stop Generating"
-msgstr ""
+msgstr "停止生成"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "User"
-msgstr ""
+msgstr "用户"
+
+#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
+msgid "AI"
+msgstr "AI"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "System"
-msgstr ""
+msgstr "系统"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Executing..."
-msgstr ""
+msgstr "执行中..."
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Output:"
-msgstr ""
+msgstr "输出:"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "...(truncated)"
-msgstr ""
+msgstr "...(已截断)"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Unknown Tool"
-msgstr ""
+msgstr "未知工具"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Round {n}"
-msgstr ""
+msgstr "第 {n} 轮"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Task Completed"
-msgstr ""
+msgstr "任务完成"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Task Failed"
-msgstr ""
+msgstr "任务未能完成"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "(Not Configured)"
-msgstr ""
+msgstr "(未配置)"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "(Disabled)"
-msgstr ""
+msgstr "(已禁用)"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "AI is thinking..."
-msgstr ""
+msgstr "AI 正在思考..."
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Enter your question or describe the command you want to execute..."
-msgstr ""
+msgstr "输入您的问题或描述要执行的命令..."
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Send"
-msgstr ""
+msgstr "发送"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "New Line"
-msgstr ""
+msgstr "换行"
 
 #: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
 msgid "Near character limit"
-msgstr ""
+msgstr "接近字符限制"
 
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Copy"
-msgstr ""
+msgstr "复制"
 
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Regenerate"
-msgstr ""
+msgstr "重新生成"
 
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Helpful"
-msgstr ""
+msgstr "有用"
 
 #: tabby-ai-assistant/src/components/chat/chat-message.component.ts
 msgid "Not Helpful"
-msgstr ""
-
-# AI Assistant Settings
-#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
-msgid "General"
-msgstr ""
+msgstr "无用"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Enable AI Assistant"
-msgstr ""
+msgstr "启用 AI 助手"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Enable or disable AI assistant functionality"
-msgstr ""
+msgstr "启用或禁用 AI 助手功能"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Default Provider"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
-msgid "Language"
-msgstr ""
+msgstr "默认提供商"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Sidebar Position"
-msgstr ""
+msgstr "侧边栏位置"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Choose whether AI sidebar appears on left or right"
-msgstr ""
+msgstr "选择 AI 侧边栏显示在窗口左侧还是右侧"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Shortcuts"
-msgstr ""
+msgstr "快捷键"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Open Chat"
-msgstr ""
+msgstr "打开聊天"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Open AI chat sidebar"
-msgstr ""
+msgstr "打开 AI 聊天侧边栏"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Generate Code"
-msgstr ""
+msgstr "生成代码"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Generate code from selection"
-msgstr ""
+msgstr "从选中内容生成代码"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Explain Code"
-msgstr ""
+msgstr "解释代码"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Explain selected code"
-msgstr ""
+msgstr "解释选中的代码"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Shortcuts can be customized in Tabby settings"
-msgstr ""
+msgstr "快捷键可在 Tabby 设置中自定义"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Not configured"
-msgstr ""
+msgstr "未配置"
 
 #: tabby-ai-assistant/src/components/settings/general-settings.component.ts
 msgid "Access Control"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
-msgid "Settings"
-msgstr ""
-
+msgstr "访问控制"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Providers"
-msgstr ""
+msgstr "提供商"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Cloud Providers"
-msgstr ""
+msgstr "云端提供商"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Configure cloud-based AI providers"
-msgstr ""
+msgstr "配置云端 AI 提供商"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Local Providers"
-msgstr ""
+msgstr "本地提供商"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Configure locally hosted AI services"
-msgstr ""
+msgstr "配置本地部署的 AI 服务"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Display Name"
-msgstr ""
+msgstr "显示名称"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Status"
-msgstr ""
+msgstr "状态"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "API Key"
-msgstr ""
+msgstr "API 密钥"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Base URL"
-msgstr ""
+msgstr "基础 URL"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Model"
-msgstr ""
+msgstr "模型"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Save Configuration"
-msgstr ""
+msgstr "保存配置"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Test Connection"
-msgstr ""
+msgstr "测试连接"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Detect Service"
-msgstr ""
+msgstr "检测服务"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Enabled"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Disabled"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Add"
-msgstr ""
+msgstr "已启用"
 
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Not Configured"
-msgstr ""
-
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Chat Settings"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Appearance"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Font Size"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Compact Mode"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Reduce spacing for more content"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Behavior"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Enter to Send"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Press Enter to send message"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Show Timestamps"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Display message timestamps"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Show Avatars"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Display user and AI avatars"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Sound Enabled"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Play sound on message received"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Agent Max Rounds"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "rounds"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Maximum conversation rounds for agent"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "History"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Enable History"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Save chat history"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Max History"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "messages"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Auto Save"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Automatically save chat history"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Export Settings"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Clear History"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Reset Defaults"
-msgstr ""
-
-
+msgstr "未配置"
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Security"
-msgstr ""
+msgstr "安全"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Password Protection"
-msgstr ""
+msgstr "密码保护"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Require password to access AI assistant"
-msgstr ""
+msgstr "访问 AI 助手需要密码"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Set Password"
-msgstr ""
+msgstr "设置密码"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Enter password"
-msgstr ""
+msgstr "输入密码"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Risk Assessment"
-msgstr ""
+msgstr "风险评估"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Automatically assess command risk level"
-msgstr ""
+msgstr "自动评估命令风险等级"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Default Risk Level"
-msgstr ""
+msgstr "默认风险等级"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Low"
-msgstr ""
+msgstr "低"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Medium"
-msgstr ""
+msgstr "中"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "High"
-msgstr ""
+msgstr "高"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "User Consent"
-msgstr ""
+msgstr "用户授权"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Remember Consent"
-msgstr ""
+msgstr "记住授权"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Remember user consent for"
-msgstr ""
+msgstr "记住用户授权"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "days"
-msgstr ""
+msgstr "天"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Dangerous Patterns"
-msgstr ""
+msgstr "危险模式"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Enter dangerous pattern"
-msgstr ""
+msgstr "输入危险模式"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Add Pattern"
-msgstr ""
+msgstr "添加模式"
 
 #: tabby-ai-assistant/src/components/settings/security-settings.component.ts
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "General"
+msgstr "常规"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Network Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Language"
+msgstr "语言"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Enable Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Settings"
+msgstr "设置"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Access AI API endpoints through proxy server"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Disabled"
+msgstr "已禁用"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Import from Environment Variables"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Add"
+msgstr "添加"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy Configuration"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Chat Settings"
+msgstr "聊天设置"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "HTTP Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Appearance"
+msgstr "外观"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Optional"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Font Size"
+msgstr "字体大小"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy address for HTTP requests"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Compact Mode"
+msgstr "紧凑模式"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "HTTPS Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Reduce spacing for more content"
+msgstr "减少间距以显示更多内容"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Recommended"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Behavior"
+msgstr "行为"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy address for HTTPS requests (most APIs use HTTPS)"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Enter to Send"
+msgstr "回车发送"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "No Proxy"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Press Enter to send message"
+msgstr "按回车键发送消息"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Addresses that do not use proxy (comma separated)"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Timestamps"
+msgstr "显示时间戳"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Require Authentication"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Display message timestamps"
+msgstr "显示消息时间戳"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Username"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Avatars"
+msgstr "显示头像"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Password"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Display user and AI avatars"
+msgstr "显示用户和 AI 头像"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Usage"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Sound Enabled"
+msgstr "启用声音"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy settings apply to all cloud AI provider API requests"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Play sound on message received"
+msgstr "收到消息时播放声音"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Local providers (Ollama, vLLM) do not use proxy by default"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Agent Max Rounds"
+msgstr "代理最大轮数"
 
-#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Supports HTTP, HTTPS and SOCKS5 proxy protocols"
-msgstr ""
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "rounds"
+msgstr "轮"
 
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Maximum conversation rounds for agent"
+msgstr "代理的最大对话轮数"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "History"
+msgstr "历史记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Enable History"
+msgstr "启用历史记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Save chat history"
+msgstr "保存聊天历史"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Max History"
+msgstr "最大历史记录"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "messages"
+msgstr "条消息"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Auto Save"
+msgstr "自动保存"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Automatically save chat history"
+msgstr "自动保存聊天历史"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export Settings"
+msgstr "导出设置"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export Chat"
+msgstr "导出聊天"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export current chat"
+msgstr "导出当前聊天"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export All"
+msgstr "导出全部"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Export all chat history"
+msgstr "导出所有聊天历史"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Clear History"
+msgstr "清除历史"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Clear all chat history"
+msgstr "清除所有聊天历史"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Action Buttons"
+msgstr "操作按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Copy Button"
+msgstr "显示复制按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show copy button in messages"
+msgstr "在消息中显示复制按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Regenerate Button"
+msgstr "显示重新生成按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show regenerate button for AI responses"
+msgstr "为 AI 响应显示重新生成按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Edit Button"
+msgstr "显示编辑按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show edit button for user messages"
+msgstr "为用户消息显示编辑按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show Delete Button"
+msgstr "显示删除按钮"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Show delete button for messages"
+msgstr "为消息显示删除按钮"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
 msgid "Context Management"
-msgstr ""
+msgstr "上下文管理"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
 msgid "Auto Compact"
-msgstr ""
+msgstr "自动压缩"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Enable Auto Compact"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Automatically compact history when context exceeds threshold"
-msgstr ""
+msgid "Automatically compact context when approaching limit"
+msgstr "接近限制时自动压缩上下文"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
 msgid "Token Configuration"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Current Provider Limit"
-msgstr ""
+msgstr "令牌配置"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
 msgid "Max Context Tokens"
-msgstr ""
+msgstr "最大上下文令牌"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Cannot exceed current provider context limit"
-msgstr ""
+msgid "tokens"
+msgstr "令牌"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Reserved Output Tokens"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Token count reserved for AI response"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Compression Threshold"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Prune Threshold"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Prune redundant content when usage exceeds this threshold (default: 70%)"
-msgstr ""
+msgid "Maximum tokens for context window"
+msgstr "上下文窗口的最大令牌数"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
 msgid "Compact Threshold"
-msgstr ""
+msgstr "压缩阈值"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Generate summary when usage exceeds this threshold (default: 85%)"
-msgstr ""
+msgid "Trigger compaction at this percentage"
+msgstr "在此百分比时触发压缩"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Messages to Keep"
-msgstr ""
+msgid "Context Sources"
+msgstr "上下文来源"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Number of recent messages to always keep during compaction (default: 3)"
-msgstr ""
+msgid "Include File Context"
+msgstr "包含文件上下文"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Context configuration saved"
-msgstr ""
+msgid "Include current file in context"
+msgstr "在上下文中包含当前文件"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Auto-compact enabled"
-msgstr ""
+msgid "Include Selection"
+msgstr "包含选择"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Auto-compact disabled"
-msgstr ""
+msgid "Include selected text in context"
+msgstr "在上下文中包含选中的文本"
 
 #: tabby-ai-assistant/src/components/settings/context-settings.component.ts
-msgid "Reset to defaults"
-msgstr ""
+msgid "Include Terminal"
+msgstr "包含终端"
 
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include terminal output in context"
+msgstr "在上下文中包含终端输出"
 
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "API Key cannot be empty"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include Git Diff"
+msgstr "包含 Git 差异"
 
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "OpenAI API Key should start with sk-"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Anthropic API Key should start with sk-ant-"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Minimax API Key should be 32+ alphanumeric characters"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "GLM API Key format is incorrect"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "API Key format may be incorrect"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Connection successful"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Connection test failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Testing connection to"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Configuration saved"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
-msgid "Delete provider configuration?"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/context-settings.component.ts
+msgid "Include git changes in context"
+msgstr "在上下文中包含 git 更改"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Proxy configuration saved"
-msgstr ""
+msgid "Proxy Settings"
+msgstr "代理设置"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Please configure proxy address first"
-msgstr ""
+msgid "Access AI API endpoints through proxy"
+msgstr "通过代理访问 AI API 端点"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Connection failed"
-msgstr ""
+msgid "Enable Proxy"
+msgstr "启用代理"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Test failed"
-msgstr ""
+msgid "Use proxy for AI requests"
+msgstr "为 AI 请求使用代理"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "Imported proxy configuration from environment variables"
-msgstr ""
+msgid "HTTP Proxy"
+msgstr "HTTP 代理"
 
 #: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
-msgid "No proxy configuration detected in environment variables"
-msgstr ""
+msgid "HTTP proxy URL"
+msgstr "HTTP 代理 URL"
 
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Clear chat history?"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTPS Proxy"
+msgstr "HTTPS 代理"
 
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Configuration deleted"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "HTTPS proxy URL"
+msgstr "HTTPS 代理 URL"
 
-#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
-msgid "Reset to defaults?"
-msgstr ""
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "No Proxy"
+msgstr "不使用代理"
 
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Comma-separated list of hosts to bypass proxy"
+msgstr "逗号分隔的绕过代理的主机列表"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy Authentication"
+msgstr "代理认证"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Username"
+msgstr "用户名"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy username"
+msgstr "代理用户名"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Password"
+msgstr "密码"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Proxy password"
+msgstr "代理密码"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Test Proxy"
+msgstr "测试代理"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "Test proxy connection"
+msgstr "测试代理连接"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "MCP Servers"
-msgstr ""
+msgid "MCP Settings"
+msgstr "MCP 设置"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Configure MCP servers to extend AI assistant functionality"
-msgstr ""
+msgid "Model Context Protocol"
+msgstr "模型上下文协议"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "tools"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "No MCP servers configured"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Add an MCP server to extend AI functionality"
-msgstr ""
+msgid "Configure MCP servers"
+msgstr "配置 MCP 服务器"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
 msgid "Add MCP Server"
-msgstr ""
+msgstr "添加 MCP 服务器"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Import JSON Config"
-msgstr ""
+msgid "Server Name"
+msgstr "服务器名称"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Command"
+msgstr "命令"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Arguments"
+msgstr "参数"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Environment Variables"
+msgstr "环境变量"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Remove"
+msgstr "移除"
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
 msgid "Edit"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Delete"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Please fill in all required fields"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Saved successfully"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Save failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Are you sure you want to delete server \"{name}\"?"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Deleted successfully"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Delete failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Disconnected"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Connecting..."
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Server configuration not found"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Disconnect"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Retry"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Connect"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Please enter JSON configuration"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Successfully imported {count} servers"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Import failed: {error}"
-msgstr ""
-
+msgstr "编辑"
 
 #: tabby-ai-assistant/src/components/settings/data-settings.component.ts
 msgid "Data Management"
-msgstr ""
+msgstr "数据管理"
 
 #: tabby-ai-assistant/src/components/settings/data-settings.component.ts
-msgid "Manage plugin data storage including chat history, memory and configuration"
-msgstr ""
+msgid "Export Data"
+msgstr "导出数据"
 
 #: tabby-ai-assistant/src/components/settings/data-settings.component.ts
-msgid "Storage Location"
-msgstr ""
+msgid "Export all settings and data"
+msgstr "导出所有设置和数据"
 
 #: tabby-ai-assistant/src/components/settings/data-settings.component.ts
-msgid "Open Directory"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Chat"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Context"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "MCP"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Data"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Advanced"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Refresh"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Enable AI Assistant to start using"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Enable"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Validate configuration"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Error occurred"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
-msgid "Export"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
-msgid "Copied to clipboard"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
-msgid "Copy failed, please try again"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-input.component.ts
-msgid "Enter your question or describe the command you want to execute..."
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "chatInterface.welcomeMessage"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "chatInterface.tipCommand"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "chatInterface.tipShortcut"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "Tip: use Alt+C to open AI chat"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "Executing tool"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "No configured providers"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "Current provider"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "Switch provider"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
-msgid "Enter provider number"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/terminal/ai-toolbar-button.component.ts
-msgid "Open AI Assistant"
-msgstr ""
-
-#: tabby-ai-assistant/src/services/chat/command-generator.service.ts
-msgid "systemPrompts.commandGeneratorRole"
-msgstr ""
-
-#: tabby-ai-assistant/src/services/providers/base-provider.service.ts
-msgid "systemPrompts.assistantRole"
-msgstr ""
-
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "MCP Servers"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "tools"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "No MCP servers configured"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Add an MCP server to extend AI functionality"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Add MCP Server"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Import JSON Config"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Please fill in all required fields"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Saved successfully"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Save failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Are you sure you want to delete server \"{name}\"?"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Deleted successfully"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Delete failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Server configuration not found"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Please enter JSON configuration"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Successfully imported {count} servers"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
-msgid "Import failed: {error}"
-msgstr ""
-
-
-#: tabby-ai-assistant/src/components/chat/chat-input.component.html
-msgid "Reset"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-input.component.html
-msgid "New Line"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/chat-input.component.html
-msgid "Near character limit"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "(Not Configured)"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "(Disabled)"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Hide Sidebar"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Clear Chat"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Export Chat"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Unknown Tool"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Executing..."
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Output:"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "...(truncated)"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Round {n}"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Task Completed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Task Failed"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Scroll to Top"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Scroll to Bottom"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "AI is thinking..."
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Send Message"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts
-msgid "Stop Generating"
-msgstr ""
-
-#: tabby-ai-assistant/src/components/settings/general-settings.component.html
-msgid "providers configured"
-msgstr ""
-
+msgid "Import Data"
+msgstr "导入数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Import settings and data"
+msgstr "导入设置和数据"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Reset Settings"
+msgstr "重置设置"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Reset all settings to default"
+msgstr "将所有设置重置为默认值"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Clear Cache"
+msgstr "清除缓存"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Clear all cached data"
+msgstr "清除所有缓存数据"

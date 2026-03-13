@@ -1,18 +1,13 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Injectable } from '@angular/core'
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { TranslateService } from '@ngx-translate/core'
 import { Subscription } from 'rxjs'
 import { AppService } from './services/app.service'
 import { BaseTabComponent } from './components/baseTab.component'
-import { SplitTabComponent, SplitDirection } from './components/splitTab.component'
 import { TabContextMenuItemProvider } from './api/tabContextMenuProvider'
 import { MenuItemOptions } from './api/menu'
 import { ProfilesService } from './services/profiles.service'
 import { TabsService } from './services/tabs.service'
 import { HotkeysService } from './services/hotkeys.service'
-import { PromptModalComponent } from './components/promptModal.component'
-import { SplitLayoutProfilesService } from './profiles'
 import { TAB_COLORS } from './utils'
 
 /** @hidden */
@@ -69,28 +64,6 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
                     },
                 },
             ]
-        } else if (tab.parent instanceof SplitTabComponent) {
-            const directions: SplitDirection[] = ['r', 'b', 'l', 't']
-            items.push({
-                label: this.translate.instant('Split'),
-                submenu: directions.map(dir => ({
-                    label: {
-                        r: this.translate.instant('Right'),
-                        b: this.translate.instant('Down'),
-                        l: this.translate.instant('Left'),
-                        t: this.translate.instant('Up'),
-                    }[dir],
-                    commandLabel: {
-                        r: this.translate.instant('Split to the right'),
-                        b: this.translate.instant('Split to the down'),
-                        l: this.translate.instant('Split to the left'),
-                        t: this.translate.instant('Split to the up'),
-                    }[dir],
-                    click: () => {
-                        (tab.parent as SplitTabComponent).splitTab(tab, dir)
-                    },
-                })) as MenuItemOptions[],
-            })
         }
         return items
     }
@@ -103,8 +76,6 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
 
     constructor (
         private app: AppService,
-        private ngbModal: NgbModal,
-        private splitLayoutProfilesService: SplitLayoutProfilesService,
         private translate: TranslateService,
     ) {
         super()
@@ -142,21 +113,6 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
                     })) as MenuItemOptions[],
                 },
             ]
-
-            if (tab instanceof SplitTabComponent && tab.getAllTabs().length > 1) {
-                items.push({
-                    label: this.translate.instant('Save layout as profile'),
-                    click: async () => {
-                        const modal = this.ngbModal.open(PromptModalComponent)
-                        modal.componentInstance.prompt = this.translate.instant('Profile name')
-                        const name = (await modal.result.catch(() => null))?.value
-                        if (!name) {
-                            return
-                        }
-                        this.splitLayoutProfilesService.createProfile(tab, name)
-                    },
-                })
-            }
         }
         return items
     }
@@ -249,14 +205,8 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
     ) {
         super()
         hotkeys.hotkey$.subscribe(hotkey => {
-            if (hotkey === 'switch-profile') {
-                let tab = this.app.activeTab
-                if (tab instanceof SplitTabComponent) {
-                    tab = tab.getFocusedTab()
-                    if (tab) {
-                        this.switchTabProfile(tab)
-                    }
-                }
+            if (hotkey === 'switch-profile' && this.app.activeTab) {
+                this.switchTabProfile(this.app.activeTab)
             }
         })
     }
@@ -277,22 +227,18 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         }
 
         const newTab = this.tabsService.create(params)
-        ;(tab.parent as SplitTabComponent).replaceTab(tab, newTab)
-
-        tab.destroy()
+        const index = this.app.tabs.indexOf(tab)
+        this.app.removeTab(tab)
+        this.app.addTabRaw(newTab, index >= 0 ? index : undefined)
+        this.app.selectTab(newTab)
     }
 
     async getItems (tab: BaseTabComponent): Promise<MenuItemOptions[]> {
-
-        if (tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
-            return [
-                {
-                    label: this.translate.instant('Switch profile'),
-                    click: () => this.switchTabProfile(tab),
-                },
-            ]
-        }
-
-        return []
+        return [
+            {
+                label: this.translate.instant('Switch profile'),
+                click: () => this.switchTabProfile(tab),
+            },
+        ]
     }
 }

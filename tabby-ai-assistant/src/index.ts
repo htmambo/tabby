@@ -107,7 +107,6 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         TabbyCoreModule,
         TabbyTerminalModule,
         NgbModule,
-        // TranslateModule is exported by TabbyCoreModule
     ],
     providers: [
         // Core Services

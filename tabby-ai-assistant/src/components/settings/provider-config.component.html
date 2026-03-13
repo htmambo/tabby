@@ -5,8 +5,8 @@
     <div class="provider-section" *ngIf="getVisibleCloudProviders().length > 0">
         <div class="section-header">
             <i class="fa fa-cloud"></i>
-            <h4>{{ singleProviderMode ? '当前云端提供商' : t.providers.cloudProviders }}</h4>
-            <span class="section-desc">{{ singleProviderMode ? '直接编辑当前默认 provider 的连接参数' : t.providers.cloudProvidersDesc }}</span>
+            <h4>{{ singleProviderMode ? (translate.instant('Current Cloud Provider')) : t.providers.cloudProviders }}</h4>
+            <span class="section-desc">{{ singleProviderMode ? (translate.instant('Edit connection parameters for current default provider directly')) : t.providers.cloudProvidersDesc }}</span>
         </div>
 
         <div class="providers-grid">
@@ -97,7 +97,7 @@
                                  [class.valid]="validateApiKeyFormat(providerName, configs[providerName][field.key]).valid"
                                  [class.invalid]="!validateApiKeyFormat(providerName, configs[providerName][field.key]).valid">
                                 <i class="fa" [ngClass]="validateApiKeyFormat(providerName, configs[providerName][field.key]).valid ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-                                {{ validateApiKeyFormat(providerName, configs[providerName][field.key]).message || '格式正确' }}
+                                {{ validateApiKeyFormat(providerName, configs[providerName][field.key]).message || (translate.instant('Format Correct')) }}
                             </div>
                         </div>
 
@@ -119,8 +119,8 @@
     <div class="provider-section local" *ngIf="getVisibleLocalProviders().length > 0">
         <div class="section-header">
             <i class="fa fa-server"></i>
-            <h4>{{ singleProviderMode ? '当前本地提供商' : t.providers.localProviders }}</h4>
-            <span class="section-desc">{{ singleProviderMode ? '直接编辑当前默认 provider 的连接参数' : t.providers.localProvidersDesc }}</span>
+            <h4>{{ singleProviderMode ? (translate.instant('Current Local Provider')) : t.providers.localProviders }}</h4>
+            <span class="section-desc">{{ singleProviderMode ? (translate.instant('Edit connection parameters for current default provider directly')) : t.providers.localProvidersDesc }}</span>
         </div>
 
         <div class="providers-grid">
@@ -198,7 +198,7 @@
                                  [class.valid]="validateApiKeyFormat(providerName, configs[providerName][field.key]).valid"
                                  [class.invalid]="!validateApiKeyFormat(providerName, configs[providerName][field.key]).valid">
                                 <i class="fa" [ngClass]="validateApiKeyFormat(providerName, configs[providerName][field.key]).valid ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-                                {{ validateApiKeyFormat(providerName, configs[providerName][field.key]).message || '格式正确' }}
+                                {{ validateApiKeyFormat(providerName, configs[providerName][field.key]).message || (translate.instant('Format Correct')) }}
                             </div>
                         </div>
 

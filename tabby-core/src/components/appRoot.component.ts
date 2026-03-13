@@ -19,7 +19,6 @@ import { TabsService } from '../services/tabs.service'
 import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
 import { TabBodyComponent } from './tabBody.component'
-import { SplitTabComponent } from './splitTab.component'
 import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup } from '../api'
 
 type RoyalEnvironment = 'prod'|'lab'|'dev'|'other'
@@ -145,7 +144,6 @@ export class AppRootComponent {
     private royalSidebarResizing = false
     private royalSidebarResizeStartX = 0
     private royalSidebarResizeStartWidth = this.royalSidebarDefaultWidth
-    private observedRoyalSplitTabs = new WeakSet<SplitTabComponent>()
     private royalConnectionBindings = new Map<string, BaseTabComponent>()
     private royalRestoredBindingCandidates = new Set<BaseTabComponent>()
     private royalRestoreBindingsRetryHandle: ReturnType<typeof setTimeout>|null = null
@@ -310,12 +308,6 @@ export class AppRootComponent {
                     this.app.duplicateTab(this.app.activeTab)
                     this.app.closeTab(this.app.activeTab, true)
                 }
-                if (hotkey === 'explode-tab' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.explodeTab(this.app.activeTab)
-                }
-                if (hotkey === 'combine-tabs' && this.app.activeTab instanceof SplitTabComponent) {
-                    this.app.combineTabsInto(this.app.activeTab)
-                }
             }
             if (hotkey === 'reopen-tab') {
                 this.app.reopenLastTab()
@@ -443,13 +435,6 @@ export class AppRootComponent {
     }
 
     onTabsReordered (event: CdkDragDrop<BaseTabComponent[]>) {
-        const tab: BaseTabComponent = event.item.data
-        if (!this.app.tabs.includes(tab)) {
-            if (tab.parent instanceof SplitTabComponent) {
-                tab.parent.removeTab(tab)
-                this.app.wrapAndAddTab(tab)
-            }
-        }
         moveItemInArray(this.app.tabs, event.previousIndex, event.currentIndex)
         this.app.emitTabsChanged()
     }
@@ -882,18 +867,6 @@ export class AppRootComponent {
     }
 
     private getRoyalTabKinds (tab: BaseTabComponent): string[] {
-        if (tab instanceof SplitTabComponent) {
-            const kinds: string[] = []
-            for (const childTab of tab.getAllTabs()) {
-                for (const kind of this.getRoyalTabKinds(childTab)) {
-                    if (!kinds.includes(kind)) {
-                        kinds.push(kind)
-                    }
-                }
-            }
-            return kinds
-        }
-
         const constructorKind = this.getRoyalConstructorKind(tab)
         const profileKind = this.getRoyalProfileTypeKind(tab)
 
@@ -914,31 +887,11 @@ export class AppRootComponent {
         if (!activeTab) {
             return null
         }
-        if (activeTab instanceof SplitTabComponent) {
-            return activeTab.getFocusedTab() ?? activeTab
-        }
         return activeTab
     }
 
     private getRoyalSessionTargets (): RoyalTabTarget[] {
-        const result: RoyalTabTarget[] = []
-
-        for (const hostTab of this.app.tabs) {
-            if (hostTab instanceof SplitTabComponent) {
-                const childTabs = hostTab.getAllTabs()
-                if (childTabs.length === 0) {
-                    result.push({ hostTab, targetTab: hostTab })
-                    continue
-                }
-                for (const childTab of childTabs) {
-                    result.push({ hostTab, targetTab: childTab })
-                }
-                continue
-            }
-            result.push({ hostTab, targetTab: hostTab })
-        }
-
-        return result
+        return this.app.tabs.map(tab => ({ hostTab: tab, targetTab: tab }))
     }
 
     private getRoyalPrimaryConnectionTargets (): Map<string, RoyalTabTarget> {
@@ -1026,7 +979,8 @@ export class AppRootComponent {
             }
 
             const targetTabs = this.getRoyalRestoredBindingTargets(hostTab)
-            if (hostTab instanceof SplitTabComponent && targetTabs.length === 0) {
+            if (!targetTabs.length) {
+                this.royalRestoredBindingCandidates.delete(hostTab)
                 continue
             }
 
@@ -1066,9 +1020,6 @@ export class AppRootComponent {
     }
 
     private getRoyalRestoredBindingTargets (hostTab: BaseTabComponent): BaseTabComponent[] {
-        if (hostTab instanceof SplitTabComponent) {
-            return hostTab.getAllTabs()
-        }
         return [hostTab]
     }
 
@@ -1091,10 +1042,6 @@ export class AppRootComponent {
             return null
         }
 
-        if (hostTab instanceof SplitTabComponent && !hostTab.getAllTabs().includes(tab)) {
-            return null
-        }
-
         return {
             hostTab,
             targetTab: tab,
@@ -1111,18 +1058,11 @@ export class AppRootComponent {
 
     private activateRoyalTabTarget (target: RoyalTabTarget): void {
         this.app.selectTab(target.hostTab)
-        if (target.hostTab instanceof SplitTabComponent && target.targetTab !== target.hostTab) {
-            target.hostTab.focus(target.targetTab)
-        }
         this.scheduleRoyalActiveSync()
     }
 
     private observeRoyalTab (tab: BaseTabComponent): void {
-        if (!(tab instanceof SplitTabComponent) || this.observedRoyalSplitTabs.has(tab)) {
-            return
-        }
-        this.observedRoyalSplitTabs.add(tab)
-        tab.focusChanged$.subscribe(() => this.scheduleRoyalActiveSync())
+        // No-op without split tabs
     }
 
     private syncRoyalActiveConnection (): void {
@@ -1382,13 +1322,6 @@ export class AppRootComponent {
     }
 
     private async closeRoyalTab (tab: BaseTabComponent): Promise<void> {
-        if (tab.parent instanceof SplitTabComponent) {
-            if (!await tab.canClose()) {
-                return
-            }
-            tab.destroy()
-            return
-        }
         await this.app.closeTab(tab, true)
     }
 

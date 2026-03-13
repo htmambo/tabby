@@ -24,6 +24,41 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { contextSettings: {}, common: {}, providers: {} }
+        }
+        return {
+            contextSettings: {
+                title: this.translate.instant('Context Management'),
+                autoCompact: this.translate.instant('Auto Compact'),
+                enableAutoCompact: this.translate.instant('Enable Auto Compact'),
+                autoCompactDesc: this.translate.instant('Automatically compact history when context exceeds threshold'),
+                tokenConfig: this.translate.instant('Token Configuration'),
+                currentProviderLimit: this.translate.instant('Current Provider Limit'),
+                maxContextTokens: this.translate.instant('Max Context Tokens'),
+                maxContextTokensDesc: this.translate.instant('Cannot exceed current provider context limit'),
+                reservedOutputTokens: this.translate.instant('Reserved Output Tokens'),
+                reservedOutputTokensDesc: this.translate.instant('Token count reserved for AI response'),
+                thresholdConfig: this.translate.instant('Compression Threshold'),
+                pruneThreshold: this.translate.instant('Prune Threshold'),
+                pruneThresholdDesc: this.translate.instant('Prune redundant content when usage exceeds this threshold (default: 70%)'),
+                compactThreshold: this.translate.instant('Compact Threshold'),
+                compactThresholdDesc: this.translate.instant('Generate summary when usage exceeds this threshold (default: 85%)'),
+                messagesToKeep: this.translate.instant('Messages to Keep'),
+                messagesToKeepDesc: this.translate.instant('Number of recent messages to always keep during compaction (default: 3)'),
+            },
+            common: {
+                enabled: this.translate.instant('Enabled'),
+                disabled: this.translate.instant('Disabled'),
+                reset: this.translate.instant('Reset to defaults'),
+            },
+            providers: {
+                saveConfig: this.translate.instant('Save Configuration'),
+            },
+        }
+    }
+
     constructor(
         private configService: ConfigProviderService,
         private contextManager: ContextManager,

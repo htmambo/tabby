@@ -1,5 +1,5 @@
 import { Inject, Injectable, Optional } from '@angular/core'
-import { AppService, Command, CommandContext, CommandProvider, ConfigService, MenuItemOptions, SplitTabComponent, TabContextMenuItemProvider, ToolbarButton, ToolbarButtonProvider, TranslateService } from '../api'
+import { AppService, Command, CommandContext, CommandProvider, ConfigService, MenuItemOptions, TabContextMenuItemProvider, ToolbarButton, ToolbarButtonProvider, TranslateService } from '../api'
 import { SelectorService } from './selector.service'
 
 @Injectable({ providedIn: 'root' })
@@ -34,16 +34,6 @@ export class CommandService {
                     // eslint-disable-next-line @typescript-eslint/no-loop-func
                     section = section.filter(item => !items.some(ex => ex.label === item.label))
                     items = items.concat(section)
-                }
-                if (context.tab instanceof SplitTabComponent) {
-                    const tab = context.tab.getFocusedTab()
-                    if (tab) {
-                        for (let section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(tab, tabHeader)))) {
-                            // eslint-disable-next-line @typescript-eslint/no-loop-func
-                            section = section.filter(item => !items.some(ex => ex.label === item.label))
-                            items = items.concat(section)
-                        }
-                    }
                 }
             }
         }
@@ -97,8 +87,8 @@ export class CommandService {
 
         const context: CommandContext = {}
         const tab = this.app.activeTab
-        if (tab instanceof SplitTabComponent) {
-            context.tab = tab.getFocusedTab() ?? undefined
+        if (tab) {
+            context.tab = tab
         }
         const commands = await this.getCommands(context)
         return this.selector.show(

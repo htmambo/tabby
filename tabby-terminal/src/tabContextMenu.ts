@@ -1,6 +1,6 @@
 import { Injectable, Optional, Inject } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { BaseTabComponent, TabContextMenuItemProvider, NotificationsService, MenuItemOptions, TranslateService, SplitTabComponent, PromptModalComponent, ConfigService, PartialProfile, Profile } from 'tabby-core'
+import { BaseTabComponent, TabContextMenuItemProvider, NotificationsService, MenuItemOptions, TranslateService, PromptModalComponent, ConfigService, PartialProfile, Profile } from 'tabby-core'
 import { BaseTerminalTabComponent } from './api/baseTerminalTab.component'
 import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
 import { MultifocusService } from './services/multifocus.service'
@@ -77,14 +77,6 @@ export class MiscContextMenu extends TabContextMenuItemProvider {
                 this.multifocus.focusAllTabs()
             },
         })
-        if (tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
-            items.push({
-                label: this.translate.instant('Focus all panes'),
-                click: () => {
-                    this.multifocus.focusAllPanes()
-                },
-            })
-        }
         return items
     }
 }

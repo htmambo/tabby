@@ -58,62 +58,92 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
 
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { providers: {}, providerNames: {}, common: {} }
+        }
+        return {
+            providers: {
+                title: this.translate.instant('Providers'),
+                cloudProviders: this.translate.instant('Cloud Providers'),
+                cloudProvidersDesc: this.translate.instant('Configure cloud-based AI providers'),
+                localProviders: this.translate.instant('Local Providers'),
+                localProvidersDesc: this.translate.instant('Configure locally hosted AI services'),
+                displayName: this.translate.instant('Display Name'),
+                status: this.translate.instant('Status'),
+                apiKey: this.translate.instant('API Key'),
+                baseURL: this.translate.instant('Base URL'),
+                model: this.translate.instant('Model'),
+                saveConfig: this.translate.instant('Save Configuration'),
+                testConnection: this.translate.instant('Test Connection'),
+                detectService: this.translate.instant('Detect Service'),
+            },
+            providerNames: {},
+            common: {
+                enabled: this.translate.instant('Enabled'),
+                disabled: this.translate.instant('Disabled'),
+                add: this.translate.instant('Add'),
+                notConfigured: this.translate.instant('Not Configured'),
+            },
+        }
+    }
+
     // 云端提供商模板
     cloudProviderTemplates: Record<string, ProviderTemplate> = {
         openai: {
             name: 'OpenAI',
-            description: 'OpenAI GPT模型',
+            description: 'OpenAI GPT Models',
             icon: 'fa-robot',
             fields: [
                 { key: 'apiKey', label: 'API Key', type: 'password', required: true },
                 { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'https://api.openai.com/v1', required: false },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'gpt-4', required: false, placeholder: '例如: gpt-4, gpt-4-turbo, gpt-3.5-turbo' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 128000, required: false, placeholder: 'GPT-4: 128000, GPT-3.5: 16385' },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'gpt-4', required: false, placeholder: 'e.g.: gpt-4, gpt-4-turbo, gpt-3.5-turbo' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 128000, required: false, placeholder: 'GPT-4: 128000, GPT-3.5: 16385' },
             ],
         },
         anthropic: {
             name: 'Anthropic Claude',
-            description: 'Anthropic Claude模型',
+            description: 'Anthropic Claude Models',
             icon: 'fa-comments',
             fields: [
                 { key: 'apiKey', label: 'API Key', type: 'password', required: true },
                 { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'https://api.anthropic.com', required: false },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'claude-3-sonnet-20240229', required: false, placeholder: '例如: claude-3-opus, claude-3-sonnet' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 200000, required: false, placeholder: 'Claude 3: 200000' },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'claude-3-sonnet-20240229', required: false, placeholder: 'e.g.: claude-3-opus, claude-3-sonnet' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 200000, required: false, placeholder: 'Claude 3: 200000' },
             ],
         },
         minimax: {
             name: 'Minimax',
-            description: 'Minimax AI模型',
+            description: 'Minimax AI Models',
             icon: 'fa-brain',
             fields: [
                 { key: 'apiKey', label: 'API Key', type: 'password', required: true },
                 { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'https://api.minimaxi.com/anthropic', required: false },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'MiniMax-M2', required: false, placeholder: '例如: MiniMax-M2, MiniMax-M2.1' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 128000, required: false, placeholder: 'MiniMax-M2: 128000' },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'MiniMax-M2', required: false, placeholder: 'e.g.: MiniMax-M2, MiniMax-M2.1' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 128000, required: false, placeholder: 'MiniMax-M2: 128000' },
             ],
         },
         glm: {
             name: 'GLM (ChatGLM)',
-            description: '智谱AI ChatGLM模型',
+            description: 'Zhipu AI ChatGLM Models',
             icon: 'fa-network-wired',
             fields: [
                 { key: 'apiKey', label: 'API Key', type: 'password', required: true },
                 { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'https://open.bigmodel.cn/api/paas/v4', required: false },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'glm-4', required: false, placeholder: '例如: glm-4, glm-4-air, glm-4-flash' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 128000, required: false, placeholder: 'GLM-4: 128000' },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'glm-4', required: false, placeholder: 'e.g.: glm-4, glm-4-air, glm-4-flash' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 128000, required: false, placeholder: 'GLM-4: 128000' },
             ],
         },
         'openai-compatible': {
-            name: 'OpenAI 兼容站点',
-            description: '支持 OpenAI API 格式的第三方服务（如 DeepSeek、OneAPI 等）',
+            name: 'OpenAI Compatible',
+            description: 'Third-party services supporting OpenAI API format (e.g. DeepSeek, OneAPI)',
             icon: 'fa-plug',
             fields: [
                 { key: 'apiKey', label: 'API Key', type: 'password', required: true },
-                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': '', required: true, placeholder: '例如: https://api.deepseek.com/v1' },
-                { key: 'model', label: 'Model', type: 'text', 'default': '', required: true, placeholder: '例如: deepseek-chat, gpt-3.5-turbo' },
-                { key: 'disableStreaming', label: '禁用流式响应', type: 'checkbox', 'default': false, required: false, placeholder: '如果站点不支持流式响应，请勾选此项' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 128000, required: false, placeholder: '根据模型设置' },
+                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': '', required: true, placeholder: 'e.g.: https://api.deepseek.com/v1' },
+                { key: 'model', label: 'Model', type: 'text', 'default': '', required: true, placeholder: 'e.g.: deepseek-chat, gpt-3.5-turbo' },
+                { key: 'disableStreaming', label: 'Disable Streaming', type: 'checkbox', 'default': false, required: false, placeholder: 'Check if site does not support streaming' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 128000, required: false, placeholder: 'Set according to model' },
             ],
         },
     }
@@ -121,26 +151,26 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
     // 本地提供商模板（不需要 API Key）
     localProviderTemplates: Record<string, ProviderTemplate> = {
         ollama: {
-            name: 'Ollama (本地)',
-            description: '本地运行的 Ollama 服务，支持 Llama、Qwen 等模型',
+            name: 'Ollama (Local)',
+            description: 'Locally running Ollama service, supports Llama, Qwen and other models',
             icon: 'fa-server',
             defaultURL: 'http://localhost:11434/v1',
             fields: [
-                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'http://localhost:11434/v1', required: true, placeholder: '例如: http://localhost:11434/v1' },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'llama3.1', required: false, placeholder: '例如: llama3.1, qwen2.5, mistral' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 8192, required: false, placeholder: 'Llama 3.1: 8192' },
+                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'http://localhost:11434/v1', required: true, placeholder: 'e.g.: http://localhost:11434/v1' },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'llama3.1', required: false, placeholder: 'e.g.: llama3.1, qwen2.5, mistral' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 8192, required: false, placeholder: 'Llama 3.1: 8192' },
             ],
         },
         vllm: {
-            name: 'vLLM (本地)',
-            description: '本地运行的 vLLM 服务，适合生产部署',
+            name: 'vLLM (Local)',
+            description: 'Locally running vLLM service, suitable for production deployment',
             icon: 'fa-database',
             defaultURL: 'http://localhost:8000/v1',
             fields: [
-                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'http://localhost:8000/v1', required: true, placeholder: '例如: http://localhost:8000/v1' },
-                { key: 'apiKey', label: 'API Key (可选)', type: 'password', required: false },
-                { key: 'model', label: 'Model', type: 'text', 'default': 'meta-llama/Llama-3.1-8B', required: false, placeholder: 'HuggingFace 模型路径' },
-                { key: 'contextWindow', label: '上下文限制', type: 'number', 'default': 8192, required: false, placeholder: '根据模型实际配置设置' },
+                { key: 'baseURL', label: 'Base URL', type: 'text', 'default': 'http://localhost:8000/v1', required: true, placeholder: 'e.g.: http://localhost:8000/v1' },
+                { key: 'apiKey', label: 'API Key (Optional)', type: 'password', required: false },
+                { key: 'model', label: 'Model', type: 'text', 'default': 'meta-llama/Llama-3.1-8B', required: false, placeholder: 'HuggingFace model path' },
+                { key: 'contextWindow', label: 'Context Window', type: 'number', 'default': 8192, required: false, placeholder: 'Set according to actual model configuration' },
             ],
         },
     }

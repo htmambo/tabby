@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
+import { TranslateService } from 'tabby-core'
 import { FileStorageService } from '../../services/core/file-storage.service'
 import { Memory } from '../../services/context/memory'
 import { ChatHistoryService } from '../../services/chat/chat-history.service'
@@ -29,9 +30,9 @@ export interface DataFileInfo {
         <div class="data-settings">
             <div class="section-header">
                 <i class="fa fa-database"></i>
-                <h3>{{ t?.dataSettings?.title || '数据管理' }}</h3>
+                <h3>{{ t.dataSettings.title }}</h3>
             </div>
-            <p class="description">{{ t?.dataSettings?.description || '管理插件的数据存储，包括聊天记录、记忆和配置' }}</p>
+            <p class="description">{{ t.dataSettings.description }}</p>
 
             <!-- 数据位置卡片 -->
             <div class="location-card">
@@ -39,14 +40,14 @@ export interface DataFileInfo {
                     <i class="fa fa-hdd-o"></i>
                 </div>
                 <div class="card-content">
-                    <div class="card-title">{{ t?.dataSettings?.storageLocation || '存储位置' }}</div>
+                    <div class="card-title">{{ t.dataSettings.storageLocation }}</div>
                     <div class="card-value">
                         <code>{{ dataDirectory }}</code>
                     </div>
                 </div>
                 <button class="btn btn-outline" (click)="openDataDirectory()">
                     <i class="fa fa-folder-open"></i>
-                    {{ t?.dataSettings?.openDirectory || '打开目录' }}
+                    {{ t.dataSettings.openDirectory }}
                 </button>
             </div>
 
@@ -721,6 +722,20 @@ export interface DataFileInfo {
 export class DataSettingsComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { dataSettings: {} }
+        }
+        return {
+            dataSettings: {
+                title: this.translate.instant('Data Management'),
+                description: this.translate.instant('Manage plugin data storage including chat history, memory and configuration'),
+                storageLocation: this.translate.instant('Storage Location'),
+                openDirectory: this.translate.instant('Open Directory'),
+            },
+        }
+    }
+
     /** 数据目录路径 */
     dataDirectory = ''
 
@@ -747,6 +762,7 @@ export class DataSettingsComponent implements OnInit, OnDestroy {
         private consentManager: ConsentManagerService,
         private logger: LoggerService,
         private toast: ToastService,
+        private translate: TranslateService,
     ) {}
 
     ngOnInit(): void {

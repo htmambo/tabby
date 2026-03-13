@@ -3,7 +3,6 @@ import { Component, Input, Optional, Inject, HostBinding, HostListener, NgZone }
 import { auditTime } from 'rxjs'
 import { TabContextMenuItemProvider } from '../api/tabContextMenuProvider'
 import { BaseTabComponent } from './baseTab.component'
-import { SplitTabComponent } from './splitTab.component'
 import { HotkeysService } from '../services/hotkeys.service'
 import { AppService } from '../services/app.service'
 import { HostAppService, Platform } from '../api/hostApp'
@@ -62,19 +61,6 @@ export class TabHeaderComponent extends BaseComponent {
         for (const section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(this.tab, true)))) {
             items.push({ type: 'separator' })
             items = items.concat(section)
-        }
-        if (this.tab instanceof SplitTabComponent) {
-            const tab = this.tab.getFocusedTab()
-            if (tab) {
-                for (let section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(tab, true)))) {
-                    // eslint-disable-next-line @typescript-eslint/no-loop-func
-                    section = section.filter(item => !items.some(ex => ex.label === item.label))
-                    if (section.length) {
-                        items.push({ type: 'separator' })
-                        items = items.concat(section)
-                    }
-                }
-            }
         }
         return items.slice(1)
     }

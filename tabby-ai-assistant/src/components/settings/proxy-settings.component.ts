@@ -420,6 +420,42 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { proxy: {}, common: {} }
+        }
+        return {
+            proxy: {
+                title: this.translate.instant('Proxy'),
+                networkProxy: this.translate.instant('Network Proxy'),
+                enableProxy: this.translate.instant('Enable Proxy'),
+                enableProxyDesc: this.translate.instant('Access AI API endpoints through proxy server'),
+                importFromEnv: this.translate.instant('Import from Environment Variables'),
+                proxyConfig: this.translate.instant('Proxy Configuration'),
+                httpProxy: this.translate.instant('HTTP Proxy'),
+                optional: this.translate.instant('Optional'),
+                httpProxyPlaceholder: this.translate.instant('http://127.0.0.1:7890'),
+                httpProxyHint: this.translate.instant('Proxy address for HTTP requests'),
+                httpsProxy: this.translate.instant('HTTPS Proxy'),
+                recommended: this.translate.instant('Recommended'),
+                httpsProxyPlaceholder: this.translate.instant('http://127.0.0.1:7890'),
+                httpsProxyHint: this.translate.instant('Proxy address for HTTPS requests (most APIs use HTTPS)'),
+                noProxy: this.translate.instant('No Proxy'),
+                noProxyPlaceholder: this.translate.instant('localhost, 127.0.0.1, *.local'),
+                noProxyHint: this.translate.instant('Addresses that do not use proxy (comma separated)'),
+                requireAuth: this.translate.instant('Require Authentication'),
+                username: this.translate.instant('Username'),
+                password: this.translate.instant('Password'),
+                testConnection: this.translate.instant('Test Connection'),
+                usage: this.translate.instant('Usage'),
+                usageInfo1: this.translate.instant('Proxy settings apply to all cloud AI provider API requests'),
+                usageInfo2: this.translate.instant('Local providers (Ollama, vLLM) do not use proxy by default'),
+                usageInfo3: this.translate.instant('Supports HTTP, HTTPS and SOCKS5 proxy protocols'),
+            },
+            common: { save: this.translate.instant('Save') },
+        }
+    }
+
     constructor(
         private config: ConfigProviderService,
         private proxyService: ProxyService,

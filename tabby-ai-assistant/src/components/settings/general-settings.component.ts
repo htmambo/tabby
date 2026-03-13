@@ -32,6 +32,40 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     private readonly localProviders = ['ollama', 'vllm']
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { general: {}, providers: {}, security: {}, settings: {} }
+        }
+        return {
+            general: {
+                title: this.translate.instant('General'),
+                enableAssistant: this.translate.instant('Enable AI Assistant'),
+                enableAssistantDesc: this.translate.instant('Enable or disable AI assistant functionality'),
+                defaultProvider: this.translate.instant('Default Provider'),
+                language: this.translate.instant('Language'),
+                sidebarPosition: this.translate.instant('Sidebar Position'),
+                sidebarPositionDesc: this.translate.instant('Choose whether AI sidebar appears on left or right'),
+                shortcuts: this.translate.instant('Shortcuts'),
+                shortcutOpenChat: this.translate.instant('Open Chat'),
+                shortcutOpenChatDesc: this.translate.instant('Open AI chat sidebar'),
+                shortcutGenerate: this.translate.instant('Generate Code'),
+                shortcutGenerateDesc: this.translate.instant('Generate code from selection'),
+                shortcutExplain: this.translate.instant('Explain Code'),
+                shortcutExplainDesc: this.translate.instant('Explain selected code'),
+                shortcutTip: this.translate.instant('Shortcuts can be customized in Tabby settings'),
+            },
+            providers: {
+                title: this.translate.instant('Providers'),
+                notConfigured: this.translate.instant('Not configured'),
+            },
+            security: {
+                title: this.translate.instant('Security'),
+                accessControl: this.translate.instant('Access Control'),
+            },
+            settings: { title: this.translate.instant('Settings') },
+        }
+    }
+
     languages = [
         { value: 'zh-CN', label: '简体中文', flag: '🇨🇳' },
         { value: 'en-US', label: 'English', flag: '🇺🇸' },
@@ -158,23 +192,32 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
 
     getProviderEndpoint(providerName: string): string {
         const config = this.getEffectiveProviderConfig(providerName)
-        return config?.baseURL ?? '未配置'
+        return config?.baseURL ?? this.translate.instant('Not Configured')
     }
 
     getProviderModel(providerName: string): string {
         const config = this.getEffectiveProviderConfig(providerName)
-        return config?.model ?? '未配置'
+        return config?.model ?? this.translate.instant('Not Configured')
+    }
+
+    isApiKeyMissing(providerName: string): boolean {
+        if (!this.isProviderConfigured(providerName)) {
+            const summary = this.getProviderSecretSummary(providerName)
+            return !summary.includes(this.translate.instant('Not Required')) &&
+                   !summary.includes(this.translate.instant('Optional'))
+        }
+        return false
     }
 
     getProviderSecretSummary(providerName: string): string {
         const providerConfig = this.config.getProviderConfig(providerName)
 
         if (providerName === 'ollama') {
-            return '本地服务无需 API Key'
+            return this.translate.instant('Local service does not require API Key')
         }
 
         if (!providerConfig?.apiKey) {
-            return providerName === 'vllm' ? '未设置（可选）' : '未配置'
+            return providerName === 'vllm' ? this.translate.instant('Not Set (Optional)') : this.translate.instant('Not Configured')
         }
 
         return this.maskSecret(providerConfig.apiKey)
@@ -182,16 +225,16 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
 
     getProviderSummaryHint(providerName: string): string {
         if (!providerName) {
-            return '请选择一个 AI 提供商后再继续配置。'
+            return this.translate.instant('Please select an AI provider before continuing configuration.')
         }
 
         if (this.isProviderConfigured(providerName)) {
-            return '如需修改 API 端点、密钥或更细的连接参数，请进入“AI 提供商”标签页。'
+            return this.translate.instant('To modify API endpoint, key or detailed connection parameters, go to AI Providers tab.')
         }
 
         return this.isLocalProvider(providerName)
-            ? '当前提供商尚未完成连接配置，请进入“AI 提供商”标签页填写 Base URL 和模型。'
-            : '当前提供商尚未完成连接配置，请进入“AI 提供商”标签页填写 Base URL、Model 和 API Key。'
+            ? this.translate.instant('Current provider connection not configured. Go to AI Providers tab to fill in Base URL and model.')
+            : this.translate.instant('Current provider connection not configured. Go to AI Providers tab to fill in Base URL, Model and API Key.')
     }
 
     getCurrentProviderStatus(providerName: string = this.selectedProvider): { text: string; color: string; icon: string } {

@@ -23,10 +23,6 @@ import { ToggleComponent } from './components/toggle.component'
 import { WindowControlsComponent } from './components/windowControls.component'
 import { RenameTabModalComponent } from './components/renameTabModal.component'
 import { SelectorModalComponent } from './components/selectorModal.component'
-import { SplitTabComponent, SplitTabRecoveryProvider } from './components/splitTab.component'
-import { SplitTabSpannerComponent } from './components/splitTabSpanner.component'
-import { SplitTabDropZoneComponent } from './components/splitTabDropZone.component'
-import { SplitTabPaneLabelComponent } from './components/splitTabPaneLabel.component'
 import { UnlockVaultModalComponent } from './components/unlockVaultModal.component'
 import { StartupTabsRecoveryModalComponent } from './components/startupTabsRecoveryModal.component'
 import { WelcomeTabComponent } from './components/welcomeTab.component'
@@ -39,7 +35,7 @@ import { FastHtmlBindDirective } from './directives/fastHtmlBind.directive'
 import { DropZoneDirective } from './directives/dropZone.directive'
 import { CdkAutoDropGroup } from './directives/cdkAutoDropGroup.directive'
 
-import { Theme, CLIHandler, TabContextMenuItemProvider, TabRecoveryProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
+import { Theme, CLIHandler, TabContextMenuItemProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
 
 import { AppService } from './services/app.service'
 import { ConfigService } from './services/config.service'
@@ -53,7 +49,6 @@ import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
 import { TaskCompletionContextMenu, CommonOptionsContextMenu, TabManagementContextMenu, ProfilesContextMenu } from './tabContextMenu'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
-import { SplitLayoutProfilesService } from './profiles'
 import { CoreCommandProvider } from './commands'
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
@@ -68,11 +63,9 @@ const PROVIDERS = [
     { provide: TabContextMenuItemProvider, useClass: TabManagementContextMenu, multi: true },
     { provide: TabContextMenuItemProvider, useClass: TaskCompletionContextMenu, multi: true },
     { provide: TabContextMenuItemProvider, useClass: ProfilesContextMenu, multi: true },
-    { provide: TabRecoveryProvider, useExisting: SplitTabRecoveryProvider, multi: true },
     { provide: CLIHandler, useClass: ProfileCLIHandler, multi: true },
     { provide: CLIHandler, useClass: LastCLIHandler, multi: true },
     { provide: FileProvider, useClass: VaultFileProvider, multi: true },
-    { provide: ProfileProvider, useExisting: SplitLayoutProfilesService, multi: true },
     { provide: CommandProvider, useExisting: CoreCommandProvider, multi: true },
     {
         provide: LOCALE_ID,
@@ -122,10 +115,6 @@ const PROVIDERS = [
         FastHtmlBindDirective,
         AlwaysVisibleTypeaheadDirective,
         SelectorModalComponent,
-        SplitTabComponent,
-        SplitTabSpannerComponent,
-        SplitTabDropZoneComponent,
-        SplitTabPaneLabelComponent,
         UnlockVaultModalComponent,
         StartupTabsRecoveryModalComponent,
         WelcomeTabComponent,

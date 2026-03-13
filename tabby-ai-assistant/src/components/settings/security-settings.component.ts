@@ -38,6 +38,41 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>()
 
+    get t() {
+        if (!this.translate) {
+            return { security: {}, common: {} }
+        }
+        return {
+            security: {
+                title: this.translate.instant('Security'),
+                accessControl: this.translate.instant('Access Control'),
+                passwordProtection: this.translate.instant('Password Protection'),
+                passwordProtectionDesc: this.translate.instant('Require password to access AI assistant'),
+                setPassword: this.translate.instant('Set Password'),
+                passwordPlaceholder: this.translate.instant('Enter password'),
+                riskAssessment: this.translate.instant('Risk Assessment'),
+                riskAssessmentDesc: this.translate.instant('Automatically assess command risk level'),
+                defaultRiskLevel: this.translate.instant('Default Risk Level'),
+                riskLow: this.translate.instant('Low'),
+                riskMedium: this.translate.instant('Medium'),
+                riskHigh: this.translate.instant('High'),
+                userConsent: this.translate.instant('User Consent'),
+                rememberConsent: this.translate.instant('Remember Consent'),
+                rememberConsentDesc: this.translate.instant('Remember user consent for'),
+                consentExpiryDays: this.translate.instant('days'),
+                dangerousPatterns: this.translate.instant('Dangerous Patterns'),
+                patternPlaceholder: this.translate.instant('Enter dangerous pattern'),
+                addPattern: this.translate.instant('Add Pattern'),
+                resetDefaults: this.translate.instant('Reset Defaults'),
+            },
+            common: {
+                enabled: this.translate.instant('Enabled'),
+                disabled: this.translate.instant('Disabled'),
+                save: this.translate.instant('Save'),
+            },
+        }
+    }
+
     constructor(
         private config: ConfigProviderService,
         private logger: LoggerService,

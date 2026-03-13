@@ -3,7 +3,6 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { Observable, Subject, AsyncSubject, takeUntil, debounceTime } from 'rxjs'
 
 import { BaseTabComponent } from '../components/baseTab.component'
-import { SplitTabComponent } from '../components/splitTab.component'
 import { RenameTabModalComponent } from '../components/renameTabModal.component'
 import { StartupTabsRecoveryModalComponent } from '../components/startupTabsRecoveryModal.component'
 import { SelectorOption } from '../api/selector'
@@ -160,15 +159,6 @@ export class AppService {
             this.tabRemoved.next(tab)
             this.tabClosed.next(tab)
         })
-
-        if (tab instanceof SplitTabComponent) {
-            tab.tabAdded$.subscribe(() => this.emitTabsChanged())
-            tab.tabRemoved$.subscribe(() => this.emitTabsChanged())
-            tab.tabAdopted$.subscribe(t => {
-                this.removeTab(t)
-                this.tabRemoved.next(t)
-            })
-        }
     }
 
     removeTab (tab: BaseTabComponent): void {
@@ -184,7 +174,7 @@ export class AppService {
     }
 
     /**
-     * Adds a new tab **without** wrapping it in a SplitTabComponent
+     * Adds a new tab
      * @param inputs  Properties to be assigned on the new tab component instance
      */
     openNewTabRaw <T extends BaseTabComponent> (params: NewTabParameters<T>, index: number|null = null, options: { select?: boolean } = {}): T {
@@ -193,16 +183,9 @@ export class AppService {
         return tab
     }
 
-    /**
-     * Adds a new tab while wrapping it in a SplitTabComponent
-     * @param inputs  Properties to be assigned on the new tab component instance
-     */
     openNewTab <T extends BaseTabComponent> (params: NewTabParameters<T>): T {
-        if (params.type as any === SplitTabComponent) {
-            return this.openNewTabRaw(params)
-        }
         const tab = this.tabsService.create(params)
-        this.wrapAndAddTab(tab)
+        this.addTabRaw(tab)
         return tab
     }
 
@@ -255,16 +238,6 @@ export class AppService {
         this.selectTab(restoredTopLevelTabs[activeTabIndex])
     }
 
-    /**
-     * Adds an existing tab while wrapping it in a SplitTabComponent
-     */
-    wrapAndAddTab (tab: BaseTabComponent): SplitTabComponent {
-        const splitTab = this.tabsService.create({ type: SplitTabComponent })
-        splitTab.addTab(tab, null, 'r')
-        this.addTabRaw(splitTab)
-        return splitTab
-    }
-
     async reopenLastTab (): Promise<BaseTabComponent|null> {
         const token = this.closedTabsStack.pop()
         if (token) {
@@ -304,17 +277,6 @@ export class AppService {
             this._activeTab?.emitVisibility(true)
         })
         this.hostWindow.setTitle(this._activeTab?.title)
-    }
-
-    getParentTab (tab: BaseTabComponent): SplitTabComponent|null {
-        for (const topLevelTab of this.tabs) {
-            if (topLevelTab instanceof SplitTabComponent) {
-                if (topLevelTab.getAllTabs().includes(tab)) {
-                    return topLevelTab
-                }
-            }
-        }
-        return null
     }
 
     /** Switches between the current tab and the previously active one */
@@ -453,8 +415,7 @@ export class AppService {
     }
 
     private async prepareTabsForRecoverySave (tabs: BaseTabComponent[]): Promise<void> {
-        const flattenedTabs = tabs.flatMap(tab => tab instanceof SplitTabComponent ? tab.getAllTabs() : [tab])
-        await Promise.all(flattenedTabs.map(async tab => {
+        await Promise.all(tabs.map(async tab => {
             const recoveryAwareTab = tab as BaseTabComponent & { prepareForRecoverySave?: () => Promise<void> }
             await recoveryAwareTab.prepareForRecoverySave?.()
         }))
@@ -501,39 +462,4 @@ export class AppService {
         return this.selector.show(name, options)
     }
 
-    explodeTab (tab: SplitTabComponent): SplitTabComponent[] {
-        const result: SplitTabComponent[] = []
-        for (const child of tab.getAllTabs().slice(1)) {
-            tab.removeTab(child)
-            result.push(this.wrapAndAddTab(child))
-        }
-        return result
-    }
-
-    combineTabsInto (into: SplitTabComponent): void {
-        this.explodeTab(into)
-
-        let allChildren: BaseTabComponent[] = []
-        for (const tab of this.tabs) {
-            if (into === tab) {
-                continue
-            }
-            let children = [tab]
-            if (tab instanceof SplitTabComponent) {
-                children = tab.getAllTabs()
-            }
-            allChildren = allChildren.concat(children)
-        }
-
-        let x = 1
-        let previous: BaseTabComponent|null = null
-        const stride = Math.ceil(Math.sqrt(allChildren.length + 1))
-        for (const child of allChildren) {
-            into.add(child, x ? previous : null, x ? 'r' : 'b')
-            previous = child
-            x = (x + 1) % stride
-        }
-
-        into.equalize()
-    }
 }
