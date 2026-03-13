@@ -632,6 +632,6 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
      * 获取默认系统提示 - 子类可重写
      */
     protected getDefaultSystemPrompt(): string {
-        return this.translate.instant('systemPrompts.assistantRole') || `You are a professional terminal command assistant running in Tabby terminal.`
+        return this.translate.instant('systemPrompts.assistantRole')
     }
 }

@@ -3765,6 +3765,10 @@ msgstr ""
 msgid "systemPrompts.assistantRole"
 msgstr ""
 
+#: tabby-ai-assistant/src/services/prompt.service.ts
+msgid "systemPrompts.defaultCommandExplanation"
+msgstr ""
+
 
 #: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
 msgid "MCP Servers"

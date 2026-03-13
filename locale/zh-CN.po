@@ -4128,3 +4128,207 @@ msgstr "禁用流式输出"
 #: tabby-ai-assistant/src/components/settings/provider-config.component.ts
 msgid "Advanced Settings"
 msgstr "高级设置"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Add an MCP server to extend AI functionality"
+msgstr "添加 MCP 服务器以扩展 AI 功能"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Are you sure you want to delete server \"{name}\"?"
+msgstr "确定要删除服务器 \"{name}\" 吗？"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Chat"
+msgstr "聊天"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "chatInterface.tipCommand"
+msgstr "💡 提示：输入 /help 查看可用命令"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "chatInterface.tipShortcut"
+msgstr "⌨️ 快捷键：Alt+C 打开/关闭聊天侧边栏"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "chatInterface.welcomeMessage"
+msgstr "👋 欢迎使用 AI 助手！我可以帮助您解答问题、生成代码和执行命令。"
+
+#: tabby-ai-assistant/src/components/chat/chat-settings.component.ts
+msgid "Chat Settings"
+msgstr "聊天设置"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Configuration"
+msgstr "配置"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Context"
+msgstr "上下文"
+
+#: tabby-ai-assistant/src/components/chat/chat-message.component.ts
+msgid "Copy failed, please try again"
+msgstr "复制失败，请重试"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "Current provider"
+msgstr "当前提供商"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Current Provider"
+msgstr "当前提供商"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Data"
+msgstr "数据"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Deleted successfully"
+msgstr "删除成功"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Delete failed"
+msgstr "删除失败"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Disconnected"
+msgstr "已断开连接"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Enable AI Assistant to start using"
+msgstr "启用 AI 助手以开始使用"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "Enter provider number"
+msgstr "输入提供商编号"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Error occurred"
+msgstr "发生错误"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "Executing tool"
+msgstr "正在执行工具"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "http://127.0.0.1:7890"
+msgstr "http://127.0.0.1:7890"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Import failed: {error}"
+msgstr "导入失败：{error}"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Import JSON Config"
+msgstr "导入 JSON 配置"
+
+#: tabby-ai-assistant/src/components/settings/proxy-settings.component.ts
+msgid "localhost, 127.0.0.1, *.local"
+msgstr "localhost, 127.0.0.1, *.local"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Logging"
+msgstr "日志"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Log Level"
+msgstr "日志级别"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Manage plugin data storage including chat history, memory and configuration"
+msgstr "管理插件数据存储，包括聊天记录、记忆和配置"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "No configured providers"
+msgstr "未配置提供商"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "No MCP servers configured"
+msgstr "未配置 MCP 服务器"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Not Required"
+msgstr "不需要"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Open Directory"
+msgstr "打开目录"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Please enter JSON configuration"
+msgstr "请输入 JSON 配置"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Please fill in all required fields"
+msgstr "请填写所有必填字段"
+
+#: tabby-ai-assistant/src/components/settings/general-settings.component.ts
+msgid "Refresh"
+msgstr "刷新"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Reset"
+msgstr "重置"
+
+#: tabby-ai-assistant/src/components/settings/provider-config.component.ts
+msgid "Retry"
+msgstr "重试"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Saved successfully"
+msgstr "保存成功"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Save failed"
+msgstr "保存失败"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Server configuration not found"
+msgstr "未找到服务器配置"
+
+#: tabby-ai-assistant/src/components/settings/data-settings.component.ts
+msgid "Storage Location"
+msgstr "存储位置"
+
+#: tabby-ai-assistant/src/components/settings/mcp-settings.component.ts
+msgid "Successfully imported {count} servers"
+msgstr "成功导入 {count} 个服务器"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "Switch provider"
+msgstr "切换提供商"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "System Info"
+msgstr "系统信息"
+
+#: tabby-ai-assistant/src/services/prompt.service.ts
+msgid "systemPrompts.assistantRole"
+msgstr "您是运行在 Tabby 终端中的专业终端命令助手。"
+
+#: tabby-ai-assistant/src/services/prompt.service.ts
+msgid "systemPrompts.commandGeneratorRole"
+msgstr "您是一位专业的终端命令生成助手。您的任务是：
+1. 将自然语言描述转换为准确高效的终端命令
+2. 考虑当前操作系统和 Shell 环境
+3. 优先选择安全且符合最佳实践的命令
+4. 提供清晰的命令解释
+5. 考虑当前工作目录和上下文
+始终返回有效命令，避免危险操作（例如，删除系统文件、格式​​化磁盘）。
+如果无法确定准确命令，请明确说明并提供替代方案。"
+
+#: tabby-ai-assistant/src/services/prompt.service.ts
+msgid "systemPrompts.defaultCommandExplanation"
+msgstr "AI生成的命令建议"
+
+#: tabby-ai-assistant/src/components/chat/chat-interface.component.ts
+msgid "Tip: use Alt+C to open AI chat"
+msgstr "提示：使用 Alt+C 打开 AI 聊天"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Validate"
+msgstr "验证"
+
+#: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
+msgid "Validate configuration"
+msgstr "验证配置"

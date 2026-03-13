@@ -235,16 +235,7 @@ export class CommandGeneratorService {
      * 获取系统提示词
      */
     private getSystemPrompt(): string {
-        return this.translate.instant('systemPrompts.commandGeneratorRole') || `You are a professional terminal command generation assistant. Your task is to:
-
-1. Convert natural language descriptions into accurate, efficient terminal commands
-2. Consider current operating system and Shell environment
-3. Prioritize safe, best-practice commands
-4. Provide clear command explanations
-5. Consider current working directory and context
-
-Always return valid commands, avoid dangerous operations (e.g., deleting system files, formatting disks).
-If unable to determine accurate command, clearly state and provide alternatives.`
+        return this.translate.instant('systemPrompts.commandGeneratorRole')
     }
 
     /**
@@ -270,7 +261,7 @@ If unable to determine accurate command, clearly state and provide alternatives.
         // 备用解析：提取命令和解释
         const lines = content.split('\n').map(l => l.trim()).filter(l => l)
         const command = lines[0] || ''
-        const explanation = lines.slice(1).join(' ') || 'AI生成的命令建议'
+        const explanation = lines.slice(1).join(' ') || this.translate.instant('systemPrompts.defaultCommandExplanation')
 
         return {
             command,
