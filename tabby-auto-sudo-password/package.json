@@ -18,6 +18,11 @@
   "devDependencies": {
     "ansi-colors": "^4.1.1"
   },
+  "peerDependencies": {
+    "tabby-core": "*",
+    "tabby-terminal": "*",
+    "tabby-ssh": "*"
+  },
   "author": "Tabby Developers",
   "license": "MIT"
 }
