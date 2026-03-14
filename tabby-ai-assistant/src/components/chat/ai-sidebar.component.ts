@@ -546,9 +546,26 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     ...msg,
                     timestamp: new Date(msg.timestamp),
                 }))
+                // 恢复输入历史：优先使用保存的历史，否则从消息中提取用户消息
+                if (lastSession.inputHistory && Array.isArray(lastSession.inputHistory) && lastSession.inputHistory.length > 0) {
+                    // 数据校验：过滤非字符串，去重，限制数量
+                    const normalizedHistory = this.normalizeInputHistory(lastSession.inputHistory)
+                    if (normalizedHistory.length > 0) {
+                        this.inputHistory = normalizedHistory
+                    } else {
+                        // 保存的历史全无效，回退到从消息提取
+                        this.inputHistory = this.extractUserMessagesAsHistory(lastSession.messages)
+                    }
+                } else {
+                    // 从历史消息中提取用户发送的消息作为输入历史
+                    this.inputHistory = this.extractUserMessagesAsHistory(lastSession.messages)
+                }
+                this.historyIndex = -1
+                this.tempInput = ''
                 this.logger.info('Loaded chat history', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
+                    inputHistoryCount: this.inputHistory.length,
                 })
                 this.initialAutoScrollPending = true
             }
@@ -556,6 +573,41 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.logger.error('Failed to load chat history', error)
             this.messages = []
         }
+    }
+
+    /**
+     * 从消息中提取用户消息作为输入历史
+     */
+    private extractUserMessagesAsHistory(messages: ChatMessage[]): string[] {
+        const userMessages = messages
+            .filter(msg => msg.role === MessageRole.USER)
+            .map(msg => msg.content)
+            .reverse() // 最新的在前面
+        return this.normalizeInputHistory(userMessages)
+    }
+
+    /**
+     * 规范化输入历史
+     * - 过滤非字符串和空字符串
+     * - 去除连续重复
+     * - 限制最大数量
+     */
+    private normalizeInputHistory(history: unknown[]): string[] {
+        // 过滤非字符串和空字符串
+        const validItems = history.filter((item): item is string =>
+            typeof item === 'string' && item.trim().length > 0
+        )
+
+        // 去除连续重复（保留顺序，最新在前）
+        const deduped: string[] = []
+        for (const item of validItems) {
+            if (deduped[deduped.length - 1] !== item) {
+                deduped.push(item)
+            }
+        }
+
+        // 限制最大数量
+        return deduped.slice(0, this.maxHistory)
     }
 
     /**
@@ -1153,6 +1205,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     clearChat(): void {
         if (confirm('确定要清空聊天记录吗？')) {
+            // 如果正在加载，先取消请求
+            if (this.isLoading) {
+                this.toolStreamProcessor.cancel()
+            }
+
             // 删除当前会话
             if (this.currentSessionId) {
                 this.chatHistory.deleteSession(this.currentSessionId)
@@ -1160,7 +1217,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             // 创建新会话
             this.currentSessionId = this.generateSessionId()
             this.messages = []
+            this.inputHistory = []
+            this.historyIndex = -1
+            this.tempInput = ''
             this.sendWelcomeMessage()
+            // 立即保存新会话，避免重启后恢复旧会话
+            this.saveChatHistory()
             this.logger.info('Chat cleared, new session created', { sessionId: this.currentSessionId })
         }
     }
@@ -1482,7 +1544,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private saveChatHistory(): void {
         try {
             if (this.messages.length > 0 && this.currentSessionId) {
-                this.chatHistory.saveSession(this.currentSessionId, this.messages)
+                this.chatHistory.saveSession(this.currentSessionId, this.messages, undefined, [...this.inputHistory])
                 this.logger.info('Chat history saved', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
@@ -1655,6 +1717,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.tempInput = ''
 
             this.onSendMessageWithAgent(message)
+            // 注意：不在 submit 时保存，避免保存不完整的 assistant 消息
+            // 输入历史会在流完成后由 saveChatHistory() 保存
             this.inputValue = ''
             setTimeout(() => this.autoResize(), 0)
             this.textInput?.nativeElement.focus()

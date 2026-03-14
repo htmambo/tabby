@@ -11,6 +11,7 @@ export interface SavedSession {
     createdAt: Date;
     updatedAt: Date;
     messageCount: number;
+    inputHistory?: string[];
     // 上下文工程相关字段
     contextInfo?: {
         tokenUsage?: {
@@ -55,10 +56,11 @@ export class ChatHistoryService {
     /**
      * 保存会话
      */
-    saveSession(sessionId: string, messages: ChatMessage[], title?: string): void {
+    saveSession(sessionId: string, messages: ChatMessage[], title?: string, inputHistory?: string[]): void {
         try {
             const sessions = this.sessionsSubject.value
             const existingIndex = sessions.findIndex(s => s.sessionId === sessionId)
+            const existingSession = existingIndex >= 0 ? sessions[existingIndex] : undefined
 
             const sessionTitle = title ?? this.generateSessionTitle(messages)
             const now = new Date()
@@ -67,13 +69,16 @@ export class ChatHistoryService {
                 sessionId,
                 title: sessionTitle,
                 messages: this.trimMessages(messages),
-                createdAt: existingIndex >= 0 ? sessions[existingIndex].createdAt : now,
+                createdAt: existingSession?.createdAt ?? now,
+                inputHistory: inputHistory ?? existingSession?.inputHistory,
                 updatedAt: now,
                 messageCount: messages.length,
             }
 
             if (existingIndex >= 0) {
-                sessions[existingIndex] = session
+                // 移除旧位置的会话，然后添加到数组开头
+                sessions.splice(existingIndex, 1)
+                sessions.unshift(session)
             } else {
                 sessions.unshift(session)
             }
@@ -136,10 +141,22 @@ export class ChatHistoryService {
 
     /**
      * 获取最近的会话
+     * 按 updatedAt 降序排序，确保即使底层数组乱序也能返回正确的最近会话
      */
     getRecentSessions(count = 10): SavedSession[] {
         const sessions = this.sessionsSubject.value
-        return sessions.slice(0, count)
+        // 防御性排序：按 updatedAt 降序，避免旧数据或导入数据乱序问题
+        // 使用 Number.isFinite 处理 Invalid Date / NaN 情况
+        const getValidTimestamp = (session: SavedSession): number => {
+            const updated = session.updatedAt?.getTime()
+            const created = session.createdAt?.getTime()
+            if (Number.isFinite(updated)) return updated!
+            if (Number.isFinite(created)) return created!
+            return 0
+        }
+        return [...sessions]
+            .sort((a, b) => getValidTimestamp(b) - getValidTimestamp(a))
+            .slice(0, count)
     }
 
     /**
@@ -335,10 +352,16 @@ export class ChatHistoryService {
                 }
 
                 if (existingIndex >= 0) {
-                    sessions[existingIndex] = processedSession
+                    sessions.splice(existingIndex, 1)
+                    sessions.unshift(processedSession)
                 } else {
                     sessions.unshift(processedSession)
                 }
+
+                // 限制会话数量并持久化
+                const trimmedSessions = sessions.slice(0, MAX_SESSIONS)
+                this.sessionsSubject.next(trimmedSessions)
+                this.saveToStorage(trimmedSessions)
             } else if (importData.sessions) {
                 // 批量导入会话
                 const importedSessions = importData.sessions.map((s: any) => ({
