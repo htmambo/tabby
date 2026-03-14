@@ -324,7 +324,8 @@ export class OpenAiCompatibleProviderService extends BaseAiProvider {
                     }
 
                     // 正常流式请求
-                    let response: AxiosResponse<any>
+                    // eslint-disable-next-line @typescript-eslint/init-declarations
+                    let response: AxiosResponse
                     let streamingWithTools = false
                     const hasTools = request.tools && request.tools.length > 0
 
