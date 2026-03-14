@@ -48,7 +48,8 @@ $tab-border-radius: 4px;
     --royal-sidebar-surface-active-bg: var(--theme-primary-more);
     --royal-sidebar-surface-active-fg: var(--theme-primary-less);
     --royal-sidebar-accent: var(--theme-primary);
-    --royal-sidebar-preview-overlay-opacity: .42;
+    --royal-sidebar-preview-overlay-bg: var(--royal-sidebar-surface-bg);
+    --royal-sidebar-preview-overlay-opacity: .78;
 
     position: absolute;
     top: 0;
@@ -378,7 +379,7 @@ $tab-border-radius: 4px;
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: var(--bs-body-bg, var(--theme-bg));
+    background: var(--royal-sidebar-preview-overlay-bg, var(--bs-body-bg, var(--theme-bg)));
     opacity: var(--royal-sidebar-preview-overlay-opacity);
     pointer-events: none;
     z-index: 0;

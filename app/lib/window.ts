@@ -297,7 +297,7 @@ export class Window {
     }
 
     private shouldUseNativeBrowserWindow (): boolean {
-        return process.platform === 'darwin' || (process.platform === 'linux' && !!process.env.TABBY_DEV)
+        return process.platform === 'darwin'
     }
 
     setDarkMode (mode: string): void {
