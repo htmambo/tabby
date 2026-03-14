@@ -93,6 +93,9 @@ export class XTermFrontend extends Frontend {
     private opened = false
     private resizeObserver?: any
     private flowControl: FlowControl
+    private layoutTransitionActive = false
+    private skipObservedResizeUntil = 0
+    private readonly observedResizeResumeDelay = 80
 
     private configService: ConfigService
     private hotkeysService: HotkeysService
@@ -228,9 +231,11 @@ export class XTermFrontend extends Frontend {
 
         this.resizeHandler = () => {
             try {
+                if (!this.enableResizing) {
+                    return
+                }
                 if (this.xterm.element && getComputedStyle(this.xterm.element).getPropertyValue('height') !== 'auto') {
                     this.fitAddon.fit()
-                    this.xterm.refresh(0, this.xterm.rows - 1)
                 }
             } catch (e) {
                 // tends to throw when element wasn't shown yet
@@ -337,7 +342,17 @@ export class XTermFrontend extends Frontend {
             event.stopPropagation()
         })
 
-        this.resizeObserver = new window['ResizeObserver'](() => setTimeout(() => this.resizeHandler()))
+        this.resizeObserver = new window['ResizeObserver'](() => {
+            setTimeout(() => {
+                if (!this.enableResizing) {
+                    return
+                }
+                if (this.shouldSkipObservedResize()) {
+                    return
+                }
+                this.resizeHandler()
+            })
+        })
         this.resizeObserver.observe(host)
     }
 
@@ -503,6 +518,17 @@ export class XTermFrontend extends Frontend {
         this.resizeHandler()
     }
 
+    setLayoutTransitionActive (active: boolean): void {
+        this.layoutTransitionActive = active
+        if (!active) {
+            this.skipObservedResizeUntil = Date.now() + this.observedResizeResumeDelay
+        }
+    }
+
+    fitToContainer (): void {
+        this.resizeHandler()
+    }
+
     private getSearchOptions (searchOptions?: SearchOptions): ISearchOptions {
         return {
             ...searchOptions,
@@ -594,6 +620,9 @@ export class XTermFrontend extends Frontend {
         try {
             if (this.xterm.element && getComputedStyle(this.xterm.element).getPropertyValue('height') !== 'auto') {
                 const canvasZeroed = this.xterm.element.querySelector('canvas')?.width === 0
+                if (!canvasZeroed && this.xterm.cols > 0 && this.xterm.rows > 0) {
+                    return
+                }
                 const prevCols = this.xterm.cols
                 const prevRows = this.xterm.rows
                 this.fitAddon.fit()
@@ -607,13 +636,17 @@ export class XTermFrontend extends Frontend {
                     this.xterm.resize(prevCols, prevRows + 1)
                     this.xterm.resize(prevCols, prevRows)
                 }
-                if (this.xterm.rows > 0) {
+                if (canvasZeroed && this.xterm.rows > 0) {
                     this.xterm.refresh(0, this.xterm.rows - 1)
                 }
             }
         } catch (e) {
             console.warn('Could not refit xterm', e)
         }
+    }
+
+    private shouldSkipObservedResize (): boolean {
+        return this.layoutTransitionActive || Date.now() < this.skipObservedResizeUntil
     }
 }
 

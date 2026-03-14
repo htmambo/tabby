@@ -108,6 +108,7 @@ title-bar(
             *ngIf='shouldShowRoyalSidebar()',
             [class.tree-mode]='isRoyalSidebarTreeMode',
             [class.collapsed]='royalSidebarCollapsed',
+            (transitionend)='onRoyalSidebarTransitionEnd($event)',
             (mouseenter)='royalSidebarCollapsed && onRoyalSidebarContainerMouseEnter()',
             (mouseleave)='royalSidebarCollapsed && onRoyalSidebarContainerMouseLeave()'
         )

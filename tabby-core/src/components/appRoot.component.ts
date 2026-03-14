@@ -19,7 +19,7 @@ import { TabsService } from '../services/tabs.service'
 import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
 import { TabBodyComponent } from './tabBody.component'
-import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup } from '../api'
+import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup, WorkspaceLayoutService } from '../api'
 
 type RoyalEnvironment = 'prod'|'lab'|'dev'|'other'
 type RoyalSidebarViewMode = 'cards'|'tree'
@@ -151,12 +151,15 @@ export class AppRootComponent {
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
     private readonly royalSidebarPreviewCloseDelay = 120
+    private readonly royalSidebarTransitionFallbackDelay = 260
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
     private pendingActiveTabSync: number|null = null
     private pendingViewRefresh: number|null = null
     private royalSidebarPreviewCloseHandle: number|null = null
+    private royalSidebarTransitionToken: number|null = null
+    private royalSidebarTransitionFallbackHandle: number|null = null
     private readonly preloadHideRetryDelay = 50
     private preloadLogoHidden = false
 
@@ -237,6 +240,31 @@ export class AppRootComponent {
         }, delay)
     }
 
+    private clearRoyalSidebarTransitionFallback (): void {
+        if (this.royalSidebarTransitionFallbackHandle !== null) {
+            window.clearTimeout(this.royalSidebarTransitionFallbackHandle)
+            this.royalSidebarTransitionFallbackHandle = null
+        }
+    }
+
+    private beginRoyalSidebarTransition (): void {
+        const token = this.workspaceLayout.beginRoyalSidebarTransition()
+        this.royalSidebarTransitionToken = token
+        this.clearRoyalSidebarTransitionFallback()
+        this.royalSidebarTransitionFallbackHandle = window.setTimeout(() => {
+            this.finishRoyalSidebarTransition(token)
+        }, this.royalSidebarTransitionFallbackDelay)
+    }
+
+    private finishRoyalSidebarTransition (token = this.royalSidebarTransitionToken): void {
+        if (token === null || token !== this.royalSidebarTransitionToken) {
+            return
+        }
+        this.clearRoyalSidebarTransitionFallback()
+        this.royalSidebarTransitionToken = null
+        this.workspaceLayout.finishRoyalSidebarTransition(token)
+    }
+
     constructor (
         private injector: Injector,
         private hotkeys: HotkeysService,
@@ -255,6 +283,7 @@ export class AppRootComponent {
         _themes: ThemesService,
         private ngZone: NgZone,
         private changeDetector: ChangeDetectorRef,
+        private workspaceLayout: WorkspaceLayoutService,
     ) {
         this.restoreRoyalPreferences()
         this.activeTab = this.app.activeTab
@@ -510,9 +539,20 @@ export class AppRootComponent {
     }
 
     toggleRoyalSidebar (): void {
+        this.beginRoyalSidebarTransition()
         this.royalSidebarCollapsed = !this.royalSidebarCollapsed
         this.saveRoyalFlag(this.royalSidebarCollapsedStorageKey, this.royalSidebarCollapsed)
         this.hideRoyalSidebarPreview()
+    }
+
+    onRoyalSidebarTransitionEnd (event: TransitionEvent): void {
+        if (
+            event.target !== event.currentTarget ||
+            !['width', 'flex-basis'].includes(event.propertyName)
+        ) {
+            return
+        }
+        this.finishRoyalSidebarTransition()
     }
 
     onRoyalSidebarBadgeMouseEnter (): void {

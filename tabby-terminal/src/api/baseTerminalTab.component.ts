@@ -3,7 +3,7 @@ import { Spinner } from 'cli-spinner'
 import colors from 'ansi-colors'
 import { NgZone, OnInit, OnDestroy, Injector, ViewChild, HostBinding, Input, ElementRef, Component } from '@angular/core'
 import { trigger, transition, style, animate, AnimationTriggerMetadata } from '@angular/animations'
-import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined } from 'tabby-core'
+import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined, WorkspaceLayoutService } from 'tabby-core'
 
 import { BaseSession } from '../session'
 
@@ -132,6 +132,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     protected translate: TranslateService
     protected multifocus: MultifocusService
     protected themes: ThemesService
+    protected workspaceLayout: WorkspaceLayoutService
     // Deps end
 
     protected logger: Logger
@@ -164,6 +165,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }, 1000)
 
     private frontendWriteLock = Promise.resolve()
+    private pendingVisibleFrontendActionFrame: number|null = null
 
     get input$ (): Observable<Buffer> {
         if (!this.frontend) {
@@ -211,6 +213,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.translate = injector.get(TranslateService)
         this.multifocus = injector.get(MultifocusService)
         this.themes = injector.get(ThemesService)
+        this.workspaceLayout = injector.get(WorkspaceLayoutService)
 
         this.logger = this.log.create('baseTerminalTab')
         this.setTitle(this.translate.instant('Terminal'))
@@ -377,6 +380,23 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         }[this.config.store.terminal.frontend] ?? XTermFrontend
         this.frontend = new cls(this.injector)
 
+        this.subscribeUntilDestroyed(this.workspaceLayout.royalSidebarTransitionActive$, active => {
+            if (!(this.frontend instanceof XTermFrontend)) {
+                return
+            }
+            if (active) {
+                this.clearPendingVisibleFrontendAction()
+            }
+            this.frontend.setLayoutTransitionActive(active)
+        })
+
+        this.subscribeUntilDestroyed(this.workspaceLayout.royalSidebarTransitionCompleted$, () => {
+            if (this.frontend instanceof XTermFrontend && this.visibility.value) {
+                const frontend = this.frontend
+                this.scheduleVisibleFrontendAction(frontend, () => frontend.fitToContainer())
+            }
+        })
+
         this.frontendReady$.pipe(first()).subscribe(() => {
             this.onFrontendReady()
         })
@@ -450,11 +470,13 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             .subscribe(visibility => {
                 if (this.frontend instanceof XTermFrontend) {
                     if (visibility) {
-                        // Capture reference for use in rAF callback
                         const frontend = this.frontend
-                        // Defer refit to next animation frame to ensure container layout is stable
-                        requestAnimationFrame(() => frontend.refit())
+                        if (this.workspaceLayout.isRoyalSidebarTransitionActive) {
+                            return
+                        }
+                        this.scheduleVisibleFrontendAction(frontend, () => frontend.refit())
                     } else {
+                        this.clearPendingVisibleFrontendAction()
                         this.frontend.xterm.element?.querySelectorAll('canvas').forEach(c => {
                             c.height = c.width = 0
                             c.style.height = c.style.width = '0px'
@@ -618,6 +640,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     ngOnDestroy (): void {
+        this.clearPendingVisibleFrontendAction()
         super.ngOnDestroy()
         this.stopSpinner()
     }
@@ -647,6 +670,28 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     protected detachTermContainerHandlers (): void {
         this.termContainerSubscriptions.cancelAll()
+    }
+
+    private clearPendingVisibleFrontendAction (): void {
+        if (this.pendingVisibleFrontendActionFrame !== null) {
+            cancelAnimationFrame(this.pendingVisibleFrontendActionFrame)
+            this.pendingVisibleFrontendActionFrame = null
+        }
+    }
+
+    private scheduleVisibleFrontendAction (frontend: XTermFrontend, action: () => void): void {
+        this.clearPendingVisibleFrontendAction()
+        this.pendingVisibleFrontendActionFrame = requestAnimationFrame(() => {
+            this.pendingVisibleFrontendActionFrame = null
+            if (
+                this.frontend !== frontend ||
+                !this.visibility.value ||
+                this.workspaceLayout.isRoyalSidebarTransitionActive
+            ) {
+                return
+            }
+            action()
+        })
     }
 
     private rightMouseDownTime = 0
