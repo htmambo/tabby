@@ -12,12 +12,12 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Installing Node
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: yarn
@@ -55,12 +55,12 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Installing Node
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: yarn
@@ -127,13 +127,13 @@ jobs:
         mkdir artifact-zip
         mv dist/*.zip artifact-zip/
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload DMG
       with:
         name: macOS .dmg (${{matrix.arch}})
         path: artifact-dmg
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload ZIP
       with:
         name: macOS .zip (${{matrix.arch}})
@@ -172,12 +172,12 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Install Node
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: yarn
@@ -199,7 +199,7 @@ jobs:
       if: matrix.build-arch == 'arm'
 
     - name: Download cached sysroot
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: dl-cached-sysroot
       if: matrix.build-arch == 'arm'
       with:
@@ -273,37 +273,37 @@ jobs:
         rpmvers: 'el/9 el/8 ol/6 ol/7'
         debvers: 'ubuntu/bionic ubuntu/focal ubuntu/hirsute ubuntu/impish ubuntu/jammy ubuntu/kinetic ubuntu/noble ubuntu/oracular debian/jessie debian/stretch debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky debian/duke debian/testing debian/unstable debian/sid'
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload AppImage (${{matrix.arch}})
       with:
         name: Linux AppImage (${{matrix.arch}})
         path: dist/*.AppImage
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload DEB (${{matrix.arch}})
       with:
         name: Linux DEB (${{matrix.arch}})
         path: dist/*.deb
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload RPM (${{matrix.arch}})
       with:
         name: Linux RPM (${{matrix.arch}})
         path: dist/*.rpm
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload Pacman Package (${{matrix.arch}})
       with:
         name: Linux Pacman (${{matrix.arch}})
         path: dist/*.pacman
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload Linux tarball (${{matrix.arch}})
       with:
         name: Linux tarball (${{matrix.arch}})
         path: dist/*.tar.gz
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload web tarball (amd64 only)
       with:
         name: Web tarball
@@ -329,7 +329,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -340,7 +340,7 @@ jobs:
         FORCE_DOWNLOAD_TOOLS: 'true'
 
     - name: Installing Node
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: yarn
@@ -428,13 +428,13 @@ jobs:
         mkdir artifact-portable
         mv dist/*-portable-*.zip artifact-portable/
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload installer
       with:
         name: Windows installer (${{matrix.arch}})
         path: artifact-setup
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v4
       name: Upload portable build
       with:
         name: Windows portable build (${{matrix.arch}})
