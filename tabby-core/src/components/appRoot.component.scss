@@ -513,7 +513,7 @@ $tab-border-radius: 4px;
     overflow: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    padding: 8px 8px 10px;
+    padding: 8px 0 8px 8px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -527,7 +527,7 @@ $tab-border-radius: 4px;
 
 .royal-nav-section + .royal-nav-section {
     padding-top: 6px;
-    border-top: 1px solid var(--royal-sidebar-border-color);
+    // border-top: 1px solid var(--royal-sidebar-border-color);
 }
 
 .royal-nav-section-title {

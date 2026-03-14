@@ -95,7 +95,8 @@ export class XTermFrontend extends Frontend {
     private flowControl: FlowControl
     private layoutTransitionActive = false
     private skipObservedResizeUntil = 0
-    private readonly observedResizeResumeDelay = 80
+    private pendingObservedResizeFrame: number|null = null
+    private readonly observedResizeResumeDelay = 120
 
     private configService: ConfigService
     private hotkeysService: HotkeysService
@@ -343,15 +344,10 @@ export class XTermFrontend extends Frontend {
         })
 
         this.resizeObserver = new window['ResizeObserver'](() => {
-            setTimeout(() => {
-                if (!this.enableResizing) {
-                    return
-                }
-                if (this.shouldSkipObservedResize()) {
-                    return
-                }
-                this.resizeHandler()
-            })
+            if (!this.enableResizing || this.shouldSkipObservedResize()) {
+                return
+            }
+            this.scheduleObservedResize()
         })
         this.resizeObserver.observe(host)
     }
@@ -359,11 +355,13 @@ export class XTermFrontend extends Frontend {
     detach (_host: HTMLElement): void {
         window.removeEventListener('resize', this.resizeHandler)
         this.resizeObserver?.disconnect()
+        this.clearPendingObservedResize()
         delete this.resizeObserver
     }
 
     destroy (): void {
         super.destroy()
+        this.clearPendingObservedResize()
         this.webGLAddon?.dispose()
         this.canvasAddon?.dispose()
         this.xterm.dispose()
@@ -520,12 +518,17 @@ export class XTermFrontend extends Frontend {
 
     setLayoutTransitionActive (active: boolean): void {
         this.layoutTransitionActive = active
+        if (active) {
+            this.clearPendingObservedResize()
+        }
         if (!active) {
-            this.skipObservedResizeUntil = Date.now() + this.observedResizeResumeDelay
+            this.suppressObservedResize()
         }
     }
 
     fitToContainer (): void {
+        this.clearPendingObservedResize()
+        this.suppressObservedResize()
         this.resizeHandler()
     }
 
@@ -623,6 +626,8 @@ export class XTermFrontend extends Frontend {
                 if (!canvasZeroed && this.xterm.cols > 0 && this.xterm.rows > 0) {
                     return
                 }
+                this.clearPendingObservedResize()
+                this.suppressObservedResize()
                 const prevCols = this.xterm.cols
                 const prevRows = this.xterm.rows
                 this.fitAddon.fit()
@@ -647,6 +652,30 @@ export class XTermFrontend extends Frontend {
 
     private shouldSkipObservedResize (): boolean {
         return this.layoutTransitionActive || Date.now() < this.skipObservedResizeUntil
+    }
+
+    private suppressObservedResize (): void {
+        this.skipObservedResizeUntil = Date.now() + this.observedResizeResumeDelay
+    }
+
+    private clearPendingObservedResize (): void {
+        if (this.pendingObservedResizeFrame !== null) {
+            cancelAnimationFrame(this.pendingObservedResizeFrame)
+            this.pendingObservedResizeFrame = null
+        }
+    }
+
+    private scheduleObservedResize (): void {
+        if (this.pendingObservedResizeFrame !== null) {
+            return
+        }
+        this.pendingObservedResizeFrame = requestAnimationFrame(() => {
+            this.pendingObservedResizeFrame = null
+            if (!this.enableResizing || this.shouldSkipObservedResize()) {
+                return
+            }
+            this.resizeHandler()
+        })
     }
 }
 
