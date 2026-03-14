@@ -2,7 +2,7 @@
 import { Observable, OperatorFunction, debounceTime, map, distinctUntilChanged } from 'rxjs'
 import { Component, Input, ViewChild, ViewContainerRef, ComponentFactoryResolver, Injector, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
-import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent, ProfilesService, TAB_COLORS, ProfileGroup, ConnectableProfileProvider, FullyDefined, ConfigProxy, isPlainEnter, isTextInputTarget } from 'tabby-core'
+import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent, ProfilesService, TAB_COLORS, ProfileGroup, ConnectableProfileProvider, FullyDefined, ConfigProxy, isExpandedControlTarget, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
 const iconsData = require('../../../tabby-core/src/icons.json')
 const iconsClassList = Object.keys(iconsData).map(
@@ -117,7 +117,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
 
     @HostListener('keydown', ['$event'])
     onKeyDown (event: KeyboardEvent): void {
-        if (!isPlainEnter(event) || !isTextInputTarget(event.target)) {
+        if (!isPlainEnter(event) || !isTextInputTarget(event.target) || isExpandedControlTarget(event.target)) {
             return
         }
 

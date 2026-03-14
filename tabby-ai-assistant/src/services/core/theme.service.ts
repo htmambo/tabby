@@ -33,7 +33,7 @@ const THEME_VARIABLES: Record<ThemeType, Record<string, string>> = {
         // 背景和边框
         'ai-bg-primary': 'var(--bs-body-bg, #1e1e1e)',
         'ai-bg-secondary': 'var(--bs-secondary-bg, #2d2d2d)',
-        'ai-bg-tertiary': 'var(--bs-tertiary-bg, #3d3d3d)',
+        'ai-bg-tertiary': 'var(--theme-bg-less, #3d3d3d)',
         'ai-text-primary': 'var(--bs-body-color, #f8f9fa)',
         'ai-text-secondary': 'var(--bs-secondary-color, #adb5bd)',
         'ai-border': 'var(--theme-fg-less2, #4a4a4a)',

@@ -9,7 +9,6 @@ input.form-control.mt-2(
     autofocus,
     [type]='isPassword() ? "password": "text"',
     placeholder='Response',
-    (keyup.enter)='next()',
     [(ngModel)]='prompt.responses[step]'
 )
 
@@ -24,10 +23,12 @@ input.form-control.mt-2(
 
     button.btn.btn-secondary.me-3(
         *ngIf='step > 0',
+        type='button',
         (click)='previous()'
     )
 
     button.btn.btn-primary(
+        type='button',
         (click)='next()'
     )
         span(*ngIf='step < prompt.prompts.length - 1') Next

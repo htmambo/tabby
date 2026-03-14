@@ -10,20 +10,20 @@
                 .ms-2(*ngIf='fw.type !== PortForwardType.Dynamic') {{fw.targetAddress}}:{{fw.targetPort}}
                 .ms-2(*ngIf='fw.type === PortForwardType.Dynamic', translate) SOCKS proxy
             div {{fw.description}}
-        button.btn.btn-link.hover-reveal.ms-auto((click)='remove(fw)')
+        button.btn.btn-link.hover-reveal.ms-auto(type='button', (click)='remove(fw)')
             i.fas.fa-trash-alt
 
 h5(translate) Add a port forward
 
 .input-group.mb-2(*ngIf='newForward.type === PortForwardType.Dynamic')
-    input.form-control(type='text', [(ngModel)]='newForward.host')
+    input.form-control(type='text', #hostInput, [(ngModel)]='newForward.host')
     .input-group-text :
     input.form-control(type='number', [(ngModel)]='newForward.port')
     .input-group-text &rarr;
     .input-group-text(style='flex: 3 1 0', translate) SOCKS proxy
 
 .input-group.mb-2(*ngIf='newForward.type !== PortForwardType.Dynamic')
-    input.form-control(type='text', [(ngModel)]='newForward.host')
+    input.form-control(type='text', #hostInput, [(ngModel)]='newForward.host')
     .input-group-text :
     input.form-control(type='number', [(ngModel)]='newForward.port')
     .input-group-text &rarr;
@@ -75,6 +75,6 @@ h5(translate) Add a port forward
             translateContext='[Dynamic] port forwarding'
         ) id.port-forwarding.dynamic
 
-    button.btn.btn-primary((click)='addForward()')
+    button.btn.btn-primary(type='button', (click)='addForward()')
         i.fas.fa-check.me-2
         span(translate) Forward port

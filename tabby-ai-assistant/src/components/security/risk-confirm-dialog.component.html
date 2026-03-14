@@ -29,7 +29,7 @@
                 <label>将要执行的命令:</label>
                 <div class="command-display">
                     <code>{{ command }}</code>
-                    <button class="btn-copy" (click)="navigator.clipboard.writeText(command)" title="复制">
+                    <button class="btn-copy" type="button" (click)="navigator.clipboard.writeText(command)" title="复制">
                         <i class="fa fa-copy"></i>
                     </button>
                 </div>
@@ -71,7 +71,7 @@
 
     <!-- 底部按钮 -->
     <div class="dialog-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancel()">
+        <button type="button" class="btn btn-secondary" #cancelButton (click)="cancel()">
             <i class="fa fa-times"></i>
             取消
         </button>

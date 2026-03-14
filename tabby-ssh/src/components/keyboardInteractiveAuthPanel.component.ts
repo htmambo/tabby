@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core'
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectionStrategy, HostListener } from '@angular/core'
+import { focusElementLater, isButtonLikeTarget, isPlainEnter } from 'tabby-core'
 import { KeyboardInteractivePrompt } from '../session/ssh'
 import { SSHProfile } from '../api'
 import { PasswordStorageService } from '../services/passwordStorage.service'
@@ -15,20 +16,34 @@ export class KeyboardInteractiveAuthComponent {
     @Input() prompt: KeyboardInteractivePrompt
     @Input() step = 0
     @Output() done = new EventEmitter()
-    @ViewChild('input') input: ElementRef
+    @ViewChild('input', { static: true }) input: ElementRef<HTMLInputElement>
     remember = false
 
     constructor (private passwordStorage: PasswordStorageService) {}
 
+    ngOnInit (): void {
+        focusElementLater(this.input)
+    }
+
     isPassword (): boolean {
         return this.prompt.isAPasswordPrompt(this.step)
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (!isPlainEnter(event) || isButtonLikeTarget(event.target)) {
+            return
+        }
+
+        event.preventDefault()
+        this.next()
     }
 
     previous (): void {
         if (this.step > 0) {
             this.step--
         }
-        this.input.nativeElement.focus()
+        focusElementLater(this.input)
     }
 
     next (): void {
@@ -42,6 +57,6 @@ export class KeyboardInteractiveAuthComponent {
             return
         }
         this.step++
-        this.input.nativeElement.focus()
+        focusElementLater(this.input)
     }
 }

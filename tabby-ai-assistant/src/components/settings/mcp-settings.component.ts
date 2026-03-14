@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core'
+import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import {
@@ -9,7 +9,7 @@ import {
 import { MCPClientManager } from '../../services/mcp/mcp-client-manager.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService } from 'tabby-core'
+import { TranslateService, focusElementLater, isPlainEscape, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
 /**
  * 服务器编辑器模式
@@ -84,11 +84,11 @@ type EditorMode = 'add' | 'edit' | null
 
             <!-- 添加服务器按钮 -->
             <div class="add-server-section">
-                <button class="btn btn-primary add-server-btn" (click)="showEditor('add')">
+                <button class="btn btn-primary add-server-btn" type="button" (click)="showEditor('add')">
                     <span class="icon">+</span>
                     {{ t.mcpSettings.addServer }}
                 </button>
-                <button class="btn btn-secondary import-btn" (click)="showImportDialog()">
+                <button class="btn btn-secondary import-btn" type="button" (click)="showImportDialog()">
                     <span class="icon">📥</span>
                     {{ t.mcpSettings.importJson }}
                 </button>
@@ -99,11 +99,12 @@ type EditorMode = 'add' | 'edit' | null
                 <div class="modal-content" (click)="$event.stopPropagation()">
                     <div class="modal-header">
                         <h4>{{ t.mcpSettings.importJson }}</h4>
-                        <button class="close-btn" (click)="hideImportDialog()">×</button>
+                        <button class="close-btn" type="button" (click)="hideImportDialog()">×</button>
                     </div>
                     <div class="modal-body">
                         <p class="import-hint">{{ t.mcpSettings.importHint }}</p>
                         <textarea class="form-control json-input" rows="12"
+                                  #importJsonInput
                                   [(ngModel)]="importJsonText"
                                   [placeholder]="getImportPlaceholder()"></textarea>
                         <div class="import-example">
@@ -112,10 +113,10 @@ type EditorMode = 'add' | 'edit' | null
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" (click)="hideImportDialog()">
+                        <button class="btn btn-secondary" type="button" (click)="hideImportDialog()">
                             {{ t.common?.cancel || '取消' }}
                         </button>
-                        <button class="btn btn-primary" (click)="importFromJson()" [disabled]="!importJsonText">
+                        <button class="btn btn-primary" type="button" (click)="importFromJson()" [disabled]="!importJsonText">
                             {{ t.mcpSettings?.import || '导入' }}
                         </button>
                     </div>
@@ -127,7 +128,7 @@ type EditorMode = 'add' | 'edit' | null
                 <div class="modal-content" (click)="$event.stopPropagation()">
                     <div class="modal-header">
                         <h4>{{ editorMode === 'add' ? (t.mcpSettings?.addServer || '添加服务器') : (t.mcpSettings?.editServer || '编辑服务器') }}</h4>
-                        <button class="close-btn" (click)="hideEditor()">×</button>
+                        <button class="close-btn" type="button" (click)="hideEditor()">×</button>
                     </div>
 
                     <div class="modal-body">
@@ -135,6 +136,7 @@ type EditorMode = 'add' | 'edit' | null
                         <div class="form-group">
                             <label>{{ t.mcpSettings?.serverName || '服务器名称' }} *</label>
                             <input type="text" class="form-control"
+                                   #editorNameInput
                                    [(ngModel)]="editingServer.name"
                                    [placeholder]="t.mcpSettings?.serverNamePlaceholder || '例如：文件系统服务器'">
                         </div>
@@ -211,10 +213,10 @@ type EditorMode = 'add' | 'edit' | null
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" (click)="hideEditor()">
+                        <button class="btn btn-secondary" type="button" (click)="hideEditor()">
                             {{ t.common?.cancel || '取消' }}
                         </button>
-                        <button class="btn btn-primary" (click)="saveServer()" [disabled]="!isValidServer()">
+                        <button class="btn btn-primary" type="button" (click)="saveServer()" [disabled]="!isValidServer()">
                             {{ t.common?.save || '保存' }}
                         </button>
                     </div>
@@ -668,6 +670,8 @@ type EditorMode = 'add' | 'edit' | null
 })
 export class MCPSettingsComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>()
+    @ViewChild('importJsonInput') importJsonInput: ElementRef<HTMLTextAreaElement>
+    @ViewChild('editorNameInput') editorNameInput: ElementRef<HTMLInputElement>
 
     get t(): any {
         if (!this.translate) {
@@ -729,6 +733,45 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
         this.destroy$.complete()
     }
 
+    @HostListener('document:keydown', ['$event'])
+    onDocumentKeyDown(event: KeyboardEvent): void {
+        if (this.showImport) {
+            if (isPlainEscape(event)) {
+                event.preventDefault()
+                this.hideImportDialog()
+                return
+            }
+
+            if (
+                event.key === 'Enter' &&
+                (event.ctrlKey || event.metaKey) &&
+                event.target instanceof HTMLTextAreaElement &&
+                !!this.importJsonText.trim()
+            ) {
+                event.preventDefault()
+                void this.importFromJson()
+                return
+            }
+        }
+
+        if (!this.editorMode) {
+            return
+        }
+
+        if (isPlainEscape(event)) {
+            event.preventDefault()
+            this.hideEditor()
+            return
+        }
+
+        if (!isPlainEnter(event) || !isTextInputTarget(event.target)) {
+            return
+        }
+
+        event.preventDefault()
+        void this.saveServer()
+    }
+
     /**
      * 加载服务器列表
      */
@@ -758,6 +801,8 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
         } else {
             this.editingServer = this.createEmptyServer()
         }
+
+        setTimeout(() => focusElementLater(this.editorNameInput))
     }
 
     /**
@@ -960,6 +1005,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     showImportDialog(): void {
         this.showImport = true
         this.importJsonText = ''
+        setTimeout(() => focusElementLater(this.importJsonInput))
     }
 
     /**

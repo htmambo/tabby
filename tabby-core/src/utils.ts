@@ -107,6 +107,11 @@ export function isMenuLikeTarget (target: EventTarget|null): boolean {
     return !!element?.closest('.dropdown-menu, .dropdown-item, [role="menu"], [role="menuitem"], [role="listbox"], [role="option"]')
 }
 
+export function isExpandedControlTarget (target: EventTarget|null): boolean {
+    const element = getHTMLElement(target)
+    return element?.getAttribute('aria-expanded') === 'true'
+}
+
 export class ResettableTimeout {
     private id: any = null
 

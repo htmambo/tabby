@@ -439,6 +439,10 @@ hotkey-input-modal {
     }
 }
 
+div.cdk-drop-list.content .btn {
+    color: var(--theme-fg);
+}
+
 .input-group-addon + .form-control {
     border-left: none;
 }

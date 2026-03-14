@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core'
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater, isPlainEscape } from 'tabby-core'
 import { RiskLevel } from '../../types/security.types'
 
 @Component({
@@ -13,10 +14,25 @@ export class RiskConfirmDialogComponent {
     @Input() explanation = ''
     @Input() riskLevel: RiskLevel = RiskLevel.MEDIUM
     @Input() suggestions: string[] = []
+    @ViewChild('cancelButton', { static: true }) cancelButton: ElementRef<HTMLButtonElement>
 
     @Output() confirmed = new EventEmitter<boolean>()
 
     constructor(public activeModal: NgbActiveModal) { }
+
+    ngOnInit(): void {
+        focusElementLater(this.cancelButton)
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown(event: KeyboardEvent): void {
+        if (!isPlainEscape(event)) {
+            return
+        }
+
+        event.preventDefault()
+        this.cancel()
+    }
 
     /**
      * 确认执行

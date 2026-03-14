@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, ElementRef, ViewChild } from '@angular/core'
+import { Component, Input, ElementRef, ViewChild, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater, isButtonLikeTarget, isPlainEnter, isPlainEscape } from '../utils'
 
 /** @hidden */
 @Component({
@@ -10,17 +11,30 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 })
 export class RenameTabModalComponent {
     @Input() value: string
-    @ViewChild('input') input: ElementRef
+    @ViewChild('input', { static: true }) input: ElementRef<HTMLInputElement>
 
     constructor (
         private modalInstance: NgbActiveModal,
     ) { }
 
     ngOnInit () {
-        setTimeout(() => {
-            this.input.nativeElement.focus()
-            this.input.nativeElement.select()
-        }, 250)
+        focusElementLater(this.input, { delay: 250, select: true })
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (isPlainEscape(event)) {
+            event.preventDefault()
+            this.close()
+            return
+        }
+
+        if (!isPlainEnter(event) || isButtonLikeTarget(event.target)) {
+            return
+        }
+
+        event.preventDefault()
+        this.save()
     }
 
     save () {
