@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { Observable, Observer } from 'rxjs'
-import axios, { AxiosInstance } from 'axios'
+import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { BaseAiProvider } from './base-provider.service'
 import { ProviderCapability, ProviderConfig, ValidationResult } from '../../types/provider.types'
 import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, MessageRole, StreamEvent } from '../../types/ai.types'
@@ -324,6 +324,7 @@ export class OpenAiCompatibleProviderService extends BaseAiProvider {
                     }
 
                     // 正常流式请求
+                    let response: AxiosResponse<any>
                     let streamingWithTools = false
                     const hasTools = request.tools && request.tools.length > 0
 
