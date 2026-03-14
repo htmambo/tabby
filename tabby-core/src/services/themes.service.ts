@@ -71,16 +71,24 @@ export class ThemesService {
         const background = this.getVibrancyBackground(Color(theme.background), configStore.appearance)
         // const background = theme.background
         const backgroundMore = more(background.string(), 0.25).string()
+        const themeBackgroundRgb = Color(theme.background).rgb().array().map(x => Math.round(x)).join(', ')
+        const themeForegroundRgb = Color(theme.foreground).rgb().array().map(x => Math.round(x)).join(', ')
+        const bodyBackgroundRgb = background.rgb().array().map(x => Math.round(x)).join(', ')
         // const backgroundMore =more(theme.background, 0.25).string()
         const accentIndex = 4
         const vars: Record<string, string> = {}
         const contrastPairs: string[][] = []
 
         vars['--body-bg'] = background.string()
+        vars['--body-bg-rgb'] = bodyBackgroundRgb
+        vars['--theme-bg-rgb'] = themeBackgroundRgb
+        vars['--theme-fg-rgb'] = themeForegroundRgb
         vars['--vibrancy-overlay-alpha'] = this.getVibrancyOverlayAlpha(configStore.appearance)
         if (this.findCurrentTheme().followsColorScheme) {
             vars['--bs-body-bg'] = theme.background
             vars['--bs-body-color'] = theme.foreground
+            vars['--bs-body-bg-rgb'] = themeBackgroundRgb
+            vars['--bs-body-color-rgb'] = themeForegroundRgb
             vars['--bs-black'] = theme.colors[0]
             vars['--bs-red'] = theme.colors[1]
             vars['--bs-green'] = theme.colors[2]
