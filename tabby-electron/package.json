@@ -6,7 +6,7 @@
     "tabby-builtin-plugin"
   ],
   "main": "dist/index.js",
-  "typings": "typings/index.d.ts",
+  "typings": "typings/tabby-electron/src/index.d.ts",
   "scripts": {
     "build": "webpack --progress --color",
     "watch": "webpack --progress --color --watch"
