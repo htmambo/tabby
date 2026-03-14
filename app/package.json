@@ -3,7 +3,7 @@
   "description": "A terminal for a modern age",
   "private": true,
   "packageManager": "yarn@1.22.19",
-  "repository": "https://github.com/Eugeny/tabby",
+  "repository": "https://github.com/htmambo/tabby",
   "author": {
     "name": "Tabby Developers",
     "email": "e@ajenti.org"

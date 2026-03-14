@@ -4,7 +4,7 @@ import axios from 'axios'
 import { Logger, LogService, ConfigService, UpdaterService, PlatformService, TranslateService } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
-const UPDATES_URL = 'https://api.github.com/repos/eugeny/tabby/releases/latest'
+const UPDATES_URL = 'https://api.github.com/repos/htmambo/tabby/releases/latest'
 
 @Injectable()
 export class ElectronUpdaterService extends UpdaterService {
