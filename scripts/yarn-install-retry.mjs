@@ -13,11 +13,24 @@ function sleep (ms) {
 
 function run (args, cwd) {
     return new Promise(resolve => {
-        const child = spawn(yarnBin, args, {
-            cwd,
-            stdio: 'inherit',
-            env: process.env,
-        })
+        let child
+        if (process.platform === 'win32') {
+            // On Windows, use shell with combined command string to avoid EINVAL
+            // and the deprecated "shell: true with args array" pattern in Node 22
+            const command = args.length > 0 ? `${yarnBin} ${args.join(' ')}` : yarnBin
+            child = spawn(command, [], {
+                cwd,
+                stdio: 'inherit',
+                env: process.env,
+                shell: true,
+            })
+        } else {
+            child = spawn(yarnBin, args, {
+                cwd,
+                stdio: 'inherit',
+                env: process.env,
+            })
+        }
 
         child.on('error', error => resolve({
             code: 1,
