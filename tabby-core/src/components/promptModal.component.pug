@@ -5,8 +5,6 @@
         [(ngModel)]='value',
         #input,
         [placeholder]='prompt',
-        (keyup.enter)='ok()',
-        (keyup.esc)='cancel()',
     )
     .d-flex.align-items-start.mt-2
         checkbox(
@@ -15,5 +13,6 @@
             text='Remember'
         )
         button.btn.btn-primary.ms-auto(
+            type='button',
             (click)='ok()',
         ) OK

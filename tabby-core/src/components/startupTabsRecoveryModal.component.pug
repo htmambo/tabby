@@ -23,4 +23,4 @@
 
 .modal-footer
     button.btn.btn-secondary(type='button', (click)='skip()', translate) Skip restore
-    button.btn.btn-primary(type='button', [disabled]='!hasSelection', (click)='restore()', translate) Restore selected
+    button.btn.btn-primary(type='button', #restoreButton, [disabled]='!hasSelection', (click)='restore()', translate) Restore selected

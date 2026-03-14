@@ -1,6 +1,6 @@
-import { Component } from '@angular/core'
+import { Component, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
-import { BaseComponent } from 'tabby-core'
+import { BaseComponent, focusElementLater } from 'tabby-core'
 import { SFTPFile, SFTPSession } from '../session/sftp'
 import { SSHSession } from '../session/ssh'
 
@@ -19,6 +19,7 @@ export class SFTPDeleteModalComponent extends BaseComponent {
     sshSession?: SSHSession
     progressMessage = ''
     cancelled = false
+    @ViewChild('cancelButton', { static: true }) cancelButton: ElementRef<HTMLButtonElement>
 
     constructor (
         private modalInstance: NgbActiveModal,
@@ -28,6 +29,7 @@ export class SFTPDeleteModalComponent extends BaseComponent {
 
     async ngOnInit (): Promise<void> {
         this.destroyed$.subscribe(() => this.cancel())
+        focusElementLater(this.cancelButton)
         await this.run(this.item)
         this.modalInstance.close()
     }

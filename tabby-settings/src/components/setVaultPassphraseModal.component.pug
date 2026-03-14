@@ -8,12 +8,10 @@ h3.modal-header.m-0.pb-0 {{title|translate}}
             [(ngModel)]='passphrase',
             #input,
             placeholder='Master passphrase',
-            (keyup.enter)='ok()',
-            (keyup.esc)='cancel()',
         )
-        button.btn.btn-secondary((click)='showPassphrase = !showPassphrase')
+        button.btn.btn-secondary(type='button', (click)='showPassphrase = !showPassphrase')
             i.fas.fa-eye
 
 .modal-footer
-    button.btn.btn-primary((click)='ok()', [disabled]='!canSubmit') {{buttonLabel|translate}}
-    button.btn.btn-danger((click)='cancel()', translate) Cancel
+    button.btn.btn-primary(type='button', (click)='ok()', [disabled]='!canSubmit') {{buttonLabel|translate}}
+    button.btn.btn-danger(type='button', (click)='cancel()', translate) Cancel

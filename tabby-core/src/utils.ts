@@ -1,5 +1,5 @@
 import * as os from 'os'
-import { NgZone } from '@angular/core'
+import { ElementRef, NgZone } from '@angular/core'
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 
 export const WIN_BUILD_CONPTY_SUPPORTED = 17692
@@ -36,6 +36,75 @@ export function wrapPromise <T> (zone: NgZone, promise: Promise<T>): Promise<T> 
             zone.run(() => reject(error))
         })
     })
+}
+
+const NON_TEXT_INPUT_TYPES = new Set([
+    'button',
+    'checkbox',
+    'color',
+    'file',
+    'hidden',
+    'image',
+    'radio',
+    'range',
+    'reset',
+    'submit',
+])
+
+function getHTMLElement (target: EventTarget|null): HTMLElement|null {
+    return target instanceof HTMLElement ? target : null
+}
+
+export function focusElementLater <T extends HTMLElement> (
+    elementRef: ElementRef<T>|null|undefined,
+    options: { delay?: number, select?: boolean } = {},
+): void {
+    setTimeout(() => {
+        const element = elementRef?.nativeElement
+        if (!element) {
+            return
+        }
+
+        element.focus()
+        if (options.select && element instanceof HTMLInputElement) {
+            element.select()
+        }
+    }, options.delay ?? 0)
+}
+
+export function isPlainEnter (event: KeyboardEvent): boolean {
+    return event.key === 'Enter' &&
+        !event.defaultPrevented &&
+        !event.isComposing &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey
+}
+
+export function isPlainEscape (event: KeyboardEvent): boolean {
+    return event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !event.isComposing &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey
+}
+
+export function isTextInputTarget (target: EventTarget|null): boolean {
+    const element = getHTMLElement(target)
+    return element instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(element.type)
+}
+
+export function isButtonLikeTarget (target: EventTarget|null): boolean {
+    const element = getHTMLElement(target)
+    return !!element?.closest('button, a, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]')
+}
+
+export function isMenuLikeTarget (target: EventTarget|null): boolean {
+    const element = getHTMLElement(target)
+    return !!element?.closest('.dropdown-menu, .dropdown-item, [role="menu"], [role="menuitem"], [role="listbox"], [role="option"]')
 }
 
 export class ResettableTimeout {

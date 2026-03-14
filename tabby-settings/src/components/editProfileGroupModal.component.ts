@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input } from '@angular/core'
+import { Component, Input, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
-import { ConfigProxy, ProfileGroup, Profile, ProfileProvider, PlatformService, TranslateService } from 'tabby-core'
+import { ConfigProxy, ProfileGroup, Profile, ProfileProvider, PlatformService, TranslateService, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
 /** @hidden */
 @Component({
@@ -20,6 +20,16 @@ export class EditProfileGroupModalComponent<G extends ProfileGroup> {
 
     save () {
         this.modalInstance.close({ group: this.group })
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (!isPlainEnter(event) || !isTextInputTarget(event.target)) {
+            return
+        }
+
+        event.preventDefault()
+        this.save()
     }
 
     cancel () {

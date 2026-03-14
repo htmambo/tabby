@@ -4,9 +4,10 @@
         input.form-control(
             type='text',
             [(ngModel)]='directoryName',
+            #input,
         )
 
 
 .modal-footer
-    button.btn.btn-success((click)='create()', translate) Create
-    button.btn.btn-danger((click)='cancel()', translate) Cancel
+    button.btn.btn-success(type='button', (click)='create()', translate) Create
+    button.btn.btn-danger(type='button', (click)='cancel()', translate) Cancel

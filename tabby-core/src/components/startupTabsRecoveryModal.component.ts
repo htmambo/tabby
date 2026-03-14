@@ -1,5 +1,6 @@
-import { Component, Input } from '@angular/core'
+import { Component, Input, ViewChild, ElementRef, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater, isPlainEscape } from '../utils'
 
 import { RecoveredTabEntry } from '../services/tabRecovery.service'
 
@@ -12,6 +13,7 @@ import { RecoveredTabEntry } from '../services/tabRecovery.service'
 })
 export class StartupTabsRecoveryModalComponent {
     @Input() entries: RecoveredTabEntry[] = []
+    @ViewChild('restoreButton', { static: true }) restoreButton: ElementRef<HTMLButtonElement>
 
     selection: boolean[] = []
 
@@ -21,6 +23,17 @@ export class StartupTabsRecoveryModalComponent {
 
     ngOnInit (): void {
         this.selection = this.entries.map(() => true)
+        focusElementLater(this.restoreButton)
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (!isPlainEscape(event)) {
+            return
+        }
+
+        event.preventDefault()
+        this.skip()
     }
 
     get hasSelection (): boolean {

@@ -1,5 +1,6 @@
-import { Component, ViewChild, ElementRef } from '@angular/core'
+import { Component, ViewChild, ElementRef, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater, isButtonLikeTarget, isMenuLikeTarget, isPlainEnter, isPlainEscape } from '../utils'
 
 /** @hidden */
 @Component({
@@ -10,7 +11,7 @@ export class UnlockVaultModalComponent {
     passphrase: string
     rememberFor = 1
     rememberOptions = [1, 5, 15, 60, 1440, 10080]
-    @ViewChild('input') input: ElementRef
+    @ViewChild('input', { static: true }) input: ElementRef<HTMLInputElement>
 
     constructor (
         private modalInstance: NgbActiveModal,
@@ -18,9 +19,23 @@ export class UnlockVaultModalComponent {
 
     ngOnInit (): void {
         this.rememberFor = parseInt(window.localStorage.vaultRememberPassphraseFor ?? 0)
-        setTimeout(() => {
-            this.input.nativeElement.focus()
-        })
+        focusElementLater(this.input)
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (isPlainEscape(event)) {
+            event.preventDefault()
+            this.cancel()
+            return
+        }
+
+        if (!isPlainEnter(event) || isButtonLikeTarget(event.target) || isMenuLikeTarget(event.target)) {
+            return
+        }
+
+        event.preventDefault()
+        this.ok()
     }
 
     ok (): void {

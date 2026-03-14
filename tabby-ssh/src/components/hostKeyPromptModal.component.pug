@@ -21,16 +21,20 @@
 .modal-footer
     .w-100
         button.d-block.w-100.mb-3.btn.btn-primary(
+            type='button',
             (click)='acceptAndSave()',
             [class.btn-danger]='isMismatched',
             translate
         ) Accept and remember key
         button.d-block.w-100.mb-3.btn.btn-secondary(
+            type='button',
             (click)='accept()',
             [class.btn-warning]='isMismatched',
             translate
         ) Accept just this once
         button.d-block.w-100.btn.btn-secondary(
+            type='button',
+            #disconnectButton,
             [class.btn-danger]='!isMismatched',
             (click)='cancel()',
             translate

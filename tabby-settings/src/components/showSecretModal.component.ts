@@ -1,6 +1,6 @@
-import { Component, Input } from '@angular/core'
+import { Component, Input, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
-import { NotificationsService, VaultFileSecret } from 'tabby-core'
+import { NotificationsService, VaultFileSecret, focusElementLater } from 'tabby-core'
 
 /** @hidden */
 @Component({
@@ -10,11 +10,16 @@ import { NotificationsService, VaultFileSecret } from 'tabby-core'
 export class ShowSecretModalComponent {
     @Input() title: string
     @Input() secret: VaultFileSecret
+    @ViewChild('closeButton', { static: true }) closeButton: ElementRef<HTMLButtonElement>
 
     constructor (
         public modalInstance: NgbActiveModal,
         private notifications: NotificationsService,
     ) { }
+
+    ngOnInit (): void {
+        focusElementLater(this.closeButton)
+    }
 
     close (): void {
         this.modalInstance.dismiss()

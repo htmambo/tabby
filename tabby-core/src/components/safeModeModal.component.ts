@@ -1,5 +1,6 @@
-import { Component, Input } from '@angular/core'
+import { Component, Input, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater } from '../utils'
 
 /** @hidden */
 @Component({
@@ -8,11 +9,16 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 })
 export class SafeModeModalComponent {
     @Input() error: Error
+    @ViewChild('closeButton', { static: true }) closeButton: ElementRef<HTMLButtonElement>
 
     constructor (
         public modalInstance: NgbActiveModal,
     ) {
         this.error = window['safeModeReason']
+    }
+
+    ngOnInit (): void {
+        focusElementLater(this.closeButton)
     }
 
     close (): void {

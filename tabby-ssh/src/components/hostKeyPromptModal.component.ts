@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input } from '@angular/core'
+import { Component, Input, ViewChild, ElementRef, HostListener } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
+import { focusElementLater, isPlainEscape } from 'tabby-core'
 import { KnownHost, KnownHostSelector, SSHKnownHostsService } from '../services/sshKnownHosts.service'
 
 /** @hidden */
@@ -11,6 +12,7 @@ import { KnownHost, KnownHostSelector, SSHKnownHostsService } from '../services/
 export class HostKeyPromptModalComponent {
     @Input() selector: KnownHostSelector
     @Input() digest: string
+    @ViewChild('disconnectButton', { static: true }) disconnectButton: ElementRef<HTMLButtonElement>
     knownHost: KnownHost|null
     isMismatched = false
     isUnknown = false
@@ -27,6 +29,18 @@ export class HostKeyPromptModalComponent {
         } else if (this.knownHost.digest !== this.digest) {
             this.isMismatched = true
         }
+
+        focusElementLater(this.disconnectButton)
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeyDown (event: KeyboardEvent): void {
+        if (!isPlainEscape(event)) {
+            return
+        }
+
+        event.preventDefault()
+        this.cancel()
     }
 
     accept () {
