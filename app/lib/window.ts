@@ -53,7 +53,7 @@ export class Window {
 
     private openDevTools (): void {
         if (!this.window?.isDestroyed() && !this.webContents.isDevToolsOpened()) {
-            this.webContents.openDevTools({ mode: 'undocked' })
+            this.webContents.openDevTools({ mode: 'detach' })
         }
     }
 

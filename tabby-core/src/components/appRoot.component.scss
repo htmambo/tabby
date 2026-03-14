@@ -45,7 +45,7 @@ $tab-border-radius: 4px;
     --royal-sidebar-surface-bg: var(--theme-bg-more-2);
     --royal-sidebar-surface-emphasis-bg: var(--theme-bg-more);
     --royal-sidebar-surface-hover-bg: var(--theme-primary-active-fg);
-    --royal-sidebar-surface-active-bg: var(--theme-primary-more);
+    --royal-sidebar-surface-active-bg: var(--theme-secondary);
     --royal-sidebar-surface-active-fg: var(--theme-primary-less);
     --royal-sidebar-accent: var(--theme-primary);
     --royal-sidebar-preview-overlay-bg: var(--royal-sidebar-surface-bg);
@@ -95,6 +95,7 @@ $tab-border-radius: 4px;
             min-width: 32px;
             width: 32px;
             height: 32px;
+            display: block;
         }
     }
 }
@@ -203,26 +204,26 @@ $tab-border-radius: 4px;
         background: transparent;
 
         &:hover {
-            background: var(--royal-sidebar-surface-hover-bg);
+            background: var(--theme-bg);
             border-color: transparent;
             box-shadow: none;
         }
 
         &:focus-visible {
-            background: var(--royal-sidebar-surface-hover-bg);
-            border-color: var(--royal-sidebar-accent);
-            box-shadow: inset 0 0 0 1px var(--royal-sidebar-accent);
+            background: var(--theme-bg);
+            // border-color: var(--royal-sidebar-accent);
+            // box-shadow: inset 0 0 0 1px var(--royal-sidebar-accent);
         }
 
         &:active {
             background: var(--royal-sidebar-surface-emphasis-bg);
-            border-color: transparent;
-            box-shadow: none;
+            // border-color: transparent;
+            // box-shadow: none;
         }
 
         &.active {
             background: var(--royal-sidebar-surface-active-bg);
-            color: var(--royal-sidebar-surface-active-fg);
+            color: var(--theme-fg-more);
         }
     }
 
@@ -299,16 +300,16 @@ $tab-border-radius: 4px;
 
     &:focus-visible {
         color: var(--theme-fg);
-        border-color: var(--royal-sidebar-accent);
+        // border-color: var(--royal-sidebar-accent);
         outline: none;
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-accent);
+        // box-shadow: inset 0 0 0 1px var(--royal-sidebar-accent);
         transform: none;
     }
 
     &:active {
         color: var(--theme-fg);
-        border-color: var(--royal-sidebar-border-color);
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
+        // border-color: var(--royal-sidebar-border-color);
+        // box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
         transform: none;
     }
 }
@@ -364,7 +365,7 @@ $tab-border-radius: 4px;
         --royal-sidebar-surface-bg: var(--royal-sidebar-floating-surface-bg);
         --royal-sidebar-surface-emphasis-bg: var(--royal-sidebar-floating-surface-emphasis-bg);
         --royal-sidebar-surface-hover-bg: var(--royal-sidebar-floating-panel-hover-bg);
-        --royal-sidebar-surface-active-bg: var(--royal-sidebar-floating-panel-active-bg);
+        --royal-sidebar-surface-active-bg: var(--theme-secondary);
         --royal-sidebar-border-color: var(--royal-sidebar-floating-border-color);
         --royal-sidebar-preview-overlay-bg: var(--royal-sidebar-floating-surface-bg);
         position: absolute;
@@ -561,9 +562,9 @@ $tab-border-radius: 4px;
     box-shadow: inset 0 0 0 1px transparent;
     transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
 
-    &:hover {
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
-    }
+    // &:hover {
+    //     box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
+    // }
 }
 
 .royal-nav-group-header {
@@ -584,7 +585,7 @@ $tab-border-radius: 4px;
 
     &:hover {
         color: var(--theme-fg);
-        background: var(--royal-sidebar-surface-bg);
+        background: var(--theme-secondary);
         box-shadow: inset 0 0 0 1px var(--royal-sidebar-border-color);
     }
 
@@ -693,26 +694,26 @@ $tab-border-radius: 4px;
     transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
 
     &:hover {
-        background: var(--royal-sidebar-surface-hover-bg);
-        border-color: var(--royal-sidebar-surface-hover-bg);
-        box-shadow: inset 0 0 0 1px var(--royal-sidebar-surface-hover-bg);
+        background: var(--theme-bg);
+        // border-color: var(--royal-sidebar-surface-hover-bg);
+        // box-shadow: inset 0 0 0 1px var(--royal-sidebar-surface-hover-bg);
     }
 
     &:focus-visible {
-        background: var(--royal-sidebar-surface-hover-bg);
-        border-color: var(--royal-sidebar-accent);
+        background: var(--theme-bg);
+        // border-color: var(--royal-sidebar-accent);
         outline: none;
         box-shadow: inset 0 0 0 1px var(--royal-sidebar-accent);
     }
 
     &:active {
         background: var(--royal-sidebar-surface-emphasis-bg);
-        border-color: var(--royal-sidebar-border-color);
+        // border-color: var(--royal-sidebar-border-color);
     }
 
     &.active {
         background: var(--royal-sidebar-surface-active-bg);
-        color: var(--royal-sidebar-surface-active-fg);
+        color: var(--theme-fg-more);
     }
 }
 
@@ -754,13 +755,13 @@ $tab-border-radius: 4px;
 .royal-nav-item:focus-visible .royal-nav-item-meta {
     color: var(--theme-fg);
     background: var(--royal-sidebar-surface-bg);
-    border-color: var(--royal-sidebar-border-color);
+    // border-color: var(--royal-sidebar-border-color);
 }
 
 .royal-nav-item.active .royal-nav-item-meta {
     color: var(--royal-sidebar-surface-active-fg);
     background: transparent;
-    border-color: currentColor;
+    // border-color: currentColor;
 }
 
 .royal-nav-item.active .royal-nav-item-title {
