@@ -40,7 +40,7 @@ export class PluginsSettingsTabComponent {
 
     private readonly showUnofficialPlugins$ = new BehaviorSubject<boolean>(this.showUnofficialPlugins)
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     installedPlugins$: PluginInfo[] = []
     availableWarnings: string[] = []
@@ -207,7 +207,7 @@ export class PluginsSettingsTabComponent {
     }
 
     enablePlugin (plugin: PluginInfo) {
-        this.config.store.pluginBlacklist = this.config.store.pluginBlacklist.filter(x => x !== plugin.name)
+        this.config.store.pluginBlacklist = this.config.store.pluginBlacklist.filter((x: string) => x !== plugin.name)
         this.config.save()
         this.config.requestRestart()
     }

@@ -927,6 +927,16 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-electron/src/shells/windowsBase.ts`
 - `tabby-electron/src/sshImporters.ts`
 
+### 3.71 tabby-plugin-manager noImplicitAny 阶段落地
+
+为 `tabby-plugin-manager` 启用 `noImplicitAny`，补齐插件设置面板的显式类型，并新增模块声明覆盖 `semver` 等依赖类型缺口，保证插件管理路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-plugin-manager/tsconfig.json`
+- `tabby-plugin-manager/types/legacy-modules.d.ts`
+- `tabby-plugin-manager/src/components/pluginsSettingsTab.component.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1564,6 +1574,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-electron` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-plugin-manager` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-plugin-manager/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-plugin-manager` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

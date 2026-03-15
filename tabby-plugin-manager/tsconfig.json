@@ -3,5 +3,6 @@
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
     "baseUrl": "src",
+    "noImplicitAny": true
   }
 }
