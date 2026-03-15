@@ -15,6 +15,7 @@ import { UpdaterService } from '../services/updater.service'
 import { CommandService } from '../services/commands.service'
 import { ProfilesService } from '../services/profiles.service'
 import { TabsService } from '../services/tabs.service'
+import { getRendererSafeModeReason } from '../api/rendererState'
 
 import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
@@ -346,7 +347,7 @@ export class AppRootComponent implements OnDestroy {
             this.app.closeWindow()
         })
 
-        if ((window as any).safeModeReason) {
+        if (getRendererSafeModeReason()) {
             ngbModal.open(SafeModeModalComponent)
         }
 

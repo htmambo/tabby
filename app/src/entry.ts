@@ -14,6 +14,7 @@ import { enableDebugTools } from '@angular/platform-browser'
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
 
 import { getRootModule } from './app.module'
+import { setRendererPluginModules, setRendererSafeModeReason } from '../../tabby-core/src/api/rendererState'
 import { getRuntimeEnv, getRuntimePlatform, hasRuntimeEnv, isRuntimeDev, setRuntimeEnv, setRuntimePromiseAPIEnabled } from '../../tabby-core/src/api/rendererRuntime'
 import { BootstrapData, BOOTSTRAP_DATA, PluginInfo } from '../../tabby-core/src/api/mainProcess'
 
@@ -51,7 +52,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
         moduleName: x?.constructor?.name,
     }))))
 
-    window['pluginModules'] = pluginModules
+    setRendererPluginModules(pluginModules)
 
     const module = getRootModule(pluginModules)
     const moduleRef = await platformBrowserDynamic([
@@ -83,7 +84,7 @@ ipc.once('start', async (bootstrapData: BootstrapData) => {
     } catch (error) {
         console.error('Angular bootstrapping error:', error)
         console.warn('Trying safe mode')
-        window['safeModeReason'] = error
+        setRendererSafeModeReason(error)
         try {
             await bootstrap(bootstrapData, plugins, true)
         } catch (error2) {

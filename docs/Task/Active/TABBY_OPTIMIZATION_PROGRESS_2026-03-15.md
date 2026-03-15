@@ -989,6 +989,18 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 
 `tabby-uac` 为 C# 工程（无 tsconfig），不在 TypeScript 严格化阶段范围内，暂不处理。
 
+### 3.78 renderer 全局状态收敛（pluginModules / safeModeReason）
+
+将 `window['pluginModules']` / `window['safeModeReason']` 收敛到 `tabby-core` 的统一渲染态容器，避免多处直接访问 `window as any`，并统一错误兜底逻辑，降低全局状态散落风险。
+
+涉及文件：
+
+- `tabby-core/src/api/rendererState.ts`
+- `app/src/entry.ts`
+- `tabby-core/src/services/config.service.ts`
+- `tabby-core/src/components/appRoot.component.ts`
+- `tabby-core/src/components/safeModeModal.component.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1676,6 +1688,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-ai-assistant` 类型检查通过（noImplicitAny 已开启）
+
+在收敛 renderer 全局状态后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-core/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-core` 类型检查通过（未新增 TypeScript 错误）
 
 ### 5.2 启动冒烟
 

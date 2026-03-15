@@ -1,6 +1,7 @@
 import { Component, Input, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import { focusElementLater } from '../utils'
+import { getRendererSafeModeReason } from '../api/rendererState'
 
 /** @hidden */
 @Component({
@@ -14,7 +15,7 @@ export class SafeModeModalComponent {
     constructor (
         public modalInstance: NgbActiveModal,
     ) {
-        this.error = (window as any).safeModeReason as Error
+        this.error = getRendererSafeModeReason() ?? new Error('Unknown error')
     }
 
     ngOnInit (): void {
