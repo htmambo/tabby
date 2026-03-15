@@ -8,8 +8,8 @@ if (String(process.type) === 'main') {
         init({
             dsn: SENTRY_DSN,
             release: app.getVersion(),
-            integrations (integrations) {
-                return integrations.filter(integration => integration.name !== 'Breadcrumbs')
+            integrations (integrations: Array<{ name: string }>) {
+                return integrations.filter((integration: { name: string }) => integration.name !== 'Breadcrumbs')
             },
         })
     }

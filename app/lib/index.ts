@@ -47,7 +47,7 @@ ipcMain.on('app:new-window', () => {
     application.newWindow()
 })
 
-process.on('uncaughtException' as any, err => {
+process.on('uncaughtException' as any, (err: Error) => {
     console.log(err)
     application.broadcast('uncaughtException', err)
 })

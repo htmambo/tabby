@@ -161,11 +161,11 @@ export class Application {
             this.onGlobalHotkey()
         })
 
-        ;(promiseIpc as any).on('plugin-manager:install', (name, version) => {
+        ;(promiseIpc as any).on('plugin-manager:install', (name: string, version: string) => {
             return pluginManager.install(this.userPluginsPath, name, version)
         })
 
-        ;(promiseIpc as any).on('plugin-manager:uninstall', (name) => {
+        ;(promiseIpc as any).on('plugin-manager:uninstall', (name: string) => {
             return pluginManager.uninstall(this.userPluginsPath, name)
         })
 
@@ -774,8 +774,8 @@ export class Application {
             }
 
             return new Promise<boolean>(resolve => {
-                windowsProcessTreeNative.getProcessList(list => {
-                    resolve(list.some(x => x.name === name))
+                windowsProcessTreeNative.getProcessList((list: Array<{ name?: string }>) => {
+                    resolve(list.some((x: { name?: string }) => x.name === name))
                 }, 0)
             })
         })
@@ -1318,7 +1318,10 @@ export class Application {
         ]
 
         if (process.env.TABBY_DEV) {
-            template[2].submenu['unshift']({ role: 'reload' })
+            const viewMenu = template[2]
+            if (Array.isArray(viewMenu.submenu)) {
+                viewMenu.submenu.unshift({ role: 'reload' })
+            }
         }
 
         Menu.setApplicationMenu(Menu.buildFromTemplate(template))

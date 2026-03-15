@@ -1,0 +1,11 @@
+declare module 'lru-cache';
+declare module 'uuid';
+declare module 'shell-quote';
+declare module 'glasstron';
+declare module 'electron-config';
+declare module 'clone-deep';
+declare module 'zmodem.js';
+declare module 'native-process-working-directory';
+declare module 'hexer';
+declare module 'buffer-replace';
+declare module 'binstring';

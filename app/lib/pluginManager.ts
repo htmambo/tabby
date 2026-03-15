@@ -9,7 +9,7 @@ export class PluginManager {
         if (!this.npmReady) {
             this.npmReady = new Promise(resolve => {
                 const npm = require('npm')
-                npm.load(err => {
+                npm.load((err: Error | null) => {
                     if (err) {
                         console.error(err)
                         return

@@ -166,18 +166,22 @@ class PTYDataQueue {
                 return
             }
 
-            const buffersToSend = []
+            const buffersToSend: Buffer[] = []
             let totalLength = 0
             while (totalLength < this.maxChunk && this.buffers.length) {
                 totalLength += this.buffers[0].length
-                buffersToSend.push(this.buffers.shift())
+                const nextBuffer = this.buffers.shift()
+                if (!nextBuffer) {
+                    break
+                }
+                buffersToSend.push(nextBuffer)
             }
 
             if (buffersToSend.length === 0) {
                 return
             }
 
-            let toSend = Buffer.concat(buffersToSend)
+            let toSend = Buffer.concat(buffersToSend as Uint8Array[])
             if (toSend.length > this.maxChunk) {
                 this.buffers.unshift(toSend.slice(this.maxChunk))
                 toSend = toSend.slice(0, this.maxChunk)
@@ -224,7 +228,7 @@ export class PTY {
         }
         this.pty = (nodePTY as any).spawn(...normalizedArgs)
         for (const key of ['close', 'exit']) {
-            (this.pty as any).on(key, (...eventArgs) => this.emit(key, ...eventArgs))
+            (this.pty as any).on(key, (...eventArgs: any[]) => this.emit(key, ...eventArgs))
         }
 
         this.outputQueue = new PTYDataQueue(this.pty, data => {

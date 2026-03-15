@@ -1,7 +1,7 @@
 import * as glasstron from 'glasstron'
 import { autoUpdater } from 'electron-updater'
 import { Subject, Observable, debounceTime } from 'rxjs'
-import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme } from 'electron'
+import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme, IpcMainEvent } from 'electron'
 import ElectronConfig from 'electron-config'
 import * as os from 'os'
 import * as path from 'path'
@@ -38,7 +38,7 @@ export class Window {
     private visible = new Subject<boolean>()
     private closed = new Subject<void>()
     private window?: ManagedBrowserWindow
-    private windowConfig: ElectronConfig
+    private windowConfig: any
     private windowBounds?: Rectangle
     private closing = false
     private lastVibrancy: { enabled: boolean, type?: string } | null = null
@@ -264,7 +264,7 @@ export class Window {
         this.setupUpdater()
 
         this.ready = new Promise(resolve => {
-            const listener = event => {
+            const listener = (event: IpcMainEvent) => {
                 if (event.sender === this.window.webContents) {
                     ipcMain.removeListener('app:ready', listener as any)
                     resolve()
@@ -568,10 +568,10 @@ export class Window {
             this.window.close()
         })
 
-        this.on('window-set-touch-bar', (_, segments, selectedIndex) => {
-            this.touchBarControl.segments = segments.map(s => ({
-                label: s.label,
-                icon: s.hasActivity ? activityIcon : undefined,
+        this.on('window-set-touch-bar', (_event, segments: Array<{ label: string, hasActivity?: boolean }>, selectedIndex: number) => {
+            this.touchBarControl.segments = segments.map((segment: { label: string, hasActivity?: boolean }) => ({
+                label: segment.label,
+                icon: segment.hasActivity ? activityIcon : undefined,
             }))
             this.touchBarControl.selectedIndex = selectedIndex
         })

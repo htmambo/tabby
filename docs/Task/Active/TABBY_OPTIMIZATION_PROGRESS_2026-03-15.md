@@ -784,6 +784,24 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `scripts/deps-update.mjs`
 - `.github/workflows/deps-check.yml`
 
+### 3.62 主进程 noImplicitAny 阶段落地
+
+先在主进程 `app/tsconfig.main.json` 启用 `noImplicitAny` 并修复对应的隐式 any 问题，新增少量模块声明与类型兜底，保证主进程类型检查通过。该阶段不触发渲染端/插件端的全量严格化，仅为后续阶段提供可控基线。
+
+涉及文件：
+
+- `app/tsconfig.main.json`
+- `app/types/legacy-modules.d.ts`
+- `app/types/native-process-working-directory.d.ts`
+- `app/lib/app.ts`
+- `app/lib/index.ts`
+- `app/lib/lru.ts`
+- `app/lib/pluginManager.ts`
+- `app/lib/pty.ts`
+- `app/lib/sentry.ts`
+- `app/lib/urlHandler.ts`
+- `app/lib/window.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1331,6 +1349,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 - 新增 webpack cache 解析提示：根 `webpack.config.mjs` 使用动态 `import(x)`，导致 buildDependencies 解析警告（不阻塞构建）
 - 新增 cache 序列化大字符串提示（不阻塞构建）
 - 仍保留既有 Sass `@import` / 内建函数弃用 warning
+
+在启用主进程 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p app/tsconfig.main.json --noEmit
+```
+
+结果：
+
+- 主进程类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
