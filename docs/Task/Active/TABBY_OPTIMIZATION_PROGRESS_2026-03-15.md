@@ -1877,6 +1877,17 @@ npm run lint:progressive
 
 - 当前无匹配文件需要 lint（未新增 lint 错误）
 
+为消除 `tabby-settings` 的 `marked` 导出警告，补充调整插件构建 `mainFields` 顺序，并再次执行：
+
+```bash
+npm run build
+```
+
+结果：
+
+- `marked` 相关 warning 已消除
+- 仍仅保留既有 Sass `@import` deprecation warning
+
 ### 5.2 启动冒烟
 
 已多轮通过：
