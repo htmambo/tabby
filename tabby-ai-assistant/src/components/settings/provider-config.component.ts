@@ -1,5 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
@@ -31,7 +30,7 @@ interface ProviderTemplate {
     encapsulation: ViewEncapsulation.None,
 })
 
-export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
+export class ProviderConfigComponent implements OnInit, OnChanges {
     @Input() providerStatus: any = {}
     @Input() focusProvider: string | null = null
     @Input() singleProviderMode = false
@@ -54,8 +53,6 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         minimax: /^[a-zA-Z0-9]{32,}$/,
         glm: /^[a-zA-Z0-9._-]+$/,
     }
-
-    private destroy$ = new Subject<void>()
 
     get t(): any {
         if (!this.translate) {
@@ -193,11 +190,6 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         }
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
-    }
-
     /**
      * 加载配置
      */
@@ -265,14 +257,19 @@ export class ProviderConfigComponent implements OnInit, OnDestroy, OnChanges {
         }
 
         for (const [name, url] of Object.entries(localUrls)) {
+            let timeoutId: number | null = null
             try {
                 const controller = new AbortController()
-                setTimeout(() => controller.abort(), 2000)
+                timeoutId = window.setTimeout(() => controller.abort(), 2000)
 
                 const response = await fetch(url, { signal: controller.signal })
                 this.localStatus[name] = response.ok
             } catch {
                 this.localStatus[name] = false
+            } finally {
+                if (timeoutId !== null) {
+                    window.clearTimeout(timeoutId)
+                }
             }
         }
     }

@@ -29,10 +29,13 @@ export class CopyPasteContextMenu extends TabContextMenuItemProvider {
                 {
                     label: this.translate.instant('Copy'),
                     click: (): void => {
-                        setTimeout(() => {
+                        const timer = setTimeout(() => {
                             tab.frontend?.copySelection()
                             this.notifications.notice(this.translate.instant('Copied'))
                         })
+                        if (typeof (timer as any)?.unref === 'function') {
+                            (timer as any).unref()
+                        }
                     },
                 },
                 {
@@ -97,19 +100,25 @@ export class ReconnectContextMenu extends TabContextMenuItemProvider {
                 {
                     label: this.translate.instant('Disconnect'),
                     click: (): void => {
-                        setTimeout(() => {
+                        const timer = setTimeout(() => {
                             tab.disconnect()
                             this.notifications.notice(this.translate.instant('Disconnect'))
                         })
+                        if (typeof (timer as any)?.unref === 'function') {
+                            (timer as any).unref()
+                        }
                     },
                 },
                 {
                     label: this.translate.instant('Reconnect'),
                     click: (): void => {
-                        setTimeout(() => {
+                        const timer = setTimeout(() => {
                             tab.reconnect()
                             this.notifications.notice(this.translate.instant('Reconnect'))
                         })
+                        if (typeof (timer as any)?.unref === 'function') {
+                            (timer as any).unref()
+                        }
                     },
                 },
             ]

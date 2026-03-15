@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Observable, OperatorFunction, debounceTime, map, distinctUntilChanged } from 'rxjs'
-import { Component, Input, ViewChild, ViewContainerRef, ComponentFactoryResolver, Injector, HostListener } from '@angular/core'
+import { Component, Input, ViewChild, ViewContainerRef, ComponentFactoryResolver, Injector, HostListener, OnDestroy } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent, ProfilesService, TAB_COLORS, ProfileGroup, ConnectableProfileProvider, FullyDefined, ConfigProxy, isExpandedControlTarget, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
@@ -16,7 +16,7 @@ const iconsClassList = Object.keys(iconsData).map(
     standalone: false,
     templateUrl: './editProfileModal.component.pug',
 })
-export class EditProfileModalComponent<P extends Profile, PP extends ProfileProvider<P>> {
+export class EditProfileModalComponent<P extends Profile, PP extends ProfileProvider<P>> implements OnDestroy {
     @Input() profile: P
     @Input() profileProvider: PP
     @Input() settingsComponent: new () => ProfileSettingsComponent<P, PP>
@@ -28,6 +28,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     private sourceProfile: P
     protected profileProxy: FullyDefined<P> & ConfigProxy<FullyDefined<P>>
     private settingsComponentInstance?: ProfileSettingsComponent<P, PP>
+    private pendingSettingsComponentHandle: number | null = null
 
     // Backward-compatible with existing imperative assignments:
     // modal.componentInstance._profile = ...
@@ -78,13 +79,21 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     ngAfterViewInit () {
         const componentType = this.profileProvider.settingsComponent
         if (componentType) {
-            setTimeout(() => {
+            this.pendingSettingsComponentHandle = window.setTimeout(() => {
+                this.pendingSettingsComponentHandle = null
                 const componentFactory = this.componentFactoryResolver.resolveComponentFactory(componentType)
                 const componentRef = componentFactory.create(this.injector)
                 this.settingsComponentInstance = componentRef.instance
                 this.settingsComponentInstance.profile = this.profileProxy
                 this.placeholder.insert(componentRef.hostView)
-            })
+            }, 0)
+        }
+    }
+
+    ngOnDestroy (): void {
+        if (this.pendingSettingsComponentHandle !== null) {
+            window.clearTimeout(this.pendingSettingsComponentHandle)
+            this.pendingSettingsComponentHandle = null
         }
     }
 

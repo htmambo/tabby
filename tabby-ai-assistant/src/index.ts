@@ -1,7 +1,9 @@
-import { NgModule } from '@angular/core'
+import { NgModule, OnDestroy } from '@angular/core'
+import { Subscription, lastValueFrom } from 'rxjs'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
+import { ChatInterfaceOpener } from './api/chatInterfaceOpener'
 
 // 全局样式
 import './styles/ai-assistant.scss'
@@ -138,6 +140,7 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         ChatHistoryService,
         CommandGeneratorService,
         AiSidebarService,
+        { provide: ChatInterfaceOpener, useExisting: AiSidebarService },
 
         // Terminal Services
         TerminalManagerService,
@@ -206,7 +209,10 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         ErrorMessageComponent,
     ],
 })
-export default class AiAssistantModule {
+export default class AiAssistantModule implements OnDestroy {
+    private pendingSidebarInit: ReturnType<typeof setTimeout> | null = null
+    private readySubscription: Subscription | null = null
+    private hotkeySubscription: Subscription | null = null
     constructor(
         private app: AppService,
         private config: ConfigService,
@@ -218,23 +224,41 @@ export default class AiAssistantModule {
         console.log('[AiAssistantModule] Module initialized')
 
         // 等待应用就绪后初始化
-        this.app.ready$.subscribe(() => {
-            this.config.ready$.toPromise().then(() => {
+        this.readySubscription = this.app.ready$.subscribe(() => {
+            void lastValueFrom(this.config.ready$).then(() => {
                 // 初始化 AI 服务
                 this.aiService.initialize()
 
                 // 延迟 1 秒初始化侧边栏，等待 Tabby DOM 完全准备好
                 // 这与 tabby-ssh-sidebar 的实现保持一致
-                setTimeout(() => {
+                if (this.pendingSidebarInit !== null) {
+                    clearTimeout(this.pendingSidebarInit)
+                }
+                this.pendingSidebarInit = setTimeout(() => {
+                    this.pendingSidebarInit = null
                     this.sidebarService.initialize()
                 }, 1000)
+                if (typeof (this.pendingSidebarInit as any)?.unref === 'function') {
+                    (this.pendingSidebarInit as any).unref()
+                }
             })
         })
 
         // 订阅热键事件
-        hotkeys.hotkey$.subscribe(hotkey => {
+        this.hotkeySubscription = hotkeys.hotkey$.subscribe(hotkey => {
             this.handleHotkey(hotkey)
         })
+    }
+
+    ngOnDestroy (): void {
+        if (this.pendingSidebarInit !== null) {
+            clearTimeout(this.pendingSidebarInit)
+            this.pendingSidebarInit = null
+        }
+        this.readySubscription?.unsubscribe()
+        this.hotkeySubscription?.unsubscribe()
+        this.readySubscription = null
+        this.hotkeySubscription = null
     }
 
     /**

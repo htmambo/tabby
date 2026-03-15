@@ -9,7 +9,7 @@ import {
 import { MCPClientManager } from '../../services/mcp/mcp-client-manager.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
-import { TranslateService, focusElementLater, isPlainEscape, isPlainEnter, isTextInputTarget } from 'tabby-core'
+import { TranslateService, isPlainEscape, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
 /**
  * 服务器编辑器模式
@@ -59,16 +59,16 @@ type EditorMode = 'add' | 'edit' | null
                     </div>
 
                     <div class="server-actions">
-                        <button class="btn btn-sm"
+                        <button type="button" class="btn btn-sm"
                                 [class.btn-success]="server.status !== 'connected'"
                                 [class.btn-danger]="server.status === 'connected'"
                                 (click)="toggleConnection(server)">
                             {{ getConnectionButtonText(server.status) }}
                         </button>
-                        <button class="btn btn-sm btn-secondary" (click)="editServer(server)">
+                        <button type="button" class="btn btn-sm btn-secondary" (click)="editServer(server)">
                             {{ t.common.edit }}
                         </button>
-                        <button class="btn btn-sm btn-danger" (click)="deleteServer(server)">
+                        <button type="button" class="btn btn-sm btn-danger" (click)="deleteServer(server)">
                             {{ t.common.delete }}
                         </button>
                     </div>
@@ -708,6 +708,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
 
     /** 导入的 JSON 文本 */
     importJsonText = ''
+    private pendingTimeouts = new Set<number>()
 
     constructor(
         private mcpManager: MCPClientManager,
@@ -729,6 +730,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        this.clearPendingTimeouts()
         this.destroy$.next()
         this.destroy$.complete()
     }
@@ -802,7 +804,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
             this.editingServer = this.createEmptyServer()
         }
 
-        setTimeout(() => focusElementLater(this.editorNameInput))
+        this.scheduleFocus(this.editorNameInput)
     }
 
     /**
@@ -1005,7 +1007,7 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
     showImportDialog(): void {
         this.showImport = true
         this.importJsonText = ''
-        setTimeout(() => focusElementLater(this.importJsonInput))
+        this.scheduleFocus(this.importJsonInput)
     }
 
     /**
@@ -1106,5 +1108,27 @@ export class MCPSettingsComponent implements OnInit, OnDestroy {
                 },
             },
         }, null, 2)
+    }
+
+    private scheduleTimeout(callback: () => void, delay: number): number {
+        const timeoutId = window.setTimeout(() => {
+            this.pendingTimeouts.delete(timeoutId)
+            callback()
+        }, delay)
+        this.pendingTimeouts.add(timeoutId)
+        return timeoutId
+    }
+
+    private scheduleFocus(elementRef: ElementRef<HTMLElement>): number {
+        return this.scheduleTimeout(() => {
+            elementRef.nativeElement?.focus()
+        }, 0)
+    }
+
+    private clearPendingTimeouts(): void {
+        for (const timeoutId of this.pendingTimeouts) {
+            window.clearTimeout(timeoutId)
+        }
+        this.pendingTimeouts.clear()
     }
 }

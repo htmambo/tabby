@@ -1,6 +1,6 @@
-import { Injectable, Inject } from '@angular/core'
+import { Injectable, Inject, OnDestroy } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { Observable, Subject, AsyncSubject, takeUntil, debounceTime } from 'rxjs'
+import { Observable, Subject, AsyncSubject, takeUntil, debounceTime, lastValueFrom } from 'rxjs'
 
 import { BaseTabComponent } from '../components/baseTab.component'
 import { RenameTabModalComponent } from '../components/renameTabModal.component'
@@ -44,7 +44,7 @@ class CompletionObserver {
 }
 
 @Injectable({ providedIn: 'root' })
-export class AppService {
+export class AppService implements OnDestroy {
     tabs: BaseTabComponent[] = []
 
     get activeTab (): BaseTabComponent|null { return this._activeTab ?? null }
@@ -64,6 +64,7 @@ export class AppService {
     private recoveryStateChangedHint = new Subject<void>()
 
     private completionObservers = new Map<BaseTabComponent, CompletionObserver>()
+    private recoveryHintInterval: ReturnType<typeof setInterval> | null = null
 
     get activeTabChange$ (): Observable<BaseTabComponent|null> { return this.activeTabChange }
     get tabOpened$ (): Observable<BaseTabComponent> { return this.tabOpened }
@@ -97,7 +98,7 @@ export class AppService {
             this.recoveryStateChangedHint.next()
         })
 
-        setInterval(() => {
+        this.recoveryHintInterval = setInterval(() => {
             this.recoveryStateChangedHint.next()
         }, 30000)
 
@@ -105,7 +106,7 @@ export class AppService {
             this.tabRecovery.saveTabs(this.tabs, this.activeTab)
         })
 
-        config.ready$.toPromise().then(async () => {
+        void lastValueFrom(config.ready$).then(async () => {
             if (this.bootstrapData.isMainWindow) {
                 if (config.store.recoverTabs) {
                     const recoveredTabs = await this.tabRecovery.recoverTabs()
@@ -126,6 +127,13 @@ export class AppService {
         })
 
         hostWindow.windowFocused$.subscribe(() => this._activeTab?.emitFocused())
+    }
+
+    ngOnDestroy (): void {
+        if (this.recoveryHintInterval !== null) {
+            clearInterval(this.recoveryHintInterval)
+            this.recoveryHintInterval = null
+        }
     }
 
     addTabRaw (tab: BaseTabComponent, index: number|null = null, options: { select?: boolean } = {}): void {
@@ -272,10 +280,13 @@ export class AppService {
         }
         this._activeTab = tab
         this.activeTabChange.next(tab)
-        setImmediate(() => {
+        const focusHandle = setImmediate(() => {
             this._activeTab?.emitFocused()
             this._activeTab?.emitVisibility(true)
         })
+        if (typeof (focusHandle as any)?.unref === 'function') {
+            (focusHandle as any).unref()
+        }
         this.hostWindow.setTitle(this._activeTab?.title)
     }
 

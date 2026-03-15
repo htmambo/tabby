@@ -1,26 +1,20 @@
 import { Injectable, Injector } from '@angular/core'
-import { TabRecoveryProvider, NewTabParameters, RecoveryToken, ProfilesService } from 'tabby-core'
+import { GenericRecoveryProvider, RecoveryToken } from 'tabby-core'
 
 import { SSHTabComponent } from './components/sshTab.component'
 
 /** @hidden */
 @Injectable()
-export class RecoveryProvider extends TabRecoveryProvider<SSHTabComponent> {
-    constructor (private injector: Injector) { super() }
-
-    async applicableTo (recoveryToken: RecoveryToken): Promise<boolean> {
-        return recoveryToken.type === 'app:ssh-tab'
+export class RecoveryProvider extends GenericRecoveryProvider<SSHTabComponent> {
+    constructor (injector: Injector) {
+        super(injector, 'app:ssh-tab', SSHTabComponent)
     }
 
-    async recover (recoveryToken: RecoveryToken): Promise<NewTabParameters<SSHTabComponent>> {
+    protected buildInputs (recoveryToken: RecoveryToken): Record<string, any> {
         return {
-            type: SSHTabComponent,
-            inputs: {
-                profile: this.injector.get(ProfilesService).getConfigProxyForProfile(recoveryToken.profile),
-                savedState: recoveryToken.savedState,
-                sftpPanelVisible: !!recoveryToken.sftpPanelVisible,
-                sftpPanelHeight: recoveryToken.sftpPanelHeight ?? 320,
-            },
+            ...super.buildInputs(recoveryToken),
+            sftpPanelVisible: !!recoveryToken.sftpPanelVisible,
+            sftpPanelHeight: recoveryToken.sftpPanelHeight ?? 320,
         }
     }
 }

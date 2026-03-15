@@ -1,11 +1,10 @@
-import * as fs from 'mz/fs'
-import * as crypto from 'crypto'
+import { stat } from 'node:fs/promises'
 import colors from 'ansi-colors'
 import stripAnsi from 'strip-ansi'
 import * as shellQuote from 'shell-quote'
 import { Injector } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { ConfigService, FileProvidersService, NotificationsService, PromptModalComponent, LogService, Logger, TranslateService, Platform, HostAppService } from 'tabby-core'
+import { ConfigService, FileProvidersService, NotificationsService, PromptModalComponent, LogService, Logger, TranslateService, Platform, HostAppService, getRuntimeEnv, getRuntimePlatform, resolveRuntimeEnv } from 'tabby-core'
 import { Socket } from 'net'
 import { Subject, Observable } from 'rxjs'
 import { HostKeyPromptModalComponent } from '../components/hostKeyPromptModal.component'
@@ -17,6 +16,7 @@ import { ForwardedPort } from './forwards'
 import { X11Socket } from './x11'
 import { supportedAlgorithms } from '../algorithms'
 import * as russh from 'russh'
+import { randomHex, sha256Base64, sha512Hex } from '../webCrypto'
 
 const WINDOWS_OPENSSH_AGENT_PIPE = '\\\\.\\pipe\\openssh-ssh-agent'
 const REMOTE_COMMAND_EXIT_SENTINEL = '__TABBY_REMOTE_EXIT__'
@@ -134,6 +134,7 @@ export class SSHSession {
     private privateKeyImporters: AutoPrivateKeyLocator[]
     private previouslyDisconnected = false
     private destroying = false
+    private pendingDestroyTimeout: number | null = null
 
     constructor (
         private injector: Injector,
@@ -313,7 +314,7 @@ export class SSHSession {
             if (this.config.store.ssh.agentType === 'auto') {
                 let pipeExists = false
                 try {
-                    await fs.stat(WINDOWS_OPENSSH_AGENT_PIPE)
+                    await stat(WINDOWS_OPENSSH_AGENT_PIPE)
                     pipeExists = true
                 } catch (e) {
                     if (e.code === 'EBUSY') {
@@ -344,9 +345,13 @@ export class SSHSession {
                 }
             }
         } else {
+            const agentSocketPath = getRuntimeEnv('SSH_AUTH_SOCK')
+            if (!agentSocketPath) {
+                return null
+            }
             return {
                 kind: 'unix-socket',
-                path: process.env.SSH_AUTH_SOCK!,
+                path: agentSocketPath,
             }
         }
         return null
@@ -435,9 +440,7 @@ export class SSHSession {
             if (!this.previouslyDisconnected && !this.destroying) {
                 this.previouslyDisconnected = true
                 // Let service messages drain
-                setTimeout(() => {
-                    void this.destroy()
-                })
+                this.scheduleDestroy()
             }
         })
 
@@ -457,7 +460,7 @@ export class SSHSession {
 
         if (this.authUsername?.startsWith('$')) {
             try {
-                const result = process.env[this.authUsername.slice(1)]
+                const result = resolveRuntimeEnv(this.authUsername.slice(1))
                 this.authUsername = result ?? this.authUsername
             } catch {
                 this.authUsername = 'root'
@@ -527,7 +530,7 @@ export class SSHSession {
 
         this.ssh.x11ChannelOpen$.subscribe(async event => {
             this.logger.info(`Incoming X11 connection from ${event.clientAddress}:${event.clientPort}`)
-            const displaySpec = (this.config.store.ssh.x11Display || process.env.DISPLAY) ?? 'localhost:0'
+            const displaySpec = (this.config.store.ssh.x11Display || getRuntimeEnv('DISPLAY')) ?? 'localhost:0'
             this.logger.debug(`Trying display ${displaySpec}`)
 
             if (!(this.ssh instanceof russh.AuthenticatedSSHClient)) {
@@ -548,7 +551,7 @@ export class SSHSession {
                     display: JSON.stringify(X11Socket.resolveDisplaySpec(displaySpec)),
                     displaySpec,
                 }))
-                if (process.platform === 'win32') {
+                if (getRuntimePlatform() === 'win32') {
                     this.emitServiceMessage('    ' + this.translate.instant('To use X forwarding, you need a local X server, e.g.:'))
                     this.emitServiceMessage('    * VcXsrv: https://sourceforge.net/projects/vcxsrv/')
                     this.emitServiceMessage('    * Xming: https://sourceforge.net/projects/xming/')
@@ -589,7 +592,7 @@ export class SSHSession {
             type: key.algorithm(),
         }
 
-        const keyDigest = crypto.createHash('sha256').update(key.bytes()).digest('base64')
+        const keyDigest = await sha256Base64(key.bytes())
 
         const knownHost = this.profile.options.host ? this.knownHosts.getFor(selector) : null
         if (!knownHost || knownHost.digest !== keyDigest) {
@@ -868,6 +871,10 @@ export class SSHSession {
             return
         }
         this.destroying = true
+        if (this.pendingDestroyTimeout !== null) {
+            window.clearTimeout(this.pendingDestroyTimeout)
+            this.pendingDestroyTimeout = null
+        }
         this.open = false
         this.previouslyDisconnected = true
         this.logger.info('Destroying')
@@ -878,6 +885,16 @@ export class SSHSession {
         await disconnectPromise?.catch(error => {
             this.logger.debug('SSH disconnect during destroy failed:', error)
         })
+    }
+
+    private scheduleDestroy (): void {
+        if (this.pendingDestroyTimeout !== null) {
+            return
+        }
+        this.pendingDestroyTimeout = window.setTimeout(() => {
+            this.pendingDestroyTimeout = null
+            void this.destroy()
+        }, 0)
     }
 
     async executePOSIXCommand (command: string): Promise<string> {
@@ -950,7 +967,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                     ch.requestX11Forwarding({
                         singleConnection: false,
                         authProtocol: 'MIT-MAGIC-COOKIE-1',
-                        authCookie: crypto.randomBytes(16).toString('hex'),
+                        authCookie: randomHex(16),
                         screenNumber: 0,
                     }),
                     this.translate.instant('requesting X11 forwarding'),
@@ -997,11 +1014,23 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                     return
                 }
                 settled = true
+                destroySubscription.unsubscribe()
                 reject(new Error(this.translate.instant('Timed out after {timeout} ms while {operation}', {
                     timeout: timeoutMs,
                     operation,
                 })))
             }, timeoutMs)
+
+            const destroySubscription = this.willDestroy$.subscribe(() => {
+                if (settled) {
+                    return
+                }
+                settled = true
+                window.clearTimeout(timer)
+                reject(new Error(this.translate.instant('Connection closed while {operation}', {
+                    operation,
+                })))
+            })
 
             promise.then(value => {
                 if (settled) {
@@ -1009,6 +1038,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                 }
                 settled = true
                 window.clearTimeout(timer)
+                destroySubscription.unsubscribe()
                 resolve(value)
             }, error => {
                 if (settled) {
@@ -1016,6 +1046,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
                 }
                 settled = true
                 window.clearTimeout(timer)
+                destroySubscription.unsubscribe()
                 reject(error)
             })
         })
@@ -1078,7 +1109,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
     }
 
     async loadPrivateKeyWithPassphraseMaybe (privateKey: string): Promise<russh.KeyPair> {
-        const keyHash = crypto.createHash('sha512').update(privateKey).digest('hex')
+        const keyHash = await sha512Hex(privateKey)
 
         privateKey = privateKey.replaceAll('EC PRIVATE KEY', 'PRIVATE KEY')
 

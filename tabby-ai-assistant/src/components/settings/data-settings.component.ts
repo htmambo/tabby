@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, OnInit, ViewEncapsulation } from '@angular/core'
 import { TranslateService } from 'tabby-core'
 import { FileStorageService } from '../../services/core/file-storage.service'
 import { Memory } from '../../services/context/memory'
@@ -9,6 +8,7 @@ import { ConfigProviderService } from '../../services/core/config-provider.servi
 import { ConsentManagerService } from '../../services/security/consent-manager.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
+import { getTabbyBridge } from '../../../../app/src/tabby-bridge'
 
 /**
  * 数据文件信息
@@ -45,7 +45,7 @@ export interface DataFileInfo {
                         <code>{{ dataDirectory }}</code>
                     </div>
                 </div>
-                <button class="btn btn-outline" (click)="openDataDirectory()">
+                <button type="button" class="btn btn-outline" (click)="openDataDirectory()">
                     <i class="fa fa-folder-open"></i>
                     {{ t.dataSettings.openDirectory }}
                 </button>
@@ -105,19 +105,19 @@ export interface DataFileInfo {
                         {{ t?.dataSettings?.storedFiles || '存储文件' }}
                     </h4>
                     <div class="files-actions">
-                        <button class="btn-action" (click)="exportAllData()" title="{{ t?.dataSettings?.exportAll || '导出所有' }}">
+                        <button type="button" class="btn-action" (click)="exportAllData()" title="{{ t?.dataSettings?.exportAll || '导出所有' }}">
                             <i class="fa fa-file-export"></i>
                             <span>{{ t?.dataSettings?.exportAll || '导出所有' }}</span>
                         </button>
-                        <button class="btn-action" (click)="importData()" title="{{ t?.dataSettings?.importData || '导入数据' }}">
+                        <button type="button" class="btn-action" (click)="importData()" title="{{ t?.dataSettings?.importData || '导入数据' }}">
                             <i class="fa fa-file-import"></i>
                             <span>{{ t?.dataSettings?.importData || '导入' }}</span>
                         </button>
-                        <button class="btn-action" (click)="migrateFromLocalStorage()" title="{{ t?.dataSettings?.migrateData || '迁移数据' }}">
+                        <button type="button" class="btn-action" (click)="migrateFromLocalStorage()" title="{{ t?.dataSettings?.migrateData || '迁移数据' }}">
                             <i class="fa fa-sync"></i>
                             <span>{{ t?.dataSettings?.migrateData || '迁移' }}</span>
                         </button>
-                        <button class="btn-action danger" (click)="clearAllData()" title="{{ t?.dataSettings?.clearAll || '清除所有' }}">
+                        <button type="button" class="btn-action danger" (click)="clearAllData()" title="{{ t?.dataSettings?.clearAll || '清除所有' }}">
                             <i class="fa fa-trash-alt"></i>
                             <span>{{ t?.dataSettings?.clearAll || '清除' }}</span>
                         </button>
@@ -159,10 +159,10 @@ export interface DataFileInfo {
                                     <span class="date-text">{{ file.modified | date:'yyyy-MM-dd HH:mm' }}</span>
                                 </td>
                                 <td class="cell-actions">
-                                    <button class="btn-action-sm" (click)="viewFile(file)" title="{{ t?.common?.view || '查看' }}">
+                                    <button type="button" class="btn-action-sm" (click)="viewFile(file)" title="{{ t?.common?.view || '查看' }}">
                                         <i class="fa fa-eye"></i>
                                     </button>
-                                    <button class="btn-action-sm danger" (click)="deleteFile(file)" title="{{ t?.common?.delete || '删除' }}">
+                                    <button type="button" class="btn-action-sm danger" (click)="deleteFile(file)" title="{{ t?.common?.delete || '删除' }}">
                                         <i class="fa fa-trash-alt"></i>
                                     </button>
                                 </td>
@@ -189,7 +189,7 @@ export interface DataFileInfo {
                     <p class="alert-title">检测到旧数据</p>
                     <p class="alert-text">{{ t?.dataSettings?.migrationNote || '浏览器存储中还有旧数据，建议点击"迁移"将数据迁移到文件存储' }}</p>
                 </div>
-                <button class="btn btn-warning" (click)="migrateFromLocalStorage()">
+                <button type="button" class="btn btn-warning" (click)="migrateFromLocalStorage()">
                     <i class="fa fa-sync"></i>
                     {{ t?.dataSettings?.migrateData || '立即迁移' }}
                 </button>
@@ -719,9 +719,7 @@ export interface DataFileInfo {
     `],
     encapsulation: ViewEncapsulation.None,
 })
-export class DataSettingsComponent implements OnInit, OnDestroy {
-    private destroy$ = new Subject<void>()
-
+export class DataSettingsComponent implements OnInit {
     get t(): any {
         if (!this.translate) {
             return { dataSettings: {} }
@@ -770,11 +768,6 @@ export class DataSettingsComponent implements OnInit, OnDestroy {
         this.loadDataFiles()
         this.loadStatistics()
         this.checkMigrationStatus()
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     /**
@@ -827,13 +820,7 @@ export class DataSettingsComponent implements OnInit, OnDestroy {
      */
     openDataDirectory(): void {
         try {
-            const fs = (window as any).require?.('fs')
-            if (fs) {
-                const { shell } = (window as any).require('electron')
-                shell.openPath(this.dataDirectory)
-            } else {
-                this.toast.warning('无法打开目录，请在文件管理器中手动打开: ' + this.dataDirectory)
-            }
+            void getTabbyBridge().shell.openPath(this.dataDirectory)
         } catch (error) {
             this.logger.error('Failed to open data directory', error)
             this.toast.error('打开目录失败')

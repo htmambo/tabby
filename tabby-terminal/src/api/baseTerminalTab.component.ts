@@ -166,6 +166,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     private frontendWriteLock = Promise.resolve()
     private pendingVisibleFrontendActionFrame: number|null = null
+    private pendingTimeouts = new Set<number>()
 
     get input$ (): Observable<Buffer> {
         if (!this.frontend) {
@@ -224,7 +225,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             }
             if (hotkey === 'search') {
                 this.showSearchPanel = true
-                setImmediate(() => {
+                this.scheduleTimeout(() => {
                     const input = this.element.nativeElement.querySelector('.search-input')
                     const selectedText = (this.frontend?.getSelection() ?? '').trim()
                     if (input && selectedText.length) {
@@ -414,7 +415,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                 }
             })
 
-            setTimeout(() => {
+            this.scheduleTimeout(() => {
                 this.session?.resize(columns, rows)
             }, 1000)
 
@@ -428,7 +429,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             this.alternateScreenActive = x
         })
 
-        setImmediate(async () => {
+        this.scheduleTimeout(async () => {
             if (this.hasFocus) {
                 await this.frontend?.attach(this.content.nativeElement, this.profile)
                 this.frontend?.configure(this.profile)
@@ -444,7 +445,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
         this.configure()
 
-        setTimeout(() => {
+        this.scheduleTimeout(() => {
             this.binaryOutput$.subscribe(() => {
                 this.displayActivity()
             })
@@ -640,6 +641,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     ngOnDestroy (): void {
+        this.clearPendingTimeouts()
         this.clearPendingVisibleFrontendAction()
         super.ngOnDestroy()
         this.stopSpinner()
@@ -677,6 +679,21 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             cancelAnimationFrame(this.pendingVisibleFrontendActionFrame)
             this.pendingVisibleFrontendActionFrame = null
         }
+    }
+
+    private scheduleTimeout (fn: () => void, delay = 0): void {
+        const handle = window.setTimeout(() => {
+            this.pendingTimeouts.delete(handle)
+            fn()
+        }, delay)
+        this.pendingTimeouts.add(handle)
+    }
+
+    private clearPendingTimeouts (): void {
+        for (const handle of this.pendingTimeouts) {
+            window.clearTimeout(handle)
+        }
+        this.pendingTimeouts.clear()
     }
 
     private scheduleVisibleFrontendAction (frontend: XTermFrontend, action: () => void): void {
@@ -737,7 +754,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
         const maybeConfigure = () => {
             if (this.hasFocus) {
-                setTimeout(() => this.configure(), 250)
+                this.scheduleTimeout(() => this.configure(), 250)
             }
         }
 

@@ -1,7 +1,7 @@
 import deepEqual from 'deep-equal'
 import { BehaviorSubject, filter, firstValueFrom, takeUntil } from 'rxjs'
 import { Injector } from '@angular/core'
-import { ConfigService, getCSSFontFamily, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, ThemesService, TranslateService } from 'tabby-core'
+import { ConfigService, getCSSFontFamily, getRuntimePlatform, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, ThemesService, TranslateService } from 'tabby-core'
 import { Frontend, SearchOptions, SearchState } from './frontend'
 import { Terminal, ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
@@ -125,7 +125,7 @@ export class XTermFrontend extends Frontend {
                 showTopBorder: false,
             },
             reflowCursorLine: true,
-            windowsPty: process.platform === 'win32' ? {
+            windowsPty: getRuntimePlatform() === 'win32' ? {
                 backend: this.configService.store.terminal.useConPTY ? 'conpty' : 'winpty',
                 buildNumber: getWindows10Build(),
             } : undefined,
@@ -266,7 +266,12 @@ export class XTermFrontend extends Frontend {
         this.opened = true
 
         // Work around font loading bugs
-        await new Promise(resolve => setTimeout(resolve, this.hostApp.platform === Platform.Web ? 1000 : 0))
+        await new Promise(resolve => {
+            const timer = setTimeout(resolve, this.hostApp.platform === Platform.Web ? 1000 : 0)
+            if (typeof (timer as any)?.unref === 'function') {
+                (timer as any).unref()
+            }
+        })
 
         // Just configure the colors to avoid a flash
         this.configureColors(profile.terminalColorScheme)
@@ -314,7 +319,12 @@ export class XTermFrontend extends Frontend {
         }
 
         // Allow an animation frame
-        await new Promise(r => setTimeout(r, 100))
+        await new Promise(resolve => {
+            const timer = setTimeout(resolve, 100)
+            if (typeof (timer as any)?.unref === 'function') {
+                (timer as any).unref()
+            }
+        })
 
         this.ready.next()
         this.ready.complete()
@@ -330,7 +340,12 @@ export class XTermFrontend extends Frontend {
         this.resizeHandler()
 
         // Allow an animation frame
-        await new Promise(r => setTimeout(r, 0))
+        await new Promise(resolve => {
+            const timer = setTimeout(resolve, 0)
+            if (typeof (timer as any)?.unref === 'function') {
+                (timer as any).unref()
+            }
+        })
 
         host.addEventListener('dragOver', (event: any) => this.dragOver.next(event))
         host.addEventListener('drop', event => this.drop.next(event))
@@ -397,7 +412,10 @@ export class XTermFrontend extends Frontend {
     }
 
     focus (): void {
-        setTimeout(() => this.xterm.focus())
+        const timer = setTimeout(() => this.xterm.focus())
+        if (typeof (timer as any)?.unref === 'function') {
+            (timer as any).unref()
+        }
     }
 
     async write (data: string): Promise<void> {
@@ -411,9 +429,12 @@ export class XTermFrontend extends Frontend {
     visualBell (): void {
         if (this.element) {
             this.element.style.animation = 'none'
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 this.element!.style.animation = 'terminalShakeFrames 0.3s ease'
             })
+            if (typeof (timer as any)?.unref === 'function') {
+                (timer as any).unref()
+            }
         }
     }
 
@@ -465,7 +486,7 @@ export class XTermFrontend extends Frontend {
     configure (profile: BaseTerminalProfile): void {
         const config = this.configService.store
 
-        setImmediate(() => {
+        const resizeHandle = setImmediate(() => {
             if (this.xterm.cols && this.xterm.rows && this.xtermCore.charMeasure) {
                 if (this.xtermCore.charMeasure) {
                     this.xtermCore.charMeasure.measure(this.xtermCore.options)
@@ -476,6 +497,9 @@ export class XTermFrontend extends Frontend {
                 this.resizeHandler()
             }
         })
+        if (typeof (resizeHandle as any)?.unref === 'function') {
+            (resizeHandle as any).unref()
+        }
 
         this.xtermCore.browser = {
             ...this.xtermCore.browser,

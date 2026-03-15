@@ -1,8 +1,7 @@
 import * as path from 'path'
-import * as fs from 'fs/promises'
 import * as which from 'which'
 import { Injectable } from '@angular/core'
-import { HostAppService, Platform, ConfigService } from 'tabby-core'
+import { HostAppService, Platform, ConfigService, getRuntimeArch, getRuntimeEnv, isRuntimeDev, readPathStat } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
 import { Shell } from 'tabby-local'
@@ -29,16 +28,16 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
             'resources',
             'extras',
             'clink',
-            `clink_${process.arch}.exe`,
+            `clink_${getRuntimeArch()}.exe`,
         )
 
-        if (process.env.TABBY_DEV) {
+        if (isRuntimeDev()) {
             clinkPath = path.join(
                 path.dirname(this.electron.app.getPath('exe')),
                 '..', '..', '..',
                 'extras',
                 'clink',
-                `clink_${process.arch}.exe`,
+                `clink_${getRuntimeArch()}.exe`,
             )
         }
         return [
@@ -78,15 +77,15 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
             }
         }
         for (const psPath of [
-            `${process.env.USERPROFILE}\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe`,
-            `${process.env.SystemRoot}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`,
-            `${process.env.SystemRoot}\\System32\\powershell.exe`,
-            (process.env.SystemRoot ?? 'C:\\Windows') + '\\powerhshell.exe',
+            `${getRuntimeEnv('USERPROFILE') ?? 'C:\\Users\\Default'}\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe`,
+            `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`,
+            `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\System32\\powershell.exe`,
+            `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\powerhshell.exe`,
         ]) {
-            try {
-                await fs.stat(psPath)
+            const stat = await readPathStat(psPath)
+            if (stat?.isFile) {
                 return psPath
-            } catch { }
+            }
         }
         return 'powershell.exe'
     }

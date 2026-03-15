@@ -92,6 +92,7 @@ export class VllmProviderService extends BaseAiProvider {
     chatStream(request: ChatRequest): Observable<StreamEvent> {
         return new Observable<StreamEvent>((subscriber: Observer<StreamEvent>) => {
             const abortController = new AbortController()
+            let streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null
 
             this.logRequest(request)
 
@@ -121,6 +122,7 @@ export class VllmProviderService extends BaseAiProvider {
                     if (!reader) {
                         throw new Error('No response body')
                     }
+                    streamReader = reader
 
                     // 工具调用状态跟踪
                     let currentToolCallId = ''
@@ -248,13 +250,25 @@ export class VllmProviderService extends BaseAiProvider {
                         subscriber.next({ type: 'error', error: errorMessage })
                         subscriber.error(new Error(errorMessage))
                     }
+                } finally {
+                    if (streamReader) {
+                        try {
+                            await streamReader.cancel()
+                        } catch {
+                            // ignore
+                        }
+                        streamReader = null
+                    }
                 }
             }
 
             runStream()
 
             // 返回取消函数
-            return () => abortController.abort()
+            return () => {
+                abortController.abort()
+                void streamReader?.cancel()
+            }
         })
     }
 

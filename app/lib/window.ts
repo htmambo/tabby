@@ -3,7 +3,6 @@ import { autoUpdater } from 'electron-updater'
 import { Subject, Observable, debounceTime } from 'rxjs'
 import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme } from 'electron'
 import ElectronConfig from 'electron-config'
-import { enable as enableRemote } from '@electron/remote/main'
 import * as os from 'os'
 import * as path from 'path'
 import macOSRelease from 'macos-release'
@@ -47,6 +46,7 @@ export class Window {
     private touchBarControl: any
     private isFluentVibrancy = false
     private dockHidden = false
+    private pendingTimeouts = new Set<ReturnType<typeof setTimeout>>()
 
     get visible$ (): Observable<boolean> { return this.visible }
     get closed$ (): Observable<void> { return this.closed }
@@ -76,6 +76,14 @@ export class Window {
             || !!((input.control || input.meta) && input.shift && (key === 'i' || code === 'keyi'))
     }
 
+    private isReloadShortcut (input: Electron.Input): boolean {
+        const key = input.key?.toLowerCase()
+        const code = input.code?.toLowerCase()
+        return key === 'f5'
+            || code === 'f5'
+            || !!((input.control || input.meta) && !input.shift && (key === 'r' || code === 'keyr'))
+    }
+
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     constructor (private application: Application, private configStore: any, options?: WindowOptions) {
         options = options ?? {}
@@ -93,7 +101,7 @@ export class Window {
             minHeight: 300,
             webPreferences: {
                 nodeIntegration: true,
-                preload: path.join(__dirname, 'sentry.js'),
+                preload: path.join(__dirname, 'bridge.js'),
                 backgroundThrottling: false,
                 contextIsolation: false,
             },
@@ -145,8 +153,8 @@ export class Window {
         this.webContents = this.window.webContents
 
         if (options.debug) {
-            this.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-                console.log(`[renderer:${level}] ${sourceId}:${line} ${message}`)
+            this.webContents.on('console-message', details => {
+                console.log(`[renderer:${details.level}] ${details.sourceId}:${details.lineNumber} ${details.message}`)
             })
             this.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
                 console.error('[renderer] did-fail-load', { errorCode, errorDescription, validatedURL, isMainFrame })
@@ -167,6 +175,11 @@ export class Window {
                 return
             }
             if (!this.isDevToolsShortcut(input)) {
+                if (!options.debug || !this.isReloadShortcut(input)) {
+                    return
+                }
+                event.preventDefault()
+                this.window?.webContents.reloadIgnoringCache()
                 return
             }
             event.preventDefault()
@@ -183,10 +196,10 @@ export class Window {
                 attempts++
                 this.openDevTools()
                 if (attempts < maxAttempts && !this.window?.isDestroyed() && !this.webContents.isDevToolsOpened()) {
-                    setTimeout(tryOpen, 500)
+                    this.scheduleTimeout(tryOpen, 500)
                 }
             }
-            setTimeout(tryOpen, 250)
+            this.scheduleTimeout(tryOpen, 250)
         }
 
         this.webContents.once('dom-ready', () => {
@@ -226,14 +239,14 @@ export class Window {
             }
         })
 
-        enableRemote(this.window.webContents)
-
         this.window.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'))
 
         this.window.webContents.setVisualZoomLevelLimits(1, 1)
         this.window.webContents.setZoomFactor(1)
-        this.window.webContents.session.setPermissionCheckHandler(() => true)
-        this.window.webContents.session.setDevicePermissionHandler(() => true)
+        const allowedPermissions = new Set(['notifications'])
+        this.window.webContents.session.setPermissionCheckHandler((_wc, permission) => allowedPermissions.has(permission))
+        this.window.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => callback(allowedPermissions.has(permission)))
+        this.window.webContents.session.setDevicePermissionHandler(() => false)
 
         if (process.platform === 'darwin') {
             this.touchBarControl = new TouchBar.TouchBarSegmentedControl({
@@ -513,6 +526,36 @@ export class Window {
             this.window?.setTitle(title)
         })
 
+        this.on('window-open-dev-tools', () => {
+            this.openDevTools()
+        })
+
+        this.on('window-reload', () => {
+            this.window?.reload()
+        })
+
+        this.on('window-toggle-fullscreen', () => {
+            if (!this.window) {
+                return
+            }
+            this.window.setFullScreen(!this.window.isFullScreen())
+        })
+
+        this.on('window-toggle-maximize', () => {
+            if (!this.window) {
+                return
+            }
+            if (this.window.isMaximized()) {
+                this.window.unmaximize()
+            } else {
+                this.window.maximize()
+            }
+        })
+
+        this.on('window-set-position', (_, x, y) => {
+            this.window?.setPosition(x, y)
+        })
+
         this.on('window-bring-to-front', () => {
             if (this.window?.isMinimized()) {
                 this.window.restore()
@@ -541,16 +584,16 @@ export class Window {
             this.disableVibrancyWhileDragging = value && this.configStore.hacks?.disableVibrancyWhileDragging
         })
 
-        let moveEndedTimeout: any = null
+        let moveEndedTimeout: ReturnType<typeof setTimeout> | null = null
         const onBoundsChange = () => {
             if (!this.lastVibrancy?.enabled || !this.disableVibrancyWhileDragging || !this.isFluentVibrancy) {
                 return
             }
             this.setVibrancy(false, undefined, false)
-            if (moveEndedTimeout) {
-                clearTimeout(moveEndedTimeout)
+            if (moveEndedTimeout !== null) {
+                this.clearScheduledTimeout(moveEndedTimeout)
             }
-            moveEndedTimeout = setTimeout(() => {
+            moveEndedTimeout = this.scheduleTimeout(() => {
                 this.setVibrancy(this.lastVibrancy.enabled, this.lastVibrancy.type)
             }, 50)
         }
@@ -567,6 +610,27 @@ export class Window {
 
         this.on('window-set-progress-bar', (_, value) => {
             this.window?.setProgressBar(value, { mode: value < 0 ? 'none' : 'normal' })
+        })
+
+        ipcMain.on('bridge:window:get-minimum-size', event => {
+            if (!this.window || event.sender !== this.window.webContents) {
+                return
+            }
+            event.returnValue = this.window.getMinimumSize()
+        })
+
+        ipcMain.on('bridge:window:get-position', event => {
+            if (!this.window || event.sender !== this.window.webContents) {
+                return
+            }
+            event.returnValue = this.window.getPosition()
+        })
+
+        ipcMain.on('bridge:window:is-maximized', event => {
+            if (!this.window || event.sender !== this.window.webContents) {
+                return
+            }
+            event.returnValue = this.window.isMaximized()
         })
     }
 
@@ -609,9 +673,37 @@ export class Window {
     }
 
     private destroy () {
+        this.clearPendingTimeouts()
         this.window = null
         this.closed.next()
         this.visible.complete()
         this.closed.complete()
+    }
+
+    private scheduleTimeout (fn: () => void, delay: number): ReturnType<typeof setTimeout> {
+        const handle = setTimeout(() => {
+            this.pendingTimeouts.delete(handle)
+            fn()
+        }, delay)
+        if (typeof handle === 'object' && typeof handle.unref === 'function') {
+            handle.unref()
+        }
+        this.pendingTimeouts.add(handle)
+        return handle
+    }
+
+    private clearScheduledTimeout (handle: ReturnType<typeof setTimeout> | null): void {
+        if (handle === null) {
+            return
+        }
+        clearTimeout(handle)
+        this.pendingTimeouts.delete(handle)
+    }
+
+    private clearPendingTimeouts (): void {
+        for (const handle of this.pendingTimeouts) {
+            clearTimeout(handle)
+        }
+        this.pendingTimeouts.clear()
     }
 }

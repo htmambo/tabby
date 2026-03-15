@@ -1,6 +1,6 @@
 import colors from 'ansi-colors'
 import * as ZModem from 'zmodem.js'
-import { Observable, filter, first } from 'rxjs'
+import { Observable, filter, firstValueFrom } from 'rxjs'
 import { Injectable } from '@angular/core'
 import { TerminalDecorator } from '../api/decorator'
 import { BaseTerminalTabComponent } from '../api/baseTerminalTab.component'
@@ -147,7 +147,7 @@ class ZModemMiddleware extends SessionMiddleware {
                         this.showMessage(colors.bgYellow.black(' ' + Math.round(100 * transfer.getCompletedBytes() / details.size).toString().padStart(3, ' ') + '% ') + ' ' + details.name, true)
                     },
                 }),
-                this.cancelEvent.pipe(first()).toPromise(),
+                firstValueFrom(this.cancelEvent),
             ])
 
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -238,12 +238,15 @@ export class ZModemDecorator extends TerminalDecorator {
     }
 
     attach (terminal: BaseTerminalTabComponent<any>): void {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             this.attachToSession(terminal)
             this.subscribeUntilDetached(terminal, terminal.sessionChanged$.subscribe(() => {
                 this.attachToSession(terminal)
             }))
         })
+        if (typeof (timer as any)?.unref === 'function') {
+            (timer as any).unref()
+        }
     }
 
     private attachToSession (terminal: BaseTerminalTabComponent<any>) {

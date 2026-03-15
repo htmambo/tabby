@@ -172,7 +172,10 @@ export class ConfigService {
         @Inject(ConfigProvider) private configProviders: ConfigProvider[],
     ) {
         this.defaults = this.mergeDefaults()
-        setTimeout(() => this.init())
+        const timer = setTimeout(() => this.init())
+        if (typeof (timer as any)?.unref === 'function') {
+            (timer as any).unref()
+        }
         vault.contentChanged$.subscribe(() => {
             this.store.vault = vault.store
             this.save()

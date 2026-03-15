@@ -1,7 +1,6 @@
-import * as fs from 'fs/promises'
 import * as path from 'path'
 import { Injectable } from '@angular/core'
-import { HostAppService, Platform } from 'tabby-core'
+import { HostAppService, Platform, getRuntimeEnv, pathExists } from 'tabby-core'
 
 import { ShellProvider, Shell } from 'tabby-local'
 
@@ -19,17 +18,13 @@ export class MSYS2ShellProvider extends ShellProvider {
             return []
         }
 
-        const msys2Path = path.resolve(process.env.SystemRoot ?? 'C:\\Windows', '../msys64')
-        try {
-            await fs.access(msys2Path)
-        } catch {
+        const msys2Path = path.resolve(getRuntimeEnv('SystemRoot') ?? 'C:\\Windows', '../msys64')
+        if (!await pathExists(msys2Path)) {
             return []
         }
 
-        let homePath: string|undefined = path.resolve(msys2Path, 'home', process.env.USERNAME!)
-        try {
-            await fs.access(msys2Path)
-        } catch {
+        let homePath: string|undefined = path.resolve(msys2Path, 'home', getRuntimeEnv('USERNAME') ?? 'user')
+        if (!await pathExists(homePath)) {
             homePath = undefined
         }
 

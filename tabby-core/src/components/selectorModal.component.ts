@@ -1,5 +1,5 @@
 import { firstBy } from 'thenby'
-import { Component, Input, HostListener, ViewChildren, QueryList, ElementRef } from '@angular/core' // eslint-disable-line @typescript-eslint/no-unused-vars
+import { Component, Input, HostListener, ViewChildren, QueryList, ElementRef, OnDestroy } from '@angular/core' // eslint-disable-line @typescript-eslint/no-unused-vars
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import FuzzySearch from 'fuzzy-search'
 import { SelectorOption } from '../api/selector'
@@ -11,7 +11,7 @@ import { SelectorOption } from '../api/selector'
     templateUrl: './selectorModal.component.pug',
     styleUrls: ['./selectorModal.component.scss'],
 })
-export class SelectorModalComponent<T> {
+export class SelectorModalComponent<T> implements OnDestroy {
     @Input() options: SelectorOption<T>[]
     @Input() filteredOptions: SelectorOption<T>[]
     @Input() filter = ''
@@ -20,6 +20,7 @@ export class SelectorModalComponent<T> {
     hasGroups = false
     @ViewChildren('item') itemChildren: QueryList<ElementRef>
     private preventEdit: boolean
+    private optionCallbackTimeout: number | null = null
 
     constructor (public modalInstance: NgbActiveModal) {
         this.preventEdit = false
@@ -114,7 +115,17 @@ export class SelectorModalComponent<T> {
 
     selectOption (option: SelectorOption<T>): void {
         this.modalInstance.close(option.result)
-        setTimeout(() => option.callback?.(this.filter))
+        this.optionCallbackTimeout = window.setTimeout(() => {
+            this.optionCallbackTimeout = null
+            option.callback?.(this.filter)
+        })
+    }
+
+    ngOnDestroy (): void {
+        if (this.optionCallbackTimeout !== null) {
+            window.clearTimeout(this.optionCallbackTimeout)
+            this.optionCallbackTimeout = null
+        }
     }
 
     canEditSelected (): boolean {

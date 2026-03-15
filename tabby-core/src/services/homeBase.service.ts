@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@angular/core'
 import * as mixpanel from 'mixpanel'
 import { v4 as uuidv4 } from 'uuid'
 import { ConfigService } from './config.service'
+import { getRuntimeArch, getRuntimePlatform } from '../api/rendererRuntime'
 import { PlatformService, BOOTSTRAP_DATA, BootstrapData, HostAppService } from '../api'
 
 @Injectable({ providedIn: 'root' })
@@ -37,7 +38,7 @@ export class HomeBaseService {
 
     reportBug (): void {
         let body = `Version: ${this.appVersion}\n`
-        body += `Platform: ${this.hostApp.platform} ${process.arch} ${this.platform.getOSRelease()}\n`
+        body += `Platform: ${this.hostApp.platform} ${getRuntimeArch()} ${this.platform.getOSRelease()}\n`
         const plugins = this.bootstrapData.installedPlugins.filter(x => !x.isBuiltin).map(x => x.name)
         body += `Plugins: ${plugins.join(', ') || 'none'}\n`
         body += `Frontend: ${this.config.store.terminal?.frontend}\n\n`
@@ -59,7 +60,7 @@ export class HomeBaseService {
     getAnalyticsProperties (): Record<string, string> {
         return {
             distinct_id: window.localStorage.analyticsUserID,
-            platform: process.platform,
+            platform: getRuntimePlatform(),
             os: this.platform.getOSRelease(),
             version: this.appVersion,
         }

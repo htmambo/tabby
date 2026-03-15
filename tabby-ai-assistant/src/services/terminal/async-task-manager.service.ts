@@ -9,8 +9,7 @@
  */
 
 import { Injectable } from '@angular/core'
-import { Subject, Observable, interval } from 'rxjs'
-import { takeUntil } from 'rxjs/operators'
+import { Subject, Observable, Subscription, interval } from 'rxjs'
 import {
     AsyncTask,
     AsyncTaskStatus,
@@ -31,8 +30,11 @@ export class AsyncTaskManagerService {
     /** 任务事件流 */
     private taskEventSubject = new Subject<AsyncTaskEvent>()
 
+    /** 延迟启动任务的计时器 */
+    private pendingStartHandles = new Map<string, number>()
+
     /** 活跃的监控定时器 */
-    private monitoringIntervals = new Map<string, any>()
+    private monitoringIntervals = new Map<string, { subscription: Subscription }>()
 
     /** 默认超时时间：5分钟 */
     private readonly DEFAULT_TIMEOUT_MS = 5 * 60 * 1000
@@ -87,7 +89,11 @@ export class AsyncTaskManagerService {
         })
 
         // 异步启动任务
-        setTimeout(() => this.startTask(taskId, params), 0)
+        const startHandle = window.setTimeout(() => {
+            this.pendingStartHandles.delete(taskId)
+            this.startTask(taskId, params)
+        }, 0)
+        this.pendingStartHandles.set(taskId, startHandle)
 
         return task
     }
@@ -165,6 +171,26 @@ export class AsyncTaskManagerService {
             timestamp: new Date(),
         })
 
+        return true
+    }
+
+    /**
+     * 移除任务
+     */
+    removeTask(taskId: string): boolean {
+        const task = this.tasks.get(taskId)
+        if (!task) {
+            return false
+        }
+
+        const pending = this.pendingStartHandles.get(taskId)
+        if (pending !== undefined) {
+            window.clearTimeout(pending)
+            this.pendingStartHandles.delete(taskId)
+        }
+
+        this.stopMonitoring(taskId)
+        this.tasks.delete(taskId)
         return true
     }
 
@@ -265,15 +291,12 @@ export class AsyncTaskManagerService {
         if (!task) {return}
 
         // 使用 RxJS interval 进行轮询
-        const poll$ = interval(this.POLL_INTERVAL_MS)
-
-        const subscription = poll$.pipe(
-            takeUntil(new Subject()),
-        ).subscribe({
+        const subscription = interval(this.POLL_INTERVAL_MS).subscribe({
             next: () => {
                 const currentTask = this.tasks.get(taskId)
                 if (!currentTask || currentTask.status !== 'running') {
                     subscription.unsubscribe()
+                    this.monitoringIntervals.delete(taskId)
                     return
                 }
 
@@ -295,6 +318,7 @@ export class AsyncTaskManagerService {
                 if (this.isTaskComplete(currentTask)) {
                     this.completeTask(taskId, true)
                     subscription.unsubscribe()
+                    this.monitoringIntervals.delete(taskId)
                 }
             },
         })

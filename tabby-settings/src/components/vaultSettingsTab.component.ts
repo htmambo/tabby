@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Component, HostBinding } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { BaseComponent, VaultService, VaultSecret, Vault, PlatformService, ConfigService, VAULT_SECRET_TYPE_FILE, PromptModalComponent, VaultFileSecret, TranslateService } from 'tabby-core'
+import { BaseComponent, VaultService, VaultSecret, Vault, PlatformService, ConfigService, VAULT_SECRET_TYPE_FILE, PromptModalComponent, VaultFileSecret, TranslateService, bytesToBase64, base64ToBytes } from 'tabby-core'
 import { SetVaultPassphraseModalComponent } from './setVaultPassphraseModal.component'
 import { ShowSecretModalComponent } from './showSecretModal.component'
 
@@ -180,7 +180,7 @@ export class VaultSettingsTabComponent extends BaseComponent {
         }
         await this.vault.updateSecret(secret, {
             ...secret,
-            value: Buffer.from(await transfers[0].readAll()).toString('base64'),
+            value: bytesToBase64(await transfers[0].readAll()),
         })
         this.loadVault()
     }
@@ -212,11 +212,11 @@ export class VaultSettingsTabComponent extends BaseComponent {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         secret = (await this.vault.getSecret(secret.type, secret.key)) as VaultFileSecret
 
-        const content = Buffer.from(secret.value, 'base64')
+        const content = base64ToBytes(secret.value)
         const download = await this.platform.startDownload(secret.key.description, 0o600, content.length)
 
         if (download) {
-            await download.write(content as Uint8Array)
+            await download.write(content)
             download.close()
         }
     }

@@ -1,8 +1,12 @@
-import { Component } from '@angular/core'
-import { DomSanitizer } from '@angular/platform-browser'
+import { afterNextRender, Component, OnDestroy } from '@angular/core'
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { HomeBaseService } from '../services/homeBase.service'
 import { CommandService } from '../services/commands.service'
 import { Command, CommandLocation } from '../api/commands'
+
+interface StartPageCommand extends Command {
+    safeIcon: SafeHtml
+}
 
 /** @hidden */
 @Component({
@@ -11,26 +15,43 @@ import { Command, CommandLocation } from '../api/commands'
     templateUrl: './startPage.component.pug',
     styleUrls: ['./startPage.component.scss'],
 })
-export class StartPageComponent {
+export class StartPageComponent implements OnDestroy {
     version: string
-    commands: Command[] = []
+    commands: StartPageCommand[] = []
+    private destroyed = false
+    private loadCommandsTimeout: ReturnType<typeof setTimeout> | null = null
 
     constructor (
         private domSanitizer: DomSanitizer,
         public homeBase: HomeBaseService,
         commands: CommandService,
     ) {
-        commands.getCommands({}).then(c => {
-            this.commands = c.filter(x => x.locations?.includes(CommandLocation.StartPage))
+        afterNextRender(() => {
+            this.loadCommandsTimeout = setTimeout(async () => {
+                const loadedCommands = await commands.getCommands({})
+                if (this.destroyed) {
+                    return
+                }
+                this.commands = loadedCommands
+                    .filter(x => x.locations?.includes(CommandLocation.StartPage))
+                    .map(command => ({
+                        ...command,
+                        safeIcon: this.domSanitizer.bypassSecurityTrustHtml(command.icon ?? ''),
+                    }))
+            }, 0)
         })
     }
 
-    sanitizeIcon (icon?: string): any {
-        return this.domSanitizer.bypassSecurityTrustHtml(icon ?? '')
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    buttonsTrackBy (_, btn: StartPageCommand): any {
+        return btn.label + btn.icon
     }
 
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    buttonsTrackBy (_, btn: Command): any {
-        return btn.label + btn.icon
+    ngOnDestroy (): void {
+        this.destroyed = true
+        if (this.loadCommandsTimeout !== null) {
+            clearTimeout(this.loadCommandsTimeout)
+            this.loadCommandsTimeout = null
+        }
     }
 }

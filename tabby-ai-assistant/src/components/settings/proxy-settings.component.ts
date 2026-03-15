@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, OnInit } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { ProxyService } from '../../services/network/proxy.service'
 import { LoggerService } from '../../services/core/logger.service'
@@ -35,7 +34,7 @@ import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types'
                     </label>
                 </div>
 
-                <button class="btn btn-link" (click)="importFromEnv()">
+                <button type="button" class="btn btn-link" (click)="importFromEnv()">
                     <i class="fa fa-download"></i>
                     {{ t.proxy?.importFromEnv || '从环境变量导入' }}
                 </button>
@@ -108,11 +107,11 @@ import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types'
 
                 <!-- 操作按钮 -->
                 <div class="form-actions">
-                    <button class="btn btn-primary" (click)="saveConfig()">
+                    <button type="button" class="btn btn-primary" (click)="saveConfig()">
                         <i class="fa fa-save"></i>
                         {{ t.common?.save || '保存' }}
                     </button>
-                    <button class="btn btn-secondary" (click)="testConnection()" [disabled]="isTesting">
+                    <button type="button" class="btn btn-secondary" (click)="testConnection()" [disabled]="isTesting">
                         <i class="fa" [ngClass]="isTesting ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
                         {{ t.proxy?.testConnection || '测试连接' }}
                     </button>
@@ -404,7 +403,7 @@ import { ProxyConfig, ProxyTestResult } from '../../types/proxy.types'
         }
     `],
 })
-export class ProxySettingsComponent implements OnInit, OnDestroy {
+export class ProxySettingsComponent implements OnInit {
     proxyConfig: ProxyConfig = {
         enabled: false,
         httpProxy: '',
@@ -416,8 +415,6 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
     showAuthFields = false
     isTesting = false
     testResult: ProxyTestResult | null = null
-
-    private destroy$ = new Subject<void>()
 
     get t(): any {
         if (!this.translate) {
@@ -465,11 +462,6 @@ export class ProxySettingsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadConfig()
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     /**

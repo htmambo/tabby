@@ -24,6 +24,7 @@ export class TabHeaderComponent extends BaseComponent {
     @Input() tab: BaseTabComponent
     @Input() progress: number|null
     Platform = Platform
+    private dragEndTimeout: number | null = null
 
     constructor (
         public app: AppService,
@@ -70,10 +71,19 @@ export class TabHeaderComponent extends BaseComponent {
     }
 
     onTabDragEnd () {
-        setTimeout(() => {
+        this.dragEndTimeout = window.setTimeout(() => {
+            this.dragEndTimeout = null
             this.app.emitTabDragEnded()
             this.app.emitTabsChanged()
         })
+    }
+
+    override ngOnDestroy (): void {
+        if (this.dragEndTimeout !== null) {
+            window.clearTimeout(this.dragEndTimeout)
+            this.dragEndTimeout = null
+        }
+        super.ngOnDestroy()
     }
 
     @HostBinding('class.flex-width') get isFlexWidthEnabled (): boolean {

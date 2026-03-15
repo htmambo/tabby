@@ -1,7 +1,8 @@
-import { Injectable, ApplicationRef, Injector, EmbeddedViewRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core'
+import { Injectable, ApplicationRef, Injector, EmbeddedViewRef, ComponentRef, EnvironmentInjector, Optional, createComponent } from '@angular/core'
 import { Subject, Observable } from 'rxjs'
-import { AppService, ConfigService } from 'tabby-core'
+import { ConfigService, SettingsTabOpener } from 'tabby-core'
 import { AiSidebarComponent } from '../../components/chat/ai-sidebar.component'
+import { ChatInterfaceOpener } from '../../api/chatInterfaceOpener'
 import { AiSettingsViewService } from '../core/ai-settings-view.service'
 
 /**
@@ -31,11 +32,14 @@ export interface AiSidebarConfig {
  * app-root 变为水平 flex 容器，sidebar 在左侧
  */
 @Injectable({ providedIn: 'root' })
-export class AiSidebarService {
+export class AiSidebarService implements ChatInterfaceOpener {
     private sidebarComponentRef: ComponentRef<AiSidebarComponent> | null = null
     private sidebarElement: HTMLElement | null = null
     private styleElement: HTMLStyleElement | null = null
     private resizeHandle: HTMLElement | null = null
+    private windowResizeHandler: (() => void) | null = null
+    private cleanupResizeHandleListeners: (() => void) | null = null
+    private cleanupResizeDocumentListeners: (() => void) | null = null
     private _isVisible = false
 
     // Resize constants
@@ -68,6 +72,7 @@ export class AiSidebarService {
         private environmentInjector: EnvironmentInjector,
         private config: ConfigService,
         private settingsView: AiSettingsViewService,
+        @Optional() private settingsTabOpener: SettingsTabOpener | null,
     ) { }
 
     /**
@@ -85,6 +90,10 @@ export class AiSidebarService {
         this.savePluginConfig(pluginConfig)
 
         this._isVisible = true
+    }
+
+    open(): void {
+        this.show()
     }
 
     /**
@@ -127,21 +136,7 @@ export class AiSidebarService {
      */
     openSettings(): void {
         this.settingsView.requestTab('providers')
-
-        const app = this.injector.get(AppService)
-        const { SettingsTabComponent } = window['nodeRequire']('tabby-settings')
-        const settingsTab = app.tabs.find(tab => tab instanceof SettingsTabComponent) as InstanceType<typeof SettingsTabComponent> | undefined
-
-        if (settingsTab) {
-            settingsTab.activeTab = 'ai-assistant'
-            app.selectTab(settingsTab)
-            return
-        }
-
-        app.openNewTabRaw({
-            type: SettingsTabComponent,
-            inputs: { activeTab: 'ai-assistant' },
-        })
+        this.settingsTabOpener?.open('ai-assistant')
     }
 
     /**
@@ -249,9 +244,8 @@ export class AiSidebarService {
         const resizeHandler = () => {
             this.applyWrapperViewportMetrics(wrapper)
         }
-        window.addEventListener('resize', resizeHandler);
-        // 存储 handler 以便在销毁时移除
-        (wrapper as any)._resizeHandler = resizeHandler
+        window.addEventListener('resize', resizeHandler)
+        this.windowResizeHandler = resizeHandler
 
         // 创建 resize handle（拖动条）
         const resizeHandle = document.createElement('div')
@@ -271,14 +265,20 @@ export class AiSidebarService {
         `
 
         // 鼠标悬停时显示高亮
-        resizeHandle.addEventListener('mouseenter', () => {
+        const onMouseEnter = () => {
             resizeHandle.style.background = 'var(--ai-primary, #4dabf7)'
-        })
-        resizeHandle.addEventListener('mouseleave', () => {
+        }
+        const onMouseLeave = () => {
             if (!this.isResizing) {
                 resizeHandle.style.background = 'transparent'
             }
-        })
+        }
+        resizeHandle.addEventListener('mouseenter', onMouseEnter)
+        resizeHandle.addEventListener('mouseleave', onMouseLeave)
+        this.cleanupResizeHandleListeners = () => {
+            resizeHandle.removeEventListener('mouseenter', onMouseEnter)
+            resizeHandle.removeEventListener('mouseleave', onMouseLeave)
+        }
 
         // 添加拖动逻辑
         this.setupResizeHandler(resizeHandle, wrapper)
@@ -310,12 +310,16 @@ export class AiSidebarService {
         // 移除注入的 CSS
         this.removeLayoutCSS()
 
-        // 移除 resize 监听器
-        if (this.sidebarElement) {
-            const handler = (this.sidebarElement as any)._resizeHandler
-            if (handler) {
-                window.removeEventListener('resize', handler)
-            }
+        if (this.windowResizeHandler) {
+            window.removeEventListener('resize', this.windowResizeHandler)
+            this.windowResizeHandler = null
+        }
+
+        this.clearActiveResizeDocumentListeners()
+
+        if (this.cleanupResizeHandleListeners) {
+            this.cleanupResizeHandleListeners()
+            this.cleanupResizeHandleListeners = null
         }
 
         if (this.sidebarComponentRef) {
@@ -328,6 +332,8 @@ export class AiSidebarService {
             this.sidebarElement.remove()
             this.sidebarElement = null
         }
+
+        this.resizeHandle = null
     }
 
     /**
@@ -454,12 +460,7 @@ export class AiSidebarService {
         }
 
         const onMouseUp = () => {
-            this.isResizing = false
-            document.removeEventListener('mousemove', onMouseMove)
-            document.removeEventListener('mouseup', onMouseUp)
-            document.body.style.cursor = ''
-            document.body.style.userSelect = ''
-            handle.style.background = 'transparent'
+            this.clearActiveResizeDocumentListeners()
 
             // 保存宽度到配置
             this.saveSidebarWidth(this.currentWidth)
@@ -467,17 +468,36 @@ export class AiSidebarService {
 
         const onMouseDown = (e: MouseEvent) => {
             e.preventDefault()
+
+            this.clearActiveResizeDocumentListeners()
             this.isResizing = true
             startX = e.clientX
             startWidth = this.currentWidth
-
             document.addEventListener('mousemove', onMouseMove)
             document.addEventListener('mouseup', onMouseUp)
+            this.cleanupResizeDocumentListeners = () => {
+                document.removeEventListener('mousemove', onMouseMove)
+                document.removeEventListener('mouseup', onMouseUp)
+            }
             document.body.style.cursor = 'ew-resize'
             document.body.style.userSelect = 'none'
         }
 
         handle.addEventListener('mousedown', onMouseDown)
+        const previousCleanup = this.cleanupResizeHandleListeners
+        this.cleanupResizeHandleListeners = () => {
+            previousCleanup?.()
+            handle.removeEventListener('mousedown', onMouseDown)
+        }
+    }
+
+    private clearActiveResizeDocumentListeners(): void {
+        this.cleanupResizeDocumentListeners?.()
+        this.cleanupResizeDocumentListeners = null
+        this.isResizing = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        this.resizeHandle?.style.setProperty('background', 'transparent')
     }
 
     /**

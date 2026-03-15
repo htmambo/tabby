@@ -1,6 +1,5 @@
-import * as keytar from 'keytar'
 import { Injectable } from '@angular/core'
-import { VaultService } from 'tabby-core'
+import { VaultService, getNativeSecret, setNativeSecret, deleteNativeSecret } from 'tabby-core'
 import { SSHProfile } from '../api'
 
 export const VAULT_SECRET_TYPE_PASSWORD = 'ssh:password'
@@ -20,7 +19,7 @@ export class PasswordStorageService {
                 return
             }
             const key = this.getKeytarKeyForConnection(profile)
-            return keytar.setPassword(key, account, password)
+            return setNativeSecret(key, account, password)
         }
     }
 
@@ -34,7 +33,7 @@ export class PasswordStorageService {
                 return
             }
             const key = this.getKeytarKeyForConnection(profile)
-            await keytar.deletePassword(key, account)
+            await deleteNativeSecret(key, account)
         }
     }
 
@@ -48,7 +47,7 @@ export class PasswordStorageService {
                 return null
             }
             const key = this.getKeytarKeyForConnection(profile)
-            return keytar.getPassword(key, account)
+            return getNativeSecret(key, account)
         }
     }
 
@@ -58,7 +57,7 @@ export class PasswordStorageService {
             this.vault.addSecret({ type: VAULT_SECRET_TYPE_PASSPHRASE, key, value: password })
         } else {
             const key = this.getKeytarKeyForPrivateKey(id)
-            return keytar.setPassword(key, 'user', password)
+            return setNativeSecret(key, 'user', password)
         }
     }
 
@@ -68,7 +67,7 @@ export class PasswordStorageService {
             this.vault.removeSecret(VAULT_SECRET_TYPE_PASSPHRASE, key)
         } else {
             const key = this.getKeytarKeyForPrivateKey(id)
-            await keytar.deletePassword(key, 'user')
+            await deleteNativeSecret(key, 'user')
         }
     }
 
@@ -78,7 +77,7 @@ export class PasswordStorageService {
             return (await this.vault.getSecret(VAULT_SECRET_TYPE_PASSPHRASE, key))?.value ?? null
         } else {
             const key = this.getKeytarKeyForPrivateKey(id)
-            return keytar.getPassword(key, 'user')
+            return getNativeSecret(key, 'user')
         }
     }
 

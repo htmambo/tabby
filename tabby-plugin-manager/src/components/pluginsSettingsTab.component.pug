@@ -25,6 +25,16 @@ ul.nav-tabs.mb-2(ngbNav, #nav='ngbNav')
                     (ngModelChange)='searchAvailable(availableFilter)',
                     [placeholder]='"Search plugins"|translate'
                 )
+            .form-check.form-switch.mb-3
+                input.form-check-input(
+                    type='checkbox',
+                    id='show-unofficial-plugins',
+                    [checked]='showUnofficialPlugins',
+                    (change)='toggleShowUnofficialPlugins($any($event.target).checked)'
+                )
+                label.form-check-label(for='show-unofficial-plugins', translate) Show community plugins
+            .alert.alert-warning.mt-3(*ngIf='showUnofficialPlugins')
+                span(translate) Community plugins are not verified and can run local code with your user permissions.
 
             .alert.alert-warning.mt-3(*ngIf='availableWarnings.length')
                 div(translate) Some plugin sources failed to load. Results may be incomplete.

@@ -20,6 +20,7 @@ export class DockMenuService {
 
     async update (): Promise<void> {
         const profiles = await this.profilesService.getProfiles()
+        const executablePath = this.electron.app.getPath('exe')
 
         if (this.hostApp.platform === Platform.Windows) {
             this.electron.app.setJumpList([
@@ -28,10 +29,10 @@ export class DockMenuService {
                     name: this.translate.instant('Recent'),
                     items: this.profilesService.getRecentProfiles().map((profile, index) => ({
                         type: 'task',
-                        program: process.execPath,
+                        program: executablePath,
                         args: `recent ${index}`,
                         title: profile.name,
-                        iconPath: process.execPath,
+                        iconPath: executablePath,
                         iconIndex: 0,
                     })),
                 },
@@ -40,30 +41,28 @@ export class DockMenuService {
                     name: this.translate.instant('Profiles'),
                     items: profiles.map(profile => ({
                         type: 'task',
-                        program: process.execPath,
+                        program: executablePath,
                         args: `profile "${profile.name}"`,
                         title: profile.name,
-                        iconPath: process.execPath,
+                        iconPath: executablePath,
                         iconIndex: 0,
                     })),
                 },
             ])
         }
         if (this.hostApp.platform === Platform.macOS) {
-            this.electron.app.dock?.setMenu(this.electron.Menu.buildFromTemplate(
-                [
-                    ...[...this.profilesService.getRecentProfiles(), ...profiles].map(profile => ({
-                        label: profile.name,
-                        click: () => this.zone.run(async () => {
-                            this.profilesService.openNewTabForProfile(profile)
-                        }),
-                    })),
-                    {
-                        label: this.translate.instant('New Window'),
-                        click: () => this.zone.run(() => this.hostApp.newWindow()),
-                    },
-                ],
-            ))
+            this.electron.setDockMenu([
+                ...[...this.profilesService.getRecentProfiles(), ...profiles].map(profile => ({
+                    label: profile.name,
+                    click: () => this.zone.run(async () => {
+                        this.profilesService.openNewTabForProfile(profile)
+                    }),
+                })),
+                {
+                    label: this.translate.instant('New Window'),
+                    click: () => this.zone.run(() => this.hostApp.newWindow()),
+                },
+            ])
         }
     }
 }

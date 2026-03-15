@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { InfiniteScrollModule } from 'ngx-infinite-scroll'
 
-import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, AppService } from 'tabby-core'
+import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener } from 'tabby-core'
 
 import { EditProfileModalComponent } from './components/editProfileModal.component'
 import { EditProfileGroupModalComponent } from './components/editProfileGroupModal.component'
@@ -22,6 +22,7 @@ import { ConfigSyncSettingsTabComponent } from './components/configSyncSettingsT
 import { ShowSecretModalComponent } from './components/showSecretModal.component'
 
 import { ConfigSyncService } from './services/configSync.service'
+import { SettingsTabOpenerService } from './services/settingsTabOpener.service'
 
 import { SettingsTabProvider } from './api'
 import { ButtonProvider } from './buttonProvider'
@@ -42,6 +43,8 @@ import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabP
         { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
         { provide: ConfigProvider, useClass: SettingsConfigProvider, multi: true },
         { provide: HotkeyProvider, useClass: SettingsHotkeyProvider, multi: true },
+        SettingsTabOpenerService,
+        { provide: SettingsTabOpener, useExisting: SettingsTabOpenerService },
         { provide: SettingsTabProvider, useClass: HotkeySettingsTabProvider, multi: true },
         { provide: SettingsTabProvider, useClass: WindowSettingsTabProvider, multi: true },
         { provide: SettingsTabProvider, useClass: VaultSettingsTabProvider, multi: true },
@@ -68,16 +71,13 @@ import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabP
 export default class SettingsModule {
     constructor (
         public configSync: ConfigSyncService,
-        app: AppService,
+        settingsTabOpener: SettingsTabOpener,
         hotkeys: HotkeysService,
     ) {
         hotkeys.hotkey$.subscribe(async hotkey => {
             if (hotkey.startsWith('settings-tab.')) {
                 const id = hotkey.substring(hotkey.indexOf('.') + 1)
-                app.openNewTabRaw({
-                    type: SettingsTabComponent,
-                    inputs: { activeTab: id },
-                })
+                settingsTabOpener.open(id)
             }
         })
     }

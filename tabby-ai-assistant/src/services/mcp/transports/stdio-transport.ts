@@ -1,16 +1,75 @@
 import { BaseTransport } from './base-transport'
 import { MCPRequest, MCPResponse } from '../mcp-message.types'
+import { getRuntimeCwd, getRuntimeEnvObject, getRuntimePlatform } from 'tabby-core'
+
+const STDIO_TRANSPORT_ENV_KEYS = [
+    'APPDATA',
+    'COMSPEC',
+    'HOME',
+    'LANG',
+    'LC_ALL',
+    'LC_CTYPE',
+    'LOCALAPPDATA',
+    'NO_PROXY',
+    'no_proxy',
+    'HTTP_PROXY',
+    'http_proxy',
+    'HTTPS_PROXY',
+    'https_proxy',
+    'PATH',
+    'Path',
+    'PATHEXT',
+    'SHELL',
+    'SystemRoot',
+    'TEMP',
+    'TERM',
+    'TMP',
+    'USER',
+    'USERNAME',
+    'USERPROFILE',
+    'windir',
+] as const
+
+type BridgeIPCListener = (...args: any[]) => void
+
+type BridgeIPC = {
+    send: (channel: string, ...args: any[]) => void
+    invoke: <T = any>(channel: string, ...args: any[]) => Promise<T>
+    on: (channel: string, listener: BridgeIPCListener) => void
+    off: (channel: string, listener: BridgeIPCListener) => void
+}
+
+type BridgeWindow = Window & {
+    tabbyBridge?: {
+        ipc?: BridgeIPC
+    }
+}
+
+interface BridgeSerializedError {
+    name?: string
+    message?: string
+    stack?: string
+}
+
+function getBridgeIPC(): BridgeIPC {
+    const ipc = (window as BridgeWindow).tabbyBridge?.ipc
+    if (!ipc) {
+        throw new Error('Tabby IPC bridge is unavailable')
+    }
+    return ipc
+}
 
 /**
  * Stdio 传输层实现
  * 用于与本地 MCP 服务器进程通信
  */
 export class StdioTransport extends BaseTransport {
-    private process: any = null // ChildProcess
+    private processID: string | null = null
     private pendingRequests = new Map<string | number, {
         resolve: (value: MCPResponse) => void;
         reject: (reason: any) => void;
     }>()
+    private subscriptions = new Map<string, BridgeIPCListener>()
 
     private buffer = ''
     private requestId = 0
@@ -29,24 +88,16 @@ export class StdioTransport extends BaseTransport {
         }
 
         try {
-            // 获取 Node.js 的 child_process 模块
-            const { spawn } = (window as any).require?.('child_process') ||
-                (typeof require !== 'undefined' ? require('child_process') : null)
-
-            if (!spawn) {
-                throw new Error('child_process module not available')
-            }
-
             // 构建环境变量
             const env = {
-                ...(typeof process !== 'undefined' ? process.env : {}),
+                ...getRuntimeEnvObject(STDIO_TRANSPORT_ENV_KEYS),
                 ...this.options.env,
                 // 确保 NODE_ENV 设置正确
                 NODE_ENV: 'production',
             }
 
             // 检测操作系统
-            const isWindows = typeof process !== 'undefined' && process.platform === 'win32'
+            const isWindows = getRuntimePlatform() === 'win32'
 
             // Windows 兼容性处理：对于 npx/npm/node 命令使用 shell 模式
             const command = this.command
@@ -54,80 +105,53 @@ export class StdioTransport extends BaseTransport {
                 cmd => this.command.toLowerCase() === cmd || this.command.toLowerCase().endsWith(`/${cmd}`) || this.command.toLowerCase().endsWith(`\\${cmd}`),
             )
 
-            this.process = spawn(command, this.args, {
-                stdio: ['pipe', 'pipe', 'pipe'],
+            this.processID = await getBridgeIPC().invoke<string>('bridge:subprocess:spawn', {
+                command,
+                args: this.args,
                 env,
-                cwd: this.options.cwd ?? (typeof process !== 'undefined' ? process.cwd() : '.'),
-                // Windows 上使用 shell 模式来解决 ENOENT 问题
+                cwd: this.options.cwd ?? getRuntimeCwd(),
                 shell: isWindows && needsShell,
             })
 
-            // 设置 stdout 处理
-            if (this.process.stdout) {
-                this.process.stdout.on('data', (data: Buffer) => {
-                    this.handleData(data.toString())
-                })
-            }
-
-            // 设置 stderr 处理
-            if (this.process.stderr) {
-                this.process.stderr.on('data', (data: Buffer) => {
-                    console.error('[MCP Stdio] stderr:', data.toString())
-                })
-            }
-
-            // 设置进程关闭处理
-            if (this.process.on) {
-                this.process.on('close', (code: number) => {
-                    this.handleClose(code)
-                })
-
-                this.process.on('error', (error: Error) => {
-                    console.error('[MCP Stdio] Process error:', error)
-                    this.handleError(error)
-                })
-            }
+            this.subscribe('stdout', (data: string) => {
+                this.handleData(data)
+            })
+            this.subscribe('stderr', (data: string) => {
+                console.error('[MCP Stdio] stderr:', data)
+            })
+            this.subscribe('close', (code: number | null, signal?: string | null) => {
+                this.handleClose(code, signal)
+            })
+            this.subscribe('error', (error: BridgeSerializedError) => {
+                this.handleError(this.deserializeError(error))
+            })
 
             this.connected = true
-
-            // 等待进程初始化
-            await this.waitForProcess()
         } catch (error) {
             console.error('[MCP Stdio] Failed to connect:', error)
-            this.connected = false
+            this.teardownConnection()
             throw error
         }
     }
 
     async disconnect(): Promise<void> {
-        if (!this.process) {
+        if (!this.processID) {
             return
         }
 
         try {
-            if (this.process.kill) {
-                this.process.kill('SIGTERM')
-            }
-            if (this.process.stdin) {
-                this.process.stdin.end()
-            }
+            getBridgeIPC().send('bridge:subprocess:stdin-end', this.processID)
+            getBridgeIPC().send('bridge:subprocess:kill', this.processID, 'SIGTERM')
         } catch (error) {
             console.error('[MCP Stdio] Error during disconnect:', error)
         }
 
-        this.process = null
-        this.connected = false
-        this.buffer = ''
-
-        // 拒绝所有待处理的请求
-        this.pendingRequests.forEach(({ reject }) => {
-            reject(new Error('Transport disconnected'))
-        })
-        this.pendingRequests.clear()
+        this.teardownConnection()
+        this.rejectPendingRequests(new Error('Transport disconnected'))
     }
 
     async send(request: MCPRequest): Promise<MCPResponse> {
-        if (!this.connected || !this.process) {
+        if (!this.connected || !this.processID) {
             throw new Error('Transport not connected')
         }
 
@@ -141,12 +165,7 @@ export class StdioTransport extends BaseTransport {
                 this.pendingRequests.set(request.id, { resolve, reject })
 
                 const message = JSON.stringify(request) + '\n'
-
-                if (this.process.stdin?.write) {
-                    this.process.stdin.write(message)
-                } else {
-                    throw new Error('Process stdin not available')
-                }
+                getBridgeIPC().send('bridge:subprocess:write', this.processID, message)
             } catch (error) {
                 this.pendingRequests.delete(request.id)
                 reject(error)
@@ -197,16 +216,12 @@ export class StdioTransport extends BaseTransport {
     /**
      * 处理进程关闭
      */
-    private handleClose(code: number): void {
+    private handleClose(code: number | null, signal?: string | null): void {
         if (!this.isDestroyed()) {
-            console.log('[MCP Stdio] Process closed with code:', code)
-            this.connected = false
-
-            // 拒绝所有待处理的请求
-            this.pendingRequests.forEach(({ reject }) => {
-                reject(new Error(`Process exited with code ${code}`))
-            })
-            this.pendingRequests.clear()
+            console.log('[MCP Stdio] Process closed', { code, signal })
+            this.teardownConnection()
+            const reason = code !== null ? `code ${code}` : `signal ${signal ?? 'unknown'}`
+            this.rejectPendingRequests(new Error(`Process exited with ${reason}`))
         }
     }
 
@@ -215,49 +230,8 @@ export class StdioTransport extends BaseTransport {
      */
     private handleError(error: Error): void {
         console.error('[MCP Stdio] Process error:', error)
-        this.connected = false
-
-        this.pendingRequests.forEach(({ reject }) => {
-            reject(error)
-        })
-        this.pendingRequests.clear()
-    }
-
-    /**
-     * 等待进程就绪
-     */
-    private waitForProcess(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Process startup timeout'))
-            }, 10000)
-
-            const checkReady = setInterval(() => {
-                if (!this.process || !this.connected) {
-                    clearTimeout(timeout)
-                    clearInterval(checkReady)
-                    return
-                }
-
-                // 发送一个 ping 请求来检查进程是否响应
-                try {
-                    if (this.process.stdin?.writable) {
-                        clearTimeout(timeout)
-                        clearInterval(checkReady)
-                        resolve()
-                    }
-                } catch {
-                    // 忽略错误，继续等待
-                }
-            }, 100)
-
-            // 如果进程已经关闭，清理定时器
-            if (this.process?.killed) {
-                clearTimeout(timeout)
-                clearInterval(checkReady)
-                reject(new Error('Process exited during startup'))
-            }
-        })
+        this.teardownConnection()
+        this.rejectPendingRequests(error)
     }
 
     /**
@@ -272,6 +246,44 @@ export class StdioTransport extends BaseTransport {
      * 获取进程对象（用于测试）
      */
     getProcess(): any {
-        return this.process
+        return this.processID
+    }
+
+    private subscribe(event: string, handler: BridgeIPCListener): void {
+        if (!this.processID) {
+            return
+        }
+
+        const channel = `bridge:subprocess:${this.processID}:${event}`
+        this.subscriptions.set(channel, handler)
+        getBridgeIPC().on(channel, handler)
+    }
+
+    private unsubscribeAll(): void {
+        for (const [channel, handler] of this.subscriptions.entries()) {
+            getBridgeIPC().off(channel, handler)
+        }
+        this.subscriptions.clear()
+    }
+
+    private teardownConnection(): void {
+        this.unsubscribeAll()
+        this.processID = null
+        this.connected = false
+        this.buffer = ''
+    }
+
+    private rejectPendingRequests(error: Error): void {
+        this.pendingRequests.forEach(({ reject }) => {
+            reject(error)
+        })
+        this.pendingRequests.clear()
+    }
+
+    private deserializeError(error: BridgeSerializedError): Error {
+        const restored = new Error(error.message ?? 'Unknown subprocess error')
+        restored.name = error.name ?? 'Error'
+        restored.stack = error.stack
+        return restored
     }
 }

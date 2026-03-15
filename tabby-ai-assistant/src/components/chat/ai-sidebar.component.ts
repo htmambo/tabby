@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
-import { TranslateService } from 'tabby-core'
+import { marked } from 'marked'
+import { TranslateService, sanitizeHTML } from 'tabby-core'
 import { ChatMessage, MessageRole, StreamEvent } from '../../types/ai.types'
 import { AiAssistantService } from '../../services/core/ai-assistant.service'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
@@ -42,24 +43,24 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" [title]="'Hide Sidebar' | translate">
+                    <button type="button" class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" [title]="'Hide Sidebar' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="openSettings()" [title]="'Open Settings' | translate">
+                    <button type="button" class="btn btn-link btn-sm" (click)="openSettings()" [title]="'Open Settings' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
                             <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.292A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="clearChat()" [title]="'Clear Chat' | translate">
+                    <button type="button" class="btn btn-link btn-sm" (click)="clearChat()" [title]="'Clear Chat' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                         </svg>
                     </button>
-                    <button class="btn btn-link btn-sm" (click)="exportChat()" [title]="'Export Chat' | translate">
+                    <button type="button" class="btn btn-link btn-sm" (click)="exportChat()" [title]="'Export Chat' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                             <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
@@ -205,12 +206,12 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
             </div>
 
             <!-- Scroll buttons -->
-            <button *ngIf="showScrollTop" class="scroll-btn scroll-top" (click)="scrollToTop()" [title]="'Scroll to Top' | translate">
+            <button *ngIf="showScrollTop" type="button" class="scroll-btn scroll-top" (click)="scrollToTop()" [title]="'Scroll to Top' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
                 </svg>
             </button>
-            <button *ngIf="showScrollBottom" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" [title]="'Scroll to Bottom' | translate">
+            <button *ngIf="showScrollBottom" type="button" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" [title]="'Scroll to Bottom' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L7.293 8 1.646 2.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
@@ -233,6 +234,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                     </textarea>
                     <button
                         *ngIf="!isLoading"
+                        type="button"
                         class="send-btn"
                         [disabled]="!inputValue.trim()"
                         (click)="submit()"
@@ -243,6 +245,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                     </button>
                     <button
                         *ngIf="isLoading"
+                        type="button"
                         class="send-btn stop-btn"
                         (click)="cancelRequest()"
                         [title]="'Stop Generating' | translate">
@@ -315,6 +318,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private activeAiMessageId: string | null = null
     private aiStartScrollPending = false
     private userScrolledDuringResponse = false
+    private pendingTimeouts = new Set<number>()
 
     constructor(
         private aiService: AiAssistantService,
@@ -384,7 +388,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
             if (autoSend) {
                 // 延迟一点确保 UI 更新
-                setTimeout(() => this.submit(), 100)
+                this.scheduleTimeout(() => this.submit(), 100)
             } else {
                 // 聚焦输入框
                 this.textInput?.nativeElement?.focus()
@@ -392,21 +396,22 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         })
 
         // 延迟检查滚动状态（等待 DOM 渲染）
-        setTimeout(() => this.checkScrollState(), 100)
+        this.scheduleTimeout(() => this.checkScrollState(), 100)
     }
 
     ngOnDestroy(): void {
         // 保存当前会话
         this.saveChatHistory()
         if (this.pendingLoadingUpdate !== null) {
-            window.clearTimeout(this.pendingLoadingUpdate)
+            this.clearPendingTimeout(this.pendingLoadingUpdate)
             this.pendingLoadingUpdate = null
         }
         if (this.pendingScrollUpdate !== null) {
-            window.clearTimeout(this.pendingScrollUpdate)
+            this.clearPendingTimeout(this.pendingScrollUpdate)
             this.pendingScrollUpdate = null
             this.queuedScrollState = null
         }
+        this.clearPendingTimeouts()
         this.destroy$.next()
         this.destroy$.complete()
     }
@@ -422,7 +427,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 使用 JavaScript 直接设置，优先级最高
      */
     private forceScrollStyles(): void {
-        setTimeout(() => {
+        this.scheduleTimeout(() => {
             const container = this.chatContainerRef?.nativeElement
             if (container) {
                 // 只设置必要的滚动样式，不强制设置高度
@@ -594,8 +599,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     private normalizeInputHistory(history: unknown[]): string[] {
         // 过滤非字符串和空字符串
-        const validItems = history.filter((item): item is string =>
-            typeof item === 'string' && item.trim().length > 0
+        const validItems = history.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
         )
 
         // 去除连续重复（保留顺序，最新在前）
@@ -795,7 +800,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0)
+        this.scheduleTimeout(() => this.scrollToBottom(), 0)
 
         // 显示加载状态
         this.setLoadingState(true)
@@ -836,7 +841,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.logger.error('Failed to send message with agent', error)
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
             this.finalizeStream()
-            setTimeout(() => this.scrollToBottom(), 0)
+            this.scheduleTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -1002,7 +1007,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0)
+        this.scheduleTimeout(() => this.scrollToBottom(), 0)
 
         // 显示加载状态
         this.setLoadingState(true)
@@ -1129,7 +1134,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
             this.setLoadingState(false)
             this.updateTokenUsage()
-            setTimeout(() => this.scrollToBottom(), 0)
+            this.scheduleTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -1142,13 +1147,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
 
         if (this.pendingLoadingUpdate !== null) {
-            window.clearTimeout(this.pendingLoadingUpdate)
+            this.clearPendingTimeout(this.pendingLoadingUpdate)
             this.pendingLoadingUpdate = null
         }
 
         if (!isLoading) {
             // 延迟到下一个宏任务，避免在同一检测周期内变更
-            this.pendingLoadingUpdate = window.setTimeout(() => {
+            this.pendingLoadingUpdate = this.scheduleTimeout(() => {
                 this.runInAngular(() => {
                     this.pendingLoadingUpdate = null
                     this.isLoading = false
@@ -1349,7 +1354,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             return
         }
 
-        this.pendingScrollUpdate = window.setTimeout(() => {
+        this.pendingScrollUpdate = this.scheduleTimeout(() => {
             this.runInAngular(() => {
                 this.pendingScrollUpdate = null
                 const state = this.queuedScrollState ?? { showTop, showBottom }
@@ -1388,7 +1393,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             return
         }
         this.scrollRefreshPending = true
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             this.scrollRefreshPending = false
             this.triggerScrollRefresh()
         }, 50)
@@ -1414,7 +1419,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             clientHeight: container.clientHeight,
         })
 
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             container.scrollTop = up
             container.dispatchEvent(new Event('scroll'))
             // 强制一次 reflow，确保 scrollTop 写入生效
@@ -1462,7 +1467,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             return
         }
         this.aiStartScrollPending = true
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     this.aiStartScrollPending = false
@@ -1505,7 +1510,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
         this.detectChangesPending = true
         // 使用 setTimeout 避免 rAF 在后台或无交互时被节流导致 UI 不更新
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             this.runInAngular(() => {
                 this.detectChangesPending = false
                 try {
@@ -1586,9 +1591,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         if (!content) {return ''}
 
         try {
-            // 使用 marked 库渲染 Markdown
-            const { marked } = require('marked')
-
             // 配置 marked 选项
             marked.setOptions({
                 breaks: true,       // 支持换行
@@ -1597,17 +1599,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 mangle: false,       // 不转义邮箱
             })
 
-            return marked.parse(content)
+            return sanitizeHTML(marked.parse(content) as string)
         } catch (e) {
             // 如果 marked 失败，使用基本格式化
-            return content
+            return sanitizeHTML(content
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/\n/g, '<br>')
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/`(.*?)`/g, '<code>$1</code>'))
         }
     }
 
@@ -1665,10 +1667,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         event.stopPropagation()
         event.preventDefault()
 
-        // 使用 Electron 的 Menu API 显示默认右键菜单
-        const { Menu, MenuItem } = this.electron
-
-        const menu = new Menu()
+        const menu: { label?: string, role?: string, type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' }[] = []
 
         // 根据上下文添加菜单项
         const selection = window.getSelection()?.toString()
@@ -1676,19 +1675,18 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const isInput = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT'
 
         if (selection) {
-            menu.append(new MenuItem({ label: '复制', role: 'copy' }))
-            menu.append(new MenuItem({ type: 'separator' }))
+            menu.push({ label: '复制', role: 'copy' })
+            menu.push({ type: 'separator' })
         }
 
         if (isInput) {
-            menu.append(new MenuItem({ label: '粘贴', role: 'paste' }))
-            menu.append(new MenuItem({ label: '剪切', role: 'cut' }))
-            menu.append(new MenuItem({ type: 'separator' }))
+            menu.push({ label: '粘贴', role: 'paste' })
+            menu.push({ label: '剪切', role: 'cut' })
+            menu.push({ type: 'separator' })
         }
 
-        menu.append(new MenuItem({ label: '全选', role: 'selectAll' }))
-
-        menu.popup({ window: this.electron.BrowserWindow.getFocusedWindow()! })
+        menu.push({ label: '全选', role: 'selectAll' })
+        this.electron.popupContextMenu(menu)
     }
 
     /**
@@ -1720,7 +1718,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             // 注意：不在 submit 时保存，避免保存不完整的 assistant 消息
             // 输入历史会在流完成后由 saveChatHistory() 保存
             this.inputValue = ''
-            setTimeout(() => this.autoResize(), 0)
+            this.scheduleTimeout(() => this.autoResize(), 0)
             this.textInput?.nativeElement.focus()
         }
     }
@@ -1794,13 +1792,34 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
 
         // 等 Angular 完成 ngModel 绑定后再定位光标
-        setTimeout(() => {
+        this.scheduleTimeout(() => {
             const textarea = this.textInput?.nativeElement
             if (textarea) {
                 textarea.selectionStart = textarea.selectionEnd = this.inputValue.length
             }
             this.autoResize()
         }, 0)
+    }
+
+    private scheduleTimeout(callback: () => void, delay: number): number {
+        const timeoutId = window.setTimeout(() => {
+            this.pendingTimeouts.delete(timeoutId)
+            callback()
+        }, delay)
+        this.pendingTimeouts.add(timeoutId)
+        return timeoutId
+    }
+
+    private clearPendingTimeout(timeoutId: number): void {
+        window.clearTimeout(timeoutId)
+        this.pendingTimeouts.delete(timeoutId)
+    }
+
+    private clearPendingTimeouts(): void {
+        for (const timeoutId of this.pendingTimeouts) {
+            window.clearTimeout(timeoutId)
+        }
+        this.pendingTimeouts.clear()
     }
 
     /**
@@ -1824,12 +1843,4 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         return this.getCharCount() > this.charLimit
     }
 
-    /**
-     * 转义 HTML 特殊字符
-     */
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div')
-        div.textContent = text
-        return div.innerHTML
-    }
 }

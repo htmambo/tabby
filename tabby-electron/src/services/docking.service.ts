@@ -42,7 +42,7 @@ export class ElectronDockingService extends DockingService {
 
         const fill = this.config.store.appearance.dockFill <= 1 ? this.config.store.appearance.dockFill : 1
         const space = this.config.store.appearance.dockSpace <= 1 ? this.config.store.appearance.dockSpace : 1
-        const [minWidth, minHeight] = this.hostWindow.getWindow().getMinimumSize()
+        const [minWidth, minHeight] = this.hostWindow.getMinimumSize()
 
         if (dockSide === 'left' || dockSide === 'right') {
             newBounds.width = Math.max(minWidth, Math.round(fill * display.workArea.width))
@@ -70,9 +70,12 @@ export class ElectronDockingService extends DockingService {
         const alwaysOnTop = this.config.store.appearance.dockAlwaysOnTop
 
         this.hostWindow.setAlwaysOnTop(alwaysOnTop)
-        setImmediate(() => {
+        const dockHandle = setImmediate(() => {
             this.hostWindow.setBounds(newBounds)
         })
+        if (typeof (dockHandle as any)?.unref === 'function') {
+            (dockHandle as any).unref()
+        }
     }
 
     getScreens (): Screen[] {
@@ -93,7 +96,7 @@ export class ElectronDockingService extends DockingService {
     }
 
     private repositionWindow () {
-        const [x, y] = this.hostWindow.getWindow().getPosition()
+        const [x, y] = this.hostWindow.getPosition()
         for (const screen of this.electron.screen.getAllDisplays()) {
             const bounds = screen.bounds
             if (x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height) {
@@ -101,6 +104,6 @@ export class ElectronDockingService extends DockingService {
             }
         }
         const screen = this.electron.screen.getPrimaryDisplay()
-        this.hostWindow.getWindow().setPosition(screen.bounds.x, screen.bounds.y)
+        this.hostWindow.setPosition(screen.bounds.x, screen.bounds.y)
     }
 }

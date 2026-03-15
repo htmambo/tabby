@@ -1,4 +1,4 @@
-import * as fs from 'mz/fs'
+import { readFile, stat } from 'node:fs/promises'
 import slugify from 'slugify'
 import { Injectable } from '@angular/core'
 import { HostAppService, Platform } from 'tabby-core'
@@ -20,18 +20,18 @@ export class POSIXShellsProvider extends ShellProvider {
         }
         let shellListPath = '/etc/shells'
         try {
-            await fs.stat(shellListPath)
+            await stat(shellListPath)
         } catch {
             // Solus Linux
             shellListPath = '/usr/share/defaults/etc/shells'
         }
-        return (await fs.readFile(shellListPath, { encoding: 'utf-8' }))
+        return (await readFile(shellListPath, { encoding: 'utf-8' }))
             .split('\n')
             .map(x => x.trim())
             .filter(x => x && !x.startsWith('#'))
             .map(x => ({
                 id: slugify(x),
-                name: x.split('/').pop(),
+                name: x.split('/').pop() ?? x,
                 icon: 'fas fa-terminal',
                 command: x,
                 args: ['-l'],

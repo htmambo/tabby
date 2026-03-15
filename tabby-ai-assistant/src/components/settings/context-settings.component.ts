@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, OnInit, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { ContextManager } from '../../services/context/manager'
 import { ToastService } from '../../services/core/toast.service'
@@ -13,15 +12,13 @@ import { ContextConfig, DEFAULT_CONTEXT_CONFIG } from '../../types/ai.types'
     styleUrls: ['./context-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class ContextSettingsComponent implements OnInit, OnDestroy {
+export class ContextSettingsComponent implements OnInit {
     // 配置项
     config: ContextConfig = { ...DEFAULT_CONTEXT_CONFIG }
     autoCompactEnabled = true
 
     // 当前供应商的上下文限制
     activeProviderContextWindow = 200000
-
-    private destroy$ = new Subject<void>()
 
     get t(): any {
         if (!this.translate) {
@@ -67,11 +64,6 @@ export class ContextSettingsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadConfig()
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     loadConfig(): void {

@@ -1,40 +1,9 @@
-import * as fs from 'mz/fs'
-import * as fsSync from 'fs'
 import { Injector } from '@angular/core'
-import { HostAppService, ConfigService, WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, Platform, BootstrapData, BOOTSTRAP_DATA, LogService } from 'tabby-core'
+import { HostAppService, ConfigService, WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, Platform, BootstrapData, BOOTSTRAP_DATA, LogService, pathExists, resolveRealPath, getRuntimeEnv } from 'tabby-core'
 import { BaseSession } from 'tabby-terminal'
 import { SessionOptions, ChildProcess, PTYInterface, PTYProxy } from './api'
 
 const windowsDirectoryRegex = /([a-zA-Z]:[^\:\[\]\?\"\<\>\|]+)/mi
-
-function mergeEnv (...envs) {
-    const result = {}
-    const keyMap = {}
-    for (const env of envs) {
-        for (const [key, value] of Object.entries(env)) {
-            // const lookup = process.platform === 'win32' ? key.toLowerCase() : key
-            const lookup = key.toLowerCase()
-            keyMap[lookup] ??= key
-            result[keyMap[lookup]] = value
-        }
-    }
-    return result
-}
-
-function substituteEnv (env: Record<string, string>) {
-    env = { ...env }
-    const pattern = process.platform === 'win32' ? /%(\w+)%/g : /\$(\w+)\b/g
-    for (const [key, value] of Object.entries(env)) {
-        env[key] = value.toString().replace(pattern, function (substring, p1) {
-            if (process.platform === 'win32') {
-                return Object.entries(process.env).find(x => x[0].toLowerCase() === p1.toLowerCase())?.[1] ?? ''
-            } else {
-                return process.env[p1] ?? ''
-            }
-        })
-    }
-    return env
-}
 
 /** @hidden */
 export class Session extends BaseSession {
@@ -67,39 +36,10 @@ export class Session extends BaseSession {
         }
 
         if (!pty) {
-            let env = mergeEnv(
-                process.env,
-                {
-                    COLORTERM: 'truecolor',
-                    TERM: 'xterm-256color',
-                    TERM_PROGRAM: 'Tabby',
-                },
-                substituteEnv(options.env),
-                this.config.store.terminal.environment || {},
-            )
-
-            if (this.hostApp.platform === Platform.Windows && this.config.store.terminal.setComSpec) {
-                env = mergeEnv(env, { COMSPEC: this.bootstrapData.executable })
-            }
-
-            delete env['']
-
-            if (this.hostApp.platform === Platform.macOS && !process.env.LC_ALL) {
-                const locale = process.env.LC_CTYPE ?? 'en_US.UTF-8'
-                Object.assign(env, {
-                    LANG: locale,
-                    LC_ALL: locale,
-                    LC_MESSAGES: locale,
-                    LC_NUMERIC: locale,
-                    LC_COLLATE: locale,
-                    LC_MONETARY: locale,
-                })
-            }
-
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-            let cwd = options.cwd || process.env.HOME
+            let cwd = options.cwd || getRuntimeEnv('HOME')
 
-            if (!fsSync.existsSync(cwd!)) {
+            if (cwd && !await pathExists(cwd)) {
                 console.warn('Ignoring non-existent CWD:', cwd)
                 cwd = undefined
             }
@@ -110,7 +50,15 @@ export class Session extends BaseSession {
                 rows: options.height ?? 30,
                 encoding: null,
                 cwd,
-                env: env,
+                env: {
+                    COLORTERM: 'truecolor',
+                    TERM: 'xterm-256color',
+                    TERM_PROGRAM: 'Tabby',
+                },
+                tabbyProfileEnv: options.env,
+                tabbyTerminalEnv: this.config.store.terminal.environment || {},
+                tabbySetComSpec: this.hostApp.platform === Platform.Windows && this.config.store.terminal.setComSpec,
+                tabbyExecutable: this.bootstrapData.executable,
                 // `1` instead of `true` forces ConPTY even if unstable
                 useConpty: isWindowsBuild(WIN_BUILD_CONPTY_SUPPORTED) && this.config.store.terminal.useConPTY ? 1 : false,
             })
@@ -188,16 +136,20 @@ export class Session extends BaseSession {
         } else {
             await new Promise<void>((resolve) => {
                 this.kill('SIGTERM')
-                setTimeout(async () => {
+                const timer = setTimeout(async () => {
                     try {
-                        process.kill(await this.pty!.getPID(), 0)
-                        // still alive
-                        this.kill('SIGKILL')
+                        if (await this.pty!.exists()) {
+                            // PTY process is still alive after SIGTERM, force it down.
+                            this.kill('SIGKILL')
+                        }
                         resolve()
                     } catch {
                         resolve()
                     }
                 }, 500)
+                if (typeof (timer as any)?.unref === 'function') {
+                    (timer as any).unref()
+                }
             })
         }
     }
@@ -217,11 +169,11 @@ export class Session extends BaseSession {
             console.info('Could not read working directory:', exc)
         }
 
-        try {
-            cwd = await fs.realpath(cwd)
-        } catch {}
+        if (cwd) {
+            cwd = await resolveRealPath(cwd) ?? cwd
+        }
 
-        if (this.hostApp.platform === Platform.Windows && (cwd === this.initialCWD || cwd === process.env.WINDIR)) {
+        if (this.hostApp.platform === Platform.Windows && (cwd === this.initialCWD || cwd === getRuntimeEnv('windir') || cwd === getRuntimeEnv('SystemRoot'))) {
             // shell doesn't truly change its process' CWD
             cwd = null
         }
@@ -229,9 +181,7 @@ export class Session extends BaseSession {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         cwd = cwd || this.guessedCWD
 
-        try {
-            await fs.access(cwd)
-        } catch {
+        if (!cwd || !await pathExists(cwd)) {
             return null
         }
         return cwd

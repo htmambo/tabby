@@ -1,5 +1,4 @@
-import { Component, Output, EventEmitter, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, Output, EventEmitter, OnInit, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ThemeService } from '../../services/core/theme.service'
@@ -14,7 +13,7 @@ import { TranslateService } from 'tabby-core'
     styleUrls: ['./general-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class GeneralSettingsComponent implements OnInit, OnDestroy {
+export class GeneralSettingsComponent implements OnInit {
     @Output() providerChanged = new EventEmitter<string>()
     @Output() openProvidersTab = new EventEmitter<void>()
 
@@ -29,8 +28,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     private localProviderStatus: Record<string, { text: string; color: string; icon: string; time: number }> = {}
     private readonly statusCacheDuration = 30000 // 30秒缓存
     private readonly localProviders = ['ollama', 'vllm']
-    private destroy$ = new Subject<void>()
-
     get t(): any {
         if (!this.translate) {
             return { general: {}, providers: {}, security: {}, settings: {} }
@@ -99,11 +96,6 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
         this.loadProviders()
         // 应用当前主题
         this.themeService.applyTheme('tech')
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     /**
@@ -274,19 +266,23 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
             vllm: 'http://localhost:8000/v1/models',
         }
 
+        let timeoutId: number | null = null
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 2000)
+            timeoutId = window.setTimeout(() => controller.abort(), 2000)
 
             const response = await fetch(urls[providerName], {
                 method: 'GET',
                 signal: controller.signal,
             })
 
-            clearTimeout(timeoutId)
             return response.ok
         } catch {
             return false
+        } finally {
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId)
+            }
         }
     }
 

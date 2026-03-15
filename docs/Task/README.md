@@ -2,6 +2,7 @@
 
 ## 活跃任务 (Active)
 - 🔄 [Tabby 项目全面优化](Active/TABBY_OPTIMIZATION_PLAN.md) - 开始于 2026-03-07
+- 📝 [Tabby 优化阶段性进展快照（2026-03-15）](Active/TABBY_OPTIMIZATION_PROGRESS_2026-03-15.md)
 - 🔄 [依赖升级 Phase 1 到 4](Active/DEPENDENCY_UPGRADE_PHASE_1_TO_4_PLAN.md)
 
 ## 已完成任务 (Archive)

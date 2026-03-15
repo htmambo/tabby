@@ -77,10 +77,10 @@
 
     <!-- 操作按钮 -->
     <div class="form-actions">
-        <button class="btn btn-primary" (click)="saveConfig()">
+        <button type="button" class="btn btn-primary" (click)="saveConfig()">
             <i class="fa fa-save"></i> {{ t.providers?.saveConfig || '保存配置' }}
         </button>
-        <button class="btn btn-secondary" (click)="resetToDefaults()">
+        <button type="button" class="btn btn-secondary" (click)="resetToDefaults()">
             <i class="fa fa-undo"></i> {{ t.common?.reset || '重置默认' }}
         </button>
     </div>

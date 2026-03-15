@@ -1,8 +1,25 @@
 import * as path from 'path'
-import * as fs from 'mz/fs'
+import { access, lstat, stat } from 'node:fs/promises'
 import { Injectable } from '@angular/core'
 import { CLIHandler, CLIEvent, AppService, ConfigService, HostWindowService, ProfilesService, NotificationsService } from 'tabby-core'
 import { TerminalService } from './services/terminal.service'
+
+async function pathExists (targetPath: string): Promise<boolean> {
+    try {
+        await access(targetPath)
+        return true
+    } catch {
+        return false
+    }
+}
+
+async function tryLstat (targetPath: string): Promise<Awaited<ReturnType<typeof lstat>> | null> {
+    try {
+        return await lstat(targetPath)
+    } catch {
+        return null
+    }
+}
 
 @Injectable()
 export class TerminalCLIHandler extends CLIHandler {
@@ -34,11 +51,9 @@ export class TerminalCLIHandler extends CLIHandler {
         if (directory.length > 1 && (directory.endsWith('/') || directory.endsWith('\\'))) {
             directory = directory.substring(0, directory.length - 1)
         }
-        if (await fs.exists(directory)) {
-            if ((await fs.stat(directory)).isDirectory()) {
-                this.terminal.openTab(undefined, directory)
-                this.hostWindow.bringToFront()
-            }
+        if ((await pathExists(directory)) && (await stat(directory)).isDirectory()) {
+            this.terminal.openTab(undefined, directory)
+            this.hostWindow.bringToFront()
         }
     }
 
@@ -76,13 +91,14 @@ export class OpenPathCLIHandler extends CLIHandler {
 
         const profile = await this.terminal.getDefaultProfile()
 
-        if (opAsPath && (await fs.lstat(opAsPath)).isDirectory()) {
+        const opStats = opAsPath ? await tryLstat(opAsPath) : null
+        if (opStats?.isDirectory()) {
             this.terminal.openTab(profile, opAsPath)
             this.hostWindow.bringToFront()
             return true
         }
 
-        if (opAsPath && await fs.exists(opAsPath)) {
+        if (opAsPath && await pathExists(opAsPath)) {
             if (opAsPath.endsWith('.sh') || opAsPath.endsWith('.command')) {
                 profile.options!.pauseAfterExit = true
                 profile.options?.args?.push(opAsPath)

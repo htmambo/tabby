@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core'
 import axios from 'axios'
+import { lastValueFrom } from 'rxjs'
 
-import { Logger, LogService, ConfigService, UpdaterService, PlatformService, TranslateService } from 'tabby-core'
+import { Logger, LogService, ConfigService, UpdaterService, PlatformService, TranslateService, getRuntimeEnv, getRuntimePlatform, isRuntimeDev } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
 const UPDATES_URL = 'https://api.github.com/repos/htmambo/tabby/releases/latest'
@@ -23,7 +24,7 @@ export class ElectronUpdaterService extends UpdaterService {
         super()
         this.logger = log.create('updater')
 
-        if (process.platform === 'linux' || process.env.PORTABLE_EXECUTABLE_FILE) {
+        if (getRuntimePlatform() === 'linux' || getRuntimeEnv('PORTABLE_EXECUTABLE_FILE')) {
             this.electronUpdaterAvailable = false
             return
         }
@@ -45,8 +46,8 @@ export class ElectronUpdaterService extends UpdaterService {
             this.electron.ipcRenderer.once('updater:update-downloaded', () => resolve(true))
         })
 
-        config.ready$.toPromise().then(() => {
-            if (config.store.enableAutomaticUpdates && this.electronUpdaterAvailable && !process.env.TABBY_DEV) {
+        void lastValueFrom(config.ready$).then(() => {
+            if (config.store.enableAutomaticUpdates && this.electronUpdaterAvailable && !isRuntimeDev()) {
                 this.logger.debug('Checking for updates')
                 try {
                     this.electron.ipcRenderer.send('updater:check-for-updates')

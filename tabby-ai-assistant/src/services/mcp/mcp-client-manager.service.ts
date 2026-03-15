@@ -64,7 +64,6 @@ export interface MCPToolCallStats {
 })
 export class MCPClientManager implements OnDestroy {
     private clients = new Map<string, MCPClient>()
-    private destroy$ = new Subject<void>()
     private toolsChanged$ = new Subject<void>()
     private statusChanged$ = new Subject<MCPServerWithStatus>()
 
@@ -94,9 +93,6 @@ export class MCPClientManager implements OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
-
         // 断开所有连接
         this.disconnectAll()
     }
@@ -264,12 +260,21 @@ export class MCPClientManager implements OnDestroy {
 
         // 带超时的调用
         const callWithTimeout = async (): Promise<unknown> => {
-            return Promise.race([
-                this.callToolOnce(serverId, toolName, args),
-                new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error(`Tool call timeout after ${timeout}ms`)), timeout),
-                ),
-            ])
+            let timeoutId: number | null = null
+            try {
+                return await Promise.race([
+                    this.callToolOnce(serverId, toolName, args),
+                    new Promise<never>((_, reject) => {
+                        timeoutId = window.setTimeout(() => {
+                            reject(new Error(`Tool call timeout after ${timeout}ms`))
+                        }, timeout)
+                    }),
+                ])
+            } finally {
+                if (timeoutId !== null) {
+                    window.clearTimeout(timeoutId)
+                }
+            }
         }
 
         // 记录开始时间

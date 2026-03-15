@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core'
+import { getRuntimeCwd, getRuntimeEnv } from 'tabby-core'
+import { getTabbyBridge } from '../../../../app/src/tabby-bridge'
 import { LoggerService } from './logger.service'
 
 /**
@@ -28,6 +30,9 @@ export class FileStorageService {
 
     /** 数据目录是否已初始化 */
     private initialized = false
+    private writeQueue = Promise.resolve()
+    private pendingFileContents = new Map<string, string>()
+    private pendingDeletes = new Map<string, symbol>()
 
     constructor(private logger: LoggerService) {
         // 确定数据目录路径
@@ -41,15 +46,17 @@ export class FileStorageService {
      */
     private getDataDirectoryPath(): string {
         // 优先使用 APPDATA 环境变量（Windows）
-        if (process.env.APPDATA) {
-            return process.env.APPDATA
+        const appData = getRuntimeEnv('APPDATA')
+        if (appData) {
+            return appData
         }
         // Linux/macOS 使用 HOME
-        if (process.env.HOME) {
-            return process.env.HOME
+        const homeDir = getRuntimeEnv('HOME')
+        if (homeDir) {
+            return homeDir
         }
         // 回退到当前工作目录
-        return process.cwd()
+        return getRuntimeCwd()
     }
 
     /**
@@ -79,9 +86,9 @@ export class FileStorageService {
      * 格式: {APPDATA}/tabby/plugins/tabby-ai-assistant/data
      */
     getPluginDataDirectory(): string {
-        const baseDir = process.env.APPDATA
-            ?? process.env.HOME
-            ?? process.cwd()
+        const baseDir = getRuntimeEnv('APPDATA')
+            ?? getRuntimeEnv('HOME')
+            ?? getRuntimeCwd()
         return this.joinPath(baseDir, 'tabby', 'plugins', 'tabby-ai-assistant', 'data')
     }
 
@@ -92,8 +99,20 @@ export class FileStorageService {
         try {
             const filePath = this.getFilePath(filename)
             const jsonContent = JSON.stringify(data, null, 2)
-            this.writeFileSync(filePath, jsonContent, 'utf-8')
-            this.logger.debug('Saved data to file', { filename, path: filePath })
+            this.pendingDeletes.delete(filePath)
+            this.pendingFileContents.set(filePath, jsonContent)
+            this.enqueueWrite(async () => {
+                try {
+                    await this.writeFile(filePath, jsonContent, 'utf-8')
+                    this.logger.debug('Saved data to file', { filename, path: filePath })
+                } catch (error) {
+                    this.logger.error('Failed to save data', { filename, error })
+                } finally {
+                    if (this.pendingFileContents.get(filePath) === jsonContent) {
+                        this.pendingFileContents.delete(filePath)
+                    }
+                }
+            })
             return true
         } catch (error) {
             this.logger.error('Failed to save data', { filename, error })
@@ -107,6 +126,14 @@ export class FileStorageService {
     load<T>(filename: string, defaultValue: T): T {
         try {
             const filePath = this.getFilePath(filename)
+            if (this.pendingDeletes.has(filePath)) {
+                return defaultValue
+            }
+
+            const pendingContent = this.pendingFileContents.get(filePath)
+            if (pendingContent !== undefined) {
+                return JSON.parse(pendingContent) as T
+            }
 
             if (this.existsSync(filePath)) {
                 const content = this.readFileSync(filePath, 'utf-8')
@@ -124,6 +151,12 @@ export class FileStorageService {
     exists(filename: string): boolean {
         try {
             const filePath = this.getFilePath(filename)
+            if (this.pendingDeletes.has(filePath)) {
+                return false
+            }
+            if (this.pendingFileContents.has(filePath)) {
+                return true
+            }
             return this.existsSync(filePath)
         } catch {
             return false
@@ -136,12 +169,28 @@ export class FileStorageService {
     delete(filename: string): boolean {
         try {
             const filePath = this.getFilePath(filename)
-
-            if (this.existsSync(filePath)) {
-                this.unlinkSync(filePath)
-                this.logger.debug('Deleted data file', { filename })
-                return true
+            if (!this.pendingFileContents.has(filePath) && !this.existsSync(filePath)) {
+                return false
             }
+
+            const deleteToken = Symbol(filePath)
+            this.pendingFileContents.delete(filePath)
+            this.pendingDeletes.set(filePath, deleteToken)
+            this.enqueueWrite(async () => {
+                try {
+                    await this.unlinkFile(filePath)
+                    this.logger.debug('Deleted data file', { filename })
+                } catch (error: any) {
+                    if (error?.code !== 'ENOENT') {
+                        this.logger.error('Failed to delete data', { filename, error })
+                    }
+                } finally {
+                    if (this.pendingDeletes.get(filePath) === deleteToken) {
+                        this.pendingDeletes.delete(filePath)
+                    }
+                }
+            })
+            return true
         } catch (error) {
             this.logger.error('Failed to delete data', { filename, error })
         }
@@ -335,18 +384,45 @@ export class FileStorageService {
         return this.joinPath(this.DATA_DIR, normalizedName)
     }
 
+    private enqueueWrite(operation: () => Promise<void>): void {
+        this.writeQueue = this.writeQueue
+            .catch(() => null)
+            .then(operation)
+    }
+
     // ==================== 文件系统操作封装 ====================
+
+    private getBridgeIPC() {
+        try {
+            return getTabbyBridge().ipc
+        } catch {
+            return null
+        }
+    }
 
     private joinPath(...paths: string[]): string {
         // 使用 path.join 的替代方案
         return paths.map(p => p.replace(/\\/g, '/').replace(/\/+/g, '/')).join('/')
     }
 
+    private async writeFile(path: string, data: string, encoding?: string): Promise<void> {
+        const ipc = this.getBridgeIPC()
+        if (ipc) {
+            await ipc.invoke('bridge:fs:write-file-text', path, data, encoding ?? 'utf-8')
+            return
+        }
+        this.writeFileSync(path, data, encoding)
+    }
+
+    private async unlinkFile(path: string): Promise<void> {
+        this.unlinkSync(path)
+    }
+
     private existsSync(path: string): boolean {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.existsSync) {
-                return fs.existsSync(path)
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                return ipc.sendSync<boolean>('bridge:fs:exists-sync', path)
             }
             // 回退：使用 XMLHttpRequest 检查
             return this.fallbackExistsSync(path)
@@ -368,21 +444,9 @@ export class FileStorageService {
 
     private mkdirSync(path: string, options?: { recursive?: boolean }): void {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.mkdirSync) {
-                if (options?.recursive) {
-                    // 手动实现递归创建目录
-                    const dirs = path.split('/').filter(d => d)
-                    let currentPath = ''
-                    for (const dir of dirs) {
-                        currentPath += (currentPath ? '/' : '') + dir
-                        if (!fs.existsSync(currentPath)) {
-                            fs.mkdirSync(currentPath)
-                        }
-                    }
-                } else {
-                    fs.mkdirSync(path)
-                }
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                ipc.sendSync('bridge:fs:mkdir-sync', path, options?.recursive ?? false)
             }
         } catch (error) {
             this.logger.error('mkdirSync failed', { path, error })
@@ -391,9 +455,9 @@ export class FileStorageService {
 
     private writeFileSync(path: string, data: string, encoding?: string): void {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.writeFileSync) {
-                fs.writeFileSync(path, data, encoding ?? 'utf-8')
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                ipc.sendSync('bridge:fs:write-file-text-sync', path, data, encoding ?? 'utf-8')
             } else {
                 this.fallbackWriteFileSync(path, data)
             }
@@ -405,14 +469,6 @@ export class FileStorageService {
 
     private fallbackWriteFileSync(path: string, data: string): void {
         try {
-            // 使用 Node.js 风格的路径（如果是 Electron 环境）
-            if ((window as any).process?.versions?.electron) {
-                const fs = (window as any).require('fs')
-                if (fs) {
-                    fs.writeFileSync(path, data, 'utf-8')
-                    return
-                }
-            }
             // 在纯浏览器环境中，使用 Blob 下载
             const blob = new Blob([data], { type: 'application/json' })
             const url = URL.createObjectURL(blob)
@@ -428,9 +484,9 @@ export class FileStorageService {
 
     private readFileSync(path: string, encoding?: string): string {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.readFileSync) {
-                return fs.readFileSync(path, encoding ?? 'utf-8')
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                return ipc.sendSync<string>('bridge:fs:read-file-text-sync', path, encoding ?? 'utf-8')
             }
             return this.fallbackReadFileSync(path)
         } catch (error) {
@@ -445,9 +501,9 @@ export class FileStorageService {
 
     private unlinkSync(path: string): void {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.unlinkSync) {
-                fs.unlinkSync(path)
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                ipc.sendSync('bridge:fs:unlink-sync', path)
             }
         } catch (error) {
             this.logger.error('unlinkSync failed', { path, error })
@@ -456,9 +512,9 @@ export class FileStorageService {
 
     private readdirSync(path: string): string[] {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.readdirSync) {
-                return fs.readdirSync(path)
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                return ipc.sendSync<Array<{ name: string }>>('bridge:fs:read-dir-sync', path).map(entry => entry.name)
             }
             return []
         } catch {
@@ -468,10 +524,12 @@ export class FileStorageService {
 
     private statSync(path: string): { size: number; mtime: Date } {
         try {
-            const fs = (window as any).require?.('fs') || (global as any).fs
-            if (fs?.statSync) {
-                const stats = fs.statSync(path)
-                return { size: stats.size, mtime: stats.mtime }
+            const ipc = this.getBridgeIPC()
+            if (ipc) {
+                const stats = ipc.sendSync<{ size: number; mtimeMs: number } | null>('bridge:fs:stat-sync', path)
+                if (stats) {
+                    return { size: stats.size, mtime: new Date(stats.mtimeMs) }
+                }
             }
             return { size: 0, mtime: new Date() }
         } catch {

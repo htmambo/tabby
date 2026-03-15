@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, OnInit, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { TranslateService } from 'tabby-core'
@@ -11,7 +10,7 @@ import { TranslateService } from 'tabby-core'
     styleUrls: ['./security-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class SecuritySettingsComponent implements OnInit, OnDestroy {
+export class SecuritySettingsComponent implements OnInit {
     settings = {
         enablePasswordProtection: false,
         enableRiskAssessment: true,
@@ -34,8 +33,6 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
         'dd if=',
         'fork(',
     ]
-
-    private destroy$ = new Subject<void>()
 
     get t(): any {
         if (!this.translate) {
@@ -80,11 +77,6 @@ export class SecuritySettingsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadSettings()
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     private loadSettings(): void {

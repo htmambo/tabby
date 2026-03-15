@@ -1,6 +1,6 @@
-import * as os from 'os'
 import { ElementRef, NgZone } from '@angular/core'
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
+import { getRuntimeOSRelease, getRuntimePlatform } from './api/rendererRuntime'
 
 export const WIN_BUILD_CONPTY_SUPPORTED = 17692
 export const WIN_BUILD_CONPTY_STABLE = 18309
@@ -8,7 +8,8 @@ export const WIN_BUILD_WSL_EXE_DISTRO_FLAG = 17763
 export const WIN_BUILD_FLUENT_BG_SUPPORTED = 17063
 
 export function getWindows10Build (): number|undefined {
-    return process.platform === 'win32' && parseFloat(os.release()) >= 10 ? parseInt(os.release().split('.')[2]) : undefined
+    const osRelease = getRuntimeOSRelease()
+    return getRuntimePlatform() === 'win32' && parseFloat(osRelease) >= 10 ? parseInt(osRelease.split('.')[2]) : undefined
 }
 
 export function isWindowsBuild (build: number): boolean {
@@ -38,6 +39,178 @@ export function wrapPromise <T> (zone: NgZone, promise: Promise<T>): Promise<T> 
     })
 }
 
+const SAFE_EXTERNAL_PROTOCOLS = new Set([
+    'file:',
+    'http:',
+    'https:',
+    'mailto:',
+    'tel:',
+])
+
+const SAFE_HTML_TAGS = new Set([
+    'a',
+    'b',
+    'blockquote',
+    'br',
+    'code',
+    'del',
+    'div',
+    'em',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'hr',
+    'i',
+    'li',
+    'ol',
+    'p',
+    'pre',
+    'span',
+    'strong',
+    'table',
+    'tbody',
+    'td',
+    'th',
+    'thead',
+    'tr',
+    'ul',
+])
+
+const REMOVE_HTML_TAGS = new Set([
+    'base',
+    'button',
+    'embed',
+    'form',
+    'iframe',
+    'img',
+    'input',
+    'link',
+    'meta',
+    'object',
+    'script',
+    'select',
+    'style',
+    'textarea',
+])
+
+function looksLikeHostName (value: string): boolean {
+    return /^[^\s/]+\.[^\s]+$/.test(value)
+}
+
+export function normalizeExternalURL (url: string): string|null {
+    const trimmed = url.trim()
+    if (!trimmed) {
+        return null
+    }
+
+    let normalized = trimmed
+    if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(normalized) && looksLikeHostName(normalized)) {
+        normalized = `https://${normalized}`
+    }
+
+    try {
+        const parsed = new URL(normalized)
+        if (!SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol)) {
+            return null
+        }
+        return parsed.toString()
+    } catch {
+        return null
+    }
+}
+
+function sanitizeElementAttributes (element: HTMLElement): void {
+    for (const attribute of Array.from(element.attributes)) {
+        const name = attribute.name.toLowerCase()
+        if (name.startsWith('on') || name === 'style' || name === 'srcdoc') {
+            element.removeAttribute(attribute.name)
+            continue
+        }
+
+        if (name === 'href') {
+            const safeURL = normalizeExternalURL(attribute.value)
+            if (safeURL) {
+                element.setAttribute('href', safeURL)
+            } else {
+                element.removeAttribute(attribute.name)
+            }
+            continue
+        }
+
+        if (name === 'class' && ['code', 'pre'].includes(element.tagName.toLowerCase())) {
+            const safeClasses = attribute.value
+                .split(/\s+/)
+                .filter(Boolean)
+                .filter(value => /^language-[\w-]+$/.test(value))
+            if (safeClasses.length) {
+                element.setAttribute('class', safeClasses.join(' '))
+            } else {
+                element.removeAttribute(attribute.name)
+            }
+            continue
+        }
+
+        const allowed = ['title', 'colspan', 'rowspan', 'aria-label', 'aria-hidden']
+        if (!allowed.includes(name)) {
+            element.removeAttribute(attribute.name)
+        }
+    }
+
+    if (element.tagName.toLowerCase() === 'a') {
+        element.setAttribute('rel', 'noopener noreferrer')
+    }
+}
+
+export function sanitizeHTML (html: string): string {
+    if (!html) {
+        return ''
+    }
+    if (typeof document === 'undefined') {
+        return html
+    }
+
+    const template = document.createElement('template')
+    template.innerHTML = html
+
+    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT)
+    const nodes: Node[] = []
+    let node = walker.nextNode()
+    while (node) {
+        nodes.push(node)
+        node = walker.nextNode()
+    }
+
+    for (const currentNode of nodes) {
+        if (currentNode.nodeType === Node.COMMENT_NODE) {
+            currentNode.parentNode?.removeChild(currentNode)
+            continue
+        }
+
+        const element = currentNode as HTMLElement
+        const tagName = element.tagName.toLowerCase()
+
+        if (REMOVE_HTML_TAGS.has(tagName)) {
+            element.remove()
+            continue
+        }
+
+        if (!SAFE_HTML_TAGS.has(tagName)) {
+            while (element.firstChild) {
+                element.parentNode?.insertBefore(element.firstChild, element)
+            }
+            element.remove()
+            continue
+        }
+
+        sanitizeElementAttributes(element)
+    }
+
+    return template.innerHTML
+}
+
 const NON_TEXT_INPUT_TYPES = new Set([
     'button',
     'checkbox',
@@ -58,8 +231,8 @@ function getHTMLElement (target: EventTarget|null): HTMLElement|null {
 export function focusElementLater <T extends HTMLElement> (
     elementRef: ElementRef<T>|null|undefined,
     options: { delay?: number, select?: boolean } = {},
-): void {
-    setTimeout(() => {
+): number {
+    return window.setTimeout(() => {
         const element = elementRef?.nativeElement
         if (!element) {
             return

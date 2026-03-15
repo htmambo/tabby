@@ -1,6 +1,7 @@
-import { Injectable, Inject, NgZone, EventEmitter } from '@angular/core'
-import { Observable, Subject, filter } from 'rxjs'
+import { Injectable, Inject, NgZone, EventEmitter, OnDestroy } from '@angular/core'
+import { Observable, Subject, filter, lastValueFrom } from 'rxjs'
 import { HotkeyDescription, HotkeyProvider } from '../api/hotkeyProvider'
+import { getRuntimePlatform } from '../api/rendererRuntime'
 import { KeyEventData, getKeyName, Keystroke, KeyName, getKeystrokeName, metaKeyName, altKeyName } from './hotkeys.util'
 import { ConfigService } from './config.service'
 import { HostAppService, Platform } from '../api/hostApp'
@@ -18,7 +19,7 @@ interface PastKeystroke {
 }
 
 @Injectable({ providedIn: 'root' })
-export class HotkeysService {
+export class HotkeysService implements OnDestroy {
     /** @hidden @deprecated */
     key = new EventEmitter<KeyboardEvent>()
 
@@ -74,6 +75,8 @@ export class HotkeysService {
     private lastKeystrokes: PastKeystroke[] = []
     private recognitionPhase = true
     private lastEventTimestamp = 0
+    private destroyed = false
+    private eventHandlers: Array<{ type: string, handler: (nativeEvent: KeyboardEvent) => void }> = []
 
     private constructor (
         private zone: NgZone,
@@ -81,20 +84,25 @@ export class HotkeysService {
         @Inject(HotkeyProvider) private hotkeyProviders: HotkeyProvider[],
         hostApp: HostAppService,
     ) {
-        this.config.ready$.toPromise().then(async () => {
+        void lastValueFrom(this.config.ready$).then(async () => {
+            if (this.destroyed) {
+                return
+            }
             const hotkeys = await this.getHotkeyDescriptions()
             this.hotkeyDescriptions = hotkeys
             const events = ['keydown', 'keyup']
 
             events.forEach(eventType => {
-                document.addEventListener(eventType, (nativeEvent: KeyboardEvent) => {
+                const handler = (nativeEvent: KeyboardEvent) => {
                     this._keyEvent.next(nativeEvent)
                     this.pushKeyEvent(eventType, nativeEvent)
                     if (hostApp.platform === Platform.Web && this.matchActiveHotkey(true) !== null) {
                         nativeEvent.preventDefault()
                         nativeEvent.stopPropagation()
                     }
-                })
+                }
+                document.addEventListener(eventType, handler)
+                this.eventHandlers.push({ type: eventType, handler })
             })
         })
 
@@ -103,6 +111,14 @@ export class HotkeysService {
         this.matchedHotkey.subscribe = deprecate(s => this.hotkey$.subscribe(s), 'matchedHotkey is deprecated, use hotkey$')
         this.keyEvent$.subscribe(h => this.key.next(h))
         this.key.subscribe = deprecate(s => this.keyEvent$.subscribe(s), 'key is deprecated, use keyEvent$')
+    }
+
+    ngOnDestroy (): void {
+        this.destroyed = true
+        for (const { type, handler } of this.eventHandlers) {
+            document.removeEventListener(type, handler)
+        }
+        this.eventHandlers = []
     }
 
     /**
@@ -178,7 +194,7 @@ export class HotkeysService {
             this._key.next(getKeyName(eventData))
         })
 
-        if (process.platform === 'darwin' && eventData.metaKey && eventName === 'keydown' && !['Ctrl', 'Shift', altKeyName, metaKeyName, 'Enter'].includes(keyName)) {
+        if (getRuntimePlatform() === 'darwin' && eventData.metaKey && eventName === 'keydown' && !['Ctrl', 'Shift', altKeyName, metaKeyName, 'Enter'].includes(keyName)) {
             // macOS will swallow non-modified keyups if Cmd is held down
             this.pushKeyEvent('keyup', nativeEvent)
         }

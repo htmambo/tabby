@@ -148,11 +148,13 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
 
                     if (extTab.__completionNotificationEnabled) {
                         this.app.observeTabCompletion(tab).subscribe(() => {
-                            new Notification(this.translate.instant('Process completed'), {
+                            const notification = new Notification(this.translate.instant('Process completed'), {
                                 body: process.name,
-                            }).addEventListener('click', () => {
-                                this.app.selectTab(tab)
                             })
+                            notification.onclick = () => {
+                                this.app.selectTab(tab)
+                                notification.close()
+                            }
                             extTab.__completionNotificationEnabled = false
                         })
                     } else {
@@ -176,11 +178,13 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
                         if (extTab.__outputNotificationSubscription && active) {
                             extTab.__outputNotificationSubscription.unsubscribe()
                             extTab.__outputNotificationSubscription = null
-                            new Notification(this.translate.instant('Tab activity'), {
+                            const notification = new Notification(this.translate.instant('Tab activity'), {
                                 body: tab.title,
-                            }).addEventListener('click', () => {
-                                this.app.selectTab(tab)
                             })
+                            notification.onclick = () => {
+                                this.app.selectTab(tab)
+                                notification.close()
+                            }
                         }
                     })
                 }

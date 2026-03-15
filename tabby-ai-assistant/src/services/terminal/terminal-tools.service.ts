@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core'
+import { Injectable, OnDestroy } from '@angular/core'
+import { getRuntimePlatform } from 'tabby-core'
 import { TerminalManagerService, TerminalInfo } from './terminal-manager.service'
 import { AsyncTaskManagerService } from './async-task-manager.service'
 import { LoggerService } from '../core/logger.service'
@@ -41,7 +42,8 @@ export interface ToolResult {
  * 定义 AI 可调用的终端相关工具
  */
 @Injectable({ providedIn: 'root' })
-export class TerminalToolsService {
+export class TerminalToolsService implements OnDestroy {
+    private pendingSleeps = new Map<ReturnType<typeof setTimeout>, () => void>()
     // ========== 智能等待配置 ==========
     // 命令类型与预估等待时间映射（毫秒）
     private readonly COMMAND_WAIT_TIMES: Record<string, number> = {
@@ -596,7 +598,7 @@ export class TerminalToolsService {
         this.logger.info('Smart wait for command', { command, baseCommand, waitTime })
 
         // 初始等待
-        await new Promise(resolve => setTimeout(resolve, waitTime))
+        await this.sleep(waitTime)
 
         // 直接从 xterm buffer 读取
         const terminals = this.terminalManager.getAllTerminals()
@@ -615,7 +617,7 @@ export class TerminalToolsService {
 
                 while (retryCount < maxRetries && !this.isCommandComplete(output)) {
                     this.logger.info(`Command still running, retry ${retryCount + 1}/${maxRetries}`)
-                    await new Promise(resolve => setTimeout(resolve, 1000))
+                    await this.sleep(1000)
                     output = this.readFromXtermBuffer(terminal, 50)
                     retryCount++
                 }
@@ -631,6 +633,27 @@ export class TerminalToolsService {
             output,
             '=== 输出结束 ===',
         ].join('\n')
+    }
+
+    ngOnDestroy (): void {
+        for (const [handle, resolve] of this.pendingSleeps) {
+            clearTimeout(handle)
+            resolve()
+        }
+        this.pendingSleeps.clear()
+    }
+
+    private sleep (ms: number): Promise<void> {
+        return new Promise(resolve => {
+            const handle = setTimeout(() => {
+                this.pendingSleeps.delete(handle)
+                resolve()
+            }, ms)
+            this.pendingSleeps.set(handle, resolve)
+            if (typeof (handle as any)?.unref === 'function') {
+                (handle as any).unref()
+            }
+        })
     }
 
     /**
@@ -678,7 +701,7 @@ export class TerminalToolsService {
         }
 
         // 检测操作系统
-        const platform = process.platform
+        const platform = getRuntimePlatform()
         const isWindows = platform === 'win32'
         const osInfo = isWindows ? 'Windows' : (platform === 'darwin' ? 'macOS' : 'Linux')
 

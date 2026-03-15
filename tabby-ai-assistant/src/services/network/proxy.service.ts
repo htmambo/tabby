@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core'
 import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
+import axios from 'axios'
+import { HttpProxyAgent } from 'http-proxy-agent'
+import { HttpsProxyAgent } from 'https-proxy-agent'
+import { getRuntimeEnv } from 'tabby-core'
 import { ConfigProviderService } from '../core/config-provider.service'
 import { LoggerService } from '../core/logger.service'
 import { ProxyConfig, DEFAULT_PROXY_CONFIG, ProxyTestResult } from '../../types/proxy.types'
@@ -107,13 +111,10 @@ export class ProxyService {
      * 创建 HTTP 代理 Agent
      */
     private createHttpProxyAgent(proxyUrl: string, options: any): HttpAgent {
-        // 使用 http-proxy-agent
         try {
-            const HttpProxyAgent = require('http-proxy-agent')
-            return new HttpProxyAgent(proxyUrl, options) as HttpAgent
+            return new HttpProxyAgent(proxyUrl, options) as unknown as HttpAgent
         } catch {
-            // 回退到简单实现
-            return new HttpAgent(options) as HttpAgent
+            return new HttpAgent(options)
         }
     }
 
@@ -121,13 +122,10 @@ export class ProxyService {
      * 创建 HTTPS 代理 Agent
      */
     private createHttpsProxyAgent(proxyUrl: string, options: any): HttpsAgent {
-        // 使用 https-proxy-agent
         try {
-            const HttpsProxyAgent = require('https-proxy-agent')
-            return new HttpsProxyAgent(proxyUrl, options) as HttpsAgent
+            return new HttpsProxyAgent(proxyUrl, options) as unknown as HttpsAgent
         } catch {
-            // 回退到简单实现
-            return new HttpsAgent(options) as HttpsAgent
+            return new HttpsAgent(options)
         }
     }
 
@@ -186,35 +184,19 @@ export class ProxyService {
 
         try {
             const agent = this.createHttpsProxyAgent(proxyUrl, {})
-
-            // 使用 Node.js https 模块测试
-            const https = require('https')
-
-            return await new Promise((resolve) => {
-                const req = https.get(testUrl, { agent, timeout: 10000 }, (res: any) => {
-                    const latency = Date.now() - startTime
-                    resolve({
-                        success: res.statusCode < 500,
-                        message: `连接成功 (${res.statusCode})`,
-                        latency,
-                    })
-                })
-
-                req.on('error', (err: Error) => {
-                    resolve({
-                        success: false,
-                        message: `连接失败: ${err.message}`,
-                    })
-                })
-
-                req.on('timeout', () => {
-                    req.destroy()
-                    resolve({
-                        success: false,
-                        message: '连接超时',
-                    })
-                })
+            const response = await axios.get(testUrl, {
+                httpsAgent: agent,
+                proxy: false,
+                timeout: 10000,
+                validateStatus: () => true,
             })
+            const latency = Date.now() - startTime
+
+            return {
+                success: response.status < 500,
+                message: `连接成功 (${response.status})`,
+                latency,
+            }
         } catch (error) {
             return {
                 success: false,
@@ -227,9 +209,9 @@ export class ProxyService {
      * 从环境变量导入代理配置
      */
     importFromEnv(): ProxyConfig {
-        const httpProxy = process.env.HTTP_PROXY ?? process.env.http_proxy ?? ''
-        const httpsProxy = process.env.HTTPS_PROXY ?? process.env.https_proxy ?? ''
-        const noProxy = process.env.NO_PROXY ?? process.env.no_proxy ?? ''
+        const httpProxy = getRuntimeEnv('HTTP_PROXY') ?? getRuntimeEnv('http_proxy') ?? ''
+        const httpsProxy = getRuntimeEnv('HTTPS_PROXY') ?? getRuntimeEnv('https_proxy') ?? ''
+        const noProxy = getRuntimeEnv('NO_PROXY') ?? getRuntimeEnv('no_proxy') ?? ''
 
         const proxyConfig: ProxyConfig = {
             enabled: !!(httpProxy || httpsProxy),

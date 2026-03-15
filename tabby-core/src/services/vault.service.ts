@@ -1,8 +1,6 @@
-import * as crypto from 'crypto'
-import { promisify } from 'util'
 import { Injectable, NgZone } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { AsyncSubject, Subject, Observable } from 'rxjs'
+import { AsyncSubject, Subject, Observable, lastValueFrom } from 'rxjs'
 import { wrapPromise, serializeFunction } from '../utils'
 import { UnlockVaultModalComponent } from '../components/unlockVaultModal.component'
 import { NotificationsService } from './notifications.service'
@@ -11,11 +9,12 @@ import { FileProvider } from '../api/fileProvider'
 import { PlatformService } from '../api/platform'
 
 const PBKDF_ITERATIONS = 100000
-const PBKDF_DIGEST = 'sha512'
 const PBKDF_SALT_LENGTH = 64 / 8
-const CRYPT_ALG = 'aes-256-cbc'
 const CRYPT_KEY_LENGTH = 256 / 8
 const CRYPT_IV_LENGTH = 128 / 8
+const PBKDF_HASH = 'SHA-512'
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
 
 export interface EncryptedStoredVault {
     version: number
@@ -77,34 +76,112 @@ function createPlainStoredVault (content: Vault): PlainStoredVault {
     }
 }
 
-function asUint8Array (buffer: Buffer): Uint8Array {
-    return buffer as Uint8Array
+function getCrypto (): Crypto {
+    if (!globalThis.crypto?.subtle) {
+        throw new Error('Web Crypto API is unavailable')
+    }
+    return globalThis.crypto
 }
 
-function deriveVaultKey (passphrase: string, salt: Buffer): Promise<Buffer> {
-    return promisify(crypto.pbkdf2)(
-        passphrase,
-        asUint8Array(salt),
-        PBKDF_ITERATIONS,
-        CRYPT_KEY_LENGTH,
-        PBKDF_DIGEST,
+function getRandomBytes (length: number): Uint8Array {
+    const bytes = new Uint8Array(length)
+    getCrypto().getRandomValues(bytes)
+    return bytes
+}
+
+function bytesToHex (bytes: Uint8Array): string {
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function hexToBytes (value: string): Uint8Array {
+    const bytes = new Uint8Array(value.length / 2)
+    for (let i = 0; i < value.length; i += 2) {
+        bytes[i / 2] = parseInt(value.slice(i, i + 2), 16)
+    }
+    return bytes
+}
+
+function bytesToBase64 (bytes: Uint8Array): string {
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
+}
+
+function base64ToBytes (value: string): Uint8Array {
+    const binary = atob(value)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+}
+
+function toArrayBuffer (bytes: Uint8Array): ArrayBuffer {
+    const copy = new Uint8Array(bytes.length)
+    copy.set(bytes)
+    return copy.buffer
+}
+
+async function deriveVaultKey (passphrase: string, salt: Uint8Array): Promise<Uint8Array> {
+    const crypto = getCrypto()
+    const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        toArrayBuffer(textEncoder.encode(passphrase)),
+        'PBKDF2',
+        false,
+        ['deriveBits'],
+    )
+
+    const keyBits = await crypto.subtle.deriveBits(
+        {
+            name: 'PBKDF2',
+            salt: toArrayBuffer(salt),
+            iterations: PBKDF_ITERATIONS,
+            hash: PBKDF_HASH,
+        },
+        keyMaterial,
+        CRYPT_KEY_LENGTH * 8,
+    )
+
+    return new Uint8Array(keyBits)
+}
+
+async function importVaultCipherKey (key: Uint8Array, usages: KeyUsage[]): Promise<CryptoKey> {
+    return getCrypto().subtle.importKey(
+        'raw',
+        toArrayBuffer(key),
+        {
+            name: 'AES-CBC',
+            length: CRYPT_KEY_LENGTH * 8,
+        },
+        false,
+        usages,
     )
 }
 
 async function encryptVault (content: Vault, passphrase: string): Promise<EncryptedStoredVault> {
-    const keySalt = await promisify(crypto.randomBytes)(PBKDF_SALT_LENGTH)
-    const iv = await promisify(crypto.randomBytes)(CRYPT_IV_LENGTH)
+    const keySalt = getRandomBytes(PBKDF_SALT_LENGTH)
+    const iv = getRandomBytes(CRYPT_IV_LENGTH)
     const key = await deriveVaultKey(passphrase, keySalt)
+    const cipherKey = await importVaultCipherKey(key, ['encrypt'])
 
-    const plaintext = JSON.stringify(content)
-    const cipher = crypto.createCipheriv(CRYPT_ALG, asUint8Array(key), asUint8Array(iv))
-    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf-8'), cipher.final()] as readonly Uint8Array[]) as Buffer
+    const plaintext = textEncoder.encode(JSON.stringify(content))
+    const encrypted = new Uint8Array(await getCrypto().subtle.encrypt(
+        {
+            name: 'AES-CBC',
+            iv: toArrayBuffer(iv),
+        },
+        cipherKey,
+        toArrayBuffer(plaintext),
+    ))
 
     return {
         version: 1,
-        contents: encrypted.toString('base64'),
-        keySalt: keySalt.toString('hex'),
-        iv: iv.toString('hex'),
+        contents: bytesToBase64(encrypted),
+        keySalt: bytesToHex(keySalt),
+        iv: bytesToHex(iv),
     }
 }
 
@@ -112,20 +189,30 @@ async function decryptVault (vault: EncryptedStoredVault, passphrase: string): P
     if (vault.version !== 1) {
         throw new Error(`Unsupported vault format version ${vault.version}`)
     }
-    const keySalt = Buffer.from(vault.keySalt, 'hex')
-    const key = await deriveVaultKey(passphrase, keySalt)
-    const iv = Buffer.from(vault.iv, 'hex')
-    const encrypted = Buffer.from(vault.contents, 'base64')
 
-    const decipher = crypto.createDecipheriv(CRYPT_ALG, asUint8Array(key), asUint8Array(iv))
-    const plaintext = decipher.update(asUint8Array(encrypted), undefined, 'utf-8') + decipher.final('utf-8')
-    return migrateVaultContent(JSON.parse(plaintext))
+    const keySalt = hexToBytes(vault.keySalt)
+    const key = await deriveVaultKey(passphrase, keySalt)
+    const iv = hexToBytes(vault.iv)
+    const encrypted = base64ToBytes(vault.contents)
+    const cipherKey = await importVaultCipherKey(key, ['decrypt'])
+
+    const plaintext = await getCrypto().subtle.decrypt(
+        {
+            name: 'AES-CBC',
+            iv: toArrayBuffer(iv),
+        },
+        cipherKey,
+        toArrayBuffer(encrypted),
+    )
+
+    return migrateVaultContent(JSON.parse(textDecoder.decode(new Uint8Array(plaintext))))
 }
 
 export const VAULT_SECRET_TYPE_FILE = 'file'
 
 // Don't make it accessible through VaultService fields
 let _rememberedPassphrase: string|null = null
+let _rememberedPassphraseTimeout: ReturnType<typeof setTimeout> | null = null
 
 @Injectable({ providedIn: 'root' })
 export class VaultService {
@@ -173,6 +260,10 @@ export class VaultService {
 
     forgetPassphrase (): void {
         _rememberedPassphrase = null
+        if (_rememberedPassphraseTimeout !== null) {
+            clearTimeout(_rememberedPassphraseTimeout)
+            _rememberedPassphraseTimeout = null
+        }
     }
 
     async decrypt (storage: StoredVault, passphrase?: string): Promise<Vault> {
@@ -213,7 +304,7 @@ export class VaultService {
     }
 
     async save (vault: Vault, passphrase?: string): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         if (passphrase !== undefined) {
             this.store = passphrase ? await this.encrypt(vault, passphrase) : createPlainStoredVault(vault)
         } else if (this.isProtected()) {
@@ -225,7 +316,7 @@ export class VaultService {
     }
 
     async setPassphrase (passphrase: string, vault?: Vault|null): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         vault ??= await this.load()
         if (!vault) {
             return
@@ -235,7 +326,7 @@ export class VaultService {
     }
 
     async clearPassphrase (vault?: Vault|null): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         vault ??= await this.load()
         if (!vault) {
             return
@@ -253,8 +344,12 @@ export class VaultService {
                 throw new Error('Vault unlock cancelled')
             }
             const { passphrase, rememberFor } = result
-            setTimeout(() => {
+            if (_rememberedPassphraseTimeout !== null) {
+                clearTimeout(_rememberedPassphraseTimeout)
+            }
+            _rememberedPassphraseTimeout = setTimeout(() => {
                 _rememberedPassphrase = null
+                _rememberedPassphraseTimeout = null
                 // avoid multiple consequent prompts
             }, Math.max(1000, rememberFor * 60000))
             _rememberedPassphrase = passphrase
@@ -264,7 +359,7 @@ export class VaultService {
     }
 
     async getSecret (type: string, key: VaultSecretKey): Promise<VaultSecret|null> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         const vault = await this.load()
         if (!vault) {
             return null
@@ -279,7 +374,7 @@ export class VaultService {
     }
 
     async addSecret (secret: VaultSecret): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         const vault = await this.load()
         if (!vault) {
             return
@@ -290,7 +385,7 @@ export class VaultService {
     }
 
     async updateSecret (secret: VaultSecret, update: VaultSecret): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         const vault = await this.load()
         if (!vault) {
             return
@@ -304,7 +399,7 @@ export class VaultService {
     }
 
     async removeSecret (type: string, key: VaultSecretKey): Promise<void> {
-        await this.ready$.toPromise()
+        await lastValueFrom(this.ready$)
         const vault = await this.load()
         if (!vault) {
             return
@@ -334,7 +429,6 @@ export class VaultFileProvider extends FileProvider {
         private vault: VaultService,
         private platform: PlatformService,
         private selector: SelectorService,
-        private zone: NgZone,
     ) {
         super()
     }
@@ -375,7 +469,7 @@ export class VaultFileProvider extends FileProvider {
             throw new Error('Nothing selected')
         }
         const transfer = transfers[0]
-        const id = (await wrapPromise(this.zone, promisify(crypto.randomBytes)(32))).toString('hex')
+        const id = bytesToHex(getRandomBytes(32))
         await this.vault.addSecret({
             type: VAULT_SECRET_TYPE_FILE,
             key: {

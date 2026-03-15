@@ -115,7 +115,7 @@ export class ThemeService implements OnDestroy {
         // 2. 生成主题特定样式
         const themeStyles = this.buildThemeStyles(effectiveTheme)
         // 3. 注入完整样式到 DOM
-        this.styleElement.innerHTML = `
+        this.styleElement.textContent = `
 /* AI Assistant Dynamic Theme - ${theme} (effective: ${effectiveTheme}) */
 :root,
 html,

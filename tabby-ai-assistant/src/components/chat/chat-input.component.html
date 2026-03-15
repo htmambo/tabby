@@ -18,12 +18,12 @@
     <!-- 操作按钮 -->
     <div class="input-actions">
         <!-- 清空按钮 -->
-        <button *ngIf="inputValue && !disabled" class="btn-icon" (click)="clear()" [title]="'Reset' | translate">
+        <button *ngIf="inputValue && !disabled" type="button" class="btn-icon" (click)="clear()" [title]="'Reset' | translate">
             <i class="fa fa-times"></i>
         </button>
 
         <!-- 发送按钮 -->
-        <button class="btn-send" [disabled]="!inputValue.trim() || disabled || isOverLimit()" (click)="submit()"
+        <button type="button" class="btn-send" [disabled]="!inputValue.trim() || disabled || isOverLimit()" (click)="submit()"
             [title]="('Send' | translate) + ' (Enter)'">
             <i class="fa fa-paper-plane"></i>
             <span class="btn-text">{{ 'Send' | translate }}</span>

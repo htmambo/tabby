@@ -1,9 +1,7 @@
 import * as tmp from 'tmp-promise'
 import * as path from 'path'
-import * as fs from 'fs'
-import { Subject, debounceTime, debounce } from 'rxjs'
 import { Injectable } from '@angular/core'
-import { MenuItemOptions, TranslateService } from 'tabby-core'
+import { MenuItemOptions, TranslateService, chmodPath, readPathStat } from 'tabby-core'
 import { SFTPFile, SFTPPanelComponent, SFTPContextMenuItemProvider, SFTPSession } from 'tabby-ssh'
 import { ElectronPlatformService } from './services/platform.service'
 
@@ -39,34 +37,112 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
     }
 
     private async edit (item: SFTPFile, sftp: SFTPSession) {
-        const tempDir = (await tmp.dir({ unsafeCleanup: true })).path
-        const tempPath = path.join(tempDir, item.name)
+        const tempDir = await tmp.dir({ unsafeCleanup: true })
+        const tempPath = path.join(tempDir.path, item.name)
         const transfer = await this.platform.startDownload(item.name, item.mode, item.size, tempPath)
         if (!transfer) {
+            await tempDir.cleanup().catch(() => null)
             return
         }
         await sftp.download(item.fullPath, transfer)
         this.platform.openPath(tempPath)
+        await chmodPath(tempPath, 0o700)
 
-        const events = new Subject<string>()
-        fs.chmodSync(tempPath, 0o700)
+        let lastFingerprint = await this.getFileFingerprint(tempPath)
+        let stopped = false
+        let pollTimer: number | null = null
+        let pollStartTimeout: number | null = null
+        let pollInFlight = false
+        let syncInFlight = false
+        let syncPending = false
 
-        // skip the first burst of events
-        setTimeout(() => {
-            const watcher = fs.watch(tempPath, event => events.next(event))
-            events.pipe(debounceTime(1000), debounce(async event => {
-                if (event === 'rename') {
-                    watcher.close()
-                }
-                const upload = await this.platform.startUpload({ multiple: false }, [tempPath])
-                if (!upload.length) {
+        const stopWatching = () => {
+            if (stopped) {
+                return
+            }
+            stopped = true
+            if (pollStartTimeout !== null) {
+                window.clearTimeout(pollStartTimeout)
+                pollStartTimeout = null
+            }
+            if (pollTimer !== null) {
+                window.clearInterval(pollTimer)
+                pollTimer = null
+            }
+            void tempDir.cleanup().catch(() => null)
+        }
+
+        const syncRemoteCopy = async () => {
+            if (syncInFlight) {
+                syncPending = true
+                return
+            }
+
+            syncInFlight = true
+            try {
+                do {
+                    syncPending = false
+
+                    const upload = await this.platform.startUpload({ multiple: false }, [tempPath])
+                    if (!upload.length) {
+                        stopWatching()
+                        return
+                    }
+
+                    await sftp.upload(item.fullPath, upload[0])
+                    await sftp.chmod(item.fullPath, item.mode)
+                    lastFingerprint = await this.getFileFingerprint(tempPath)
+                } while (syncPending && !stopped)
+            } finally {
+                syncInFlight = false
+            }
+        }
+
+        const pollForChanges = async () => {
+            if (stopped || pollInFlight) {
+                return
+            }
+
+            pollInFlight = true
+            try {
+                const fingerprint = await this.getFileFingerprint(tempPath)
+                if (!fingerprint) {
+                    stopWatching()
                     return
                 }
-                await sftp.upload(item.fullPath, upload[0])
-                await sftp.chmod(item.fullPath, item.mode)
-            })).subscribe()
-            watcher.on('close', () => events.complete())
-            sftp.closed$.subscribe(() => watcher.close())
+
+                if (fingerprint === lastFingerprint) {
+                    return
+                }
+
+                lastFingerprint = fingerprint
+                await syncRemoteCopy()
+            } finally {
+                pollInFlight = false
+            }
+        }
+
+        const sftpCloseSubscription = sftp.closed$.subscribe(() => {
+            stopWatching()
+            sftpCloseSubscription.unsubscribe()
+        })
+
+        pollStartTimeout = window.setTimeout(() => {
+            if (stopped) {
+                return
+            }
+            pollStartTimeout = null
+            pollTimer = window.setInterval(() => {
+                void pollForChanges()
+            }, 1000)
         }, 1000)
+    }
+
+    private async getFileFingerprint (filePath: string): Promise<string | null> {
+        const stat = await readPathStat(filePath)
+        if (!stat || !stat.isFile) {
+            return null
+        }
+        return `${stat.size}:${stat.mtimeMs}`
     }
 }

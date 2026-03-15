@@ -7,29 +7,34 @@ import './toastr.scss'
 
 // Importing before @angular/*
 import { findPlugins, initModuleLookup, loadPlugins } from './plugins'
+import { getTabbyBridge } from './tabby-bridge'
 
 import { enableProdMode, NgModuleRef, ApplicationRef } from '@angular/core'
 import { enableDebugTools } from '@angular/platform-browser'
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
-import { ipcRenderer } from 'electron'
 
 import { getRootModule } from './app.module'
+import { getRuntimeEnv, getRuntimePlatform, hasRuntimeEnv, isRuntimeDev, setRuntimeEnv, setRuntimePromiseAPIEnabled } from '../../tabby-core/src/api/rendererRuntime'
 import { BootstrapData, BOOTSTRAP_DATA, PluginInfo } from '../../tabby-core/src/api/mainProcess'
 
 // Always land on the start view
 location.hash = ''
 
-;(process as any).enablePromiseAPI = true
+setRuntimePromiseAPIEnabled(true)
 
-if (process.platform === 'win32' && !('HOME' in process.env)) {
-    process.env.HOME = `${process.env.HOMEDRIVE}${process.env.HOMEPATH}`
+if (getRuntimePlatform() === 'win32' && !hasRuntimeEnv('HOME')) {
+    const homeDrive = getRuntimeEnv('HOMEDRIVE') ?? ''
+    const homePath = getRuntimeEnv('HOMEPATH') ?? ''
+    setRuntimeEnv('HOME', `${homeDrive}${homePath}`)
 }
 
-if (process.env.TABBY_DEV && !process.env.TABBY_FORCE_ANGULAR_PROD) {
+if (isRuntimeDev() && !hasRuntimeEnv('TABBY_FORCE_ANGULAR_PROD')) {
     console.warn('Running in debug mode')
 } else {
     enableProdMode()
 }
+
+const ipc = getTabbyBridge().ipc
 
 async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], safeMode = false): Promise<NgModuleRef<any>> {
     if (safeMode) {
@@ -52,7 +57,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     const moduleRef = await platformBrowserDynamic([
         { provide: BOOTSTRAP_DATA, useValue: bootstrapData },
     ]).bootstrapModule(module)
-    if (process.env.TABBY_DEV) {
+    if (isRuntimeDev()) {
         const applicationRef = moduleRef.injector.get(ApplicationRef)
         const componentRef = applicationRef.components[0]
         enableDebugTools(componentRef)
@@ -60,7 +65,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     return moduleRef
 }
 
-ipcRenderer.once('start', async (_$event, bootstrapData: BootstrapData) => {
+ipc.once('start', async (bootstrapData: BootstrapData) => {
     console.log('Window bootstrap data:', bootstrapData)
 
     initModuleLookup(bootstrapData.userPluginsPath)
@@ -87,4 +92,4 @@ ipcRenderer.once('start', async (_$event, bootstrapData: BootstrapData) => {
     }
 })
 
-ipcRenderer.send('ready')
+ipc.send('ready')

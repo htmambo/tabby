@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@angular/core'
+import { Injectable, Inject, Optional } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
 import { NewTabParameters } from './tabs.service'
 import { BaseTabComponent } from '../components/baseTab.component'
@@ -8,6 +8,7 @@ import { AppService } from './app.service'
 import { configMerge, ConfigProxy, ConfigService, FullyDefined } from './config.service'
 import { NotificationsService } from './notifications.service'
 import { SelectorService } from './selector.service'
+import { SettingsTabOpener } from '../api/settingsTabOpener'
 import deepClone from 'clone-deep'
 import { v4 as uuidv4 } from 'uuid'
 import slugify from 'slugify'
@@ -36,6 +37,7 @@ export class ProfilesService {
         private selector: SelectorService,
         private translate: TranslateService,
         @Inject(ProfileProvider) private profileProviders: ProfileProvider<Profile>[],
+        @Optional() private settingsTabOpener: SettingsTabOpener | null,
     ) { }
 
     /*
@@ -276,21 +278,17 @@ export class ProfilesService {
                     callback: () => resolve(p),
                 }))]
 
-                try {
-                    const { SettingsTabComponent } = window['nodeRequire']('tabby-settings')
+                if (this.settingsTabOpener) {
                     options.push({
                         name: this.translate.instant('Manage profiles'),
                         icon: 'fas fa-window-restore',
                         weight: 10,
                         callback: () => {
-                            this.app.openNewTabRaw({
-                                type: SettingsTabComponent,
-                                inputs: { activeTab: 'profiles' },
-                            })
+                            this.settingsTabOpener?.open('profiles')
                             resolve(null)
                         },
                     })
-                } catch { }
+                }
 
                 this.getProviders().forEach(provider => {
                     if (provider instanceof QuickConnectProfileProvider) {

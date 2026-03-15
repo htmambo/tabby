@@ -1,5 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewEncapsulation, OnDestroy } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core'
 import { ChatMessage } from '../../types/ai.types'
 import { ToastService } from '../../services/core/toast.service'
 import { TranslateService } from 'tabby-core'
@@ -11,7 +10,7 @@ import { TranslateService } from 'tabby-core'
     styleUrls: ['./chat-message.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class ChatMessageComponent implements OnDestroy {
+export class ChatMessageComponent {
     @Input() message!: ChatMessage
     @Input() showAvatar = true
     @Input() showTimestamp = true
@@ -19,17 +18,10 @@ export class ChatMessageComponent implements OnDestroy {
     @Output() messageClick = new EventEmitter<ChatMessage>()
     @Output() messageAction = new EventEmitter<{ action: string; message: ChatMessage }>()
 
-    private destroy$ = new Subject<void>()
-
     constructor(
         private toastService: ToastService,
         private translate: TranslateService,
     ) {}
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
-    }
 
     /**
      * 处理消息点击

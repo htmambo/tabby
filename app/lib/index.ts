@@ -15,7 +15,6 @@ import './sentry'
 import './lru'
 import { parseArgs } from './cli'
 import { Application } from './app'
-import electronDebug from 'electron-debug'
 import { loadConfig } from './config'
 
 
@@ -52,14 +51,6 @@ process.on('uncaughtException' as any, err => {
     console.log(err)
     application.broadcast('uncaughtException', err)
 })
-
-if (argv.d) {
-    electronDebug({
-        isEnabled: true,
-        showDevTools: true,
-        devToolsMode: 'undocked',
-    })
-}
 
 app.on('activate', async () => {
     if (!application.hasWindows()) {

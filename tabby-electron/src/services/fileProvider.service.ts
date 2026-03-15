@@ -1,8 +1,6 @@
-import { promises as fs } from 'fs'
 import { Injectable } from '@angular/core'
 import { FileProvider } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
-import { ElectronHostWindow } from './hostWindow.service'
 
 @Injectable()
 export class ElectronFileProvider extends FileProvider {
@@ -10,19 +8,15 @@ export class ElectronFileProvider extends FileProvider {
 
     constructor (
         private electron: ElectronService,
-        private hostWindow: ElectronHostWindow,
     ) {
         super()
     }
 
     async selectAndStoreFile (description: string): Promise<string> {
-        const result = await this.electron.dialog.showOpenDialog(
-            this.hostWindow.getWindow(),
-            {
-                buttonLabel: `Select ${description}`,
-                properties: ['openFile', 'treatPackageAsDirectory'],
-            },
-        )
+        const result = await this.electron.dialog.showOpenDialog({
+            buttonLabel: `Select ${description}`,
+            properties: ['openFile', 'treatPackageAsDirectory'],
+        })
         if (result.canceled || !result.filePaths.length) {
             throw new Error('canceled')
         }
@@ -36,6 +30,7 @@ export class ElectronFileProvider extends FileProvider {
         } else if (key.includes('://')) {
             throw new Error('Incorrect type')
         }
-        return fs.readFile(key, { encoding: null })
+        const content = await this.electron.ipcRenderer.invoke<string>('bridge:file-provider:read-file', key)
+        return Buffer.from(content, 'base64')
     }
 }

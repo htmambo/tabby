@@ -1,6 +1,7 @@
 import * as yaml from 'js-yaml'
 import axios from 'axios'
-import { Injectable } from '@angular/core'
+import { Injectable, OnDestroy } from '@angular/core'
+import { lastValueFrom } from 'rxjs'
 import { ConfigService, HostAppService, Logger, LogService, Platform, PlatformService } from 'tabby-core'
 
 export interface User {
@@ -58,12 +59,14 @@ const NON_SYNCED_CONFIG_PATHS = [
 ]
 
 @Injectable({ providedIn: 'root' })
-export class ConfigSyncService {
+export class ConfigSyncService implements OnDestroy {
     private logger: Logger
     private lastRemoteChange = new Date(0)
     private lastSyncedLocalFingerprint: string|null = null
     private internalConfigWriteInProgress = false
     private autoSyncLocalChangeInProgress = false
+    private destroyed = false
+    private autoSyncSleepHandle: ReturnType<typeof setTimeout> | null = null
 
     constructor (
         log: LogService,
@@ -72,7 +75,7 @@ export class ConfigSyncService {
         private config: ConfigService,
     ) {
         this.logger = log.create('configSync')
-        config.ready$.toPromise().then(async () => {
+        void lastValueFrom(config.ready$).then(async () => {
             try {
                 this.lastSyncedLocalFingerprint = await this.readLocalSyncFingerprint()
             } catch (error) {
@@ -88,6 +91,14 @@ export class ConfigSyncService {
                 }
             })
         })
+    }
+
+    ngOnDestroy (): void {
+        this.destroyed = true
+        if (this.autoSyncSleepHandle !== null) {
+            clearTimeout(this.autoSyncSleepHandle)
+            this.autoSyncSleepHandle = null
+        }
     }
 
     isAvailable (): boolean {
@@ -254,11 +265,26 @@ export class ConfigSyncService {
                 },
                 ...params,
             })
-            this.logger.debug(response)
+            this.logger.debug('Config sync request completed', {
+                method,
+                url,
+                status: response.status,
+            })
             return response.data
         } catch (error) {
-            this.logger.error(error)
+            this.logger.error('Config sync request failed', this.describeRequestError(error))
             throw error
+        }
+    }
+
+    private describeRequestError (error: unknown): Record<string, unknown> {
+        const anyError = error as any
+        return {
+            message: anyError?.message,
+            status: anyError?.response?.status,
+            statusText: anyError?.response?.statusText,
+            url: anyError?.config?.url,
+            method: anyError?.config?.method,
         }
     }
 
@@ -291,7 +317,7 @@ export class ConfigSyncService {
     }
 
     private async autoSync () {
-        while (true) {
+        while (!this.destroyed) {
             try {
                 if (this.isEnabled() && this.isAutoSyncEnabled() && !this.autoSyncLocalChangeInProgress) {
                     const cfg = await this.getConfig(this.config.store.configSync.configID)
@@ -303,8 +329,20 @@ export class ConfigSyncService {
             } catch (error) {
                 this.logger.debug('Recovering from autoSync network error')
             }
-            await new Promise(resolve => setTimeout(resolve, 60000))
+            await this.sleepAutoSync(60000)
         }
+    }
+
+    private sleepAutoSync (ms: number): Promise<void> {
+        if (this.destroyed) {
+            return Promise.resolve()
+        }
+        return new Promise(resolve => {
+            this.autoSyncSleepHandle = setTimeout(() => {
+                this.autoSyncSleepHandle = null
+                resolve()
+            }, ms)
+        })
     }
 
     private async handleLocalConfigChanged (): Promise<void> {

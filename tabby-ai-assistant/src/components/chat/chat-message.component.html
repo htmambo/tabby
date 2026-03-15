@@ -42,16 +42,16 @@
 
             <!-- 操作按钮（仅AI消息显示） -->
             <div *ngIf="isAssistantMessage()" class="message-actions">
-                <button class="action-btn" (click)="copyMessage()" [title]="'Copy' | translate">
+                <button type="button" class="action-btn" (click)="copyMessage()" [title]="'Copy' | translate">
                     <i class="icon-copy"></i>
                 </button>
-                <button class="action-btn" (click)="regenerateResponse()" [title]="'Regenerate' | translate">
+                <button type="button" class="action-btn" (click)="regenerateResponse()" [title]="'Regenerate' | translate">
                     <i class="icon-refresh"></i>
                 </button>
-                <button class="action-btn" (click)="markAsHelpful()" [title]="'Helpful' | translate">
+                <button type="button" class="action-btn" (click)="markAsHelpful()" [title]="'Helpful' | translate">
                     <i class="icon-thumbs-up"></i>
                 </button>
-                <button class="action-btn" (click)="markAsNotHelpful()" [title]="'Not Helpful' | translate">
+                <button type="button" class="action-btn" (click)="markAsNotHelpful()" [title]="'Not Helpful' | translate">
                     <i class="icon-thumbs-down"></i>
                 </button>
             </div>

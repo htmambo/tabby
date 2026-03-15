@@ -47,6 +47,7 @@ export class SerialSession extends BaseSession {
     get serviceMessage$ (): Observable<string> { return this.serviceMessage }
     private serviceMessage = new Subject<string>()
     private streamProcessor: TerminalStreamProcessor
+    private pendingStreamStartHandle: ReturnType<typeof setTimeout> | null = null
     private zone: NgZone
     private notifications: NotificationsService
     private serialService: SerialService
@@ -119,7 +120,15 @@ export class SerialSession extends BaseSession {
         })
 
         this.open = true
-        setTimeout(() => this.streamProcessor.start())
+        this.pendingStreamStartHandle = setTimeout(() => {
+            this.pendingStreamStartHandle = null
+            if (this.open) {
+                this.streamProcessor.start()
+            }
+        }, 0)
+        if (typeof (this.pendingStreamStartHandle as any)?.unref === 'function') {
+            (this.pendingStreamStartHandle as any).unref()
+        }
 
         serial.on('readable', () => {
             this.emitOutput(serial.read())
@@ -141,6 +150,10 @@ export class SerialSession extends BaseSession {
 
     async destroy (): Promise<void> {
         this.serviceMessage.complete()
+        if (this.pendingStreamStartHandle !== null) {
+            clearTimeout(this.pendingStreamStartHandle)
+            this.pendingStreamStartHandle = null
+        }
         await super.destroy()
     }
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import * as path from 'path'
-import { WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild } from 'tabby-core'
+import { WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, isRuntimeDev } from 'tabby-core'
 import { SessionOptions, UACService } from 'tabby-local'
 import { ElectronService } from './electron.service'
 
@@ -22,7 +22,7 @@ export class ElectronUACService extends UACService {
             'UAC.exe',
         )
 
-        if (process.env.TABBY_DEV) {
+        if (isRuntimeDev()) {
             helperPath = path.join(
                 path.dirname(this.electron.app.getPath('exe')),
                 '..', '..', '..',

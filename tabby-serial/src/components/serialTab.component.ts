@@ -17,6 +17,7 @@ import { SerialSession, BAUD_RATES, SerialProfile } from '../api'
 export class SerialTabComponent extends ConnectableTerminalTabComponent<SerialProfile> {
     session: SerialSession|null = null
     Platform = Platform
+    private pendingTitleHandle: number | null = null
 
     // eslint-disable-next-line @typescript-eslint/no-useless-constructor
     constructor (
@@ -47,9 +48,18 @@ export class SerialTabComponent extends ConnectableTerminalTabComponent<SerialPr
 
         super.ngOnInit()
 
-        setImmediate(() => {
+        this.pendingTitleHandle = window.setTimeout(() => {
+            this.pendingTitleHandle = null
             this.setTitle(this.profile.name)
-        })
+        }, 0)
+    }
+
+    ngOnDestroy (): void {
+        if (this.pendingTitleHandle !== null) {
+            window.clearTimeout(this.pendingTitleHandle)
+            this.pendingTitleHandle = null
+        }
+        super.ngOnDestroy()
     }
 
     async initializeSession () {

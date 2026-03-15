@@ -1,8 +1,8 @@
-import * as fs from 'mz/fs'
+import { access } from 'node:fs/promises'
 import slugify from 'slugify'
 
 import { Injectable } from '@angular/core'
-import { HostAppService, Platform, isWindowsBuild, WIN_BUILD_WSL_EXE_DISTRO_FLAG } from 'tabby-core'
+import { HostAppService, Platform, isWindowsBuild, WIN_BUILD_WSL_EXE_DISTRO_FLAG, getRuntimeEnv } from 'tabby-core'
 
 import { ShellProvider, Shell } from 'tabby-local'
 
@@ -35,6 +35,15 @@ const wslIconMap: Record<string, string> = {
 }
 /* eslint-enable quote-props */
 
+async function pathExists (targetPath: string): Promise<boolean> {
+    try {
+        await access(targetPath)
+        return true
+    } catch {
+        return false
+    }
+}
+
 /** @hidden */
 @Injectable()
 export class WSLShellProvider extends ShellProvider {
@@ -49,8 +58,9 @@ export class WSLShellProvider extends ShellProvider {
             return []
         }
 
-        const bashPath = `${process.env.windir}\\system32\\bash.exe`
-        const wslPath = `${process.env.windir}\\system32\\wsl.exe`
+        const windowsDir = getRuntimeEnv('windir') ?? 'C:\\Windows'
+        const bashPath = `${windowsDir}\\system32\\bash.exe`
+        const wslPath = `${windowsDir}\\system32\\wsl.exe`
 
         const lxssPath = 'Software\\Microsoft\\Windows\\CurrentVersion\\Lxss'
         const lxss = wnr.getRegistryKey(wnr.HK.CU, lxssPath)
@@ -75,7 +85,7 @@ export class WSLShellProvider extends ShellProvider {
         }
 
         if (!lxss?.DefaultDistribution || !isWindowsBuild(WIN_BUILD_WSL_EXE_DISTRO_FLAG)) {
-            if (await fs.exists(bashPath)) {
+            if (await pathExists(bashPath)) {
                 return [{
                     id: 'wsl',
                     name: 'WSL / Bash on Windows',

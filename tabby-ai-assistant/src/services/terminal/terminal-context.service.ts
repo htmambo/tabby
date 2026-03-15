@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core'
+import { getRuntimeCwd, getRuntimeEnv, getRuntimeEnvObject } from 'tabby-core'
 import { Subject, Observable } from 'rxjs'
 import { TerminalContext, TerminalSession, TerminalError, CommandResult, SystemInfo, ProcessInfo, ProjectInfo } from '../../types/terminal.types'
 import { LoggerService } from '../core/logger.service'
@@ -14,6 +15,22 @@ interface ProjectDetector {
     language: string;
     framework?: string;
 }
+
+const TERMINAL_CONTEXT_ENV_KEYS = [
+    'COMSPEC',
+    'HOME',
+    'HOSTNAME',
+    'LANG',
+    'LOGNAME',
+    'PATH',
+    'Path',
+    'PWD',
+    'SHELL',
+    'TERM',
+    'TERM_PROGRAM',
+    'USER',
+    'USERNAME',
+] as const
 
 @Injectable({ providedIn: 'root' })
 export class TerminalContextService {
@@ -338,17 +355,11 @@ export class TerminalContextService {
      */
     private async getCurrentSession(): Promise<TerminalSession> {
         // 这里应该从Tabby API获取真实的会话信息
-        const env: Record<string, string> = {}
-        Object.keys(process.env).forEach(key => {
-            const value = process.env[key]
-            if (value !== undefined) {
-                env[key] = value
-            }
-        })
+        const env = getRuntimeEnvObject(TERMINAL_CONTEXT_ENV_KEYS)
 
         return {
             sessionId: this.generateSessionId(),
-            cwd: process.cwd(),
+            cwd: getRuntimeCwd(),
             shell: this.detectShell(),
             user: env.USER || env.USERNAME,
             hostname: env.HOSTNAME || 'localhost',
@@ -387,7 +398,7 @@ export class TerminalContextService {
      * 根据当前工作目录中的配置文件检测项目类型和元数据
      */
     async detectProjectInfo(): Promise<ProjectInfo | null> {
-        const cwd = this.currentContext?.session.cwd ?? process.cwd()
+        const cwd = this.currentContext?.session.cwd ?? getRuntimeCwd()
 
         // 检测 .git 目录（Git 项目）
         const hasGit = await this.checkFileExists('.git')
@@ -522,7 +533,7 @@ export class TerminalContextService {
      * 检测当前Shell
      */
     private detectShell(): string {
-        return process.env.SHELL ?? process.env.COMSPEC ?? 'unknown'
+        return getRuntimeEnv('SHELL') ?? getRuntimeEnv('COMSPEC') ?? 'unknown'
     }
 
     /**

@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core'
-import { Subject } from 'rxjs'
+import { Component, OnInit, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { TranslateService } from 'tabby-core'
@@ -11,7 +10,7 @@ import { TranslateService } from 'tabby-core'
     styleUrls: ['./chat-settings.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class ChatSettingsComponent implements OnInit, OnDestroy {
+export class ChatSettingsComponent implements OnInit {
     settings: {
         chatHistoryEnabled: boolean;
         maxChatHistory: number;
@@ -39,8 +38,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
         }
 
     fontSizes = [12, 14, 16, 18, 20]
-
-    private destroy$ = new Subject<void>()
 
     get t(): any {
         if (!this.translate) {
@@ -87,11 +84,6 @@ export class ChatSettingsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadSettings()
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next()
-        this.destroy$.complete()
     }
 
     /**

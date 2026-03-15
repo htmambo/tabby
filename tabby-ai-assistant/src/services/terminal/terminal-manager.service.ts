@@ -1,11 +1,25 @@
 import { Injectable, NgZone } from '@angular/core'
 import { Subject, Observable, Subscription, interval } from 'rxjs'
-import { AppService } from 'tabby-core'
+import { AppService, getRuntimeArgv0, getRuntimeCwd, getRuntimeEnv, getRuntimeEnvObject, getRuntimePid, getRuntimePlatform } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { LoggerService } from '../core/logger.service'
 
 // eslint-disable-next-line @typescript-eslint/no-type-alias
 type TerminalTab = BaseTerminalTabComponent<any>
+
+const TERMINAL_MANAGER_ENV_KEYS = [
+    'COMSPEC',
+    'HOME',
+    'LANG',
+    'PATH',
+    'Path',
+    'PWD',
+    'SHELL',
+    'TERM',
+    'TERM_PROGRAM',
+    'USER',
+    'USERNAME',
+] as const
 
 /**
  * 终端信息接口
@@ -69,6 +83,7 @@ export class TerminalManagerService {
     private processMonitoringSubject = new Subject<{ terminalId: string; processes: ProcessInfo[] }>()
     private promptDetectionSubject = new Subject<{ terminalId: string; prompt: string }>()
     private monitoringIntervals = new Map<string, Subscription>()
+    private pendingSleeps = new Map<ReturnType<typeof setTimeout>, () => void>()
 
     outputEvent$ = this.outputEventSubject.asObservable()
     processMonitoring$ = this.processMonitoringSubject.asObservable()
@@ -494,6 +509,11 @@ export class TerminalManagerService {
         this.outputSubscriptions.clear()
         this.monitoringIntervals.forEach(sub => sub.unsubscribe())
         this.monitoringIntervals.clear()
+        for (const [handle, resolve] of this.pendingSleeps) {
+            clearTimeout(handle)
+            resolve()
+        }
+        this.pendingSleeps.clear()
     }
 
     // ==================== AI感知能力 ====================
@@ -504,7 +524,7 @@ export class TerminalManagerService {
     async detectCurrentDirectory(terminal?: TerminalTab): Promise<string> {
         const t = terminal ?? this.getActiveTerminal()
         if (!t) {
-            return process.cwd()
+            return getRuntimeCwd()
         }
 
         try {
@@ -519,15 +539,15 @@ export class TerminalManagerService {
             this.sendCommandToTerminal(t, 'pwd', true)
 
             // 等待输出（简化实现）
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await this.sleep(500)
 
             const newPrompt = await this.getPrompt(t)
             const pwdOutput = this.extractCommandOutput(originalPrompt, newPrompt, 'pwd')
 
-            return pwdOutput || process.cwd()
+            return pwdOutput || getRuntimeCwd()
         } catch (error) {
             this.logger.error('Failed to detect current directory', error)
-            return process.cwd()
+            return getRuntimeCwd()
         }
     }
 
@@ -542,13 +562,13 @@ export class TerminalManagerService {
 
         try {
             // 尝试从环境变量获取
-            const shell = process.env.SHELL ?? process.env.COMSPEC ?? 'unknown'
+            const shell = getRuntimeEnv('SHELL') ?? getRuntimeEnv('COMSPEC') ?? 'unknown'
 
             // 如果无法从环境变量获取，使用 echo $SHELL (Unix) 或 echo %COMSPEC% (Windows)
-            const shellCommand = process.platform === 'win32' ? 'echo %COMSPEC%' : 'echo $SHELL'
+            const shellCommand = getRuntimePlatform() === 'win32' ? 'echo %COMSPEC%' : 'echo $SHELL'
             this.sendCommandToTerminal(t, shellCommand, true)
 
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await this.sleep(500)
 
             return shell
         } catch (error) {
@@ -600,7 +620,7 @@ export class TerminalManagerService {
         try {
             // 发送一个空命令来触发提示符显示
             this.sendCommandToTerminal(t, '', true)
-            await new Promise(resolve => setTimeout(resolve, 200))
+            await this.sleep(200)
 
             // 简化实现：返回默认提示符格式
             const shell = await this.getActiveShell(t)
@@ -624,17 +644,17 @@ export class TerminalManagerService {
 
         try {
             // 使用 ps 命令获取进程列表
-            const psCommand = process.platform === 'win32' ? 'tasklist' : 'ps aux'
+            const psCommand = getRuntimePlatform() === 'win32' ? 'tasklist' : 'ps aux'
             this.sendCommandToTerminal(t, psCommand, true)
 
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await this.sleep(1000)
 
             // 简化实现：返回模拟进程信息
             const processes: ProcessInfo[] = [
                 {
-                    pid: process.pid,
-                    name: process.platform === 'win32' ? 'node.exe' : 'node',
-                    command: process.argv0,
+                    pid: getRuntimePid(),
+                    name: getRuntimePlatform() === 'win32' ? 'node.exe' : 'node',
+                    command: getRuntimeArgv0(),
                     status: 'running',
                 },
             ]
@@ -685,7 +705,7 @@ export class TerminalManagerService {
             activeShell,
             prompt,
             processes,
-            environment: this.filterEnvVariables(process.env),
+            environment: getRuntimeEnvObject(TERMINAL_MANAGER_ENV_KEYS),
             timestamp: Date.now(),
         }
 
@@ -810,6 +830,19 @@ export class TerminalManagerService {
     }
 
     // ==================== 私有辅助方法 ====================
+
+    private sleep (ms: number): Promise<void> {
+        return new Promise(resolve => {
+            const handle = setTimeout(() => {
+                this.pendingSleeps.delete(handle)
+                resolve()
+            }, ms)
+            this.pendingSleeps.set(handle, resolve)
+            if (typeof (handle as any)?.unref === 'function') {
+                (handle as any).unref()
+            }
+        })
+    }
 
     private getTerminalId(terminal: TerminalTab): string {
         return terminal.title || `terminal-${Math.random().toString(36).substr(2, 9)}`

@@ -1,55 +1,67 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import * as winston from 'winston'
 import { Injectable } from '@angular/core'
 import { ConsoleLogger, Logger } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
-const initializeWinston = (electron: ElectronService) => {
-    const logDirectory = electron.app.getPath('userData')
-    // eslint-disable-next-line
-    const winston = require('winston')
-
-    if (!fs.existsSync(logDirectory)) {
-        fs.mkdirSync(logDirectory)
-    }
-
-    return winston.createLogger({
-        transports: [
-            new winston.transports.File({
-                level: 'debug',
-                filename: path.join(logDirectory, 'log.txt'),
-                format: winston.format.simple(),
-                handleExceptions: false,
-                maxsize: 5242880,
-                maxFiles: 5,
-            }),
-        ],
-        exitOnError: false,
-    })
+interface BridgeLogEntry {
+    level: 'debug' | 'info' | 'warn' | 'error'
+    message: string
+    name: string
 }
 
-export class WinstonAndConsoleLogger extends ConsoleLogger {
-    constructor (private winstonLogger: winston.Logger, name: string) {
+function normalizeLogLevel (level: string): BridgeLogEntry['level'] {
+    if (level === 'debug' || level === 'info' || level === 'warn' || level === 'error') {
+        return level
+    }
+    return 'info'
+}
+
+function formatLogArg (arg: any): string {
+    if (arg instanceof Error) {
+        return arg.stack ?? `${arg.name}: ${arg.message}`
+    }
+    if (typeof arg === 'string') {
+        return arg
+    }
+    if (arg === undefined) {
+        return 'undefined'
+    }
+    if (arg === null) {
+        return 'null'
+    }
+    if (typeof arg === 'number' || typeof arg === 'boolean' || typeof arg === 'bigint') {
+        return String(arg)
+    }
+
+    try {
+        return JSON.stringify(arg)
+    } catch {
+        return String(arg)
+    }
+}
+
+export class BridgeAndConsoleLogger extends ConsoleLogger {
+    constructor (private electron: ElectronService, name: string) {
         super(name)
     }
 
     protected doLog (level: string, ...args: any[]): void {
         super.doLog(level, ...args)
-        this.winstonLogger[level](...args)
+
+        const entry: BridgeLogEntry = {
+            level: normalizeLogLevel(level),
+            message: args.map(arg => formatLogArg(arg)).join(' '),
+            name: this.name,
+        }
+        this.electron.ipcRenderer.send('bridge:log:write', entry)
     }
 }
 
 @Injectable({ providedIn: 'root' })
 export class ElectronLogService {
-    private log: winston.Logger
-
     /** @hidden */
-    constructor (electron: ElectronService) {
-        this.log = initializeWinston(electron)
-    }
+    constructor (private electron: ElectronService) { }
 
     create (name: string): Logger {
-        return new WinstonAndConsoleLogger(this.log, name)
+        return new BridgeAndConsoleLogger(this.electron, name)
     }
 }

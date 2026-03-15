@@ -1,9 +1,8 @@
-import * as fs from 'fs/promises'
 import * as path from 'path'
 import untildify from 'untildify'
 import { Injectable } from '@angular/core'
 import { ToastrService } from 'ngx-toastr'
-import { PlatformService } from 'tabby-core'
+import { PlatformService, pathExists } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 
 import { LinkHandler } from './api'
@@ -57,12 +56,7 @@ export class BaseFileHandler extends LinkHandler {
     }
 
     async verify (uri: string): Promise<boolean> {
-        try {
-            await fs.access(uri)
-            return true
-        } catch {
-            return false
-        }
+        return pathExists(uri)
     }
 
     async convert (uri: string, tab?: BaseTerminalTabComponent<any>): Promise<string> {

@@ -2,10 +2,11 @@ doctype html
 html.tabby
     head
         meta(charset='UTF-8')
+        meta(
+            http-equiv='Content-Security-Policy'
+            content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https: http:; font-src 'self' data: file:; connect-src 'self' https: http: ws: wss:; worker-src 'self' blob:; media-src 'self' blob: data: file:;"
+        )
         base(href='index.html')
-        script.
-            console.timeStamp('index')
-            window.nodeRequire = require
         script(src='./preload.js')
         script(src='./bundle.js', defer)
         style.

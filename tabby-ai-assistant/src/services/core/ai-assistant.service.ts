@@ -1,5 +1,5 @@
-import { Injectable, Optional, Injector } from '@angular/core'
-import { Observable, from, throwError, Subject, merge } from 'rxjs'
+import { Injectable, Optional, OnDestroy } from '@angular/core'
+import { Observable, from, throwError, Subject, merge, Subscription } from 'rxjs'
 import { catchError, tap, finalize, filter } from 'rxjs/operators'
 import {
     ChatMessage, MessageRole, ChatRequest, ChatResponse, CommandRequest, CommandResponse,
@@ -14,10 +14,9 @@ import { TerminalContextService } from '../terminal/terminal-context.service'
 import { TerminalToolsService } from '../terminal/terminal-tools.service'
 import { TerminalManagerService } from '../terminal/terminal-manager.service'
 import { SecurityValidatorService } from '../security/security-validator.service'
-// 使用延迟注入获取 AiSidebarService 以打破循环依赖
-import type { AiSidebarService } from '../chat/ai-sidebar.service'
 import { LoggerService } from './logger.service'
 import { BaseAiProvider } from '../../types/provider.types'
+import { ChatInterfaceOpener } from '../../api/chatInterfaceOpener'
 
 // Import all provider services
 import { OpenAiProviderService } from '../providers/openai-provider.service'
@@ -29,11 +28,12 @@ import { OllamaProviderService } from '../providers/ollama-provider.service'
 import { VllmProviderService } from '../providers/vllm-provider.service'
 
 @Injectable({ providedIn: 'root' })
-export class AiAssistantService {
+export class AiAssistantService implements OnDestroy {
     // 提供商映射表
     private providerMapping: Record<string, BaseAiProvider> = {}
     private initialized = false
     private pendingProviderRefresh: number | null = null
+    private configChangeSubscription: Subscription | null = null
 
     constructor(
         private providerManager: AiProviderManagerService,
@@ -42,8 +42,8 @@ export class AiAssistantService {
         private terminalTools: TerminalToolsService,
         private terminalManager: TerminalManagerService,
         private securityValidator: SecurityValidatorService,
-        private injector: Injector,
         private logger: LoggerService,
+        @Optional() private chatInterfaceOpener: ChatInterfaceOpener | null,
         // 注入所有提供商服务
         @Optional() private openaiProvider: OpenAiProviderService,
         @Optional() private anthropicProvider: AnthropicProviderService,
@@ -56,7 +56,7 @@ export class AiAssistantService {
         // 构建提供商映射表
         this.buildProviderMapping()
 
-        this.config.onConfigChange().pipe(
+        this.configChangeSubscription = this.config.onConfigChange().pipe(
             filter(change => change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === 'providers' || change.key === '*'),
         ).subscribe(() => {
             if (!this.initialized) {
@@ -64,6 +64,15 @@ export class AiAssistantService {
             }
             this.scheduleProviderRefresh()
         })
+    }
+
+    ngOnDestroy (): void {
+        if (this.pendingProviderRefresh !== null) {
+            window.clearTimeout(this.pendingProviderRefresh)
+            this.pendingProviderRefresh = null
+        }
+        this.configChangeSubscription?.unsubscribe()
+        this.configChangeSubscription = null
     }
 
     /**
@@ -688,14 +697,10 @@ export class AiAssistantService {
 
     /**
      * 打开聊天界面
-     * 使用延迟注入获取 AiSidebarService 以避免循环依赖
      */
     openChatInterface(): void {
         this.logger.info('Opening chat interface')
-        // 延迟获取 AiSidebarService 以打破循环依赖
-        const { AiSidebarService } = require('../chat/ai-sidebar.service')
-        const sidebarService = this.injector.get(AiSidebarService) as AiSidebarService
-        sidebarService.show()
+        this.chatInterfaceOpener?.open()
     }
 
     /**

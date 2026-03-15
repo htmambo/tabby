@@ -3,7 +3,7 @@ import { PlatformService, LogService, UpdaterService, DockingService, HostAppSer
 import { TerminalColorSchemeProvider, TerminalDecorator } from 'tabby-terminal'
 import { SFTPContextMenuItemProvider, SSHProfileImporter, AutoPrivateKeyLocator } from 'tabby-ssh'
 import { PTYInterface, ShellProvider, UACService } from 'tabby-local'
-import { auditTime } from 'rxjs'
+import { auditTime, lastValueFrom } from 'rxjs'
 
 import { HyperColorSchemes } from './colorSchemes'
 import { ElectronPlatformService } from './services/platform.service'
@@ -94,7 +94,7 @@ export default class ElectronModule {
         app: AppService,
         dockMenu: DockMenuService,
     ) {
-        config.ready$.toPromise().then(() => {
+        void lastValueFrom(config.ready$).then(() => {
             touchbar.update()
             docking.dock()
             hostWindow.windowShown$.subscribe(() => {
@@ -140,7 +140,7 @@ export default class ElectronModule {
 
         config.changed$.subscribe(() => this.updateWindowControlsColor())
 
-        config.ready$.toPromise().then(() => {
+        void lastValueFrom(config.ready$).then(() => {
             dockMenu.update()
         })
     }

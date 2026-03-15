@@ -249,12 +249,23 @@ export class AiProviderManagerService implements ProviderManager {
         this.pendingHealthChecks.set(providerName, healthCheckPromise)
 
         try {
-            const status = await Promise.race([
-                healthCheckPromise,
-                new Promise<HealthStatus>(resolve => {
-                    setTimeout(() => resolve(HealthStatus.DEGRADED), this.HEALTH_CHECK_TIMEOUT)
-                }),
-            ])
+            let timeoutId: number | null = null
+            const status = await (async () => {
+                try {
+                    return await Promise.race([
+                        healthCheckPromise,
+                        new Promise<HealthStatus>(resolve => {
+                            timeoutId = window.setTimeout(() => {
+                                resolve(HealthStatus.DEGRADED)
+                            }, this.HEALTH_CHECK_TIMEOUT)
+                        }),
+                    ])
+                } finally {
+                    if (timeoutId !== null) {
+                        window.clearTimeout(timeoutId)
+                    }
+                }
+            })()
 
             // 更新缓存
             this.updateHealthCache(providerName, status)

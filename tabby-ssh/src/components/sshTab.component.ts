@@ -42,6 +42,9 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     private lastTerminalOutputAt = 0
     private sftpResizeStartY = 0
     private sftpResizeInitialHeight = this.sftpPanelHeight
+    private destroyedFlag = false
+    private pendingProbeSleeps = new Map<number, () => void>()
+    private sshPendingTimeouts = new Set<number>()
 
     @HostBinding('style.--sftp-panel-height.px')
     get sftpPanelHeightCSSVar (): number {
@@ -160,7 +163,7 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
 
         this.attachSessionHandler(session.keyboardInteractivePrompt$, prompt => {
             this.activeKIPrompt = prompt
-            setTimeout(() => {
+            this.scheduleSshTimeout(() => {
                 this.frontend?.scrollToBottom()
             })
         })
@@ -271,13 +274,13 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
             return
         }
 
-        setTimeout(() => {
+        this.scheduleSshTimeout(() => {
             if (!this.sshSession) {
                 this.sshSession = sftpSession
             }
             this.sftpPanelVisible = true
             this.ensureSFTPPanelHeightInBounds()
-            setTimeout(() => this.ensureSFTPPanelHeightInBounds())
+            this.scheduleSshTimeout(() => this.ensureSFTPPanelHeightInBounds())
         }, 100)
     }
 
@@ -376,12 +379,12 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
             return
         }
 
-        setTimeout(() => {
+        this.scheduleSshTimeout(() => {
             if (!this.sftpPanelVisible || !this.effectiveSFTPSession) {
                 return
             }
             this.ensureSFTPPanelHeightInBounds()
-            setTimeout(() => this.ensureSFTPPanelHeightInBounds())
+            this.scheduleSshTimeout(() => this.ensureSFTPPanelHeightInBounds())
         }, 100)
     }
 
@@ -469,17 +472,23 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         const deadline = Date.now() + timeoutMs
 
         while (Date.now() < deadline) {
+            if (this.shouldAbortDirectoryProbe()) {
+                return false
+            }
             const quietForMs = Date.now() - this.lastTerminalOutputAt
             if (quietForMs >= quietWindowMs) {
                 return true
             }
-            await new Promise(resolve => setTimeout(resolve, 50))
+            await this.sleepForProbe(50)
         }
 
         return false
     }
 
     private async runShellCurrentDirectoryProbe (command: string, knownWorkingDirectory: string|null): Promise<string|null> {
+        if (this.shouldAbortDirectoryProbe()) {
+            return null
+        }
         if (!this.session?.open) {
             return null
         }
@@ -492,7 +501,10 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         const probeDeadline = Date.now() + timeoutMs
 
         while (Date.now() < probeDeadline) {
-            await new Promise(resolve => setTimeout(resolve, 50))
+            if (this.shouldAbortDirectoryProbe()) {
+                return null
+            }
+            await this.sleepForProbe(50)
             const workingDirectory = (await this.session?.getWorkingDirectory())?.trim() ?? null
             if (workingDirectory && workingDirectory !== knownWorkingDirectory) {
                 return workingDirectory
@@ -500,6 +512,10 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         }
 
         return (await this.session?.getWorkingDirectory())?.trim() ?? null
+    }
+
+    private shouldAbortDirectoryProbe (): boolean {
+        return this.destroyedFlag || !this.session?.open
     }
 
     private async resolveSFTPSession (): Promise<SSHSession|null> {
@@ -528,5 +544,50 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         return super.isSessionExplicitlyTerminated() ||
         this.recentInputs.charCodeAt(this.recentInputs.length - 1) === 4 ||
         this.recentInputs.endsWith('exit\r')
+    }
+
+    ngOnDestroy (): void {
+        this.destroyedFlag = true
+        for (const [handle, resolve] of this.pendingProbeSleeps) {
+            window.clearTimeout(handle)
+            resolve()
+        }
+        this.pendingProbeSleeps.clear()
+        this.clearSshPendingTimeouts()
+        super.ngOnDestroy()
+    }
+
+    private sleepForProbe (delayMs: number): Promise<void> {
+        if (this.destroyedFlag) {
+            return Promise.resolve()
+        }
+        return new Promise(resolve => {
+            const handle = window.setTimeout(() => {
+                this.pendingProbeSleeps.delete(handle)
+                resolve()
+            }, delayMs)
+            this.pendingProbeSleeps.set(handle, resolve)
+        })
+    }
+
+    private scheduleSshTimeout (fn: () => void, delay = 0): void {
+        if (this.destroyedFlag) {
+            return
+        }
+        const handle = window.setTimeout(() => {
+            this.sshPendingTimeouts.delete(handle)
+            if (this.destroyedFlag) {
+                return
+            }
+            fn()
+        }, delay)
+        this.sshPendingTimeouts.add(handle)
+    }
+
+    private clearSshPendingTimeouts (): void {
+        for (const handle of this.sshPendingTimeouts) {
+            window.clearTimeout(handle)
+        }
+        this.sshPendingTimeouts.clear()
     }
 }

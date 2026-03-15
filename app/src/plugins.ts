@@ -1,14 +1,53 @@
-import * as fs from 'mz/fs'
 import * as path from 'path'
-import { rm } from 'node:fs/promises'
-import * as remote from '@electron/remote'
+import { access, readFile, readdir, rm } from 'node:fs/promises'
+import * as angularAnimations from '@angular/animations'
+import * as angularCdkClipboard from '@angular/cdk/clipboard'
+import * as angularCdkDragDrop from '@angular/cdk/drag-drop'
+import * as angularCommon from '@angular/common'
+import * as angularCompiler from '@angular/compiler'
+import * as angularCore from '@angular/core'
+import * as angularForms from '@angular/forms'
+import * as angularLocalize from '@angular/localize'
+import '@angular/localize/init'
+import * as angularPlatformBrowser from '@angular/platform-browser'
+import * as angularPlatformBrowserAnimations from '@angular/platform-browser/animations'
+import * as angularPlatformBrowserDynamic from '@angular/platform-browser-dynamic'
+import * as ngBootstrap from '@ng-bootstrap/ng-bootstrap'
+import * as ngxToastr from 'ngx-toastr'
+import * as rxjsModule from 'rxjs'
+import * as rxjsOperators from 'rxjs/operators'
+import * as zoneJs from 'zone.js'
+import { getRuntimeCwd, getRuntimeEnv, getRuntimeResourcesPath, setRuntimeEnv } from '../../tabby-core/src/api/rendererRuntime'
 import { PluginInfo } from '../../tabby-core/src/api/mainProcess'
 import { PLUGIN_BLACKLIST } from './pluginBlacklist'
+import { getNodeRequire, getTabbyBridge } from './tabby-bridge'
 
-const nodeModule = require('module') // eslint-disable-line @typescript-eslint/no-var-requires
+type NodeModuleRuntime = typeof import('module') & {
+    globalPaths: string[]
+    _initPaths: () => void
+    prototype: {
+        require: NodeJS.Require
+    }
+}
 
-const nodeRequire = global['require']
+type NodeModuleContext = {
+    filename?: string
+    path?: string
+    parent?: NodeModuleContext | null
+}
+
+type GlobalModuleTarget = typeof globalThis & {
+    module?: {
+        paths?: string[]
+    }
+}
+
+const nodeRequire = getNodeRequire()
+const nodeModule = nodeRequire('module') as NodeModuleRuntime
+const bridgeIPC = getTabbyBridge().ipc
 let managedUserPluginsNodeModulesPath: string | null = null
+let pluginLookupPaths: string[] = []
+const pluginRuntimeRoots = new Set<string>()
 
 function normalizePath (p: string): string {
     const cygwinPrefix = '/cygdrive/'
@@ -23,8 +62,38 @@ function normalizePathForCompare (p: string): string {
     return normalizePath(path.resolve(p)).replace(/\\/g, '/').toLowerCase()
 }
 
-const builtinPluginsPath = process.env.TABBY_DEV ? path.dirname(remote.app.getAppPath()) : path.join((process as any).resourcesPath, 'builtin-plugins')
-const configuredBuiltinPluginRootPaths = (process.env.TABBY_BUILTIN_PLUGINS ?? '')
+function pathExistsSync (targetPath: string): boolean {
+    return bridgeIPC.sendSync<boolean>('bridge:fs:exists-sync', targetPath)
+}
+
+function resolveDevelopmentWorkspaceRoot (): string | null {
+    const candidates = Array.from(new Set([
+        normalizePath(path.resolve(getRuntimeCwd())),
+        normalizePath(path.resolve(__dirname, '../..')),
+        normalizePath(path.dirname(appPath)),
+    ]))
+
+    for (const candidate of candidates) {
+        if (
+            pathExistsSync(path.join(candidate, 'app', 'package.json')) &&
+            pathExistsSync(path.join(candidate, 'tabby-core', 'package.json'))
+        ) {
+            return candidate
+        }
+    }
+
+    return null
+}
+
+const appPath = bridgeIPC.sendSync<string>('bridge:app:get-app-path')
+const developmentWorkspaceRoot = resolveDevelopmentWorkspaceRoot()
+const effectiveAppPath = developmentWorkspaceRoot
+    ? path.join(developmentWorkspaceRoot, 'app')
+    : appPath
+const builtinPluginsPath = developmentWorkspaceRoot
+    ? developmentWorkspaceRoot
+    : path.join(getRuntimeResourcesPath() ?? effectiveAppPath, 'builtin-plugins')
+const configuredBuiltinPluginRootPaths = (getRuntimeEnv('TABBY_BUILTIN_PLUGINS') ?? '')
     .split(path.delimiter)
     .filter(Boolean)
     .map(x => normalizePath(path.resolve(x)))
@@ -37,24 +106,24 @@ const builtinPluginRoots = new Set<string>([
 ])
 
 const cachedBuiltinModules = {
-    '@angular/animations': require('@angular/animations'),
-    '@angular/cdk/drag-drop': require('@angular/cdk/drag-drop'),
-    '@angular/cdk/clipboard': require('@angular/cdk/clipboard'),
-    '@angular/common': require('@angular/common'),
-    '@angular/compiler': require('@angular/compiler'),
-    '@angular/core': require('@angular/core'),
-    '@angular/forms': require('@angular/forms'),
-    '@angular/localize': require('@angular/localize'),
-    '@angular/localize/init': require('@angular/localize/init'),
-    '@angular/platform-browser': require('@angular/platform-browser'),
-    '@angular/platform-browser/animations': require('@angular/platform-browser/animations'),
-    '@angular/platform-browser-dynamic': require('@angular/platform-browser-dynamic'),
-    '@ng-bootstrap/ng-bootstrap': require('@ng-bootstrap/ng-bootstrap'),
-    'ngx-toastr': require('ngx-toastr'),
-    rxjs: require('rxjs'),
-    'rxjs/operators': require('rxjs/operators'),
-    'zone.js/dist/zone.js': require('zone.js'),
-    'zone.js': require('zone.js'),
+    '@angular/animations': angularAnimations,
+    '@angular/cdk/drag-drop': angularCdkDragDrop,
+    '@angular/cdk/clipboard': angularCdkClipboard,
+    '@angular/common': angularCommon,
+    '@angular/compiler': angularCompiler,
+    '@angular/core': angularCore,
+    '@angular/forms': angularForms,
+    '@angular/localize': angularLocalize,
+    '@angular/localize/init': {},
+    '@angular/platform-browser': angularPlatformBrowser,
+    '@angular/platform-browser/animations': angularPlatformBrowserAnimations,
+    '@angular/platform-browser-dynamic': angularPlatformBrowserDynamic,
+    '@ng-bootstrap/ng-bootstrap': ngBootstrap,
+    'ngx-toastr': ngxToastr,
+    rxjs: rxjsModule,
+    'rxjs/operators': rxjsOperators,
+    'zone.js/dist/zone.js': zoneJs,
+    'zone.js': zoneJs,
 }
 
 const builtinModules = [
@@ -65,32 +134,88 @@ const builtinModules = [
     'tabby-terminal',
 ]
 
-const originalRequire = (global as any).require
-;(global as any).require = function (query: string) {
-    if (cachedBuiltinModules[query]) {
-        return cachedBuiltinModules[query]
-    }
-    return originalRequire.apply(this, [query])
-}
-
 const originalModuleRequire = nodeModule.prototype.require
-nodeModule.prototype.require = function (query: string) {
-    if (cachedBuiltinModules[query]) {
+nodeModule.prototype.require = (function (this: unknown, query: string) {
+    if (cachedBuiltinModules[query] && isPluginModuleContext(this)) {
         return cachedBuiltinModules[query]
     }
     return originalModuleRequire.call(this, query)
-}
+}) as NodeJS.Require
 
 export type ProgressCallback = (current: number, total: number) => void
+
+function delay (ms: number): Promise<void> {
+    return new Promise(resolve => {
+        const timer = setTimeout(resolve, ms)
+        if (typeof timer === 'object' && typeof timer.unref === 'function') {
+            timer.unref()
+        }
+    })
+}
+
+function isWithinRuntimeRoot (candidatePath: string): boolean {
+    const normalizedCandidate = normalizePathForCompare(candidatePath)
+    for (const root of pluginRuntimeRoots) {
+        if (normalizedCandidate === root || normalizedCandidate.startsWith(`${root}/`)) {
+            return true
+        }
+    }
+    return false
+}
+
+function registerPluginRuntimeRoot (pluginRoot: string | null | undefined): void {
+    if (!pluginRoot) {
+        return
+    }
+    pluginRuntimeRoots.add(normalizePathForCompare(pluginRoot))
+}
+
+function isPluginModuleContext (moduleContext: unknown): boolean {
+    const visited = new Set<NodeModuleContext>()
+    let current = moduleContext as NodeModuleContext | null | undefined
+
+    while (current && typeof current === 'object' && !visited.has(current)) {
+        visited.add(current)
+
+        if (
+            (current.filename && isWithinRuntimeRoot(current.filename)) ||
+            (current.path && isWithinRuntimeRoot(current.path))
+        ) {
+            return true
+        }
+
+        current = current.parent ?? null
+    }
+
+    return false
+}
+
+function getInitialModuleLookupPaths (): string[] {
+    const rendererModulePaths = (globalThis as GlobalModuleTarget).module?.paths ?? []
+    const mainModulePaths = nodeRequire.main?.paths ?? []
+    return Array.from(new Set([
+        ...rendererModulePaths,
+        ...mainModulePaths,
+    ].map(x => normalizePath(path.resolve(x)))))
+}
 
 function isBuiltinPluginDir (pluginDir: string): boolean {
     return builtinPluginRoots.has(normalizePathForCompare(pluginDir))
 }
 
+async function pathExists (targetPath: string): Promise<boolean> {
+    try {
+        await access(targetPath)
+        return true
+    } catch {
+        return false
+    }
+}
+
 function resolveBuiltinPackagePath (packageName: string): string | null {
     for (const root of builtinPluginRootPaths) {
         const candidate = path.join(root, packageName)
-        if (require('fs').existsSync(path.join(candidate, 'package.json'))) {
+        if (pathExistsSync(path.join(candidate, 'package.json'))) {
             return candidate
         }
     }
@@ -98,36 +223,46 @@ function resolveBuiltinPackagePath (packageName: string): string | null {
 }
 
 export function initModuleLookup (userPluginsPath: string): void {
-    global['module'].paths.map((x: string) => nodeModule.globalPaths.push(normalizePath(x)))
+    for (const modulePath of getInitialModuleLookupPaths()) {
+        if (!nodeModule.globalPaths.includes(modulePath)) {
+            nodeModule.globalPaths.push(modulePath)
+        }
+    }
 
     const paths = []
     managedUserPluginsNodeModulesPath = normalizePath(path.resolve(path.join(userPluginsPath, 'node_modules')))
     paths.unshift(path.join(userPluginsPath, 'node_modules'))
-    paths.unshift(path.join(remote.app.getAppPath(), 'node_modules'))
+    paths.unshift(path.join(effectiveAppPath, 'node_modules'))
 
-    if (process.env.TABBY_DEV) {
-        paths.unshift(path.dirname(remote.app.getAppPath()))
+    if (developmentWorkspaceRoot) {
+        paths.unshift(path.dirname(effectiveAppPath))
     }
 
     paths.unshift(builtinPluginsPath)
     // paths.unshift(path.join((process as any).resourcesPath, 'app.asar', 'node_modules'))
-    if (process.env.TABBY_PLUGINS) {
-        process.env.TABBY_PLUGINS
+    const extraPluginPaths = getRuntimeEnv('TABBY_PLUGINS')
+    if (extraPluginPaths) {
+        extraPluginPaths
             .split(path.delimiter)
             .filter(Boolean)
             .map(x => paths.push(normalizePath(path.resolve(x))))
     }
 
-    process.env.NODE_PATH = [
-        process.env.NODE_PATH ?? '',
+    setRuntimeEnv('NODE_PATH', [
+        getRuntimeEnv('NODE_PATH') ?? '',
         paths.join(path.delimiter),
-    ].filter(Boolean).join(path.delimiter)
+    ].filter(Boolean).join(path.delimiter))
     nodeModule._initPaths()
+    pluginLookupPaths = Array.from(new Set([
+        ...paths.map(x => normalizePath(path.resolve(x))),
+        ...nodeModule.globalPaths.map(x => normalizePath(path.resolve(x))),
+    ]))
 
     builtinModules.forEach(m => {
         if (!cachedBuiltinModules[m]) {
             const builtinPackagePath = resolveBuiltinPackagePath(m)
             if (builtinPackagePath) {
+                registerPluginRuntimeRoot(builtinPackagePath)
                 cachedBuiltinModules[m] = nodeRequire(builtinPackagePath)
                 console.info(`Pinned builtin module ${m} to ${builtinPackagePath}`)
             } else {
@@ -143,9 +278,9 @@ const LEGACY_PLUGIN_PREFIX = 'terminus-'
 async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocations: { pluginDir: string, packageName: string }[] = []
 
-    if (await fs.exists(pluginDir)) {
-        const pluginNames = await fs.readdir(pluginDir)
-        if (await fs.exists(path.join(pluginDir, 'package.json'))) {
+    if (await pathExists(pluginDir)) {
+        const pluginNames = await readdir(pluginDir)
+        if (await pathExists(path.join(pluginDir, 'package.json'))) {
             candidateLocations.push({
                 pluginDir: path.dirname(pluginDir),
                 packageName: path.basename(pluginDir),
@@ -158,7 +293,7 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
             if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !PLUGIN_BLACKLIST.includes(packageName)) {
                 const pluginPath = path.join(pluginDir, packageName)
                 const infoPath = path.join(pluginPath, 'package.json')
-                promises.push(fs.exists(infoPath).then(result => {
+                promises.push(pathExists(infoPath).then(result => {
                     if (result) {
                         candidateLocations.push({ pluginDir, packageName })
                     }
@@ -204,7 +339,7 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
     const name = packageName.startsWith(PLUGIN_PREFIX) ? packageName.substring(PLUGIN_PREFIX.length) : packageName.substring(LEGACY_PLUGIN_PREFIX.length)
 
     try {
-        const info = JSON.parse(await fs.readFile(infoPath, { encoding: 'utf-8' }))
+        const info = JSON.parse(await readFile(infoPath, { encoding: 'utf-8' }))
 
         if (!info.keywords || !(info.keywords.includes('terminus-plugin') || info.keywords.includes('terminus-builtin-plugin') || info.keywords.includes('tabby-plugin') || info.keywords.includes('tabby-builtin-plugin'))) {
             return null
@@ -288,7 +423,7 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
 }
 
 export async function findPlugins (): Promise<PluginInfo[]> {
-    const paths = nodeModule.globalPaths
+    const paths = pluginLookupPaths.length ? pluginLookupPaths : nodeModule.globalPaths
     const foundPlugins: PluginInfo[] = []
 
     const candidateLocations: { pluginDir: string, packageName: string }[] = await getPluginCandidateLocation(paths)
@@ -324,6 +459,8 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
     const plugins: any[] = []
     const pluginsPromises: Promise<any>[] = []
 
+    foundPlugins.forEach(plugin => registerPluginRuntimeRoot(plugin.path))
+
     let index = 0
     const setProgress = function () {
         index++
@@ -332,7 +469,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
 
     progress(0, 1)
     for (const foundPlugin of foundPlugins) {
-        pluginsPromises.push(new Promise(x => {
+        pluginsPromises.push((async () => {
             try {
                 let resolvedPath = foundPlugin.path
                 try {
@@ -365,8 +502,8 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 console.error(`Could not load ${foundPlugin.name}:`, error)
             }
             setProgress()
-            setTimeout(x, 50)
-        }))
+            await delay(50)
+        })())
     }
     await Promise.all(pluginsPromises)
 

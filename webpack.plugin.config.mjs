@@ -22,6 +22,14 @@ const linkerPlugin = createEs2015LinkerPlugin({
 })
 
 export default options => {
+    const sassLoader = {
+        loader: 'sass-loader',
+        options: {
+            sassOptions: {
+                quietDeps: true,
+            },
+        },
+    }
     const sourceMapOptions = {
         exclude: [/node_modules/, /vendor/],
         filename: '[file].map',
@@ -116,8 +124,8 @@ export default options => {
                         },
                     ],
                 },
-                { test: /\.scss$/, use: ['@tabby-gang/to-string-loader', 'css-loader', 'sass-loader'], include: /(theme.*|component)\.scss/ },
-                { test: /\.scss$/, use: ['style-loader', 'css-loader', 'sass-loader'], exclude: /(theme.*|component)\.scss/ },
+                { test: /\.scss$/, use: ['@tabby-gang/to-string-loader', 'css-loader', sassLoader], include: /(theme.*|component)\.scss/ },
+                { test: /\.scss$/, use: ['style-loader', 'css-loader', sassLoader], exclude: /(theme.*|component)\.scss/ },
                 { test: /\.css$/, use: ['@tabby-gang/to-string-loader', 'css-loader'], include: /component\.css/ },
                 { test: /\.css$/, use: ['style-loader', 'css-loader'], exclude: /component\.css/ },
                 { test: /\.yaml$/, use: ['yaml-loader'] },

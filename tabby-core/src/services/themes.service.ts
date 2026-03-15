@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@angular/core'
-import { Subject, Observable } from 'rxjs'
+import { Subject, Observable, lastValueFrom } from 'rxjs'
 import * as Color from 'color'
 import { ConfigService } from '../services/config.service'
 import { Theme } from '../api/theme'
 import { PlatformService, PlatformTheme } from '../api/platform'
+import { getRuntimePlatform } from '../api/rendererRuntime'
 import { NewTheme } from '../theme'
 
 @Injectable({ providedIn: 'root' })
@@ -26,7 +27,7 @@ export class ThemesService {
         this.rootElementStyleBackup = document.documentElement.style.cssText
         this.applyTheme(standardTheme)
         this.applyThemeVariables()
-        config.ready$.toPromise().then(() => {
+        void lastValueFrom(config.ready$).then(() => {
             this.applyCurrentTheme()
             this.applyThemeVariables()
             platform.themeChanged$.subscribe(() => {
@@ -191,7 +192,7 @@ export class ThemesService {
     }
 
     private getLinuxVibrancyOpacityFactor (appearance: Record<string, unknown>): number {
-        if (process.platform !== 'linux' || !appearance.vibrancy) {
+        if (getRuntimePlatform() !== 'linux' || !appearance.vibrancy) {
             return 1
         }
         const numericOpacity = Number(appearance.opacity)
@@ -218,7 +219,7 @@ export class ThemesService {
             return background
         }
         const fadedBackground = background.fade(0.6)
-        if (process.platform !== 'linux') {
+        if (getRuntimePlatform() !== 'linux') {
             return fadedBackground
         }
         return fadedBackground.alpha(fadedBackground.alpha() * this.getLinuxVibrancyOpacityFactor(appearance))
@@ -277,7 +278,10 @@ export class ThemesService {
             document.querySelector('head')!.appendChild(this.styleElement)
         }
         this.styleElement.textContent = theme.css
-        document.querySelector('style#custom-css')!.innerHTML = this.getConfigStoreOrDefaults().appearance.css
+        const customStyleElement = document.querySelector('style#custom-css') as HTMLStyleElement | null
+        if (customStyleElement) {
+            customStyleElement.textContent = this.getConfigStoreOrDefaults().appearance.css
+        }
         this.themeChanged.next(theme)
     }
 

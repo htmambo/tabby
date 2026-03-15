@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Injector, NgZone, ChangeDetectorRef } from '@angular/core'
+import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Optional, NgZone, ChangeDetectorRef, OnDestroy } from '@angular/core'
 import { trigger, style, animate, transition, state } from '@angular/animations'
 import { NgbDropdown, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
@@ -20,6 +20,7 @@ import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
 import { TabBodyComponent } from './tabBody.component'
 import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, MenuItemOptions, PartialProfile, PartialProfileGroup, PlatformService, Profile, ProfileGroup, WorkspaceLayoutService } from '../api'
+import { SFTPTabOpener } from '../api/sftpTabOpener'
 
 type RoyalEnvironment = 'prod'|'lab'|'dev'|'other'
 type RoyalSidebarViewMode = 'cards'|'tree'
@@ -101,16 +102,16 @@ function makeTabAnimation (dimension: string, size: number) {
         trigger('animateTab', makeTabAnimation('width', 200)),
     ],
 })
-export class AppRootComponent {
+export class AppRootComponent implements OnDestroy {
     private readonly minMacOSWindowOpacity = 0.85
     private readonly minVibrantWindowOpacity = 0.4
     Platform = Platform
     @Input() ready = false
     @Input() leftToolbarButtons: Command[]
     @Input() rightToolbarButtons: Command[]
-    @HostBinding('class.platform-win32') platformClassWindows = process.platform === 'win32'
-    @HostBinding('class.platform-darwin') platformClassMacOS = process.platform === 'darwin'
-    @HostBinding('class.platform-linux') platformClassLinux = process.platform === 'linux'
+    @HostBinding('class.platform-win32') get platformClassWindows (): boolean { return this.hostApp.platform === Platform.Windows }
+    @HostBinding('class.platform-darwin') get platformClassMacOS (): boolean { return this.hostApp.platform === Platform.macOS }
+    @HostBinding('class.platform-linux') get platformClassLinux (): boolean { return this.hostApp.platform === Platform.Linux }
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
     activeTab: BaseTabComponent|null = null
@@ -146,7 +147,7 @@ export class AppRootComponent {
     private royalSidebarResizeStartWidth = this.royalSidebarDefaultWidth
     private royalConnectionBindings = new Map<string, BaseTabComponent>()
     private royalRestoredBindingCandidates = new Set<BaseTabComponent>()
-    private royalRestoreBindingsRetryHandle: ReturnType<typeof setTimeout>|null = null
+    private royalRestoreBindingsRetryHandle: number|null = null
     private royalRestoreBindingsAttempt = 0
     private readonly royalRestoreBindingsRetryDelay = 500
     private readonly royalRestoreBindingsMaxAttempts = 20
@@ -162,16 +163,16 @@ export class AppRootComponent {
     private royalSidebarTransitionFallbackHandle: number|null = null
     private readonly preloadHideRetryDelay = 50
     private preloadLogoHidden = false
+    private destroyed = false
+    private pendingTimeouts = new Set<number>()
+    private updatesCheckInterval: number | null = null
 
     private hidePreloadLogo (): void {
         if (this.preloadLogoHidden) {
             return
         }
         this.preloadLogoHidden = true
-        if (this.pendingPreloadHideCheck !== null) {
-            window.clearTimeout(this.pendingPreloadHideCheck)
-            this.pendingPreloadHideCheck = null
-        }
+        this.pendingPreloadHideCheck = this.clearScheduledTimeout(this.pendingPreloadHideCheck)
         document.querySelector('app-root .preload-logo')?.remove()
     }
 
@@ -183,18 +184,16 @@ export class AppRootComponent {
         if (!root) {
             return false
         }
-        const shouldWaitForTabSurface = !!this.config.store?.enableWelcomeTab || this.app.tabs.length > 0 || this.unsortedTabs.length > 0
-        if (shouldWaitForTabSurface) {
-            return !!root.querySelector('.tab-bar tab-header, tab-body.content-tab-active')
-        }
-        return !!root.querySelector('start-page.content-tab-active')
+        // 只要主内容容器已经挂载，就可以安全移除启动遮罩。
+        // 继续等待某个具体 tab/start-page DOM 形态会导致首屏状态轻微抖动时永久卡在 splash。
+        return !!root.querySelector('.content')
     }
 
     private schedulePreloadHideCheck (delay = 0): void {
         if (this.preloadLogoHidden || this.pendingPreloadHideCheck !== null) {
             return
         }
-        this.pendingPreloadHideCheck = window.setTimeout(() => {
+        this.pendingPreloadHideCheck = this.scheduleTimeout(() => {
             this.pendingPreloadHideCheck = null
             if (this.isStartupSurfaceReady()) {
                 this.hidePreloadLogo()
@@ -208,7 +207,7 @@ export class AppRootComponent {
         if (this.pendingRoyalActiveSync !== null) {
             return
         }
-        this.pendingRoyalActiveSync = window.setTimeout(() => {
+        this.pendingRoyalActiveSync = this.scheduleTimeout(() => {
             this.pendingRoyalActiveSync = null
             this.runInAngular(() => {
                 this.syncRoyalActiveConnection()
@@ -221,7 +220,7 @@ export class AppRootComponent {
         if (this.pendingActiveTabSync !== null) {
             return
         }
-        this.pendingActiveTabSync = window.setTimeout(() => {
+        this.pendingActiveTabSync = this.scheduleTimeout(() => {
             this.pendingActiveTabSync = null
             this.runInAngular(() => {
                 this.activeTab = this.app.activeTab
@@ -234,24 +233,21 @@ export class AppRootComponent {
         if (this.pendingViewRefresh !== null) {
             return
         }
-        this.pendingViewRefresh = window.setTimeout(() => {
+        this.pendingViewRefresh = this.scheduleTimeout(() => {
             this.pendingViewRefresh = null
             this.changeDetector.detectChanges()
         }, delay)
     }
 
     private clearRoyalSidebarTransitionFallback (): void {
-        if (this.royalSidebarTransitionFallbackHandle !== null) {
-            window.clearTimeout(this.royalSidebarTransitionFallbackHandle)
-            this.royalSidebarTransitionFallbackHandle = null
-        }
+        this.royalSidebarTransitionFallbackHandle = this.clearScheduledTimeout(this.royalSidebarTransitionFallbackHandle)
     }
 
     private beginRoyalSidebarTransition (): void {
         const token = this.workspaceLayout.beginRoyalSidebarTransition()
         this.royalSidebarTransitionToken = token
         this.clearRoyalSidebarTransitionFallback()
-        this.royalSidebarTransitionFallbackHandle = window.setTimeout(() => {
+        this.royalSidebarTransitionFallbackHandle = this.scheduleTimeout(() => {
             this.finishRoyalSidebarTransition(token)
         }, this.royalSidebarTransitionFallbackDelay)
     }
@@ -266,7 +262,6 @@ export class AppRootComponent {
     }
 
     constructor (
-        private injector: Injector,
         private hotkeys: HotkeysService,
         private commands: CommandService,
         private profilesService: ProfilesService,
@@ -281,6 +276,7 @@ export class AppRootComponent {
         log: LogService,
         ngbModal: NgbModal,
         _themes: ThemesService,
+        @Optional() private sftpTabOpener: SFTPTabOpener | null,
         private ngZone: NgZone,
         private changeDetector: ChangeDetectorRef,
         private workspaceLayout: WorkspaceLayoutService,
@@ -397,7 +393,7 @@ export class AppRootComponent {
                 this.syncWindowOpacity()
                 this.scheduleViewRefresh()
             })
-            window.setTimeout(() => {
+            this.scheduleTimeout(() => {
                 void this.refreshRoyalConnections().then(() => this.scheduleRoyalActiveSync())
             })
             this.config.changed$.subscribe(() => {
@@ -407,7 +403,7 @@ export class AppRootComponent {
                 })
             })
 
-            setInterval(() => {
+            this.updatesCheckInterval = window.setInterval(() => {
                 if (this.config.store.enableAutomaticUpdates) {
                     this.updater.check().then(available => {
                         this.runInAngular(() => {
@@ -422,14 +418,16 @@ export class AppRootComponent {
     async ngOnInit () {
         void firstValueFrom(this.config.ready$)
             .then(() => {
-                setTimeout(() => {
+                this.scheduleTimeout(() => {
                     this.runInAngular(() => {
                         this.ready = true
                         this.syncWindowOpacity()
                         this.scheduleRoyalActiveSync()
-                        this.app.emitReady()
                         this.schedulePreloadHideCheck()
                         this.scheduleViewRefresh()
+                    })
+                    this.scheduleTimeout(() => {
+                        this.runInAngular(() => this.app.emitReady())
                     })
                 })
             })
@@ -1003,10 +1001,7 @@ export class AppRootComponent {
     }
 
     private stopRoyalRestoredBindingsRecovery (): void {
-        if (this.royalRestoreBindingsRetryHandle) {
-            clearTimeout(this.royalRestoreBindingsRetryHandle)
-            this.royalRestoreBindingsRetryHandle = null
-        }
+        this.royalRestoreBindingsRetryHandle = this.clearScheduledTimeout(this.royalRestoreBindingsRetryHandle)
     }
 
     private restoreRoyalConnectionBindingsFromRestoredCandidates (): void {
@@ -1054,7 +1049,7 @@ export class AppRootComponent {
             return
         }
 
-        this.royalRestoreBindingsRetryHandle = setTimeout(() => {
+        this.royalRestoreBindingsRetryHandle = this.scheduleTimeout(() => {
             this.restoreRoyalConnectionBindingsFromRestoredCandidates()
         }, this.royalRestoreBindingsRetryDelay)
     }
@@ -1321,10 +1316,13 @@ export class AppRootComponent {
     }
 
     private async openRoyalSFTPConnection (profile: PartialProfile<Profile>): Promise<void> {
+        if (!this.sftpTabOpener) {
+            this.logger.warn('SFTP tab opener is unavailable')
+            return
+        }
+
         try {
-            const { SFTPTabLauncherService } = window['nodeRequire']('tabby-ssh')
-            const launcher = this.injector.get<{ openForProfile: (profile: PartialProfile<Profile>) => Promise<void> }>(SFTPTabLauncherService as any)
-            await launcher.openForProfile(profile)
+            await this.sftpTabOpener.openForProfile(profile)
         } catch (error) {
             this.logger.warn('Failed to open SFTP tab from connection sidebar', error)
         }
@@ -1446,11 +1444,7 @@ export class AppRootComponent {
     }
 
     private clearRoyalSidebarPreviewCloseTimer (): void {
-        if (this.royalSidebarPreviewCloseHandle === null) {
-            return
-        }
-        window.clearTimeout(this.royalSidebarPreviewCloseHandle)
-        this.royalSidebarPreviewCloseHandle = null
+        this.royalSidebarPreviewCloseHandle = this.clearScheduledTimeout(this.royalSidebarPreviewCloseHandle)
     }
 
     private scheduleRoyalSidebarPreviewClose (): void {
@@ -1459,7 +1453,7 @@ export class AppRootComponent {
             return
         }
         this.clearRoyalSidebarPreviewCloseTimer()
-        this.royalSidebarPreviewCloseHandle = window.setTimeout(() => {
+        this.royalSidebarPreviewCloseHandle = this.scheduleTimeout(() => {
             this.royalSidebarPreviewCloseHandle = null
             this.royalSidebarPreviewVisible = false
         }, this.royalSidebarPreviewCloseDelay)
@@ -1517,9 +1511,9 @@ export class AppRootComponent {
         const hostWindowWithOpacity = this.hostWindow as HostWindowService & { setOpacity?: (opacity: number) => void }
         const shouldBeVibrant = this.ready && !!this.config.store?.appearance?.vibrancy
         if (this.pendingVibrancySync) {
-            window.clearTimeout(this.pendingVibrancySync)
+            this.pendingVibrancySync = this.clearScheduledTimeout(this.pendingVibrancySync)
         }
-        this.pendingVibrancySync = window.setTimeout(() => {
+        this.pendingVibrancySync = this.scheduleTimeout(() => {
             document.querySelector('app-root')?.classList.toggle('vibrant', shouldBeVibrant)
             this.pendingVibrancySync = null
         })
@@ -1544,5 +1538,53 @@ export class AppRootComponent {
             return this.minVibrantWindowOpacity
         }
         return this.config.store?.appearance?.vibrancy ? this.minVibrantWindowOpacity : this.minMacOSWindowOpacity
+    }
+
+    ngOnDestroy (): void {
+        this.destroyed = true
+        this.pendingPreloadHideCheck = this.clearScheduledTimeout(this.pendingPreloadHideCheck)
+        this.pendingRoyalActiveSync = this.clearScheduledTimeout(this.pendingRoyalActiveSync)
+        this.pendingActiveTabSync = this.clearScheduledTimeout(this.pendingActiveTabSync)
+        this.pendingViewRefresh = this.clearScheduledTimeout(this.pendingViewRefresh)
+        this.pendingVibrancySync = this.clearScheduledTimeout(this.pendingVibrancySync)
+        this.royalSidebarPreviewCloseHandle = this.clearScheduledTimeout(this.royalSidebarPreviewCloseHandle)
+        this.royalSidebarTransitionFallbackHandle = this.clearScheduledTimeout(this.royalSidebarTransitionFallbackHandle)
+        this.royalRestoreBindingsRetryHandle = this.clearScheduledTimeout(this.royalRestoreBindingsRetryHandle)
+        this.clearPendingTimeouts()
+        if (this.updatesCheckInterval !== null) {
+            clearInterval(this.updatesCheckInterval)
+            this.updatesCheckInterval = null
+        }
+    }
+
+    private scheduleTimeout (fn: () => void, delay = 0): number | null {
+        if (this.destroyed) {
+            return null
+        }
+        const handle = window.setTimeout(() => {
+            this.pendingTimeouts.delete(handle)
+            if (this.destroyed) {
+                return
+            }
+            fn()
+        }, delay)
+        this.pendingTimeouts.add(handle)
+        return handle
+    }
+
+    private clearScheduledTimeout (handle: number | null): number | null {
+        if (handle === null) {
+            return null
+        }
+        window.clearTimeout(handle)
+        this.pendingTimeouts.delete(handle)
+        return null
+    }
+
+    private clearPendingTimeouts (): void {
+        for (const handle of this.pendingTimeouts) {
+            window.clearTimeout(handle)
+        }
+        this.pendingTimeouts.clear()
     }
 }

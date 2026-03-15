@@ -10,6 +10,7 @@
             <div class="font-size-selector">
                 <button
                     *ngFor="let size of fontSizes"
+                    type="button"
                     class="font-size-btn"
                     [class.active]="settings.fontSize === size"
                     (click)="updateFontSize(size)">
@@ -155,15 +156,15 @@
 
     <!-- 操作按钮 -->
     <div class="settings-actions">
-        <button class="btn btn-secondary" (click)="exportSettings()">
+        <button type="button" class="btn btn-secondary" (click)="exportSettings()">
             <i class="fa fa-download"></i>
             {{ t.chatSettings.exportSettings }}
         </button>
-        <button class="btn btn-danger" (click)="clearChatHistory()">
+        <button type="button" class="btn btn-danger" (click)="clearChatHistory()">
             <i class="fa fa-trash"></i>
             {{ t.chatSettings.clearHistory }}
         </button>
-        <button class="btn btn-outline" (click)="resetToDefaults()">
+        <button type="button" class="btn btn-outline" (click)="resetToDefaults()">
             <i class="fa fa-undo"></i>
             {{ t.chatSettings.resetDefaults }}
         </button>

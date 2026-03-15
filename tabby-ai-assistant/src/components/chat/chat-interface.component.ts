@@ -44,6 +44,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     private readonly AUTO_SCROLL_THRESHOLD = 80
     private scrollRefreshPending = false
     private notificationSound: HTMLAudioElement | null = null
+    private pendingTimeouts = new Set<number>()
 
     constructor(
         private aiService: AiAssistantService,
@@ -74,7 +75,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         }
 
         // 延迟检查滚动状态（等待 DOM 渲染）
-        setTimeout(() => this.checkScrollState(), 100)
+        this.scheduleTimeout(() => this.checkScrollState(), 100)
     }
 
     /**
@@ -112,6 +113,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     ngOnDestroy(): void {
         // 保存当前会话
         this.saveChatHistory()
+        this.clearPendingTimeouts()
         this.destroy$.next()
         this.destroy$.complete()
     }
@@ -203,7 +205,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0)
+        this.scheduleTimeout(() => this.scrollToBottom(), 0)
 
         // 清空输入框
         content = ''
@@ -243,7 +245,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             this.logger.error('Failed to send message with agent', error)
             aiMessage.content = `${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.translate.instant('Tip: use Alt+C to open AI chat')}`
             this.isLoading = false
-            setTimeout(() => this.scrollToBottom(), 0)
+            this.scheduleTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -365,7 +367,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.messages.push(userMessage)
 
         // 滚动到底部
-        setTimeout(() => this.scrollToBottom(), 0)
+        this.scheduleTimeout(() => this.scrollToBottom(), 0)
 
         // 清空输入框
         content = ''
@@ -491,7 +493,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             }
             this.messages.push(errorMessage)
             this.isLoading = false
-            setTimeout(() => this.scrollToBottom(), 0)
+            this.scheduleTimeout(() => this.scrollToBottom(), 0)
         }
     }
 
@@ -513,7 +515,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             this.isLoading = false
 
             // 延迟滚动和恢复焦点，确保DOM已更新
-            setTimeout(() => {
+            this.scheduleTimeout(() => {
                 this.scrollToBottom()
                 // 尝试恢复输入框焦点
                 const inputElement = document.querySelector<HTMLTextAreaElement>('.chat-textarea')
@@ -628,7 +630,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             return
         }
         this.scrollRefreshPending = true
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             this.scrollRefreshPending = false
             this.triggerScrollRefresh()
         }, 50)
@@ -651,7 +653,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             height: container.scrollHeight,
             clientHeight: container.clientHeight,
         })
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             container.scrollTop = max
             this.logger.info('[Chat Interface] Scroll refresh (down)', {
                 delta,
@@ -674,7 +676,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             return
         }
         this.aiStartScrollPending = true
-        window.setTimeout(() => {
+        this.scheduleTimeout(() => {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     this.aiStartScrollPending = false
@@ -757,6 +759,22 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         } catch (error) {
             this.logger.error('Failed to save chat history', error)
         }
+    }
+
+    private scheduleTimeout(callback: () => void, delay: number): number {
+        const timeoutId = window.setTimeout(() => {
+            this.pendingTimeouts.delete(timeoutId)
+            callback()
+        }, delay)
+        this.pendingTimeouts.add(timeoutId)
+        return timeoutId
+    }
+
+    private clearPendingTimeouts(): void {
+        for (const timeoutId of this.pendingTimeouts) {
+            window.clearTimeout(timeoutId)
+        }
+        this.pendingTimeouts.clear()
     }
 
     /**

@@ -12,13 +12,13 @@
             </span>
         </div>
         <div class="header-actions">
-            <button class="btn-icon" (click)="switchProvider()" [title]="t.chatInterface.switchProvider">
+            <button type="button" class="btn-icon" (click)="switchProvider()" [title]="t.chatInterface.switchProvider">
                 <i class="fa fa-exchange"></i>
             </button>
-            <button class="btn-icon" (click)="exportChat()" [title]="t.chatInterface.exportChat">
+            <button type="button" class="btn-icon" (click)="exportChat()" [title]="t.chatInterface.exportChat">
                 <i class="fa fa-download"></i>
             </button>
-            <button class="btn-icon danger" (click)="clearChat()" [title]="t.chatInterface.clearChat">
+            <button type="button" class="btn-icon danger" (click)="clearChat()" [title]="t.chatInterface.clearChat">
                 <i class="fa fa-trash"></i>
             </button>
         </div>
@@ -154,10 +154,10 @@
         </div>
 
         <!-- 滚动按钮 (在容器外部以便固定定位) -->
-        <button *ngIf="showScrollTop" class="scroll-btn scroll-top" (click)="scrollToTop()" title="滚动到顶部">
+        <button *ngIf="showScrollTop" type="button" class="scroll-btn scroll-top" (click)="scrollToTop()" title="滚动到顶部">
             <i class="fa fa-chevron-up"></i>
         </button>
-        <button *ngIf="showScrollBottom" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" title="滚动到底部">
+        <button *ngIf="showScrollBottom" type="button" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" title="滚动到底部">
             <i class="fa fa-chevron-down"></i>
         </button>
     </div>

@@ -1,6 +1,6 @@
-import * as fs from 'mz/fs'
+import { readFile } from 'node:fs/promises'
 import { Injectable } from '@angular/core'
-import { HostAppService, Platform, LogService, Logger, TranslateService } from 'tabby-core'
+import { HostAppService, Platform, LogService, Logger, TranslateService, getRuntimeEnv } from 'tabby-core'
 
 import { ShellProvider, Shell } from 'tabby-local'
 
@@ -22,8 +22,8 @@ export class LinuxDefaultShellProvider extends ShellProvider {
         if (this.hostApp.platform !== Platform.Linux) {
             return []
         }
-        const line = (await fs.readFile('/etc/passwd', { encoding: 'utf-8' }))
-            .split('\n').find(x => x.startsWith(`${process.env.LOGNAME}:`))
+        const line = (await readFile('/etc/passwd', { encoding: 'utf-8' }))
+            .split('\n').find(x => x.startsWith(`${getRuntimeEnv('LOGNAME') ?? ''}:`))
         if (!line) {
             this.logger.warn('Could not detect user shell')
             return [{

@@ -17,6 +17,8 @@ export class HTTPStreamTransport extends BaseTransport {
     }>()
 
     private abortController: AbortController | null = null
+    private pollSleepHandle: ReturnType<typeof setTimeout> | null = null
+    private pollSleepResolve: (() => void) | null = null
 
     constructor(
         private url: string,
@@ -71,6 +73,7 @@ export class HTTPStreamTransport extends BaseTransport {
     }
 
     async disconnect(): Promise<void> {
+        this.clearPollSleep()
         if (this.abortController) {
             this.abortController.abort()
             this.abortController = null
@@ -85,6 +88,11 @@ export class HTTPStreamTransport extends BaseTransport {
             reject(new Error('Transport disconnected'))
         })
         this.pendingRequests.clear()
+    }
+
+    override destroy(): void {
+        this.clearPollSleep()
+        super.destroy()
     }
 
     async send(request: MCPRequest): Promise<MCPResponse> {
@@ -328,7 +336,33 @@ export class HTTPStreamTransport extends BaseTransport {
      * 休眠辅助函数
      */
     private sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms))
+        if (!this.connected || this.isDestroyed()) {
+            return Promise.resolve()
+        }
+        return new Promise(resolve => {
+            this.pollSleepResolve = () => {
+                this.pollSleepResolve = null
+                resolve()
+            }
+            this.pollSleepHandle = setTimeout(() => {
+                this.pollSleepHandle = null
+                const resolver = this.pollSleepResolve
+                this.pollSleepResolve = null
+                resolver?.()
+            }, ms)
+        })
+    }
+
+    private clearPollSleep(): void {
+        if (this.pollSleepHandle !== null) {
+            clearTimeout(this.pollSleepHandle)
+            this.pollSleepHandle = null
+        }
+        if (this.pollSleepResolve) {
+            const resolver = this.pollSleepResolve
+            this.pollSleepResolve = null
+            resolver()
+        }
     }
 
     /**

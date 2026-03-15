@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core'
-import { ToolbarButtonProvider, ToolbarButton, AppService, HostAppService, HotkeysService, TranslateService } from 'tabby-core'
+import { Injectable, Optional } from '@angular/core'
+import { ToolbarButtonProvider, ToolbarButton, HostAppService, HotkeysService, SettingsTabOpener, TranslateService, AppService } from 'tabby-core'
 
 import { SettingsTabComponent } from './components/settingsTab.component'
 
@@ -9,6 +9,7 @@ export class ButtonProvider extends ToolbarButtonProvider {
     constructor (
         hostApp: HostAppService,
         hotkeys: HotkeysService,
+        @Optional() private settingsTabOpener: SettingsTabOpener | null,
         private app: AppService,
         private translate: TranslateService,
     ) {
@@ -33,7 +34,12 @@ export class ButtonProvider extends ToolbarButtonProvider {
     }
 
     open (): void {
-        const settingsTab = this.app.tabs.find(tab => tab instanceof SettingsTabComponent)
+        if (this.settingsTabOpener) {
+            this.settingsTabOpener.open()
+            return
+        }
+
+        const settingsTab = this.app.tabs.find(tab => tab instanceof SettingsTabComponent) as SettingsTabComponent | undefined
         if (settingsTab) {
             this.app.selectTab(settingsTab)
         } else {

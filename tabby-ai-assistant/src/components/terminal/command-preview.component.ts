@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core'
+import { Component, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 import { CommandResponse } from '../../types/ai.types'
 import { RiskLevel } from '../../types/security.types'
 import { TerminalManagerService, TerminalInfo } from '../../services/terminal/terminal-manager.service'
@@ -10,7 +10,7 @@ import { LoggerService } from '../../services/core/logger.service'
     templateUrl: './command-preview.component.html',
     styleUrls: ['./command-preview.component.scss'],
 })
-export class CommandPreviewComponent {
+export class CommandPreviewComponent implements OnDestroy {
     @Input() command: CommandResponse | null = null
     @Input() riskLevel: RiskLevel = RiskLevel.LOW
 
@@ -23,12 +23,19 @@ export class CommandPreviewComponent {
     showTerminalSelector = false
     executionStatus: 'idle' | 'executing' | 'success' | 'error' = 'idle'
     statusMessage = ''
+    private statusResetTimer: number | null = null
+    private autoCloseTimer: number | null = null
 
     constructor(
         private terminalManager: TerminalManagerService,
         private logger: LoggerService,
     ) {
         this.loadTerminals()
+    }
+
+    ngOnDestroy(): void {
+        this.clearStatusResetTimer()
+        this.clearAutoCloseTimer()
     }
 
     /**
@@ -70,7 +77,7 @@ export class CommandPreviewComponent {
         if (this.command) {
             navigator.clipboard.writeText(this.command.command)
             this.statusMessage = '已复制到剪贴板'
-            setTimeout(() => this.statusMessage = '', 2000)
+            this.scheduleStatusReset(2000)
         }
     }
 
@@ -108,7 +115,7 @@ export class CommandPreviewComponent {
                 this.executed.emit(this.command)
 
                 // 2秒后关闭预览
-                setTimeout(() => this.close(), 2000)
+                this.scheduleAutoClose(2000)
             } else {
                 this.executionStatus = 'error'
                 this.statusMessage = '发送命令失败'
@@ -134,7 +141,7 @@ export class CommandPreviewComponent {
         const success = this.terminalManager.sendCommand(this.command.command, false)
         if (success) {
             this.statusMessage = '命令已插入终端（未执行）'
-            setTimeout(() => this.close(), 1500)
+            this.scheduleAutoClose(1500)
         }
     }
 
@@ -158,6 +165,7 @@ export class CommandPreviewComponent {
      * 关闭预览
      */
     close(): void {
+        this.clearAutoCloseTimer()
         this.closed.emit()
     }
 
@@ -167,6 +175,36 @@ export class CommandPreviewComponent {
     selectAlternative(alt: string | { command?: string }): void {
         if (this.command && alt) {
             this.command = { ...this.command, command: typeof alt === 'string' ? alt : (alt.command ?? this.command.command) }
+        }
+    }
+
+    private scheduleStatusReset(delayMs: number): void {
+        this.clearStatusResetTimer()
+        this.statusResetTimer = window.setTimeout(() => {
+            this.statusMessage = ''
+            this.statusResetTimer = null
+        }, delayMs)
+    }
+
+    private scheduleAutoClose(delayMs: number): void {
+        this.clearAutoCloseTimer()
+        this.autoCloseTimer = window.setTimeout(() => {
+            this.autoCloseTimer = null
+            this.close()
+        }, delayMs)
+    }
+
+    private clearStatusResetTimer(): void {
+        if (this.statusResetTimer !== null) {
+            window.clearTimeout(this.statusResetTimer)
+            this.statusResetTimer = null
+        }
+    }
+
+    private clearAutoCloseTimer(): void {
+        if (this.autoCloseTimer !== null) {
+            window.clearTimeout(this.autoCloseTimer)
+            this.autoCloseTimer = null
         }
     }
 }

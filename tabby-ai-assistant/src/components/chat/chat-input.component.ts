@@ -30,6 +30,7 @@ export class ChatInputComponent implements OnInit, OnDestroy {
     private historyIndex = -1
     private tempInput = ''
     private readonly maxHistory = 50
+    private pendingTimeouts = new Set<number>()
 
     // 智能建议相关
     suggestions: string[] = []
@@ -57,6 +58,7 @@ export class ChatInputComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        this.clearPendingTimeouts()
         this.destroy$.next()
         this.destroy$.complete()
     }
@@ -166,7 +168,7 @@ export class ChatInputComponent implements OnInit, OnDestroy {
 
             this.send.emit(message)
             this.inputValue = ''
-            setTimeout(() => this.autoResize(), 0)
+            this.scheduleTimeout(() => this.autoResize(), 0)
             this.textInput?.nativeElement.focus()
         }
     }
@@ -273,11 +275,27 @@ export class ChatInputComponent implements OnInit, OnDestroy {
         const textarea = this.textInput?.nativeElement
         if (textarea) {
             textarea.value = this.inputValue
-            setTimeout(() => {
+            this.scheduleTimeout(() => {
                 textarea.selectionStart = textarea.selectionEnd = this.inputValue.length
                 this.autoResize()
             }, 0)
         }
+    }
+
+    private scheduleTimeout(callback: () => void, delay: number): number {
+        const timeoutId = window.setTimeout(() => {
+            this.pendingTimeouts.delete(timeoutId)
+            callback()
+        }, delay)
+        this.pendingTimeouts.add(timeoutId)
+        return timeoutId
+    }
+
+    private clearPendingTimeouts(): void {
+        for (const timeoutId of this.pendingTimeouts) {
+            window.clearTimeout(timeoutId)
+        }
+        this.pendingTimeouts.clear()
     }
 
     /**

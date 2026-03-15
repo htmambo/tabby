@@ -1,4 +1,3 @@
-import type { BrowserWindow, TouchBar } from 'electron'
 import { Injectable, Inject, NgZone } from '@angular/core'
 import { BootstrapData, BOOTSTRAP_DATA, HostWindowService } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
@@ -57,19 +56,23 @@ export class ElectronHostWindow extends HostWindowService {
             this._isMaximized = false
         }))
 
-        this._isMaximized = this.getWindow().isMaximized()
+        this._isMaximized = this.electron.ipcRenderer.sendSync('bridge:window:is-maximized')
     }
 
-    getWindow (): BrowserWindow {
-        return this.electron.BrowserWindow.fromId(this.bootstrapData.windowID)!
+    getMinimumSize (): [number, number] {
+        return this.electron.ipcRenderer.sendSync('bridge:window:get-minimum-size')
+    }
+
+    getPosition (): [number, number] {
+        return this.electron.ipcRenderer.sendSync('bridge:window:get-position')
     }
 
     openDevTools (): void {
-        this.getWindow().webContents.openDevTools({ mode: 'undocked' })
+        this.electron.ipcRenderer.send('window-open-dev-tools')
     }
 
     reload (): void {
-        this.getWindow().reload()
+        this.electron.ipcRenderer.send('window-reload')
     }
 
     setTitle (title?: string): void {
@@ -77,7 +80,7 @@ export class ElectronHostWindow extends HostWindowService {
     }
 
     toggleFullscreen (): void {
-        this.getWindow().setFullScreen(!this._isFullscreen)
+        this.electron.ipcRenderer.send('window-toggle-fullscreen')
     }
 
     minimize (): void {
@@ -89,11 +92,7 @@ export class ElectronHostWindow extends HostWindowService {
     }
 
     toggleMaximize (): void {
-        if (this.getWindow().isMaximized()) {
-            this.getWindow().unmaximize()
-        } else {
-            this.getWindow().maximize()
-        }
+        this.electron.ipcRenderer.send('window-toggle-maximize')
     }
 
     close (): void {
@@ -108,8 +107,8 @@ export class ElectronHostWindow extends HostWindowService {
         this.electron.ipcRenderer.send('window-set-always-on-top', flag)
     }
 
-    setTouchBar (touchBar: TouchBar): void {
-        this.getWindow().setTouchBar(touchBar)
+    setTouchBar (_touchBar: unknown): void {
+        console.warn('setTouchBar via ElectronHostWindow is deprecated, use TouchbarService instead')
     }
 
     setTrafficLightPosition (x: number, y: number): void {
@@ -122,6 +121,10 @@ export class ElectronHostWindow extends HostWindowService {
 
     setProgressBar (value: number): void {
         this.electron.ipcRenderer.send('window-set-progress-bar', value)
+    }
+
+    setPosition (x: number, y: number): void {
+        this.electron.ipcRenderer.send('window-set-position', x, y)
     }
 
     bringToFront (): void {

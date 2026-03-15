@@ -9,7 +9,7 @@
             *ngFor='let command of commands; trackBy: buttonsTrackBy',
             (click)='command.run()',
         )
-            .d-flex.align-self-center([innerHTML]='sanitizeIcon(command.icon)')
+            .d-flex.align-self-center([innerHTML]='command.safeIcon')
             span {{command.label}}
 
 footer.d-flex.align-items-center

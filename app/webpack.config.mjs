@@ -23,7 +23,7 @@ export default () => ({
     target: 'node',
     entry: {
         'index.ignore': 'file-loader?name=index.html!pug-html-loader!' + path.resolve(__dirname, './index.pug'),
-        sentry: path.resolve(__dirname, 'lib/sentry.ts'),
+        bridge: path.resolve(__dirname, 'src/bridge.preload.ts'),
         preload: path.resolve(__dirname, 'src/entry.preload.ts'),
         bundle: path.resolve(__dirname, 'src/entry.ts'),
     },
@@ -73,6 +73,9 @@ export default () => ({
                         loader: 'sass-loader',
                         options: {
                             implementation: sass,
+                            sassOptions: {
+                                quietDeps: true,
+                            },
                         },
                     },
                 ],
@@ -85,14 +88,18 @@ export default () => ({
         ],
     },
     externals: {
-        '@electron/remote': 'commonjs @electron/remote',
+        '@tabby-gang/windows-blurbehind': 'commonjs @tabby-gang/windows-blurbehind',
+        '@tabby-gang/windows-process-tree': 'commonjs @tabby-gang/windows-process-tree',
         'v8-compile-cache': 'commonjs v8-compile-cache',
         child_process: 'commonjs child_process',
         electron: 'commonjs electron',
+        'fontmanager-redux': 'commonjs fontmanager-redux',
         fs: 'commonjs fs',
+        'macos-native-processlist': 'commonjs macos-native-processlist',
         module: 'commonjs module',
-        mz: 'commonjs mz',
+        'native-process-working-directory': 'commonjs native-process-working-directory',
         path: 'commonjs path',
+        'windows-native-registry': 'commonjs windows-native-registry',
     },
     plugins: [
         new wp.DefinePlugin({

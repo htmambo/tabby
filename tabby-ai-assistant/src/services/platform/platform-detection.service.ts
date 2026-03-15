@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core'
+import { getRuntimeArch, getRuntimeEnv, getRuntimeEnvObject, getRuntimePlatform, getRuntimeReleaseName, getRuntimeVersion } from 'tabby-core'
 import { LoggerService } from '../core/logger.service'
 
 /**
@@ -75,6 +76,26 @@ export interface EnvironmentAnalysis {
     };
 }
 
+const PLATFORM_ENV_KEYS = [
+    'COLORTERM',
+    'COMSPEC',
+    'LANG',
+    'LC_ALL',
+    'LC_CTYPE',
+    'POWERSHELL_VERSION',
+    'PROMPT',
+    'SESSION_NAME',
+    'SHELL',
+    'SSH_CLIENT',
+    'SSH_CONNECTION',
+    'SSH_TTY',
+    'TERM',
+    'TERM_PROGRAM',
+    'TERM_VERSION',
+    'WSL_DISTRO_NAME',
+    'WSL_INTEROP',
+] as const
+
 /**
  * 平台检测服务
  * 提供跨平台终端环境检测、兼容性分析和能力检测功能
@@ -95,7 +116,7 @@ export class PlatformDetectionService {
      * 检测操作系统
      */
     detectOS(): OSType {
-        const platform = process.platform
+        const platform = getRuntimePlatform()
 
         switch (platform) {
             case 'linux':
@@ -113,20 +134,20 @@ export class PlatformDetectionService {
      * 检测终端类型
      */
     detectTerminal(): TerminalType {
-        const term = process.env.TERM ?? ''
-        const termProgram = process.env.TERM_PROGRAM ?? ''
-        const sessionName = process.env.SESSION_NAME ?? ''
+        const term = getRuntimeEnv('TERM') ?? ''
+        const termProgram = getRuntimeEnv('TERM_PROGRAM') ?? ''
+        const sessionName = getRuntimeEnv('SESSION_NAME') ?? ''
 
         // Windows终端检测
         if (termProgram === 'Windows Terminal' || sessionName === 'Windows Terminal') {
             return TerminalType.WINDOWS_WSL
         }
 
-        if (process.env.PROMPT ?? process.env.COMSPEC) {
+        if (getRuntimeEnv('PROMPT') ?? getRuntimeEnv('COMSPEC')) {
             return TerminalType.WINDOWS_CMD
         }
 
-        if (termProgram === 'PowerShell' || process.env.POWERSHELL_VERSION) {
+        if (termProgram === 'PowerShell' || getRuntimeEnv('POWERSHELL_VERSION')) {
             return TerminalType.WINDOWS_POWERSHELL
         }
 
@@ -159,8 +180,8 @@ export class PlatformDetectionService {
      * 检查终端能力
      */
     checkCapabilities(): TerminalCapabilities {
-        const term = process.env.TERM ?? ''
-        const colorTerm = process.env.COLORTERM ?? ''
+        const term = getRuntimeEnv('TERM') ?? ''
+        const colorTerm = getRuntimeEnv('COLORTERM') ?? ''
 
         const capabilities: TerminalCapabilities = {
             colors: this.getColorCount(term, colorTerm),
@@ -212,7 +233,7 @@ export class PlatformDetectionService {
             osVersion: this.getOSVersion(),
             terminalVersion: this.getTerminalVersion(),
             shellVersion: this.getShellVersion(),
-            nodeVersion: process.version,
+            nodeVersion: getRuntimeVersion(),
         }
     }
 
@@ -228,7 +249,7 @@ export class PlatformDetectionService {
         const terminal = this.detectTerminal()
         const capabilities = this.checkCapabilities()
         const shell = this.getActiveShell()
-        const arch = process.arch
+        const arch = getRuntimeArch()
 
         this.platformInfo = {
             os,
@@ -238,7 +259,7 @@ export class PlatformDetectionService {
             shell,
             shellVersion: this.getShellVersion(),
             capabilities,
-            environment: this.filterEnvVariables(process.env),
+            environment: getRuntimeEnvObject(PLATFORM_ENV_KEYS),
             arch,
             isVirtualTerminal: this.isVirtualTerminal(),
         }
@@ -279,15 +300,15 @@ export class PlatformDetectionService {
      * 检查是否为Windows WSL环境
      */
     isWSL(): boolean {
-        return process.platform === 'linux' &&
-            !!(process.env.WSL_DISTRO_NAME ?? process.env.WSL_INTEROP)
+        return getRuntimePlatform() === 'linux' &&
+            !!(getRuntimeEnv('WSL_DISTRO_NAME') ?? getRuntimeEnv('WSL_INTEROP'))
     }
 
     /**
      * 检查是否通过SSH连接
      */
     isSSH(): boolean {
-        return !!process.env.SSH_CLIENT || !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION
+        return !!getRuntimeEnv('SSH_CLIENT') || !!getRuntimeEnv('SSH_TTY') || !!getRuntimeEnv('SSH_CONNECTION')
     }
 
     /**
@@ -340,7 +361,7 @@ export class PlatformDetectionService {
     }
 
     private supportsUnicode(): boolean {
-        return !!process.env.LC_ALL || !!process.env.LC_CTYPE || !!process.env.LANG
+        return !!getRuntimeEnv('LC_ALL') || !!getRuntimeEnv('LC_CTYPE') || !!getRuntimeEnv('LANG')
     }
 
     private supportsMouse(term: string): boolean {
@@ -454,24 +475,26 @@ export class PlatformDetectionService {
     }
 
     private getOSVersion(): string {
-        if (typeof process.release !== 'undefined') {
-            return process.release.name + ' ' + (process.version || '')
+        const releaseName = getRuntimeReleaseName()
+        if (releaseName) {
+            return `${releaseName} ${getRuntimeVersion()}`
         }
-        return process.platform
+        return getRuntimePlatform()
     }
 
     private getTerminalVersion(): string | undefined {
-        return process.env.TERM_VERSION
+        return getRuntimeEnv('TERM_VERSION')
     }
 
     private getActiveShell(): string {
-        return process.env.SHELL ?? process.env.COMSPEC ?? 'unknown'
+        return getRuntimeEnv('SHELL') ?? getRuntimeEnv('COMSPEC') ?? 'unknown'
     }
 
     private getShellVersion(): string | undefined {
         // 简化实现：实际应通过执行命令获取
-        if (process.env.SHELL) {
-            const shellName = process.env.SHELL.split('/').pop()
+        const shellPath = getRuntimeEnv('SHELL')
+        if (shellPath) {
+            const shellName = shellPath.split('/').pop()
             return shellName
         }
         return undefined
@@ -481,14 +504,4 @@ export class PlatformDetectionService {
         return this.isWSL() || this.isSSH()
     }
 
-    private filterEnvVariables(env: NodeJS.ProcessEnv): Record<string, string> {
-        const result: Record<string, string> = {}
-        for (const key of Object.keys(env)) {
-            const value = env[key]
-            if (value !== undefined) {
-                result[key] = value
-            }
-        }
-        return result
-    }
 }

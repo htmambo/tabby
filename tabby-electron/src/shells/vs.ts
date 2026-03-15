@@ -1,7 +1,6 @@
 import * as path from 'path'
-import * as fs from 'fs/promises'
 import { Injectable } from '@angular/core'
-import { HostAppService, Platform } from 'tabby-core'
+import { HostAppService, Platform, getRuntimeEnv, readDirectory, readPathStat } from 'tabby-core'
 
 import { ShellProvider, Shell } from 'tabby-local'
 
@@ -27,26 +26,34 @@ export class VSDevToolsProvider extends ShellProvider {
             return []
         }
 
-        const x86ParentPath = path.join(process.env['programfiles(x86)'] ?? 'C:\\Program Files (x86)', 'Microsoft Visual Studio')
-        const x64ParentPath = path.join(process.env['programfiles'] ?? 'C:\\Program Files', 'Microsoft Visual Studio')
+        const x86ParentPath = path.join(getRuntimeEnv('programfiles(x86)') ?? 'C:\\Program Files (x86)', 'Microsoft Visual Studio')
+        const x64ParentPath = path.join(getRuntimeEnv('programfiles') ?? 'C:\\Program Files', 'Microsoft Visual Studio')
 
         const result: Shell[] = []
         for (const parentPath of [x86ParentPath, x64ParentPath]) {
+            const parentStat = await readPathStat(parentPath)
+            if (!parentStat?.isDirectory) {
+                continue
+            }
+
             try {
-                await fs.stat(parentPath)
-                for (const version of await fs.readdir(parentPath)) {
-                    const bat = path.join(parentPath, version, 'Community\\Common7\\Tools\\VsDevCmd.bat')
-                    try {
-                        await fs.stat(bat)
-                    } catch {
+                for (const entry of await readDirectory(parentPath)) {
+                    if (!entry.isDirectory) {
                         continue
                     }
+
+                    const bat = path.join(parentPath, entry.name, 'Community\\Common7\\Tools\\VsDevCmd.bat')
+                    const batStat = await readPathStat(bat)
+                    if (!batStat?.isFile) {
+                        continue
+                    }
+
                     result.push({
-                        id: `vs-cmd-${version}`,
-                        name: `Developer Prompt for VS ${version}`,
+                        id: `vs-cmd-${entry.name}`,
+                        name: `Developer Prompt for VS ${entry.name}`,
                         command: 'cmd.exe',
                         args: ['/k', bat],
-                        icon: vsIconMap[version],
+                        icon: vsIconMap[entry.name],
                         env: {},
                     })
                 }
@@ -55,24 +62,5 @@ export class VSDevToolsProvider extends ShellProvider {
             }
         }
         return result
-
-        // return [
-        //     {
-        //         id: 'cmderps',
-        //         name: 'Cmder PowerShell',
-        //         command: 'powershell.exe',
-        //         args: [
-        //             '-ExecutionPolicy',
-        //             'Bypass',
-        //             '-nologo',
-        //             '-noprofile',
-        //             '-noexit',
-        //             '-command',
-        //             `Invoke-Expression '. ''${path.join(process.env.CMDER_ROOT, 'vendor', 'profile.ps1')}'''`,
-        //         ],
-        //         icon: require('../icons/cmder-powershell.svg'),
-        //         env: {},
-        //     },
-        // ]
     }
 }

@@ -4,7 +4,7 @@
             <i class="fa fa-terminal"></i>
             命令预览
         </h4>
-        <button class="btn-close" (click)="close()">
+        <button type="button" class="btn-close" (click)="close()">
             <i class="fa fa-times"></i>
         </button>
     </div>
@@ -21,7 +21,7 @@
             <label>将要执行的命令:</label>
             <div class="command-display">
                 <code>{{ command.command }}</code>
-                <button class="btn-copy" (click)="copyCommand()" title="复制">
+                <button type="button" class="btn-copy" (click)="copyCommand()" title="复制">
                     <i class="fa fa-copy"></i>
                 </button>
             </div>
@@ -55,7 +55,7 @@
     </div>
 
     <div class="preview-footer">
-        <button class="btn btn-secondary" (click)="close()">取消</button>
-        <button class="btn btn-primary" (click)="execute()">执行命令</button>
+        <button type="button" class="btn btn-secondary" (click)="close()">取消</button>
+        <button type="button" class="btn btn-primary" (click)="execute()">执行命令</button>
     </div>
 </div>

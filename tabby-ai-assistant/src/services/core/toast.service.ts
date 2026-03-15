@@ -12,6 +12,7 @@ export interface ToastMessage {
 export class ToastService {
     private toastSubject = new Subject<ToastMessage>()
     toast$ = this.toastSubject.asObservable()
+    private toastTimers = new WeakMap<HTMLElement, number[]>()
 
     show(type: ToastMessage['type'], message: string, duration = 3000): void {
         const id = `toast-${Date.now()}`
@@ -60,7 +61,15 @@ export class ToastService {
         `
 
         const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : type === 'warning' ? '⚠' : 'ℹ'
-        toast.innerHTML = `<span style="font-size: 16px;">${icon}</span><span>${message}</span>`
+        const iconSpan = document.createElement('span')
+        iconSpan.style.fontSize = '16px'
+        iconSpan.textContent = icon
+
+        const messageSpan = document.createElement('span')
+        messageSpan.textContent = message
+
+        toast.appendChild(iconSpan)
+        toast.appendChild(messageSpan)
 
         toast.onclick = () => {
             this.removeToast(toast)
@@ -69,7 +78,7 @@ export class ToastService {
         container.appendChild(toast)
 
         // 自动消失
-        setTimeout(() => {
+        this.scheduleToastTimeout(toast, () => {
             this.removeToast(toast)
         }, duration)
 
@@ -78,14 +87,41 @@ export class ToastService {
     }
 
     private removeToast(toast: HTMLElement): void {
+        this.clearToastTimers(toast)
+        toast.onclick = null
         if (toast.parentNode) {
             toast.style.animation = 'toastSlideOut 0.3s ease forwards'
-            setTimeout(() => {
+            this.scheduleToastTimeout(toast, () => {
                 if (toast.parentNode) {
                     toast.remove()
                 }
             }, 300)
         }
+    }
+
+    private scheduleToastTimeout(toast: HTMLElement, callback: () => void, delay: number): number {
+        const timeoutId = window.setTimeout(() => {
+            const timers = this.toastTimers.get(toast)
+            if (timers) {
+                this.toastTimers.set(toast, timers.filter(id => id !== timeoutId))
+            }
+            callback()
+        }, delay)
+        const timers = this.toastTimers.get(toast) ?? []
+        timers.push(timeoutId)
+        this.toastTimers.set(toast, timers)
+        return timeoutId
+    }
+
+    private clearToastTimers(toast: HTMLElement): void {
+        const timers = this.toastTimers.get(toast)
+        if (!timers?.length) {
+            return
+        }
+        for (const timeoutId of timers) {
+            window.clearTimeout(timeoutId)
+        }
+        this.toastTimers.delete(toast)
     }
 
     success(message: string, duration = 3000): void {

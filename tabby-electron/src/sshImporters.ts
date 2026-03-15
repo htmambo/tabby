@@ -1,10 +1,8 @@
-import * as fs from 'fs/promises'
-import * as fsSync from 'fs'
 import * as path from 'path'
 import * as glob from 'glob'
 import * as yaml from 'js-yaml'
 import { Injectable } from '@angular/core'
-import { PartialProfile } from 'tabby-core'
+import { PartialProfile, getRuntimeEnv, pathExists, readPathStat, readTextFile, readBinaryFile, readDirectory } from 'tabby-core'
 import {
     SSHProfileImporter,
     PortForwardType,
@@ -49,6 +47,10 @@ const decodeFields: Record<string, SSHProfilePropertyNames> = {
     localforward: SSHProfilePropertyNames.ForwardedPorts,
     remoteforward: SSHProfilePropertyNames.ForwardedPorts,
     dynamicforward: SSHProfilePropertyNames.ForwardedPorts,
+}
+
+function getRuntimeHomeDir (): string {
+    return getRuntimeEnv('HOME') ?? '~'
 }
 
 // Function to use the above to return details corresponding to the supplied SSHProperty name.
@@ -102,16 +104,13 @@ async function parseSSHConfigFile (
     visited.add(filePath)
 
     let raw = ''
+    const stat = await readPathStat(filePath)
+    if (!stat?.isFile) {
+        return SSHConfig.parse('')
+    }
     try {
-        const stat = await fs.stat(filePath)
-        if (!stat.isFile()) {
-            return SSHConfig.parse('')
-        }
-        raw = await fs.readFile(filePath, 'utf8')
+        raw = await readTextFile(filePath)
     } catch (err) {
-        if (err.code === 'ENOENT' || err.code === 'ENOTDIR') {
-            return SSHConfig.parse('')
-        }
         console.error(`Error reading SSH config file: ${filePath}`, err)
         return SSHConfig.parse('')
     }
@@ -130,15 +129,15 @@ async function parseSSHConfigFile (
             if (path.isAbsolute(directive.value)) {
                 incPath = directive.value
             } else if (directive.value.startsWith('~')) {
-                incPath = path.join(process.env.HOME ?? '~', directive.value.slice(1))
+                incPath = path.join(getRuntimeHomeDir(), directive.value.slice(1))
             } else {
-                incPath = path.join(process.env.HOME ?? '~', '.ssh', directive.value)
+                incPath = path.join(getRuntimeHomeDir(), '.ssh', directive.value)
             }
 
             const matches = glob.sync(incPath)
             for (const match of matches) {
-                const stat = await fs.stat(match)
-                if (stat.isDirectory()) {
+                const includeStat = await readPathStat(match)
+                if (!includeStat || includeStat.isDirectory) {
                     continue
                 }
                 const matchedConfig = await parseSSHConfigFile(match, visited)
@@ -270,7 +269,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                 const processedKeys: string [] = (settings[key] as string[]).map( s => {
                     let retVal: string = s
                     if (s.startsWith('~/')) {
-                        retVal = path.join(process.env.HOME ?? '~', s.slice(2))
+                        retVal = path.join(getRuntimeHomeDir(), s.slice(2))
                     }
                     return retVal
                 })
@@ -365,7 +364,7 @@ async function convertToSSHProfiles (config: SSHConfig): Promise<PartialProfile<
 export class OpenSSHImporter extends SSHProfileImporter {
     async getProfiles (): Promise<PartialProfile<SSHProfile>[]> {
 
-        const configPath = path.join(process.env.HOME ?? '~', '.ssh', 'config')
+        const configPath = path.join(getRuntimeHomeDir(), '.ssh', 'config')
 
         try {
             const config: SSHConfig = await parseSSHConfigFile(configPath)
@@ -393,11 +392,11 @@ export class StaticFileImporter extends SSHProfileImporter {
     async getProfiles (): Promise<PartialProfile<SSHProfile>[]> {
         const deriveID = async name => 'file-config:' + await hashSSHProfileName(name)
 
-        if (!fsSync.existsSync(this.configPath)) {
+        if (!await pathExists(this.configPath)) {
             return []
         }
 
-        const content = await fs.readFile(this.configPath, 'utf8')
+        const content = await readTextFile(this.configPath)
         if (!content) {
             return []
         }
@@ -415,17 +414,16 @@ export class StaticFileImporter extends SSHProfileImporter {
 export class PrivateKeyLocator extends AutoPrivateKeyLocator {
     async getKeys (): Promise<[string, Buffer][]> {
         const results: [string, Buffer][] = []
-        const keysPath = path.join(process.env.HOME!, '.ssh')
-        if (!fsSync.existsSync(keysPath)) {
+        const keysPath = path.join(getRuntimeHomeDir(), '.ssh')
+        if (!await pathExists(keysPath)) {
             return results
         }
-        for (const file of await fs.readdir(keysPath)) {
-            if (/^id_[\w\d]+$/.test(file)) {
-                const privateKeyContents = await fs.readFile(
-                    path.join(keysPath, file),
-                    { encoding: null },
+        for (const file of await readDirectory(keysPath)) {
+            if (/^id_[\w\d]+$/.test(file.name) && file.isFile) {
+                const privateKeyContents = await readBinaryFile(
+                    path.join(keysPath, file.name),
                 )
-                results.push([file, privateKeyContents])
+                results.push([file.name, privateKeyContents])
             }
         }
         return results

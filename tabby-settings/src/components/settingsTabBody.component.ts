@@ -1,4 +1,4 @@
-import { Component, Input, ViewContainerRef, ViewChild, ComponentFactoryResolver, ComponentRef } from '@angular/core'
+import { Component, Input, ViewContainerRef, ViewChild, ComponentFactoryResolver, ComponentRef, OnDestroy } from '@angular/core'
 import { SettingsTabProvider } from '../api'
 
 /** @hidden */
@@ -13,21 +13,30 @@ import { SettingsTabProvider } from '../api'
         }
     `],
 })
-export class SettingsTabBodyComponent {
+export class SettingsTabBodyComponent implements OnDestroy {
     @Input() provider: SettingsTabProvider
     @ViewChild('placeholder', { read: ViewContainerRef }) placeholder: ViewContainerRef
     component: ComponentRef<unknown>
+    private pendingCreateHandle: number | null = null
 
     constructor (private componentFactoryResolver: ComponentFactoryResolver) { }
 
     ngAfterViewInit (): void {
         // run after the change detection finishes
-        setImmediate(() => {
+        this.pendingCreateHandle = window.setTimeout(() => {
+            this.pendingCreateHandle = null
             this.component = this.placeholder.createComponent(
                 this.componentFactoryResolver.resolveComponentFactory(
                     this.provider.getComponentType(),
                 ),
             )
-        })
+        }, 0)
+    }
+
+    ngOnDestroy (): void {
+        if (this.pendingCreateHandle !== null) {
+            window.clearTimeout(this.pendingCreateHandle)
+            this.pendingCreateHandle = null
+        }
     }
 }

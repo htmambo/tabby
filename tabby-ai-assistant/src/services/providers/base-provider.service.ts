@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { IBaseAiProvider, ProviderConfig, AuthConfig, ProviderCapability, HealthStatus, ValidationResult, ProviderInfo, PROVIDER_DEFAULTS } from '../../types/provider.types'
 import { ChatRequest, ChatResponse, CommandRequest, CommandResponse, ExplainRequest, ExplainResponse, AnalysisRequest, AnalysisResponse, StreamEvent, MessageRole } from '../../types/ai.types'
 import { LoggerService } from '../core/logger.service'
-import { TranslateService } from 'tabby-core'
+import { TranslateService, textToBase64 } from 'tabby-core'
 
 /**
  * 基础AI提供商抽象类
@@ -19,11 +19,22 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
     protected config: ProviderConfig | null = null
     protected isInitialized = false
     protected lastHealthCheck: { status: HealthStatus; timestamp: Date } | null = null
+    protected destroyed = false
+    private pendingSleeps = new Map<ReturnType<typeof setTimeout>, () => void>()
 
     constructor(
         protected logger: LoggerService,
         protected translate: TranslateService,
     ) {}
+
+    destroy(): void {
+        this.destroyed = true
+        for (const [handle, resolve] of this.pendingSleeps) {
+            clearTimeout(handle)
+            resolve()
+        }
+        this.pendingSleeps.clear()
+    }
 
     /**
      * 配置提供商
@@ -254,9 +265,9 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
 
             case 'basic':
                 if (this.authConfig.credentials.username && this.authConfig.credentials.password) {
-                    const credentials = Buffer.from(
+                    const credentials = textToBase64(
                         `${this.authConfig.credentials.username}:${this.authConfig.credentials.password}`,
-                    ).toString('base64')
+                    )
                     headers['Authorization'] = `Basic ${credentials}`
                 }
                 break
@@ -313,7 +324,7 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
                     { error: lastError.message },
                 )
 
-                await new Promise(resolve => setTimeout(resolve, delay))
+                await this.sleep(delay)
             }
         }
 
@@ -335,6 +346,22 @@ export abstract class BaseAiProvider implements IBaseAiProvider {
     protected logResponse(response: unknown): void {
         this.logger.debug(`[${this.name}] Response`, {
             response: this.sanitizeResponse(response),
+        })
+    }
+
+    protected sleep(ms: number): Promise<void> {
+        if (this.destroyed) {
+            return Promise.resolve()
+        }
+        return new Promise(resolve => {
+            const handle = setTimeout(() => {
+                this.pendingSleeps.delete(handle)
+                resolve()
+            }, ms)
+            this.pendingSleeps.set(handle, resolve)
+            if (typeof (handle as any)?.unref === 'function') {
+                (handle as any).unref()
+            }
         })
     }
 

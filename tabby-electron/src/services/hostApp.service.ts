@@ -1,5 +1,5 @@
 import { Injectable, NgZone, Injector } from '@angular/core'
-import { isWindowsBuild, WIN_BUILD_FLUENT_BG_SUPPORTED, HostAppService, Platform, CLIHandler } from 'tabby-core'
+import { isWindowsBuild, WIN_BUILD_FLUENT_BG_SUPPORTED, HostAppService, Platform, CLIHandler, getRuntimeEnv, getRuntimePlatform } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
 
@@ -14,7 +14,7 @@ export class ElectronHostAppService extends HostAppService {
             win32: Platform.Windows,
             darwin: Platform.macOS,
             linux: Platform.Linux,
-        }[process.platform]
+        }[getRuntimePlatform()]
     }
 
     constructor (
@@ -67,9 +67,9 @@ export class ElectronHostAppService extends HostAppService {
     }
 
     relaunch (): void {
-        const isPortable = !!process.env.PORTABLE_EXECUTABLE_FILE
-        if (isPortable) {
-            this.electron.app.relaunch({ execPath: process.env.PORTABLE_EXECUTABLE_FILE })
+        const portableExecutableFile = getRuntimeEnv('PORTABLE_EXECUTABLE_FILE')
+        if (portableExecutableFile) {
+            this.electron.app.relaunch({ execPath: portableExecutableFile })
         } else {
             let args: string[] = []
             if (this.platform === Platform.Linux) {

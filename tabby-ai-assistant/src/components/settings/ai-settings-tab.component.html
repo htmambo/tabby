@@ -18,16 +18,16 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn-icon" (click)="toggleEnabled()" [title]="isEnabled ? t.common.disabled : t.common.enabled">
+            <button type="button" class="btn-icon" (click)="toggleEnabled()" [title]="isEnabled ? t.common.disabled : t.common.enabled">
                 <i [class]="isEnabled ? 'fa fa-pause' : 'fa fa-play'"></i>
             </button>
-            <button class="btn-icon" (click)="refreshProviderStatus()" [title]="t.general.shortcutGenerate">
+            <button type="button" class="btn-icon" (click)="refreshProviderStatus()" [title]="t.general.shortcutGenerate">
                 <i class="fa fa-refresh"></i>
             </button>
-            <button class="btn-icon" (click)="exportConfig()" [title]="t.chatInterface.exportChat">
+            <button type="button" class="btn-icon" (click)="exportConfig()" [title]="t.chatInterface.exportChat">
                 <i class="fa fa-download"></i>
             </button>
-            <button class="btn-icon" (click)="importConfig()" [title]="t.common.add">
+            <button type="button" class="btn-icon" (click)="importConfig()" [title]="t.common.add">
                 <i class="fa fa-upload"></i>
             </button>
         </div>
@@ -101,11 +101,11 @@
                 <!-- 配置验证 -->
                 <div class="settings-section">
                     <h4>{{ t.advancedSettings.configManagement }}</h4>
-                    <button class="btn btn-primary" (click)="validateConfig()">
+                    <button type="button" class="btn btn-primary" (click)="validateConfig()">
                         <i class="fa fa-check"></i>
                         {{ t.advancedSettings.validateConfig }}
                     </button>
-                    <button class="btn btn-warning" (click)="resetToDefaults()">
+                    <button type="button" class="btn btn-warning" (click)="resetToDefaults()">
                         <i class="fa fa-refresh"></i>
                         {{ t.advancedSettings.resetDefaults }}
                     </button>
@@ -154,7 +154,7 @@
             <i class="fa fa-pause-circle fa-3x"></i>
             <h3>{{ t.chatInterface.title }} {{ t.common.disabled }}</h3>
             <p>{{ t.general.enableAssistantDesc }}</p>
-            <button class="btn btn-primary" (click)="toggleEnabled()">
+            <button type="button" class="btn btn-primary" (click)="toggleEnabled()">
                 <i class="fa fa-play"></i>
                 {{ t.general.enableAssistant }}
             </button>

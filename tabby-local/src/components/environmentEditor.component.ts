@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Component, Output, Input } from '@angular/core'
 import { Subject } from 'rxjs'
+import { getRuntimePlatform } from 'tabby-core'
 
 /** @hidden */
 @Component({
@@ -50,7 +51,7 @@ export class EnvironmentEditorComponent {
     }
 
     addExample (): void {
-        const value = process.platform === 'win32' ? 'C:\\Program Files\\Custom:%PATH%' : '/opt/custom:$PATH'
+        const value = getRuntimePlatform() === 'win32' ? 'C:\\Program Files\\Custom:%PATH%' : '/opt/custom:$PATH'
         this.vars.push({ key: 'PATH', value })
         this.emitUpdate()
     }

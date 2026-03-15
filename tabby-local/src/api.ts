@@ -61,6 +61,7 @@ export abstract class UACService {
 
 export abstract class PTYProxy {
     abstract getID (): string
+    abstract exists (): Promise<boolean>
     abstract getPID (): Promise<number>
     abstract resize (columns: number, rows: number): Promise<void>
     abstract write (data: Buffer): Promise<void>
