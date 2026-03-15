@@ -293,6 +293,9 @@ export class ResettableTimeout {
     set (timeout?: number): void {
         this.clear()
         this.id = setTimeout(this.fn, timeout ?? this.timeout)
+        if (typeof this.id === 'object' && typeof this.id.unref === 'function') {
+            this.id.unref()
+        }
     }
 
     clear (): void {

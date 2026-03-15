@@ -135,7 +135,13 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
             pollTimer = window.setInterval(() => {
                 void pollForChanges()
             }, 1000)
+            if (typeof pollTimer === 'object' && typeof (pollTimer as any).unref === 'function') {
+                (pollTimer as any).unref()
+            }
         }, 1000)
+        if (typeof pollStartTimeout === 'object' && typeof (pollStartTimeout as any).unref === 'function') {
+            (pollStartTimeout as any).unref()
+        }
     }
 
     private async getFileFingerprint (filePath: string): Promise<string | null> {

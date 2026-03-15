@@ -1010,6 +1010,18 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `app/src/app.module.ts`
 - `tabby-terminal/src/frontends/xtermFrontend.ts`
 
+### 3.80 低风险延迟计时器 unref 补齐
+
+补齐可选 `unref`，减少在 Node/Electron 环境下计时器对事件循环的潜在阻塞：
+
+- `ResettableTimeout` 的 `set()` 计时器追加 `unref` 检测
+- SFTP 本地编辑轮询的启动/轮询计时器追加 `unref` 检测
+
+涉及文件：
+
+- `tabby-core/src/utils.ts`
+- `tabby-electron/src/sftpContextMenu.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1717,6 +1729,18 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-terminal` 类型检查通过（未新增 TypeScript 错误）
+
+在补齐低风险延迟计时器 unref 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-core/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-electron/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-core` 类型检查通过（未新增 TypeScript 错误）
+- `tabby-electron` 类型检查通过（未新增 TypeScript 错误）
 
 ### 5.2 启动冒烟
 
