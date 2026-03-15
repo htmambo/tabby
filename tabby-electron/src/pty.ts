@@ -48,7 +48,7 @@ export class ElectronPTYProxy extends PTYProxy {
 
     subscribe (event: string, handler: (..._: any[]) => void): void {
         const key = `pty:${this.id}:${event}`
-        const newHandler = (...args) => handler(...args)
+        const newHandler = (...args: unknown[]) => handler(...args as any[])
         this.subscriptions.set(key, newHandler)
         ipc.on(key, newHandler)
     }

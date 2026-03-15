@@ -10,11 +10,17 @@ export class ElectronHostAppService extends HostAppService {
     }
 
     get configPlatform (): Platform {
-        return {
-            win32: Platform.Windows,
-            darwin: Platform.macOS,
-            linux: Platform.Linux,
-        }[getRuntimePlatform()]
+        const runtimePlatform = getRuntimePlatform()
+        switch (runtimePlatform) {
+            case 'win32':
+                return Platform.Windows
+            case 'darwin':
+                return Platform.macOS
+            case 'linux':
+                return Platform.Linux
+            default:
+                return Platform.Linux
+        }
     }
 
     constructor (

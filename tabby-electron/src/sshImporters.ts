@@ -7,6 +7,7 @@ import {
     SSHProfileImporter,
     PortForwardType,
     SSHProfile,
+    SSHProfileOptions,
     AutoPrivateKeyLocator,
     ForwardedPortConfig,
 } from 'tabby-ssh'
@@ -56,12 +57,12 @@ function getRuntimeHomeDir (): string {
 // Function to use the above to return details corresponding to the supplied SSHProperty name.
 // If the name of the supplied SSH Config file Property is valid, and one that we process,
 // then we get back the name of the corresponding Property in the SSHProfile object
-function decodeTarget (SSHProperty: string): string {
+function decodeTarget (SSHProperty: string): SSHProfilePropertyNames | null {
     const lower = SSHProperty.toLowerCase()
     if (lower in decodeFields) {
         return decodeFields[lower]
     }
-    return ''
+    return null
 }
 
 // Function to combine SSHConfig values into a single string. This is used to smash
@@ -172,7 +173,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
         type: 'ssh',
         group: 'Imported from .ssh/config',
     }
-    const options = {}
+    const options: Partial<SSHProfileOptions> = {}
 
     function convertToForwardedPortDescriptor (forwardType: PortForwardType.Local | PortForwardType.Remote | PortForwardType.Dynamic, details: string): ForwardedPortConfig {
         const detailsParts = details.split(/\s/)
@@ -198,6 +199,9 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
     for (const key in settings) {
         // decode a target attribute and an action
         const targetName = decodeTarget(key)
+        if (!targetName) {
+            continue
+        }
 
         switch (targetName) {
 
@@ -266,7 +270,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
             // IdentityFile may have multiple values and the need to have '~' converted to the
             // path to the HOME directory
             case SSHProfilePropertyNames.PrivateKeys:
-                const processedKeys: string [] = (settings[key] as string[]).map( s => {
+                const processedKeys: string [] = (settings[key] as string[]).map((s: string) => {
                     let retVal: string = s
                     if (s.startsWith('~/')) {
                         retVal = path.join(getRuntimeHomeDir(), s.slice(2))
@@ -293,12 +297,13 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                         break
                 }
                 if (forwardType) {
-                    options[targetName] ??= []
+                    const forwardedPorts = (options[targetName] ?? []) as ForwardedPortConfig[]
                     for (const forwarderDetails of settings[key]) {
                         if (typeof forwarderDetails === 'string') {
-                            options[targetName].push(convertToForwardedPortDescriptor(forwardType, forwarderDetails))
+                            forwardedPorts.push(convertToForwardedPortDescriptor(forwardType, forwarderDetails))
                         }
                     }
+                    options[targetName] = forwardedPorts
                 }
                 break
 
@@ -343,11 +348,11 @@ async function convertToSSHProfiles (config: SSHConfig): Promise<PartialProfile<
             // for our purposes) then convert the configuration into an SSHProfile and stash it
             for (const host of hostList) {
                 if (noWildCardsInName(host)) {
-                    if (!(host in myMap)) {
+                    if (!myMap.has(host)) {
                         // NOTE: SSHConfig.compute() lies about the return types
                         const configuration: Record<string, string | string[] | object[]> = config.compute(host)
                         if (Object.keys(configuration).map(key => key.toLowerCase()).includes('hostname')) {
-                            myMap[host] = await convertHostToSSHProfile(host, configuration)
+                            myMap.set(host, await convertHostToSSHProfile(host, configuration))
                         }
                     }
                 }
@@ -356,7 +361,7 @@ async function convertToSSHProfiles (config: SSHConfig): Promise<PartialProfile<
     }
     // Convert the values from the map into a list of Partial SSHProfiles sorted
     // by Hostname
-    return Object.keys(myMap).sort().map(key => myMap[key])
+    return Array.from(myMap.keys()).sort().map(key => myMap.get(key)!).filter(Boolean)
 }
 
 
@@ -390,7 +395,7 @@ export class StaticFileImporter extends SSHProfileImporter {
     }
 
     async getProfiles (): Promise<PartialProfile<SSHProfile>[]> {
-        const deriveID = async name => 'file-config:' + await hashSSHProfileName(name)
+        const deriveID = async (name: string) => 'file-config:' + await hashSSHProfileName(name)
 
         if (!await pathExists(this.configPath)) {
             return []

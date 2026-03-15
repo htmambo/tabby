@@ -11,13 +11,14 @@ export abstract class WindowsBaseShellProvider extends ShellProvider {
     }
 
     protected getEnvironment (): any {
-        return {
+        const envByIdentification: Record<string, Record<string, string | number>> = {
             wt: {
                 WT_SESSION: 0,
             },
             cygwin: {
                 TERM: 'cygwin',
             },
-        }[this.config.store.terminal.identification] ?? {}
+        }
+        return envByIdentification[this.config.store.terminal.identification] ?? {}
     }
 }

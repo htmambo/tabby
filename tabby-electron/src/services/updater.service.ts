@@ -62,8 +62,7 @@ export class ElectronUpdaterService extends UpdaterService {
     async check (): Promise<boolean> {
         if (this.electronUpdaterAvailable) {
             return new Promise((resolve, reject) => {
-                // eslint-disable-next-line @typescript-eslint/init-declarations, prefer-const
-                let cancel
+                let cancel: () => void = () => {}
                 const onNoUpdate = () => {
                     cancel()
                     resolve(false)
@@ -72,7 +71,7 @@ export class ElectronUpdaterService extends UpdaterService {
                     cancel()
                     resolve(this.downloaded)
                 }
-                const onError = (err) => {
+                const onError = (err: unknown) => {
                     cancel()
                     reject(err)
                 }

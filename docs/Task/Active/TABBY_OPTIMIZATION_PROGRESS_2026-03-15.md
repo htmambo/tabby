@@ -913,6 +913,20 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-settings/tsconfig.json`
 - `tabby-settings/types/legacy-modules.d.ts`
 
+### 3.70 tabby-electron noImplicitAny 阶段落地
+
+为 `tabby-electron` 启用 `noImplicitAny`，补齐主进程桥接、SSH 导入、更新服务与 Windows shell 逻辑的显式类型，并新增模块声明覆盖缺失依赖类型，保证 Electron 插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-electron/tsconfig.json`
+- `tabby-electron/types/legacy-modules.d.ts`
+- `tabby-electron/src/pty.ts`
+- `tabby-electron/src/services/hostApp.service.ts`
+- `tabby-electron/src/services/updater.service.ts`
+- `tabby-electron/src/shells/windowsBase.ts`
+- `tabby-electron/src/sshImporters.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1540,6 +1554,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-settings` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-electron` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-electron/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-electron` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
