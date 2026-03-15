@@ -13,7 +13,7 @@ function patchZoneAwareRequestAnimationFrame (): void {
     if (!zoneSymbol) {
         return
     }
-    const windowAny = window as Window & Record<string, unknown>
+    const windowAny = window as unknown as Record<string, unknown>
     const zoneRequestAnimationFrame = windowAny[zoneSymbol]
     if (typeof zoneRequestAnimationFrame === 'function') {
         window.requestAnimationFrame = zoneRequestAnimationFrame as typeof window.requestAnimationFrame

@@ -1035,6 +1035,14 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-core/src/services/config.service.ts`
 - `tabby-serial/src/services/serial.service.ts`
 
+### 3.82 打包类型错误修复（window 类型断言）
+
+修正 `app/src/app.module.ts` 中的 `window` 类型断言，避免 TypeScript 在打包时提示类型不兼容。
+
+涉及文件：
+
+- `app/src/app.module.ts`
+
 ---
 
 ## 4. 关键文件索引
