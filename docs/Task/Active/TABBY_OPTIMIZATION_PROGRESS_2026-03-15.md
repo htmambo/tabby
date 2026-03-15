@@ -1022,6 +1022,19 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-core/src/utils.ts`
 - `tabby-electron/src/sftpContextMenu.ts`
 
+### 3.81 localStorage 读写容错收敛（tab recovery / serial）
+
+在易受配额/权限影响的本地存储读写处加入容错处理，避免因 localStorage 异常导致恢复/连接流程中断：
+
+- tab 恢复状态持久化与读取增加 try/catch，并在解析失败时清理坏数据
+- 串口快速连接记录与配置重置的 localStorage 写入/删除加入容错
+
+涉及文件：
+
+- `tabby-core/src/services/tabRecovery.service.ts`
+- `tabby-core/src/services/config.service.ts`
+- `tabby-serial/src/services/serial.service.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1741,6 +1754,18 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 
 - `tabby-core` 类型检查通过（未新增 TypeScript 错误）
 - `tabby-electron` 类型检查通过（未新增 TypeScript 错误）
+
+在加入 localStorage 容错后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-core/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-serial/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-core` 类型检查通过（未新增 TypeScript 错误）
+- `tabby-serial` 类型检查通过（未新增 TypeScript 错误）
 
 ### 5.2 启动冒烟
 

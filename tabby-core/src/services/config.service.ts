@@ -398,7 +398,13 @@ export class ConfigService {
             }
             delete config.ssh?.connections
             delete config.serial?.connections
-            delete window.localStorage.lastSerialConnection
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    localStorage.removeItem('lastSerialConnection')
+                } catch (error) {
+                    console.warn('Failed to clear last serial connection', error)
+                }
+            }
             config.version = 3
         }
         if (config.version < 4) {

@@ -62,7 +62,14 @@ export class TabRecoveryService {
             serializedTabs.push(token)
         }
 
-        window.localStorage.tabsRecovery = JSON.stringify(serializedTabs)
+        if (typeof localStorage === 'undefined') {
+            return
+        }
+        try {
+            localStorage.setItem('tabsRecovery', JSON.stringify(serializedTabs))
+        } catch (error) {
+            this.logger.warn('Failed to persist tab recovery state', error)
+        }
     }
 
     async getFullRecoveryToken (tab: BaseTabComponent, options?: GetRecoveryTokenOptions): Promise<RecoveryToken|null> {
@@ -103,11 +110,27 @@ export class TabRecoveryService {
     }
 
     async recoverTabs (): Promise<RecoveredTabsState> {
-        if (window.localStorage.tabsRecovery) {
+        if (typeof localStorage === 'undefined') {
+            return { tabs: [], activeTabIndex: null, entries: [] }
+        }
+        const rawState = localStorage.getItem('tabsRecovery')
+        if (rawState) {
             const entries: RecoveredTabEntry[] = []
             let activeTabIndex: number|null = null
-            const savedState = JSON.parse(window.localStorage.tabsRecovery)
-            const savedTabs = Array.isArray(savedState) ? savedState : savedState?.tabs ?? []
+            let savedState: unknown
+            try {
+                savedState = JSON.parse(rawState)
+            } catch (error) {
+                this.logger.warn('Failed to parse tab recovery state', error)
+                localStorage.removeItem('tabsRecovery')
+                return { tabs: [], activeTabIndex: null, entries: [] }
+            }
+            const savedStateObject = typeof savedState === 'object' && savedState !== null
+                ? (savedState as { tabs?: unknown })
+                : null
+            const savedTabs = Array.isArray(savedState)
+                ? savedState
+                : Array.isArray(savedStateObject?.tabs) ? savedStateObject?.tabs : []
             for (const token of savedTabs) {
                 const tab = await this.recoverTab(token)
                 if (!tab) {
