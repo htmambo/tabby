@@ -1,0 +1,10 @@
+extends:
+  - ./.eslintrc.yml
+
+overrides:
+  - files:
+    - 'app/src/**/*.ts'
+    - 'tabby-core/src/**/*.ts'
+    rules:
+      '@typescript-eslint/no-floating-promises': error
+      '@typescript-eslint/require-await': error

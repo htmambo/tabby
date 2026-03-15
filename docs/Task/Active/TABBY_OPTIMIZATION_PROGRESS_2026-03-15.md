@@ -1082,6 +1082,16 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `app/tsconfig.json`
 - `app/src/plugins.ts`
 
+### 3.85 ESLint 规则渐进恢复（progressive lint）
+
+新增 progressive lint 配置与脚本，仅对 `app/src` 与 `tabby-core/src` 的变更文件提升 `no-floating-promises` / `require-await` 为 error，避免一次性全量收紧导致阻塞，同时为后续逐步恢复提供执行入口。
+
+涉及文件：
+
+- `.eslintrc.progressive.yml`
+- `scripts/lint-progressive.mjs`
+- `package.json`
+
 ---
 
 ## 4. 关键文件索引

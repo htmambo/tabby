@@ -122,6 +122,7 @@
     "prod": "cross-env TABBY_DEV=1 electron app",
     "docs": "node scripts/build-docs.mjs",
     "lint": "eslint --ext ts */src */lib",
+    "lint:progressive": "node scripts/lint-progressive.mjs",
     "deps:check": "node scripts/deps-check.mjs",
     "deps:audit": "node scripts/deps-audit.mjs",
     "deps:update": "node scripts/deps-update.mjs",
