@@ -8,24 +8,24 @@ export class ColorSchemes extends TerminalColorSchemeProvider {
     async getSchemes (): Promise<TerminalColorScheme[]> {
         const schemes: TerminalColorScheme[] = []
 
-        schemeContents.keys().filter(x => !x.startsWith('./')).forEach(schemeFile => {
+        schemeContents.keys().filter((x: string) => !x.startsWith('./')).forEach((schemeFile: string) => {
             const lines = (schemeContents(schemeFile).default as string).split('\n')
 
             // process #define variables
-            const variables: any = {}
+            const variables: Record<string, string> = {}
             lines
-                .filter(x => x.startsWith('#define'))
-                .map(x => x.split(' ').map(v => v.trim()))
-                .forEach(([_, variableName, variableValue]) => {
+                .filter((x: string) => x.startsWith('#define'))
+                .map((x: string) => x.split(' ').map(v => v.trim()))
+                .forEach(([_ignored, variableName, variableValue]: string[]) => {
                     variables[variableName] = variableValue
                 })
 
-            const values: any = {}
+            const values: Record<string, string> = {}
             lines
-                .filter(x => x.startsWith('*.'))
-                .map(x => x.substring(2))
-                .map(x => x.split(':').map(v => v.trim()))
-                .forEach(([key, value]) => {
+                .filter((x: string) => x.startsWith('*.'))
+                .map((x: string) => x.substring(2))
+                .map((x: string) => x.split(':').map(v => v.trim()))
+                .forEach(([key, value]: string[]) => {
                     values[key] = variables[value] ? variables[value] : value
                 })
 

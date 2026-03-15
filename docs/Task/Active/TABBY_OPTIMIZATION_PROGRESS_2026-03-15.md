@@ -947,6 +947,16 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-linkifier/types/legacy-modules.d.ts`
 - `tabby-linkifier/src/decorator.ts`
 
+### 3.73 tabby-community-color-schemes noImplicitAny 阶段落地
+
+为 `tabby-community-color-schemes` 启用 `noImplicitAny`，补齐配色解析逻辑的显式类型，并新增模块声明覆盖缺失依赖类型，保证社区配色插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-community-color-schemes/tsconfig.json`
+- `tabby-community-color-schemes/types/legacy-modules.d.ts`
+- `tabby-community-color-schemes/src/colorSchemes.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1604,6 +1614,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-linkifier` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-community-color-schemes` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-community-color-schemes/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-community-color-schemes` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
