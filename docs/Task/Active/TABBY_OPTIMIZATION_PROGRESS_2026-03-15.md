@@ -977,7 +977,15 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-ai-assistant/src/services/chat/chat-history.service.ts`
 - `tabby-ai-assistant/src/services/core/ai-assistant.service.ts`
 
-### 3.76 tabby-uac（非 TypeScript 项目）
+### 3.76 根 tsconfig noImplicitAny 评估与回退
+
+尝试在根 `tsconfig.json` 启用 `noImplicitAny`，触发渲染端、主进程联动与内建插件/测试的广泛类型报错（约 1600+ 处）。该范围已超出本轮“分插件渐进式严格化”的目标，决定回退为 `false`，保留已完成的主进程与各插件 `noImplicitAny` 阶段成果，并将根级严格化改为后续独立阶段推进。
+
+涉及文件：
+
+- `tsconfig.json`
+
+### 3.77 tabby-uac（非 TypeScript 项目）
 
 `tabby-uac` 为 C# 工程（无 tsconfig），不在 TypeScript 严格化阶段范围内，暂不处理。
 
