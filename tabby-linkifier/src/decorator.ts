@@ -21,7 +21,7 @@ export class LinkHighlighterDecorator extends TerminalDecorator {
         }
 
         tab.frontend.xterm.options.linkHandler = {
-            activate: (event, uri) => {
+            activate: (event: MouseEvent, uri: string) => {
                 if (!this.willHandleEvent(event)) {
                     return
                 }
@@ -29,7 +29,7 @@ export class LinkHighlighterDecorator extends TerminalDecorator {
             },
         }
 
-        const openLink = async uri => {
+        const openLink = async (uri: string) => {
             for (const handler of this.handlers) {
                 if (!handler.fullMatchRegex.test(uri)) {
                     continue
@@ -53,7 +53,7 @@ export class LinkHighlighterDecorator extends TerminalDecorator {
         }
 
         const addon = new WebLinksAddon(
-            async (event, uri) => {
+            async (event: MouseEvent, uri: string) => {
                 if (!this.willHandleEvent(event)) {
                     return
                 }
@@ -69,6 +69,9 @@ export class LinkHighlighterDecorator extends TerminalDecorator {
 
     private willHandleEvent (event: MouseEvent) {
         const modifier = this.config.store.clickableLinks.modifier
-        return !modifier || event[modifier]
+        if (!modifier) {
+            return true
+        }
+        return Boolean((event as MouseEvent & Record<string, boolean>)[modifier])
     }
 }

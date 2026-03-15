@@ -937,6 +937,16 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-plugin-manager/types/legacy-modules.d.ts`
 - `tabby-plugin-manager/src/components/pluginsSettingsTab.component.ts`
 
+### 3.72 tabby-linkifier noImplicitAny 阶段落地
+
+为 `tabby-linkifier` 启用 `noImplicitAny`，补齐链接处理回调与事件访问的显式类型，并新增模块声明覆盖缺失依赖类型，保证链接高亮插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-linkifier/tsconfig.json`
+- `tabby-linkifier/types/legacy-modules.d.ts`
+- `tabby-linkifier/src/decorator.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1584,6 +1594,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-plugin-manager` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-linkifier` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-linkifier/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-linkifier` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
