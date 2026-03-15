@@ -194,7 +194,7 @@
 #### 任务 3.1：TypeScript 严格化 - 阶段 1 ⏳
 **优先级**: P1
 **预计工作量**: 1 周
-**状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal、tabby-ssh、tabby-local、tabby-serial、tabby-telnet 已开启 noImplicitAny）
+**状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal、tabby-ssh、tabby-local、tabby-serial、tabby-telnet、tabby-settings 已开启 noImplicitAny）
 
 **具体改动**：
 1. 启用 noImplicitAny

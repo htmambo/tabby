@@ -904,6 +904,15 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-telnet/tsconfig.json`
 - `tabby-telnet/types/legacy-modules.d.ts`
 
+### 3.69 tabby-settings noImplicitAny 阶段落地
+
+为 `tabby-settings` 启用 `noImplicitAny`，新增缺失模块声明以覆盖依赖链路中的类型缺口，保证设置插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-settings/tsconfig.json`
+- `tabby-settings/types/legacy-modules.d.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1521,6 +1530,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-telnet` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-settings` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-settings/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-settings` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
