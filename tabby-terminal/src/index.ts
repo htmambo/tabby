@@ -5,7 +5,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 import { NgxColorsModule } from 'ngx-colors'
 
-import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, TabContextMenuItemProvider, CLIHandler } from 'tabby-core'
+import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, TabContextMenuItemProvider, CLIHandler, TabbyPluginManifest } from 'tabby-core'
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { AppearanceSettingsTabComponent } from './components/appearanceSettingsTab.component'
@@ -36,6 +36,26 @@ import { XTermFrontend, XTermWebGLFrontend } from './frontends/xtermFrontend'
 import { TerminalCLIHandler } from './cli'
 import { DefaultColorSchemes } from './colorSchemes'
 
+const PROVIDERS = [
+    { provide: SettingsTabProvider, useClass: AppearanceSettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: ColorSchemeSettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: TerminalSettingsTabProvider, multi: true },
+
+    { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
+    { provide: HotkeyProvider, useClass: TerminalHotkeyProvider, multi: true },
+    { provide: TerminalDecorator, useClass: ZModemDecorator, multi: true },
+    { provide: TerminalDecorator, useClass: DebugDecorator, multi: true },
+
+    { provide: TabContextMenuItemProvider, useClass: CopyPasteContextMenu, multi: true },
+    { provide: TabContextMenuItemProvider, useClass: MiscContextMenu, multi: true },
+    { provide: TabContextMenuItemProvider, useClass: LegacyContextMenu, multi: true },
+    { provide: TabContextMenuItemProvider, useClass: ReconnectContextMenu, multi: true },
+    { provide: TabContextMenuItemProvider, useClass: SaveAsProfileContextMenu, multi: true },
+
+    { provide: CLIHandler, useClass: TerminalCLIHandler, multi: true },
+    { provide: TerminalColorSchemeProvider, useClass: DefaultColorSchemes, multi: true },
+]
+
 /** @hidden */
 @NgModule({
     imports: [
@@ -46,25 +66,7 @@ import { DefaultColorSchemes } from './colorSchemes'
         TabbyCorePlugin,
         NgxColorsModule,
     ],
-    providers: [
-        { provide: SettingsTabProvider, useClass: AppearanceSettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: ColorSchemeSettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: TerminalSettingsTabProvider, multi: true },
-
-        { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
-        { provide: HotkeyProvider, useClass: TerminalHotkeyProvider, multi: true },
-        { provide: TerminalDecorator, useClass: ZModemDecorator, multi: true },
-        { provide: TerminalDecorator, useClass: DebugDecorator, multi: true },
-
-        { provide: TabContextMenuItemProvider, useClass: CopyPasteContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: MiscContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: LegacyContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: ReconnectContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: SaveAsProfileContextMenu, multi: true },
-
-        { provide: CLIHandler, useClass: TerminalCLIHandler, multi: true },
-        { provide: TerminalColorSchemeProvider, useClass: DefaultColorSchemes, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         ColorPickerComponent,
         ColorSchemePreviewComponent,
@@ -90,6 +92,11 @@ import { DefaultColorSchemes } from './colorSchemes'
     ],
 })
 export default class TerminalModule { } // eslint-disable-line @typescript-eslint/no-extraneous-class
+
+export const manifest: TabbyPluginManifest = {
+    name: 'terminal',
+    providers: PROVIDERS,
+}
 
 export { TerminalDecorator, TerminalContextMenuItemProvider, TerminalColorSchemeProvider }
 export { Frontend, XTermFrontend, XTermWebGLFrontend }

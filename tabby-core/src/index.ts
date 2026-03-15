@@ -50,6 +50,7 @@ import { AppHotkeyProvider } from './hotkeys'
 import { TaskCompletionContextMenu, CommonOptionsContextMenu, TabManagementContextMenu, ProfilesContextMenu } from './tabContextMenu'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { CoreCommandProvider } from './commands'
+import { TabbyPluginManifest } from './api/plugin-manifest'
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
@@ -77,6 +78,11 @@ const PROVIDERS = [
         useValue: LocaleService.allLanguages.map(x => x.code),
     },
 ]
+
+export const manifest: TabbyPluginManifest = {
+    name: 'core',
+    providers: PROVIDERS,
+}
 
 /** @hidden */
 @NgModule({

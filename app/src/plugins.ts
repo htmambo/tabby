@@ -17,6 +17,7 @@ import * as ngxToastr from 'ngx-toastr'
 import * as rxjsModule from 'rxjs'
 import * as rxjsOperators from 'rxjs/operators'
 import * as zoneJs from 'zone.js'
+import { TabbyPluginManifest } from '../../tabby-core/src/api/plugin-manifest'
 import { getRuntimeCwd, getRuntimeEnv, getRuntimeResourcesPath, setRuntimeEnv } from '../../tabby-core/src/api/rendererRuntime'
 import { PluginInfo } from '../../tabby-core/src/api/mainProcess'
 import { PLUGIN_BLACKLIST } from './pluginBlacklist'
@@ -143,6 +144,19 @@ nodeModule.prototype.require = (function (this: unknown, query: string) {
 }) as NodeJS.Require
 
 export type ProgressCallback = (current: number, total: number) => void
+
+function normalizePluginManifest (manifest: TabbyPluginManifest | undefined, pluginName: string): TabbyPluginManifest | undefined {
+    if (!manifest) {
+        return undefined
+    }
+    if (!manifest.name) {
+        return {
+            ...manifest,
+            name: pluginName,
+        }
+    }
+    return manifest
+}
 
 function delay (ms: number): Promise<void> {
     return new Promise(resolve => {
@@ -481,6 +495,8 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 }
                 console.info(`Loading ${foundPlugin.name}: ${resolvedPath}`)
                 const packageModule = nodeRequire(foundPlugin.path)
+                const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
+                const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
                 if (foundPlugin.packageName.startsWith('tabby-')) {
                     cachedBuiltinModules[foundPlugin.packageName.replace('tabby-', 'terminus-')] = packageModule
                 }
@@ -491,11 +507,15 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 const pluginModule = pluginRootModule.forRoot ? pluginRootModule.forRoot() : pluginRootModule
                 pluginModule.pluginName = foundPlugin.name
                 pluginModule.bootstrap = packageModule.bootstrap
+                if (pluginManifest) {
+                    pluginModule.pluginManifest = pluginManifest
+                }
                 console.info(`Loaded ${foundPlugin.name}:`, {
                     hasDefaultExport: !!packageModule.default,
                     hasBootstrapExport: !!packageModule.bootstrap,
                     pluginName: pluginModule.pluginName,
                     moduleName: pluginModule?.constructor?.name,
+                    hasManifest: !!pluginManifest,
                 })
                 plugins.push(pluginModule)
             } catch (error) {

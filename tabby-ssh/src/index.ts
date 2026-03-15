@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 import { NgxFilesizeModule } from 'ngx-filesize'
-import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, TabContextMenuItemProvider, ProfileProvider, SFTPTabOpener } from 'tabby-core'
+import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, TabContextMenuItemProvider, ProfileProvider, SFTPTabOpener, TabbyPluginManifest } from 'tabby-core'
 import { SettingsTabProvider } from 'tabby-settings'
 import TabbyTerminalModule from 'tabby-terminal'
 
@@ -30,6 +30,17 @@ import { CommonSFTPContextMenu } from './sftpContextMenu'
 import { SFTPCreateDirectoryModalComponent } from './components/sftpCreateDirectoryModal.component'
 import { SFTPTabLauncherService } from './services/sftpTabLauncher.service'
 
+const PROVIDERS = [
+    { provide: ConfigProvider, useClass: SSHConfigProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: SSHSettingsTabProvider, multi: true },
+    { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
+    { provide: HotkeyProvider, useClass: SSHHotkeyProvider, multi: true },
+    { provide: TabContextMenuItemProvider, useClass: SFTPContextMenu, multi: true },
+    { provide: ProfileProvider, useExisting: SSHProfilesService, multi: true },
+    { provide: SFTPTabOpener, useExisting: SFTPTabLauncherService },
+    { provide: SFTPContextMenuItemProvider, useClass: CommonSFTPContextMenu, multi: true },
+]
+
 /** @hidden */
 @NgModule({
     imports: [
@@ -41,16 +52,7 @@ import { SFTPTabLauncherService } from './services/sftpTabLauncher.service'
         TabbyCoreModule,
         TabbyTerminalModule,
     ],
-    providers: [
-        { provide: ConfigProvider, useClass: SSHConfigProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: SSHSettingsTabProvider, multi: true },
-        { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
-        { provide: HotkeyProvider, useClass: SSHHotkeyProvider, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: SFTPContextMenu, multi: true },
-        { provide: ProfileProvider, useExisting: SSHProfilesService, multi: true },
-        { provide: SFTPTabOpener, useExisting: SFTPTabLauncherService },
-        { provide: SFTPContextMenuItemProvider, useClass: CommonSFTPContextMenu, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         SSHProfileSettingsComponent,
         SFTPDeleteModalComponent,
@@ -67,6 +69,11 @@ import { SFTPTabLauncherService } from './services/sftpTabLauncher.service'
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export default class SSHModule { }
+
+export const manifest: TabbyPluginManifest = {
+    name: 'ssh',
+    providers: PROVIDERS,
+}
 
 export * from './api'
 export { SFTPFile, SFTPSession } from './session/sftp'

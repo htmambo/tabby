@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core'
-import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService, WIN_BUILD_FLUENT_BG_SUPPORTED, isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider } from 'tabby-core'
+import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService, WIN_BUILD_FLUENT_BG_SUPPORTED, isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider, TabbyPluginManifest } from 'tabby-core'
 import { TerminalColorSchemeProvider, TerminalDecorator } from 'tabby-terminal'
 import { SFTPContextMenuItemProvider, SSHProfileImporter, AutoPrivateKeyLocator } from 'tabby-ssh'
 import { PTYInterface, ShellProvider, UACService } from 'tabby-local'
@@ -39,48 +39,50 @@ import { WindowsStockShellsProvider } from './shells/windowsStock'
 import { WSLShellProvider } from './shells/wsl'
 import { VSDevToolsProvider } from './shells/vs'
 
+const PROVIDERS = [
+    { provide: TerminalColorSchemeProvider, useClass: HyperColorSchemes, multi: true },
+    { provide: PlatformService, useExisting: ElectronPlatformService },
+    { provide: HostWindowService, useExisting: ElectronHostWindow },
+    { provide: HostAppService, useExisting: ElectronHostAppService },
+    { provide: LogService, useClass: ElectronLogService },
+    { provide: UpdaterService, useClass: ElectronUpdaterService },
+    { provide: DockingService, useClass: ElectronDockingService },
+    { provide: HotkeyProvider, useClass: ElectronHotkeyProvider, multi: true },
+    { provide: ConfigProvider, useClass: ElectronConfigProvider, multi: true },
+    { provide: FileProvider, useClass: ElectronFileProvider, multi: true },
+    { provide: SFTPContextMenuItemProvider, useClass: EditSFTPContextMenu, multi: true },
+    { provide: SSHProfileImporter, useExisting: OpenSSHImporter, multi: true },
+    { provide: SSHProfileImporter, useExisting: StaticFileImporter, multi: true },
+    { provide: AutoPrivateKeyLocator, useExisting: PrivateKeyLocator, multi: true },
+
+    { provide: ShellProvider, useClass: WindowsDefaultShellProvider, multi: true },
+    { provide: ShellProvider, useClass: MacOSDefaultShellProvider, multi: true },
+    { provide: ShellProvider, useClass: LinuxDefaultShellProvider, multi: true },
+    { provide: ShellProvider, useClass: WindowsStockShellsProvider, multi: true },
+    { provide: ShellProvider, useClass: PowerShellCoreShellProvider, multi: true },
+    { provide: ShellProvider, useClass: CmderShellProvider, multi: true },
+    { provide: ShellProvider, useClass: Cygwin32ShellProvider, multi: true },
+    { provide: ShellProvider, useClass: Cygwin64ShellProvider, multi: true },
+    { provide: ShellProvider, useClass: GitBashShellProvider, multi: true },
+    { provide: ShellProvider, useClass: POSIXShellsProvider, multi: true },
+    { provide: ShellProvider, useClass: MSYS2ShellProvider, multi: true },
+    { provide: ShellProvider, useClass: WSLShellProvider, multi: true },
+    { provide: ShellProvider, useClass: VSDevToolsProvider, multi: true },
+
+    { provide: UACService, useClass: ElectronUACService },
+
+    { provide: PTYInterface, useClass: ElectronPTYInterface },
+
+    { provide: TerminalDecorator, useClass: PathDropDecorator, multi: true },
+
+    // For WindowsDefaultShellProvider
+    PowerShellCoreShellProvider,
+    WSLShellProvider,
+    WindowsStockShellsProvider,
+]
+
 @NgModule({
-    providers: [
-        { provide: TerminalColorSchemeProvider, useClass: HyperColorSchemes, multi: true },
-        { provide: PlatformService, useExisting: ElectronPlatformService },
-        { provide: HostWindowService, useExisting: ElectronHostWindow },
-        { provide: HostAppService, useExisting: ElectronHostAppService },
-        { provide: LogService, useClass: ElectronLogService },
-        { provide: UpdaterService, useClass: ElectronUpdaterService },
-        { provide: DockingService, useClass: ElectronDockingService },
-        { provide: HotkeyProvider, useClass: ElectronHotkeyProvider, multi: true },
-        { provide: ConfigProvider, useClass: ElectronConfigProvider, multi: true },
-        { provide: FileProvider, useClass: ElectronFileProvider, multi: true },
-        { provide: SFTPContextMenuItemProvider, useClass: EditSFTPContextMenu, multi: true },
-        { provide: SSHProfileImporter, useExisting: OpenSSHImporter, multi: true },
-        { provide: SSHProfileImporter, useExisting: StaticFileImporter, multi: true },
-        { provide: AutoPrivateKeyLocator, useExisting: PrivateKeyLocator, multi: true },
-
-        { provide: ShellProvider, useClass: WindowsDefaultShellProvider, multi: true },
-        { provide: ShellProvider, useClass: MacOSDefaultShellProvider, multi: true },
-        { provide: ShellProvider, useClass: LinuxDefaultShellProvider, multi: true },
-        { provide: ShellProvider, useClass: WindowsStockShellsProvider, multi: true },
-        { provide: ShellProvider, useClass: PowerShellCoreShellProvider, multi: true },
-        { provide: ShellProvider, useClass: CmderShellProvider, multi: true },
-        { provide: ShellProvider, useClass: Cygwin32ShellProvider, multi: true },
-        { provide: ShellProvider, useClass: Cygwin64ShellProvider, multi: true },
-        { provide: ShellProvider, useClass: GitBashShellProvider, multi: true },
-        { provide: ShellProvider, useClass: POSIXShellsProvider, multi: true },
-        { provide: ShellProvider, useClass: MSYS2ShellProvider, multi: true },
-        { provide: ShellProvider, useClass: WSLShellProvider, multi: true },
-        { provide: ShellProvider, useClass: VSDevToolsProvider, multi: true },
-
-        { provide: UACService, useClass: ElectronUACService },
-
-        { provide: PTYInterface, useClass: ElectronPTYInterface },
-
-        { provide: TerminalDecorator, useClass: PathDropDecorator, multi: true },
-
-        // For WindowsDefaultShellProvider
-        PowerShellCoreShellProvider,
-        WSLShellProvider,
-        WindowsStockShellsProvider,
-    ],
+    providers: PROVIDERS,
 })
 export default class ElectronModule {
     constructor (
@@ -192,6 +194,11 @@ export default class ElectronModule {
 
         this.electron.ipcRenderer.send('window-set-window-controls-color', this.config.store.terminal.colorScheme)
     }
+}
+
+export const manifest: TabbyPluginManifest = {
+    name: 'electron',
+    providers: PROVIDERS,
 }
 
 export { ElectronHostWindow, ElectronHostAppService, ElectronService }

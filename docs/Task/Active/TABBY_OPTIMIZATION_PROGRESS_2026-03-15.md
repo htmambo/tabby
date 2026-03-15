@@ -1043,6 +1043,36 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 
 - `app/src/app.module.ts`
 
+### 3.83 插件清单协议与加载链路收口
+
+新增插件清单协议与 provider 显式声明，移除运行时对 Angular 私有 `ɵ` 注入元数据的依赖，统一由插件自带的 manifest 提供 provider 列表：
+
+- 新增 `tabby-core` 插件清单类型与 provider 解析工具
+- 所有内置插件导出 `manifest`（复用各自 providers 列表）
+- 插件加载器读取 `manifest` 并挂载到模块实例
+- `ConfigService` 使用 manifest providers 构建服务缓存，不再访问 `ɵ` 注入数据
+
+涉及文件：
+
+- `tabby-core/src/api/plugin-manifest.ts`
+- `tabby-core/src/api/index.ts`
+- `tabby-core/src/api/rendererState.ts`
+- `tabby-core/src/services/config.service.ts`
+- `app/src/plugins.ts`
+- `tabby-core/src/index.ts`
+- `tabby-terminal/src/index.ts`
+- `tabby-settings/src/index.ts`
+- `tabby-ssh/src/index.ts`
+- `tabby-local/src/index.ts`
+- `tabby-serial/src/index.ts`
+- `tabby-telnet/src/index.ts`
+- `tabby-electron/src/index.ts`
+- `tabby-plugin-manager/src/index.ts`
+- `tabby-linkifier/src/index.ts`
+- `tabby-community-color-schemes/src/index.ts`
+- `tabby-auto-sudo-password/src/index.ts`
+- `tabby-ai-assistant/src/index.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1775,6 +1805,28 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 - `tabby-core` 类型检查通过（未新增 TypeScript 错误）
 - `tabby-serial` 类型检查通过（未新增 TypeScript 错误）
 
+在插件清单协议落地后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-core/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-terminal/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-settings/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-ssh/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-local/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-serial/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-telnet/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-electron/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-plugin-manager/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-linkifier/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-community-color-schemes/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-auto-sudo-password/tsconfig.json --noEmit
+./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.json --noEmit
+```
+
+结果：
+
+- 以上模块类型检查全部通过（未新增 TypeScript 错误）
+
 ### 5.2 启动冒烟
 
 已多轮通过：
@@ -1910,14 +1962,14 @@ timeout 18s env TABBY_DEV=1 ./node_modules/.bin/electron app -d --no-sandbox --d
 
 ### 6.3 插件主加载链仍为高风险兼容区
 
-`app/src/plugins.ts` 里的以下逻辑仍属于高风险核心链路：
+已移除对 Angular 私有 `ɵ` 注入元数据的读取，但 `app/src/plugins.ts` 里的以下逻辑仍属于高风险核心链路：
 
 - `nodeRequire('module')`
 - `nodeRequire.resolve(...)`
 - `nodeRequire(foundPlugin.path)`
 - `Module.prototype.require` 补丁
 
-这部分后续如果要继续改，必须以“插件清单协议 / 加载器重构”作为独立任务推进，而不是继续做零散清理。
+这部分后续如果要继续改，必须继续以“插件清单协议 / 加载器重构”的分阶段方式推进，而不是继续做零散清理。
 
 ### 6.4 环境级与依赖级告警仍存在
 

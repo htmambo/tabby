@@ -21,6 +21,7 @@ export { getNativeSecret, setNativeSecret, deleteNativeSecret } from './nativeSe
 export { ProfileProvider, ConnectableProfileProvider, QuickConnectProfileProvider, Profile, ConnectableProfile, PartialProfile, ProfileSettingsComponent, ProfileGroup, PartialProfileGroup } from './profileProvider'
 export { SettingsTabOpener } from './settingsTabOpener'
 export { SFTPTabOpener } from './sftpTabOpener'
+export { TabbyPluginManifest, getManifestProviderClasses } from './plugin-manifest'
 export { TabbyRuntimeBridge, getRuntimePlatform, getRuntimeArch, getRuntimeOSRelease, getRuntimeVersion, getRuntimeReleaseName, getRuntimePid, getRuntimeArgv0, getRuntimeResourcesPath, getRuntimeCwd, getRuntimeEnv, resolveRuntimeEnv, listRuntimeEnvKeys, getRuntimeEnvObject, hasRuntimeEnv, setRuntimeEnv, setRuntimePromiseAPIEnabled, isRuntimeDev } from './rendererRuntime'
 export { PromptModalComponent } from '../components/promptModal.component'
 export * from './commands'

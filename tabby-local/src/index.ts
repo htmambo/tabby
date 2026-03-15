@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 
-import TabbyCorePlugin, { HostAppService, ToolbarButtonProvider, TabRecoveryProvider, ConfigProvider, HotkeysService, HotkeyProvider, TabContextMenuItemProvider, CLIHandler, ProfileProvider } from 'tabby-core'
+import TabbyCorePlugin, { HostAppService, ToolbarButtonProvider, TabRecoveryProvider, ConfigProvider, HotkeysService, HotkeyProvider, TabContextMenuItemProvider, CLIHandler, ProfileProvider, TabbyPluginManifest } from 'tabby-core'
 import TabbyTerminalModule from 'tabby-terminal'
 import { SettingsTabProvider } from 'tabby-settings'
 
@@ -26,6 +26,23 @@ import { NewTabContextMenu } from './tabContextMenu'
 import { AutoOpenTabCLIHandler, OpenPathCLIHandler, TerminalCLIHandler } from './cli'
 import { LocalProfilesService } from './profiles'
 
+const PROVIDERS = [
+    { provide: SettingsTabProvider, useClass: ShellSettingsTabProvider, multi: true },
+
+    { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
+    { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
+    { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
+    { provide: HotkeyProvider, useClass: LocalTerminalHotkeyProvider, multi: true },
+
+    { provide: ProfileProvider, useClass: LocalProfilesService, multi: true },
+
+    { provide: TabContextMenuItemProvider, useClass: NewTabContextMenu, multi: true },
+
+    { provide: CLIHandler, useClass: TerminalCLIHandler, multi: true },
+    { provide: CLIHandler, useClass: OpenPathCLIHandler, multi: true },
+    { provide: CLIHandler, useClass: AutoOpenTabCLIHandler, multi: true },
+]
+
 /** @hidden */
 @NgModule({
     imports: [
@@ -36,22 +53,7 @@ import { LocalProfilesService } from './profiles'
         TabbyCorePlugin,
         TabbyTerminalModule,
     ],
-    providers: [
-        { provide: SettingsTabProvider, useClass: ShellSettingsTabProvider, multi: true },
-
-        { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
-        { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
-        { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
-        { provide: HotkeyProvider, useClass: LocalTerminalHotkeyProvider, multi: true },
-
-        { provide: ProfileProvider, useClass: LocalProfilesService, multi: true },
-
-        { provide: TabContextMenuItemProvider, useClass: NewTabContextMenu, multi: true },
-
-        { provide: CLIHandler, useClass: TerminalCLIHandler, multi: true },
-        { provide: CLIHandler, useClass: OpenPathCLIHandler, multi: true },
-        { provide: CLIHandler, useClass: AutoOpenTabCLIHandler, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         TerminalTabComponent,
         ShellSettingsTabComponent,
@@ -80,6 +82,11 @@ export default class LocalTerminalModule { // eslint-disable-line @typescript-es
             }
         })
     }
+}
+
+export const manifest: TabbyPluginManifest = {
+    name: 'local',
+    providers: PROVIDERS,
 }
 
 export { TerminalTabComponent }

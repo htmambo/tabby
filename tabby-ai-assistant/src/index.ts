@@ -9,7 +9,7 @@ import { ChatInterfaceOpener } from './api/chatInterfaceOpener'
 import './styles/ai-assistant.scss'
 
 // Tabby modules
-import TabbyCoreModule, { AppService, ConfigService, ToolbarButtonProvider, ConfigProvider, HotkeyProvider, HotkeysService } from 'tabby-core'
+import TabbyCoreModule, { AppService, ConfigService, ToolbarButtonProvider, ConfigProvider, HotkeyProvider, HotkeysService, TabbyPluginManifest } from 'tabby-core'
 import TabbyTerminalModule from 'tabby-terminal'
 import { SettingsTabProvider } from 'tabby-settings'
 
@@ -102,6 +102,73 @@ import { AiSettingsTabProvider } from './providers/tabby/ai-settings-tab.provide
 import { AiConfigProvider } from './providers/tabby/ai-config.provider'
 import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
 
+const PROVIDERS = [
+    // Core Services
+    AiAssistantService,
+    AiProviderManagerService,
+    ConfigProviderService,
+    LoggerService,
+
+    // Network Services
+    ProxyService,
+
+    // AI Providers
+    OpenAiProviderService,
+    AnthropicProviderService,
+    MinimaxProviderService,
+    GlmProviderService,
+    OpenAiCompatibleProviderService,
+    OllamaProviderService,
+    VllmProviderService,
+
+    // Security Services
+    SecurityValidatorService,
+    RiskAssessmentService,
+    PasswordManagerService,
+    ConsentManagerService,
+
+    // Chat Services
+    ChatSessionService,
+    ChatHistoryService,
+    CommandGeneratorService,
+    AiSidebarService,
+    { provide: ChatInterfaceOpener, useExisting: AiSidebarService },
+
+    // Terminal Services
+    TerminalManagerService,
+    AsyncTaskManagerService,
+
+    // Context Engineering Services
+    ContextManager,
+    Compaction,
+    Memory,
+    TokenBudget,
+
+    // Platform Services
+    PlatformDetectionService,
+
+    // Core Services
+    CheckpointManager,
+
+    // Toast Service
+    ToastService,
+
+    // File Storage Service
+    FileStorageService,
+
+    // Enhanced Terminal Services
+    BufferAnalyzerService,
+
+    // MCP Services
+    MCPClientManager,
+
+    // Tabby Integration Providers
+    { provide: ToolbarButtonProvider, useClass: AiToolbarButtonProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: AiSettingsTabProvider, multi: true },
+    { provide: ConfigProvider, useClass: AiConfigProvider, multi: true },
+    { provide: HotkeyProvider, useClass: AiHotkeyProvider, multi: true },
+]
+
 @NgModule({
     imports: [
         CommonModule,
@@ -110,72 +177,7 @@ import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
         TabbyTerminalModule,
         NgbModule,
     ],
-    providers: [
-        // Core Services
-        AiAssistantService,
-        AiProviderManagerService,
-        ConfigProviderService,
-        LoggerService,
-
-        // Network Services
-        ProxyService,
-
-        // AI Providers
-        OpenAiProviderService,
-        AnthropicProviderService,
-        MinimaxProviderService,
-        GlmProviderService,
-        OpenAiCompatibleProviderService,
-        OllamaProviderService,
-        VllmProviderService,
-
-        // Security Services
-        SecurityValidatorService,
-        RiskAssessmentService,
-        PasswordManagerService,
-        ConsentManagerService,
-
-        // Chat Services
-        ChatSessionService,
-        ChatHistoryService,
-        CommandGeneratorService,
-        AiSidebarService,
-        { provide: ChatInterfaceOpener, useExisting: AiSidebarService },
-
-        // Terminal Services
-        TerminalManagerService,
-        AsyncTaskManagerService,
-
-        // Context Engineering Services
-        ContextManager,
-        Compaction,
-        Memory,
-        TokenBudget,
-
-        // Platform Services
-        PlatformDetectionService,
-
-        // Core Services
-        CheckpointManager,
-
-        // Toast Service
-        ToastService,
-
-        // File Storage Service
-        FileStorageService,
-
-        // Enhanced Terminal Services
-        BufferAnalyzerService,
-
-        // MCP Services
-        MCPClientManager,
-
-        // Tabby Integration Providers
-        { provide: ToolbarButtonProvider, useClass: AiToolbarButtonProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: AiSettingsTabProvider, multi: true },
-        { provide: ConfigProvider, useClass: AiConfigProvider, multi: true },
-        { provide: HotkeyProvider, useClass: AiHotkeyProvider, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         // Chat Components
         ChatInterfaceComponent,
@@ -339,6 +341,11 @@ export default class AiAssistantModule implements OnDestroy {
         // 4. 发送消息（自动发送）
         this.sidebarService.sendPresetMessage(prompt, true)
     }
+}
+
+export const manifest: TabbyPluginManifest = {
+    name: 'ai-assistant',
+    providers: PROVIDERS,
 }
 
 export const forRoot = (): typeof AiAssistantModule => {

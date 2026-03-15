@@ -8,7 +8,8 @@ import { TranslateService } from '@ngx-translate/core'
 import { ConfigProvider } from '../api/configProvider'
 import { PlatformService } from '../api/platform'
 import { HostAppService } from '../api/hostApp'
-import { getRendererPluginModules, RendererPluginModule, RendererProviderLike } from '../api/rendererState'
+import { getManifestProviderClasses } from '../api/plugin-manifest'
+import { getRendererPluginModules, RendererPluginModule } from '../api/rendererState'
 import { Vault, VaultService } from './vault.service'
 import { serializeFunction } from '../utils'
 import { PartialProfileGroup, ProfileGroup } from '../api/profileProvider'
@@ -52,18 +53,6 @@ export type ProxifiedConfig<T extends AnyRec> = {
 export type FullyDefined<T> = T extends object
     ? { [K in keyof T]-?: FullyDefined<T[K]> }
     : T
-
-function resolveProviderClass (provider: RendererProviderLike): Function | null {
-    if (typeof provider === 'function') {
-        return provider
-    }
-    if (provider && typeof provider === 'object') {
-        const typedProvider = provider as { useClass?: unknown; useExisting?: unknown }
-        const resolved = typedProvider.useClass ?? typedProvider.useExisting
-        return typeof resolved === 'function' ? resolved : null
-    }
-    return null
-}
 
 /** @hidden */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -292,11 +281,10 @@ export class ConfigService {
             this.servicesCache = {}
             const pluginModules = getRendererPluginModules()
             for (const imp of pluginModules) {
-                const module = (imp.ngModule ?? imp) as RendererPluginModule
-                if (module.ɵinj?.providers) {
-                    this.servicesCache[module.pluginName] = module.ɵinj.providers
-                        .map(resolveProviderClass)
-                        .filter((provider): provider is Function => !!provider)
+                const module = imp as RendererPluginModule
+                const providerClasses = getManifestProviderClasses(module.pluginManifest)
+                if (providerClasses.length) {
+                    this.servicesCache[module.pluginName] = providerClasses
                 }
             }
         }

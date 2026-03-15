@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 import { NgxFilesizeModule } from 'ngx-filesize'
-import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, ProfileProvider } from 'tabby-core'
+import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, ProfileProvider, TabbyPluginManifest } from 'tabby-core'
 import TabbyTerminalModule from 'tabby-terminal'
 
 import { TelnetProfileSettingsComponent } from './components/telnetProfileSettings.component'
@@ -14,6 +14,13 @@ import { TelnetConfigProvider } from './config'
 import { RecoveryProvider } from './recoveryProvider'
 import { TelnetHotkeyProvider } from './hotkeys'
 import { TelnetProfilesService } from './profiles'
+
+const PROVIDERS = [
+    { provide: ConfigProvider, useClass: TelnetConfigProvider, multi: true },
+    { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
+    { provide: HotkeyProvider, useClass: TelnetHotkeyProvider, multi: true },
+    { provide: ProfileProvider, useExisting: TelnetProfilesService, multi: true },
+]
 
 /** @hidden */
 @NgModule({
@@ -26,12 +33,7 @@ import { TelnetProfilesService } from './profiles'
         TabbyCoreModule,
         TabbyTerminalModule,
     ],
-    providers: [
-        { provide: ConfigProvider, useClass: TelnetConfigProvider, multi: true },
-        { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
-        { provide: HotkeyProvider, useClass: TelnetHotkeyProvider, multi: true },
-        { provide: ProfileProvider, useExisting: TelnetProfilesService, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         TelnetProfileSettingsComponent,
         TelnetTabComponent,
@@ -39,3 +41,8 @@ import { TelnetProfilesService } from './profiles'
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export default class TelnetModule { }
+
+export const manifest: TabbyPluginManifest = {
+    name: 'telnet',
+    providers: PROVIDERS,
+}

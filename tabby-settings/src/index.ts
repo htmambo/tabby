@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { InfiniteScrollModule } from 'ngx-infinite-scroll'
 
-import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener } from 'tabby-core'
+import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest } from 'tabby-core'
 
 import { EditProfileModalComponent } from './components/editProfileModal.component'
 import { EditProfileGroupModalComponent } from './components/editProfileGroupModal.component'
@@ -30,6 +30,19 @@ import { SettingsHotkeyProvider } from './hotkeys'
 import { SettingsConfigProvider } from './config'
 import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabProvider, ProfilesSettingsTabProvider, ConfigSyncSettingsTabProvider } from './settings'
 
+const PROVIDERS = [
+    { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
+    { provide: ConfigProvider, useClass: SettingsConfigProvider, multi: true },
+    { provide: HotkeyProvider, useClass: SettingsHotkeyProvider, multi: true },
+    SettingsTabOpenerService,
+    { provide: SettingsTabOpener, useExisting: SettingsTabOpenerService },
+    { provide: SettingsTabProvider, useClass: HotkeySettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: WindowSettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: VaultSettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: ProfilesSettingsTabProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: ConfigSyncSettingsTabProvider, multi: true },
+]
+
 /** @hidden */
 @NgModule({
     imports: [
@@ -39,18 +52,7 @@ import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabP
         TabbyCorePlugin,
         InfiniteScrollModule,
     ],
-    providers: [
-        { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
-        { provide: ConfigProvider, useClass: SettingsConfigProvider, multi: true },
-        { provide: HotkeyProvider, useClass: SettingsHotkeyProvider, multi: true },
-        SettingsTabOpenerService,
-        { provide: SettingsTabOpener, useExisting: SettingsTabOpenerService },
-        { provide: SettingsTabProvider, useClass: HotkeySettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: WindowSettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: VaultSettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: ProfilesSettingsTabProvider, multi: true },
-        { provide: SettingsTabProvider, useClass: ConfigSyncSettingsTabProvider, multi: true },
-    ],
+    providers: PROVIDERS,
     declarations: [
         EditProfileModalComponent,
         EditProfileGroupModalComponent,
@@ -81,6 +83,11 @@ export default class SettingsModule {
             }
         })
     }
+}
+
+export const manifest: TabbyPluginManifest = {
+    name: 'settings',
+    providers: PROVIDERS,
 }
 
 export * from './api'

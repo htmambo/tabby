@@ -1,18 +1,8 @@
-export type RendererProviderLike = {
-    useClass?: unknown
-    useExisting?: unknown
-} | unknown
+import { TabbyPluginManifest } from './plugin-manifest'
 
 export type RendererPluginModule = {
     pluginName: string
-    ngModule?: {
-        ɵinj?: {
-            providers?: RendererProviderLike[]
-        }
-    }
-    ɵinj?: {
-        providers?: RendererProviderLike[]
-    }
+    pluginManifest?: TabbyPluginManifest
 }
 
 export type RendererState = {
