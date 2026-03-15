@@ -966,6 +966,21 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-auto-sudo-password/tsconfig.json`
 - `tabby-auto-sudo-password/types/legacy-modules.d.ts`
 
+### 3.75 tabby-ai-assistant noImplicitAny 阶段落地
+
+为 `tabby-ai-assistant` 启用 `noImplicitAny`，补齐会话导入与流式错误处理的显式类型，并新增模块声明覆盖缺失依赖类型（通过将声明文件纳入 tsconfig files），保证 AI Assistant 插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-ai-assistant/tsconfig.json`
+- `tabby-ai-assistant/types/legacy-modules.d.ts`
+- `tabby-ai-assistant/src/services/chat/chat-history.service.ts`
+- `tabby-ai-assistant/src/services/core/ai-assistant.service.ts`
+
+### 3.76 tabby-uac（非 TypeScript 项目）
+
+`tabby-uac` 为 C# 工程（无 tsconfig），不在 TypeScript 严格化阶段范围内，暂不处理。
+
 ---
 
 ## 4. 关键文件索引
@@ -1643,6 +1658,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-auto-sudo-password` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-ai-assistant` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-ai-assistant` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

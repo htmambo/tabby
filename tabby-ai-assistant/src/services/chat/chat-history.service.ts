@@ -364,7 +364,7 @@ export class ChatHistoryService {
                 this.saveToStorage(trimmedSessions)
             } else if (importData.sessions) {
                 // 批量导入会话
-                const importedSessions = importData.sessions.map((s: any) => ({
+                const importedSessions: SavedSession[] = importData.sessions.map((s: SavedSession) => ({
                     ...s,
                     createdAt: new Date(s.createdAt),
                     updatedAt: new Date(s.updatedAt),
@@ -373,7 +373,7 @@ export class ChatHistoryService {
 
                 // 合并现有会话，避免重复
                 const mergedSessions = [...sessions]
-                importedSessions.forEach(imported => {
+                importedSessions.forEach((imported: SavedSession) => {
                     const existingIndex = mergedSessions.findIndex(s => s.sessionId === imported.sessionId)
                     if (existingIndex >= 0) {
                         mergedSessions[existingIndex] = imported

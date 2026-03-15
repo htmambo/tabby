@@ -194,7 +194,7 @@
 #### 任务 3.1：TypeScript 严格化 - 阶段 1 ⏳
 **优先级**: P1
 **预计工作量**: 1 周
-**状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal、tabby-ssh、tabby-local、tabby-serial、tabby-telnet、tabby-settings、tabby-electron、tabby-plugin-manager、tabby-linkifier、tabby-community-color-schemes、tabby-auto-sudo-password 已开启 noImplicitAny）
+**状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal、tabby-ssh、tabby-local、tabby-serial、tabby-telnet、tabby-settings、tabby-electron、tabby-plugin-manager、tabby-linkifier、tabby-community-color-schemes、tabby-auto-sudo-password、tabby-ai-assistant 已开启 noImplicitAny；tabby-uac 为非 TS 项目不适用）
 
 **具体改动**：
 1. 启用 noImplicitAny

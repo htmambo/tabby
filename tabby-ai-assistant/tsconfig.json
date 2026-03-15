@@ -1,6 +1,6 @@
 {
     "extends": "../tsconfig.json",
-    "files": ["src/index.ts"],
+    "files": ["src/index.ts", "types/legacy-modules.d.ts"],
     "exclude": [
         "node_modules",
         "dist",
@@ -11,6 +11,7 @@
     ],
     "compilerOptions": {
         "baseUrl": "src",
+        "noImplicitAny": true,
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "paths": {

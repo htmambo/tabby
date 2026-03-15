@@ -1277,7 +1277,7 @@ export class AiAssistantService implements OnDestroy {
                                     break
                             }
                         },
-                        error: (error) => {
+                        error: (error: unknown) => {
                             subscriber.next({
                                 type: 'error',
                                 error: error instanceof Error ? error.message : String(error),
