@@ -197,9 +197,9 @@
 **状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal、tabby-ssh、tabby-local、tabby-serial、tabby-telnet、tabby-settings、tabby-electron、tabby-plugin-manager、tabby-linkifier、tabby-community-color-schemes、tabby-auto-sudo-password、tabby-ai-assistant 已开启 noImplicitAny；根 tsconfig 暂不启用；tabby-uac 为非 TS 项目不适用）
 
 **具体改动**：
-1. 启用 noImplicitAny
-   - 修改 `tsconfig.json:6`（noImplicitAny: false → true）
-   - 修改 `tsconfig.json:4`（target: es2016 → ES2020）
+1. 分模块启用 noImplicitAny（根 tsconfig 保持 false，后续独立阶段再推进）
+   - 主进程：`app/tsconfig.main.json`
+   - 插件：`tabby-*/tsconfig.json`
 
 2. 修复核心路径的类型错误
    - `app/src/plugins.ts`
