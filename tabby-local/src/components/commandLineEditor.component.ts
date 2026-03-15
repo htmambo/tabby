@@ -33,7 +33,7 @@ export class CommandLineEditorComponent {
     }
 
     parseCommand () {
-        const args = shellQuote.parse(this.command)
+        const args = shellQuote.parse(this.command) as string[]
         this.model.command = args[0] ?? ''
         this.model.args = args.slice(1)
     }
@@ -45,7 +45,7 @@ export class CommandLineEditorComponent {
         ])
     }
 
-    trackByIndex (index) {
+    trackByIndex (index: number) {
         return index
     }
 }

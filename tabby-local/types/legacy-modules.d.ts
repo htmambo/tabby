@@ -1,0 +1,12 @@
+declare module 'fuzzy-search';
+declare module 'clone-deep';
+declare module 'uuid';
+declare module 'js-yaml';
+declare module 'color';
+declare module 'cli-spinner';
+declare module 'shell-quote';
+declare module 'hexer';
+declare module 'buffer-replace';
+declare module 'binstring';
+declare module 'zmodem.js';
+declare module '@luminati-io/socksv5';

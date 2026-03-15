@@ -10,7 +10,7 @@ export class ShellSettingsTabComponent {
     isConPTYAvailable: boolean
     isConPTYStable: boolean
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         public config: ConfigService,

@@ -11,21 +11,22 @@ import { getRuntimePlatform } from 'tabby-core'
     styleUrls: ['./environmentEditor.component.scss'],
 })
 export class EnvironmentEditorComponent {
-    @Output() modelChange = new Subject<any>()
+    @Output() modelChange = new Subject<Record<string, string>>()
     vars: { key: string, value: string }[] = []
-    private cachedModel: any
+    private cachedModel: Record<string, string> = {}
 
-    @Input() get model (): any {
+    @Input() get model (): Record<string, string> {
         return this.cachedModel
     }
 
-    set model (value) {
-        this.vars = Object.entries(value).map(([k, v]) => ({ key: k, value: v as string }))
+    set model (value: Record<string, string> | null | undefined) {
+        const normalizedValue = value ?? {}
+        this.vars = Object.entries(normalizedValue).map(([k, v]) => ({ key: k, value: v }))
         this.cachedModel = this.getModel()
     }
 
-    getModel () {
-        const model = {}
+    getModel (): Record<string, string> {
+        const model: Record<string, string> = {}
         for (const pair of this.vars) {
             model[pair.key] = pair.value
         }
