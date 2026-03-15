@@ -456,14 +456,17 @@
 #### 任务 7.3：依赖安全审计与整改 ⏳
 **优先级**: P1  
 **预计工作量**: 1-2 天  
-**状态**: 🔄 进行中（npm audit 检出 112 vulnerabilities）
+**状态**: 🔄 进行中（已清零 critical；high 104 / moderate 31 / low 7）
 
 **具体改动**：
 1. 分类：运行时依赖 / 构建链依赖 / 开发工具依赖
 2. 明确可安全升级的直接依赖
 3. 对深层依赖选择升级/替换/忽略策略
+4. 移除未使用的高风险依赖（npx / electron-download）
+5. 升级 pug-html-loader 并对 loader-utils 做定向覆盖
 
 **验收标准**：
+- ✅ critical 清零
 - 🔄 高危漏洞清单与处理策略明确
 - 🔄 可修复项完成升级或打补丁
 
@@ -472,7 +475,7 @@
 #### 任务 7.4：代码质量评分基线 ⏳
 **优先级**: P1  
 **预计工作量**: 1 天  
-**状态**: ⏸ 待定义（lint:progressive 当前无匹配文件）
+**状态**: 🔄 进行中（基线：86 files / 60 errors / 839 warnings；范围：app/src + tabby-core/src）
 
 **具体改动**：
 1. 选定指标（ESLint warnings 数量 / TS error 数量 / 复杂度指标）
@@ -480,7 +483,8 @@
 3. 对应到目标提升比例
 
 **验收标准**：
-- 🔄 质量基线与指标定义完成
+- ✅ 质量基线与指标定义完成
+- 🔄 质量趋势对比机制落地
 
 ---
 
@@ -493,7 +497,7 @@
 | 运行性能 | 基线 | +30% | 30% |
 | 代码质量评分 | 基线 | +40% | 40% |
 | 类型覆盖率 | ~60% | 95%+ | 35%+ |
-| 依赖安全漏洞 | audit 112（含 12 critical） | 0 高危 | - |
+| 依赖安全漏洞 | audit 142（critical 0 / high 104 / moderate 31 / low 7） | 0 高危 | - |
 
 ---
 
@@ -607,7 +611,7 @@
 4. 🔄 构建速度提升 50%+（已记录 2026-03-15 全量构建 1m30.62，待对比历史基线）
 5. ✅ Angular 升级到 17+
 6. 🔄 所有核心功能正常运行（需补充系统回归）
-7. 🔄 代码质量评分提升 40%+（lint:progressive 当前无匹配文件，需定义评分基线）
+7. 🔄 代码质量评分提升 40%+（已记录基线：86 files / 60 errors / 839 warnings）
 8. ✅ 依赖管理自动化建立
 9. 🔄 依赖安全漏洞治理（npm audit 检出 112 vulnerabilities，需分层整改）
 
@@ -620,6 +624,9 @@
 - 2026-03-15：迁移 Sass `@import` 为 `@use`，内联调整 `ngx-toastr` 样式并替换弃用函数，构建告警清零
 - 2026-03-15：修复 deps 脚本使用 `npm_execpath`，避免本地 npm 版本干扰，并复跑 `deps:audit`/`lint:progressive`
 - 2026-03-15：记录全量构建时间基线（`npm run build` 总耗时 1m30.62）
+- 2026-03-15：安全审计整改：移除 `npx`/`electron-download`，升级 `pug-html-loader` 并定向覆盖 `loader-utils`，critical 清零
+- 2026-03-15：修复 `pug-html-loader` 查询串兼容（inline loader 加 `?`），并复验 `npm run build`
+- 2026-03-15：建立 ESLint 基线（app/src + tabby-core/src，60 errors / 839 warnings）
 
 ---
 

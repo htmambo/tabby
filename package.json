@@ -41,7 +41,6 @@
     "deep-equal": "2.2.3",
     "electron": "^40.8.0",
     "electron-builder": "^26.8.1",
-    "electron-download": "^4.1.1",
     "electron-installer-snap": "^5.1.0",
     "eslint": "8.57.1",
     "eslint-import-resolver-typescript": "^3.6.0",
@@ -58,12 +57,11 @@
     "ngx-toastr": "^16.0.2",
     "node-abi": "^4",
     "npmlog": "6.0.2",
-    "npx": "^10.2.2",
     "patch-package": "^6.4.7",
     "po-gettext-loader": "^1.0.0",
     "pug": "3",
     "pug-cli": "^1.0.0-alpha6",
-    "pug-html-loader": "1.1.5",
+    "pug-html-loader": "1.1.7",
     "pug-lint": "^2.6.0",
     "pug-loader": "^2.4.0",
     "pug-static-loader": "2.0.0",
@@ -100,12 +98,42 @@
     "**/graceful-fs": "^4.2.4",
     "nan": "2.22.2",
     "node-abi": "^4",
-    "node-gyp": "^10.0.0"
+    "node-gyp": "^10.0.0",
+    "@tabby-gang/to-string-loader/loader-utils": "1.4.2",
+    "apply-loader/loader-utils": "1.4.2",
+    "pug-loader/loader-utils": "1.4.2",
+    "svg-inline-loader/loader-utils": "1.4.2",
+    "file-loader/loader-utils": "2.0.4",
+    "pug-html-loader/loader-utils": "2.0.4",
+    "raw-loader/loader-utils": "2.0.4",
+    "yaml-loader/loader-utils": "2.0.4"
   },
   "overrides": {
     "@types/minimatch": "5.1.2",
+    "@tabby-gang/to-string-loader": {
+      "loader-utils": "1.4.2"
+    },
+    "apply-loader": {
+      "loader-utils": "1.4.2"
+    },
     "pug-loader": {
+      "loader-utils": "1.4.2",
       "pug": "$pug"
+    },
+    "svg-inline-loader": {
+      "loader-utils": "1.4.2"
+    },
+    "file-loader": {
+      "loader-utils": "2.0.4"
+    },
+    "pug-html-loader": {
+      "loader-utils": "2.0.4"
+    },
+    "raw-loader": {
+      "loader-utils": "2.0.4"
+    },
+    "yaml-loader": {
+      "loader-utils": "2.0.4"
     }
   },
   "scripts": {

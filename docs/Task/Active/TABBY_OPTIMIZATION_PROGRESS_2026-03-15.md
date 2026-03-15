@@ -2088,7 +2088,51 @@ timeout 18s env TABBY_DEV=1 ./node_modules/.bin/electron app -d --no-sandbox --d
 
 ---
 
-## 9. 结论
+## 9. 安全审计整改进展（2026-03-15）
+
+针对 yarn audit 的 critical 项，完成以下收口：
+
+- 移除未使用的高风险依赖：`npx`、`electron-download`
+- 升级 `pug-html-loader` 至 1.1.7，避免拉入旧版 `loader-utils`
+- 为 loader 相关依赖添加定向覆盖：`loader-utils` 1.4.2 / 2.0.4
+- `npm run build` 全量构建复验通过（修复 `pug-html-loader` 兼容问题）
+- `app/webpack.config.mjs` 的 inline loader 查询补齐 `?`，避免 `parseQuery` 触发异常
+
+最新审计结果（`yarn audit`）：
+
+- critical: 0
+- high: 104
+- moderate: 31
+- low: 7
+
+---
+
+## 10. 代码质量基线（2026-03-15）
+
+为建立可量化的代码质量基线，本轮执行：
+
+```bash
+./node_modules/.bin/eslint --ext .ts app/src tabby-core/src -f json
+```
+
+基线结果（范围：`app/src` + `tabby-core/src`）：
+
+- 扫描文件数：86
+- ESLint errors：60
+- ESLint warnings：839
+
+Top 规则（前 5）：
+1. `@typescript-eslint/member-ordering` 305
+2. `@typescript-eslint/strict-boolean-expressions` 179
+3. `@typescript-eslint/prefer-readonly` 158
+4. `@typescript-eslint/no-explicit-any` 120
+5. `@typescript-eslint/require-await` 40
+
+> 说明：eslint 以 error 退出属正常基线状态，后续将用于逐步收敛。
+
+---
+
+## 11. 结论
 
 本阶段已经完成“从应用无法稳定启动，到恢复稳定，再到持续做低风险安全/性能收口”的核心工作。当前最重要的成果不是某一个单点优化，而是建立了一条可持续推进的稳定基线：
 
