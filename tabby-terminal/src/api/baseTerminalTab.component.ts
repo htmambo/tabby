@@ -78,7 +78,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     @Input() showSearchPanel = false
 
     /** @hidden */
-    @ViewChild('content') content
+    @ViewChild('content') content!: ElementRef<HTMLElement>
 
     /** @hidden */
     @HostBinding('style.background-color') backgroundColor: string|null = null
@@ -118,7 +118,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     // Deps start
     config: ConfigService
-    element: ElementRef
+    element: ElementRef<HTMLElement>
     protected zone: NgZone
     protected app: AppService
     protected hostApp: HostAppService
@@ -145,7 +145,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     private sessionHandlers = new SubscriptionContainer()
     private spinner = new Spinner({
         stream: {
-            write: x => {
+            write: (x: string) => {
                 try {
                     if (!this.frontend) {
                         return
@@ -226,7 +226,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             if (hotkey === 'search') {
                 this.showSearchPanel = true
                 this.scheduleTimeout(() => {
-                    const input = this.element.nativeElement.querySelector('.search-input')
+                    const input = this.element.nativeElement.querySelector<HTMLInputElement>('.search-input')
                     const selectedText = (this.frontend?.getSelection() ?? '').trim()
                     if (input && selectedText.length) {
                         input.value = selectedText
@@ -275,24 +275,30 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                 case 'reset-zoom':
                     this.forEachFocusedTerminalPane(tab => tab.resetZoom())
                     break
-                case 'previous-word':
+                case 'previous-word': {
+                    const wordLeftByPlatform: Record<Platform, string> = {
+                        [Platform.Windows]: '\x1b[1;5D',
+                        [Platform.macOS]: '\x1bb',
+                        [Platform.Linux]: '\x1bb',
+                        [Platform.Web]: '\x1bb',
+                    }
                     this.forEachFocusedTerminalPane(tab => {
-                        tab.sendInput({
-                            [Platform.Windows]: '\x1b[1;5D',
-                            [Platform.macOS]: '\x1bb',
-                            [Platform.Linux]: '\x1bb',
-                        }[this.hostApp.platform])
+                        tab.sendInput(wordLeftByPlatform[this.hostApp.platform])
                     })
                     break
-                case 'next-word':
+                }
+                case 'next-word': {
+                    const wordRightByPlatform: Record<Platform, string> = {
+                        [Platform.Windows]: '\x1b[1;5C',
+                        [Platform.macOS]: '\x1bf',
+                        [Platform.Linux]: '\x1bf',
+                        [Platform.Web]: '\x1bf',
+                    }
                     this.forEachFocusedTerminalPane(tab => {
-                        tab.sendInput({
-                            [Platform.Windows]: '\x1b[1;5C',
-                            [Platform.macOS]: '\x1bf',
-                            [Platform.Linux]: '\x1bf',
-                        }[this.hostApp.platform])
+                        tab.sendInput(wordRightByPlatform[this.hostApp.platform])
                     })
                     break
+                }
                 case 'delete-line':
                     this.forEachFocusedTerminalPane(tab => {
                         tab.sendInput('\x1bw')
@@ -303,15 +309,18 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                         tab.sendInput('\u0017')
                     })
                     break
-                case 'delete-next-word':
+                case 'delete-next-word': {
+                    const deleteNextWordByPlatform: Record<Platform, string> = {
+                        [Platform.Windows]: '\x1bd\x1b[3;5~',
+                        [Platform.macOS]: '\x1bd',
+                        [Platform.Linux]: '\x1bd',
+                        [Platform.Web]: '\x1bd',
+                    }
                     this.forEachFocusedTerminalPane(tab => {
-                        tab.sendInput({
-                            [Platform.Windows]: '\x1bd\x1b[3;5~',
-                            [Platform.macOS]: '\x1bd',
-                            [Platform.Linux]: '\x1bd',
-                        }[this.hostApp.platform])
+                        tab.sendInput(deleteNextWordByPlatform[this.hostApp.platform])
                     })
                     break
+                }
                 case 'copy-current-path':
                     this.copyCurrentPath()
                     break
@@ -375,10 +384,14 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             }
         }
 
-        const cls: new (..._) => Frontend = enable8884Workarround ? XTermFrontend : {
+        const frontendMap: Record<string, new (...args: any[]) => Frontend> = {
             xterm: XTermFrontend,
             'xterm-webgl': XTermWebGLFrontend,
-        }[this.config.store.terminal.frontend] ?? XTermFrontend
+        }
+        const frontendKey = String(this.config.store.terminal.frontend ?? 'xterm')
+        const cls: new (...args: any[]) => Frontend = enable8884Workarround
+            ? XTermFrontend
+            : frontendMap[frontendKey] ?? XTermFrontend
         this.frontend = new cls(this.injector)
 
         this.subscribeUntilDestroyed(this.workspaceLayout.royalSidebarTransitionActive$, active => {
@@ -792,13 +805,10 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                 }
             }
             if (event.type === 'mousewheel') {
-                let wheelDeltaY = 0
-
-                if ('wheelDeltaY' in event) {
-                    wheelDeltaY = (event as unknown as WheelEvent)['wheelDeltaY']
-                } else {
-                    wheelDeltaY = (event as unknown as WheelEvent).deltaY
-                }
+                const wheelEvent = event as WheelEvent & { wheelDeltaY?: number }
+                const wheelDeltaY = typeof wheelEvent.wheelDeltaY === 'number'
+                    ? wheelEvent.wheelDeltaY
+                    : wheelEvent.deltaY
 
                 if (event.altKey) {
                     event.preventDefault()

@@ -16,7 +16,7 @@ export class VaultSettingsTabComponent extends BaseComponent {
     vaultContents: Vault|null = null
     VAULT_SECRET_TYPE_FILE = VAULT_SECRET_TYPE_FILE
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         public vault: VaultService,

@@ -11,8 +11,7 @@ import { InputProcessingOptions } from '../middleware/inputProcessing'
 })
 export class InputProcessingSettingsComponent {
     @Input() options: InputProcessingOptions
-
-    backspaceModes = [
+    private readonly backspaceModes = [
         {
             key: 'backspace',
             name: _('Pass-through'),
@@ -29,13 +28,13 @@ export class InputProcessingSettingsComponent {
             key: 'delete',
             name: 'Delete (CSI 3~)',
         },
-    ]
+    ] satisfies { key: InputProcessingOptions['backspace'], name: string }[]
 
-    getBackspaceModeName (key) {
+    getBackspaceModeName (key: InputProcessingOptions['backspace']): string | undefined {
         return this.backspaceModes.find(x => x.key === key)?.name
     }
 
-    setBackspaceMode (mode) {
+    setBackspaceMode (mode: InputProcessingOptions['backspace']) {
         this.options.backspace = mode
     }
 }

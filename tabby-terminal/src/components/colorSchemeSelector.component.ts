@@ -29,7 +29,7 @@ export class ColorSchemeSelectorComponent {
     @Input() model?: TerminalColorScheme
     @Output() modelChange = new EventEmitter<TerminalColorScheme|undefined>()
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         @Inject(TerminalColorSchemeProvider) private colorSchemeProviders: TerminalColorSchemeProvider[],

@@ -38,7 +38,7 @@ export class HotkeySettingsTabComponent {
         for (const token of id.split(/\./g)) {
             ptr = ptr[token]
         }
-        return (ptr || []).map(hotkey => this.detectDuplicates(hotkey))
+        return (ptr || []).map((hotkey: string | string[]) => this.detectDuplicates(hotkey))
     }
 
     setHotkeys (id: string, hotkeys: Hotkey[]) {
@@ -48,7 +48,7 @@ export class HotkeySettingsTabComponent {
             ptr = ptr[prop]
             prop = token
         }
-        ptr[prop] = hotkeys.map(hotkey =>
+        ptr[prop] = hotkeys.map((hotkey: Hotkey) =>
             hotkey.strokes.length === 1 && Array.isArray(hotkey.strokes)
                 ? hotkey.strokes[0]
                 : hotkey.strokes,

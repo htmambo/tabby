@@ -16,7 +16,7 @@ export interface LoginScriptsOptions {
 export class LoginScriptProcessor extends SessionMiddleware {
     private remainingScripts: LoginScript[] = []
 
-    private escapeSeqMap = {
+    private escapeSeqMap: Record<string, string> = {
         a: '\x07',
         b: '\x08',
         e: '\x1b',

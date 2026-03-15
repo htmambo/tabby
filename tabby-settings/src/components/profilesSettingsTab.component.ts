@@ -340,7 +340,7 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
     }
 
     unblacklistProfile (profile: PartialProfile<Profile>): void {
-        this.config.store.profileBlacklist = this.config.store.profileBlacklist.filter(x => x !== profile.id)
+        this.config.store.profileBlacklist = this.config.store.profileBlacklist.filter((x: string) => x !== profile.id)
         this.config.save()
     }
 

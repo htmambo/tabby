@@ -32,7 +32,7 @@ export class WindowSettingsTabComponent extends BaseComponent {
     readonly maxFixedTabWidth = 600
     readonly defaultFixedTabWidth = 200
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         public config: ConfigService,

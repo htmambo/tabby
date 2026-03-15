@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import axios from 'axios'
-import * as marked from '../../node_modules/marked/src/marked'
+import { marked } from 'marked'
 import { Component, Injector } from '@angular/core'
 import { BaseTabComponent, TranslateService } from 'tabby-core'
 
@@ -45,10 +45,10 @@ export class ReleaseNotesComponent extends BaseTabComponent {
             const response = await axios.get(`https://api.github.com/repos/htmambo/tabby/releases?page=${page}`, {
                 headers: { Accept: 'application/vnd.github.v3+json' },
             })
-            const releases = response.data.map(r => ({
+            const releases = response.data.map((r: { name: string, tag_name: string, body: string, created_at: string }) => ({
                 name: r.name,
                 version: r.tag_name,
-                content: marked.marked(r.body),
+                content: marked.parse(r.body),
                 date: new Date(r.created_at),
             }))
 

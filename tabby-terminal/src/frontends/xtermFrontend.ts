@@ -131,7 +131,7 @@ export class XTermFrontend extends Frontend {
             } : undefined,
         })
         this.flowControl = new FlowControl(this.xterm)
-        this.xtermCore = this.xterm['_core']
+        this.xtermCore = (this.xterm as any)._core
 
         this.xterm.onBinary(data => {
             this.input.next(Buffer.from(data, 'binary'))
@@ -469,8 +469,9 @@ export class XTermFrontend extends Frontend {
             overviewRulerBorder: scheme.background,
         }
 
+        const themeColors = theme as Record<string, string | undefined>
         for (let i = 0; i < COLOR_NAMES.length; i++) {
-            theme[COLOR_NAMES[i]] = scheme.colors[i]
+            themeColors[COLOR_NAMES[i]] = scheme.colors[i]
         }
 
         theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') ?? theme.brightBlack
@@ -509,9 +510,8 @@ export class XTermFrontend extends Frontend {
         }
 
         this.xterm.options.fontFamily = getCSSFontFamily(config)
-        this.xterm.options.cursorStyle = {
-            beam: 'bar',
-        }[config.terminal.cursor] || config.terminal.cursor
+        const cursorStyle = config.terminal.cursor === 'beam' ? 'bar' : config.terminal.cursor
+        this.xterm.options.cursorStyle = cursorStyle as 'bar' | 'block' | 'underline' | undefined
         this.xterm.options.cursorBlink = config.terminal.cursorBlink
         this.xterm.options.macOptionIsMeta = config.terminal.altIsMeta
         this.xterm.options.scrollback = config.terminal.scrollbackLines

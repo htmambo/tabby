@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import { Component, Input } from '@angular/core'
-import { StreamProcessingOptions } from '../middleware/streamProcessing'
+import { StreamProcessingOptions, InputMode, OutputMode, NewlineMode } from '../middleware/streamProcessing'
 
 /** @hidden */
 @Component({
@@ -12,7 +12,7 @@ import { StreamProcessingOptions } from '../middleware/streamProcessing'
 export class StreamProcessingSettingsComponent {
     @Input() options: StreamProcessingOptions
 
-    inputModes = [
+    inputModes: { key: InputMode, name: string, description: string }[] = [
         {
             key: null,
             name: _('Normal'),
@@ -35,7 +35,7 @@ export class StreamProcessingSettingsComponent {
         },
     ]
 
-    outputModes = [
+    outputModes: { key: OutputMode, name: string, description: string }[] = [
         {
             key: null,
             name: _('Normal'),
@@ -48,7 +48,7 @@ export class StreamProcessingSettingsComponent {
         },
     ]
 
-    newlineModes = [
+    newlineModes: { key: NewlineMode | 'strip', name: string }[] = [
         { key: null, name: _('Keep') },
         { key: 'strip', name: _('Strip') },
         { key: 'cr', name: _('Force CR') },
@@ -58,19 +58,19 @@ export class StreamProcessingSettingsComponent {
         { key: 'implicit_lf', name: _('Implicit LF in every CR') },
     ]
 
-    getInputModeName (key) {
+    getInputModeName (key: InputMode) {
         return this.inputModes.find(x => x.key === key)?.name
     }
 
-    getOutputModeName (key) {
+    getOutputModeName (key: OutputMode) {
         return this.outputModes.find(x => x.key === key)?.name
     }
 
-    setInputMode (mode) {
+    setInputMode (mode: InputMode) {
         this.options.inputMode = mode
     }
 
-    setOutputMode (mode) {
+    setOutputMode (mode: OutputMode) {
         this.options.outputMode = mode
     }
 }

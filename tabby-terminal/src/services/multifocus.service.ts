@@ -47,7 +47,10 @@ export class MultifocusService {
 
     cancel (): void {
         this.warningElement.style.display = 'none'
-        document.querySelector('app-root')!['style'].border = 'none'
+        const appRoot = document.querySelector('app-root') as HTMLElement | null
+        if (appRoot) {
+            appRoot.style.border = 'none'
+        }
 
         if (!this.inputSubscription) {
             return
@@ -66,7 +69,10 @@ export class MultifocusService {
         this.start(currentTab, tabs)
 
         this.warningElement.style.display = 'block'
-        document.querySelector('app-root')!['style'].border = '5px solid red'
+        const appRoot = document.querySelector('app-root') as HTMLElement | null
+        if (appRoot) {
+            appRoot.style.border = '5px solid red'
+        }
     }
 
     focusAllPanes (): void {

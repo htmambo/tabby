@@ -1,5 +1,5 @@
 import colors from 'ansi-colors'
-import * as ZModem from 'zmodem.js'
+const ZModem = require('zmodem.js') as any
 import { Observable, filter, firstValueFrom } from 'rxjs'
 import { Injectable } from '@angular/core'
 import { TerminalDecorator } from '../api/decorator'
@@ -10,7 +10,7 @@ import { LogService, Logger, HotkeysService, PlatformService, FileUpload } from 
 const SPACER = '            '
 
 class ZModemMiddleware extends SessionMiddleware {
-    private sentry: ZModem.Sentry
+    private sentry: any
     private isActive = false
     private logger: Logger
     private activeSession: any = null
@@ -26,13 +26,13 @@ class ZModemMiddleware extends SessionMiddleware {
 
         this.logger = log.create('zmodem')
         this.sentry = new ZModem.Sentry({
-            to_terminal: data => {
+            to_terminal: (data: string | Uint8Array) => {
                 if (this.isActive && this.activeSession) {
                     this.outputToTerminal.next(Buffer.from(data))
                 }
             },
-            sender: data => this.outputToSession.next(Buffer.from(data)),
-            on_detect: async detection => {
+            sender: (data: string | Uint8Array) => this.outputToSession.next(Buffer.from(data)),
+            on_detect: async (detection: any) => {
                 try {
                     this.isActive = true
                     await this.process(detection)
@@ -72,7 +72,7 @@ class ZModemMiddleware extends SessionMiddleware {
         }
     }
 
-    private async process (detection): Promise<void> {
+    private async process (detection: any): Promise<void> {
         this.showMessage(colors.bgBlue.black(' ZMODEM ') + ' Session started')
         this.showMessage('------------------------')
 
@@ -92,7 +92,7 @@ class ZModemMiddleware extends SessionMiddleware {
                 }
                 await zsession.close()
             } else {
-                zsession.on('offer', xfer => {
+                zsession.on('offer', (xfer: any) => {
                     this.receiveFile(xfer, zsession)
                 })
 
@@ -113,7 +113,7 @@ class ZModemMiddleware extends SessionMiddleware {
         }
     }
 
-    private async receiveFile (xfer, zsession) {
+    private async receiveFile (xfer: any, zsession: any) {
         const details: {
             name: string,
             size: number,
@@ -139,7 +139,7 @@ class ZModemMiddleware extends SessionMiddleware {
         try {
             await Promise.race([
                 xfer.accept({
-                    on_input: chunk => {
+                    on_input: (chunk: Uint8Array) => {
                         if (canceled) {
                             return
                         }
@@ -165,7 +165,7 @@ class ZModemMiddleware extends SessionMiddleware {
         cancelSubscription.unsubscribe()
     }
 
-    private async sendFile (zsession, transfer: FileUpload, filesRemaining, sizeRemaining) {
+    private async sendFile (zsession: any, transfer: FileUpload, filesRemaining: number, sizeRemaining: number) {
         const offer = {
             name: transfer.getName(),
             size: transfer.getSize(),

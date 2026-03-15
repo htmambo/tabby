@@ -30,7 +30,7 @@ export class ColorSchemeSettingsForModeComponent {
     currentStockScheme: TerminalColorScheme|null = null
     currentCustomScheme: TerminalColorScheme|null = null
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         @Inject(TerminalColorSchemeProvider) private colorSchemeProviders: TerminalColorSchemeProvider[],
@@ -112,7 +112,7 @@ export class ColorSchemeSettingsForModeComponent {
         return schemes.find(x => deepEqual(x, scheme)) ?? null
     }
 
-    colorsTrackBy (index) {
+    colorsTrackBy (index: number) {
         return index
     }
 }

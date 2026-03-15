@@ -829,6 +829,34 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-core/src/services/vault.service.ts`
 - `tabby-core/src/utils.ts`
 
+### 3.64 tabby-terminal noImplicitAny 阶段落地
+
+为 `tabby-terminal` 启用 `noImplicitAny`，补齐终端核心组件/前端渲染/中间件/服务的显式类型，同时同步修复 `tabby-settings` 中与终端设置联动的隐式 any。该阶段仍保持范围可控，仅针对 `tabby-terminal` 与其联动的设置面板路径。
+
+涉及文件：
+
+- `tabby-terminal/tsconfig.json`
+- `tabby-terminal/types/legacy-modules.d.ts`
+- `tabby-terminal/src/api/baseTerminalTab.component.ts`
+- `tabby-terminal/src/components/colorSchemeSelector.component.ts`
+- `tabby-terminal/src/components/colorSchemeSettingsForMode.component.ts`
+- `tabby-terminal/src/components/inputProcessingSettings.component.ts`
+- `tabby-terminal/src/components/streamProcessingSettings.component.ts`
+- `tabby-terminal/src/components/terminalSettingsTab.component.ts`
+- `tabby-terminal/src/features/debug.ts`
+- `tabby-terminal/src/features/zmodem.ts`
+- `tabby-terminal/src/frontends/xtermFrontend.ts`
+- `tabby-terminal/src/middleware/loginScriptProcessing.ts`
+- `tabby-terminal/src/services/multifocus.service.ts`
+- `tabby-settings/src/components/configSyncSettingsTab.component.ts`
+- `tabby-settings/src/components/vaultSettingsTab.component.ts`
+- `tabby-settings/src/components/windowSettingsTab.component.ts`
+- `tabby-settings/src/components/editProfileModal.component.ts`
+- `tabby-settings/src/components/hotkeySettingsTab.component.ts`
+- `tabby-settings/src/components/profilesSettingsTab.component.ts`
+- `tabby-settings/src/components/releaseNotesTab.component.ts`
+- `tabby-settings/src/services/configSync.service.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1396,6 +1424,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-core` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-terminal` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-terminal/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-terminal` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

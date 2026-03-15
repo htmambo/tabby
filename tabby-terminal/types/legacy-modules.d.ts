@@ -1,0 +1,11 @@
+declare module 'cli-spinner';
+declare module 'clone-deep';
+declare module 'uuid';
+declare module 'js-yaml';
+declare module 'color';
+declare module 'fuzzy-search';
+declare module 'hexer';
+declare module 'buffer-replace';
+declare module 'binstring';
+declare module 'shell-quote';
+declare module 'zmodem.js';

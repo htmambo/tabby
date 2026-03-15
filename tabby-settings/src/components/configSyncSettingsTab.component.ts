@@ -20,7 +20,7 @@ export class ConfigSyncSettingsTabComponent extends BaseComponent {
     private connectionSettingsSaveTimer: ReturnType<typeof setTimeout>|null = null
     private connectionTestRequestID = 0
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         public config: ConfigService,

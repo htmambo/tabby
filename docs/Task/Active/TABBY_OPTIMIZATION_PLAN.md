@@ -194,7 +194,7 @@
 #### 任务 3.1：TypeScript 严格化 - 阶段 1 ⏳
 **优先级**: P1
 **预计工作量**: 1 周
-**状态**: 🔄 进行中（主进程与 tabby-core 已开启 noImplicitAny）
+**状态**: 🔄 进行中（主进程、tabby-core、tabby-terminal 已开启 noImplicitAny）
 
 **具体改动**：
 1. 启用 noImplicitAny
@@ -204,6 +204,8 @@
 2. 修复核心路径的类型错误
    - `app/src/plugins.ts`
    - `tabby-core/src/services/`
+   - `tabby-terminal/src/`
+   - `tabby-settings/src/`
    - `tabby-ssh/src/`
 
 3. 使用 unknown 替代 any

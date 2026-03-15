@@ -11,7 +11,7 @@ export class TerminalSettingsTabComponent {
     altKeyName = altKeyName
     metaKeyName = metaKeyName
 
-    @HostBinding('class.content-box') true
+    @HostBinding('class.content-box') readonly contentBox = true
 
     constructor (
         public config: ConfigService,

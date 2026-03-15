@@ -16,7 +16,7 @@ export class DebugDecorator extends TerminalDecorator {
         let sessionOutputBuffer = ''
         const bufferLength = 8192
 
-        const handler = data => {
+        const handler = (data: string) => {
             sessionOutputBuffer += data
             if (sessionOutputBuffer.length > bufferLength) {
                 sessionOutputBuffer = sessionOutputBuffer.substring(sessionOutputBuffer.length - bufferLength)

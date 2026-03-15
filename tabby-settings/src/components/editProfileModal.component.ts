@@ -6,8 +6,8 @@ import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent
 
 const iconsData = require('../../../tabby-core/src/icons.json')
 const iconsClassList = Object.keys(iconsData).map(
-    icon => iconsData[icon].map(
-        style => `fa${style[0]} fa-${icon}`,
+    (icon: string) => iconsData[icon].map(
+        (style: string) => `fa${style[0]} fa-${icon}`,
     ),
 ).flat()
 
@@ -47,7 +47,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         private modalInstance: NgbActiveModal,
     ) { }
 
-    colorsAutocomplete = text$ => text$.pipe(
+    colorsAutocomplete: OperatorFunction<string, (string | null)[]> = (text$: Observable<string>) => text$.pipe(
         debounceTime(200),
         distinctUntilChanged(),
         map((q: string) =>
@@ -57,7 +57,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         ),
     )
 
-    colorsFormatter = value => {
+    colorsFormatter = (value: string): string => {
         return TAB_COLORS.find(x => x.value === value)?.name ?? value
     }
 

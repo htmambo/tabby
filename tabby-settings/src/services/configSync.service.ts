@@ -470,7 +470,7 @@ export class ConfigSyncService implements OnDestroy {
         if (value instanceof Array) {
             return value.map(item => this.cloneConfigValue(item))
         }
-        const result = {}
+        const result: Record<string, any> = {}
         for (const [key, nestedValue] of Object.entries(value)) {
             result[key] = this.cloneConfigValue(nestedValue)
         }
