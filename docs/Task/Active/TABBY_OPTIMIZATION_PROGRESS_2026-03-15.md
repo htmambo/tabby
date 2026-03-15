@@ -1266,6 +1266,19 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-ssh` 构建通过
 - 没有新增 TypeScript / 模板 / Webpack 错误
 
+在执行全量 webpack 构建 sweep 时，首次使用默认内存触发 Node.js 堆内存不足（OOM），随后提升内存上限重新执行成功：
+
+```bash
+./node_modules/.bin/webpack --config webpack.config.mjs --mode=production
+env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config webpack.config.mjs --mode=production
+```
+
+结果：
+
+- 全量 multi-compiler 构建通过（覆盖 app renderer/main 与所有 `tabby-*` 模块）
+- 仍仅保留既有 Sass `@import` / 内建函数弃用 warning（`tabby-core` 主题、`ngx-toastr`、`tabby-serial`/`tabby-telnet`、`tabby-ai-assistant`）
+- 未出现新增 TypeScript / 模板 / Webpack 错误
+
 ### 5.2 启动冒烟
 
 已多轮通过：
