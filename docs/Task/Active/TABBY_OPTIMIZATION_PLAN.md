@@ -544,6 +544,12 @@
 
 ---
 
+## 📝 变更记录
+
+- 2026-03-15：修复 `tabby-plugin-manager`/`tabby-ai-assistant` 构建兼容问题，补充完成 `npm run build` 与 `npm run lint:progressive` 验证
+
+---
+
 **文档版本**: v1.0
 **创建时间**: 2026-03-07
 **最后更新**: 2026-03-15

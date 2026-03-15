@@ -3,7 +3,7 @@ import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
 import axios from 'axios'
 import { HttpProxyAgent } from 'http-proxy-agent'
-import { HttpsProxyAgent } from 'https-proxy-agent'
+import * as HttpsProxyAgentModule from 'https-proxy-agent'
 import { getRuntimeEnv } from 'tabby-core'
 import { ConfigProviderService } from '../core/config-provider.service'
 import { LoggerService } from '../core/logger.service'
@@ -68,13 +68,13 @@ export class ProxyService {
             return {}
         }
 
-        const options = this.buildProxyOptions(proxyUrl, proxyConfig)
+        const proxyTarget = this.applyProxyAuth(proxyUrl, proxyConfig)
 
         // 动态导入代理 agent
         if (isHttps) {
-            return { httpsAgent: this.createHttpsProxyAgent(proxyUrl, options) }
+            return { httpsAgent: this.createHttpsProxyAgent(proxyTarget) }
         } else {
-            return { httpAgent: this.createHttpProxyAgent(proxyUrl, options) }
+            return { httpAgent: this.createHttpProxyAgent(proxyTarget) }
         }
     }
 
@@ -98,47 +98,65 @@ export class ProxyService {
             return undefined
         }
 
-        const options = this.buildProxyOptions(proxyUrl, proxyConfig)
+        const proxyTarget = this.applyProxyAuth(proxyUrl, proxyConfig)
 
         if (isHttps) {
-            return this.createHttpsProxyAgent(proxyUrl, options)
+            return this.createHttpsProxyAgent(proxyTarget)
         } else {
-            return this.createHttpProxyAgent(proxyUrl, options)
+            return this.createHttpProxyAgent(proxyTarget)
         }
     }
 
     /**
      * 创建 HTTP 代理 Agent
      */
-    private createHttpProxyAgent(proxyUrl: string, options: any): HttpAgent {
+    private createHttpProxyAgent(proxyUrl: string): HttpAgent {
         try {
-            return new HttpProxyAgent(proxyUrl, options) as unknown as HttpAgent
+            return new HttpProxyAgent(proxyUrl) as unknown as HttpAgent
         } catch {
-            return new HttpAgent(options)
+            return new HttpAgent()
         }
     }
 
     /**
      * 创建 HTTPS 代理 Agent
      */
-    private createHttpsProxyAgent(proxyUrl: string, options: any): HttpsAgent {
+    private createHttpsProxyAgent(proxyUrl: string): HttpsAgent {
         try {
-            return new HttpsProxyAgent(proxyUrl, options) as unknown as HttpsAgent
+            const ProxyAgentCtor = this.resolveHttpsProxyAgentCtor()
+            return new ProxyAgentCtor(proxyUrl)
         } catch {
-            return new HttpsAgent(options)
+            return new HttpsAgent()
         }
     }
 
     /**
      * 构建代理选项
      */
-    private buildProxyOptions(proxyUrl: string, proxyConfig: ProxyConfig): any {
-        const options: any = {}
-        // 添加认证信息
-        if (proxyConfig.auth?.username) {
-            options.auth = `${proxyConfig.auth.username}:${proxyConfig.auth.password || ''}`
+    private applyProxyAuth(proxyUrl: string, proxyConfig: ProxyConfig): string {
+        if (!proxyConfig.auth?.username) {
+            return proxyUrl
         }
-        return options
+        try {
+            const url = new URL(proxyUrl)
+            if (!url.username) {
+                url.username = proxyConfig.auth.username
+            }
+            if (!url.password && proxyConfig.auth.password !== undefined) {
+                url.password = proxyConfig.auth.password
+            }
+            return url.toString()
+        } catch {
+            return proxyUrl
+        }
+    }
+
+    private resolveHttpsProxyAgentCtor(): new (proxy: string | URL) => HttpsAgent {
+        const moduleAny = HttpsProxyAgentModule as unknown as {
+            HttpsProxyAgent?: new (proxy: string | URL) => HttpsAgent
+            default?: new (proxy: string | URL) => HttpsAgent
+        }
+        return moduleAny.HttpsProxyAgent ?? moduleAny.default ?? (HttpsProxyAgentModule as unknown as new (proxy: string | URL) => HttpsAgent)
     }
 
     /**
@@ -183,7 +201,7 @@ export class ProxyService {
         const startTime = Date.now()
 
         try {
-            const agent = this.createHttpsProxyAgent(proxyUrl, {})
+            const agent = this.createHttpsProxyAgent(proxyUrl)
             const response = await axios.get(testUrl, {
                 httpsAgent: agent,
                 proxy: false,

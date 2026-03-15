@@ -1856,6 +1856,27 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 
 - `app/tsconfig.json` 类型检查通过（noImplicitAny 已开启）
 
+在修复 `tabby-plugin-manager` 可用插件列表类型推断（避免 `never`）与 `tabby-ai-assistant` 代理构造器兼容后，补充执行完整构建：
+
+```bash
+npm run build
+```
+
+结果：
+
+- typings 全部通过
+- webpack 全部通过（仅保留既有 Sass `@import` deprecation 与 `marked` 导出 warning）
+
+并补充运行：
+
+```bash
+npm run lint:progressive
+```
+
+结果：
+
+- 当前无匹配文件需要 lint（未新增 lint 错误）
+
 ### 5.2 启动冒烟
 
 已多轮通过：

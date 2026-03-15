@@ -58,7 +58,7 @@ export class PluginsSettingsTabComponent {
     ngOnInit () {
         this.showUnofficialPlugins$.next(this.showUnofficialPlugins)
 
-        const availableResults$ = this.availablePluginsQuery$
+        const availableResults$: Observable<AvailablePluginInfo[]> = this.availablePluginsQuery$
             .asObservable()
             .pipe(
                 debounceTime(200),
@@ -78,7 +78,7 @@ export class PluginsSettingsTabComponent {
                         this.erroredPlugin = 'available plugins'
                         this.errorMessage = `${error}`
                         this.availablePluginsReady = true
-                        return of([])
+                        return of<AvailablePluginInfo[]>([])
                     }))
                 }),
                 shareReplay({ bufferSize: 1, refCount: true }),
