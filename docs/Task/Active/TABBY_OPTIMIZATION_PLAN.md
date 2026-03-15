@@ -548,6 +548,7 @@
 
 - 2026-03-15：修复 `tabby-plugin-manager`/`tabby-ai-assistant` 构建兼容问题，补充完成 `npm run build` 与 `npm run lint:progressive` 验证
 - 2026-03-15：调整插件构建 `mainFields` 顺序，消除 `tabby-settings` 的 `marked` 导出 warning，并复验 `npm run build`
+- 2026-03-15：迁移 Sass `@import` 为 `@use`，内联调整 `ngx-toastr` 样式并替换弃用函数，构建告警清零
 
 ---
 

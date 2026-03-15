@@ -1888,6 +1888,18 @@ npm run build
 - `marked` 相关 warning 已消除
 - 仍仅保留既有 Sass `@import` deprecation warning
 
+继续清理 Sass `@import` 与内建函数弃用告警（`tabby-core/theme*`、`tabby-serial`、`tabby-telnet`、`tabby-ai-assistant`），并将 `ngx-toastr` 样式内联改造为模块化写法后，再次执行：
+
+```bash
+npm run build
+```
+
+结果：
+
+- typings 全部通过
+- webpack 全部通过
+- Sass 相关 deprecation warning 已清零
+
 ### 5.2 启动冒烟
 
 已多轮通过：

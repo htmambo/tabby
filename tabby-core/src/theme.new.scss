@@ -1,7 +1,14 @@
 @use "sass:math";
-
-$font-family-sans-serif: "Source Sans Pro";
-$font-size-base: math.div(14rem, 16);
+@use "bootstrap/scss/bootstrap" as * with (
+    $font-family-sans-serif: "Source Sans Pro",
+    $font-size-base: math.div(14rem, 16),
+    $modal-header-border-color: transparent,
+    $modal-footer-border-color: transparent,
+    $form-check-input-width: 1.4em,
+    $form-switch-width: 2.5em,
+    $input-placeholder-color: var(--theme-fg-more-2),
+);
+@use "./theme.vendor.scss";
 
 app-root {
     background: transparent;
@@ -198,19 +205,6 @@ app-root {
 tab-body {
     background: var(--body-bg);
 }
-
-$tab-border-radius: 5px;
-
-$modal-header-border-color:      transparent;
-$modal-footer-border-color:      transparent;
-
-$form-check-input-width: 1.4em;
-$form-switch-width: 2.5em;
-
-$input-placeholder-color: var(--theme-fg-more-2);
-
-@import '~bootstrap/scss/bootstrap.scss';
-@import "./theme.vendor.scss";
 
 body {
     background: var(--body-bg);

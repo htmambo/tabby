@@ -3,7 +3,7 @@
  */
 
 // 导入主题系统
-@import 'themes';
+@use 'themes';
 
 // 主题颜色变量已移至 themes.scss
 // 这里只保留通用样式和组件样式

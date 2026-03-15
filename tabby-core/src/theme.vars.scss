@@ -1,3 +1,8 @@
+@use "bootstrap/scss/functions" as *;
+@use "sass:color";
+@use "sass:map";
+@use "sass:math";
+
 $white:    #fff;
 $gray-100: #f8f9fa;
 $gray-200: #e9ecef;
@@ -20,8 +25,6 @@ $teal:   #5bc0de !default;
 $pink:   #ff5b77 !default;
 $purple: #613d7c !default;
 
-
-@import "~bootstrap/scss/functions";
 
 $content-bg: rgba(39, 49, 60, 0.65); //#1D272D;
 $content-bg-solid: #1D272D;
@@ -48,7 +51,7 @@ $body-bg2: #20333e;
 
 $font-family-sans-serif: "Source Sans Pro";
 $font-family-monospace: "Source Code Pro";
-$font-size-base: 14rem / 16;
+$font-size-base: math.div(14rem, 16);
 $font-size-lg: 1.28rem;
 $font-size-sm: .85rem;
 
@@ -175,12 +178,12 @@ $badge-padding-y: 4px;
 $badge-padding-x: 6px;
 
 
-$form-check-input-border: lighten($body-bg, 25%);
+$form-check-input-border: color.adjust($body-bg, $lightness: 25%);
 $form-check-input-width: 1.4em;
 $form-switch-width: 2.5em;
-$form-switch-color: lighten($body-bg, 25%);
-$form-switch-focus-color: lighten($body-bg, 40%);
-$form-switch-checked-color: map-get($theme-colors, "primary");
+$form-switch-color: color.adjust($body-bg, $lightness: 25%);
+$form-switch-focus-color: color.adjust($body-bg, $lightness: 40%);
+$form-switch-checked-color: map.get($theme-colors, "primary");
 
 
 $modal-content-bg:               $content-bg-solid;
