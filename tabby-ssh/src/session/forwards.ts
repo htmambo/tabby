@@ -30,7 +30,11 @@ export class ForwardedPort implements ForwardedPortConfig {
             })
         } else if (this.type === PortForwardType.Dynamic) {
             return new Promise((resolve, reject) => {
-                this.listener = socksv5.createServer((info, acceptConnection, rejectConnection) => {
+                type SocksProxyInfo = { dstAddr: string, dstPort: number }
+                type SocksAccept = (allow?: boolean) => Socket
+                type SocksReject = () => void
+                type SocksServer = Server & { useAuth?: (auth: unknown) => void }
+                this.listener = socksv5.createServer((info: SocksProxyInfo, acceptConnection: SocksAccept, rejectConnection: SocksReject) => {
                     callback(
                         () => acceptConnection(true),
                         () => rejectConnection(),
@@ -39,10 +43,11 @@ export class ForwardedPort implements ForwardedPortConfig {
                         info.dstAddr,
                         info.dstPort,
                     )
-                }) as Server
+                }) as SocksServer
                 this.listener.on('error', reject)
                 this.listener.listen(this.port, this.host, resolve)
-                this.listener['useAuth'](socksv5.auth.None())
+                const socksListener = this.listener as SocksServer
+                socksListener.useAuth?.(socksv5.auth.None())
             })
         } else {
             throw new Error('Invalid forward type for a local listener')

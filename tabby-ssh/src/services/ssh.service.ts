@@ -65,7 +65,7 @@ export class SSHService {
         }
         let tmpFile: tmp.FileResult|null = null
         if (profile.options.jumpHost) {
-            const jumpHostProfile = this.config.store.profiles.find(x => x.id === profile.options.jumpHost) ?? null
+            const jumpHostProfile = this.config.store.profiles.find((x: { id?: string }) => x.id === profile.options.jumpHost) ?? null
             const xTunnelParams = await this.generateWinSCPXTunnelURI(jumpHostProfile)
             uri += xTunnelParams.uri ?? ''
             tmpFile = xTunnelParams.privateKeyFile ?? null

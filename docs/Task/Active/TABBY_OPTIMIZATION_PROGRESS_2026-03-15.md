@@ -857,6 +857,20 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-settings/src/components/releaseNotesTab.component.ts`
 - `tabby-settings/src/services/configSync.service.ts`
 
+### 3.65 tabby-ssh noImplicitAny 阶段落地
+
+为 `tabby-ssh` 启用 `noImplicitAny`，补齐 SSH 配置面板、已知主机、端口转发与连接流程中的显式类型，并增加模块声明以覆盖依赖链路中缺失的类型定义。该阶段覆盖 `tabby-ssh` 与其间接依赖的缺失模块声明，保证 SSH 插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-ssh/tsconfig.json`
+- `tabby-ssh/types/legacy-modules.d.ts`
+- `tabby-ssh/src/components/sshSettingsTab.component.ts`
+- `tabby-ssh/src/services/ssh.service.ts`
+- `tabby-ssh/src/services/sshKnownHosts.service.ts`
+- `tabby-ssh/src/session/forwards.ts`
+- `tabby-ssh/src/session/ssh.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1434,6 +1448,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-terminal` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-ssh` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-ssh/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-ssh` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

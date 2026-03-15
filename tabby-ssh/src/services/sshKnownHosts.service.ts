@@ -18,7 +18,7 @@ export class SSHKnownHostsService {
     ) { }
 
     getFor (selector: KnownHostSelector): KnownHost|null {
-        return this.config.store.ssh.knownHosts.find(x => x.host === selector.host && x.port === selector.port && x.type === selector.type) ?? null
+        return this.config.store.ssh.knownHosts.find((x: KnownHost) => x.host === selector.host && x.port === selector.port && x.type === selector.type) ?? null
     }
 
     async store (selector: KnownHostSelector, digest: string): Promise<void> {

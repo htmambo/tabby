@@ -371,11 +371,6 @@ export class SSHSession {
         await this.init()
         const readyTimeoutMs = this.getReadyTimeoutMs()
 
-        const algorithms = {}
-        for (const key of Object.values(SSHAlgorithmType)) {
-            algorithms[key] = this.profile.options.algorithms[key].filter(x => supportedAlgorithms[key].includes(x))
-        }
-
         // eslint-disable-next-line @typescript-eslint/init-declarations
         let transport: russh.SshTransport
         if (this.profile.options.proxyCommand) {
