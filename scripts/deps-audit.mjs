@@ -6,13 +6,25 @@ const run = (command, args) => new Promise(resolve => {
     child.on('exit', code => resolve({ code: code ?? 0 }))
 })
 
+const npmExec = process.env.npm_execpath ?? ''
+const nodeExec = process.execPath
+const runNpm = (args) => {
+    if (!npmExec) {
+        return run('npm', args)
+    }
+    const usesNode = npmExec.endsWith('.js')
+    const command = usesNode ? nodeExec : npmExec
+    const commandArgs = usesNode ? [npmExec, ...args] : args
+    return run(command, commandArgs)
+}
+
 const level = process.env.AUDIT_LEVEL ?? 'high'
 const userAgent = process.env.npm_config_user_agent ?? ''
 const preferYarn = userAgent.includes('yarn')
 
 const runAudit = async () => {
     if (!preferYarn) {
-        const result = await run('npm', ['audit', `--audit-level=${level}`])
+        const result = await runNpm(['audit', `--audit-level=${level}`])
         if (result.error?.code !== 'ENOENT') {
             return result
         }
@@ -20,7 +32,7 @@ const runAudit = async () => {
 
     const fallback = await run('yarn', ['audit', '--level', level])
     if (fallback.error?.code === 'ENOENT' && preferYarn) {
-        return run('npm', ['audit', `--audit-level=${level}`])
+        return runNpm(['audit', `--audit-level=${level}`])
     }
     return fallback
 }

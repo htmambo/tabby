@@ -2077,7 +2077,18 @@ timeout 18s env TABBY_DEV=1 ./node_modules/.bin/electron app -d --no-sandbox --d
 
 ---
 
-## 8. 结论
+## 8. 量化与审计补充（2026-03-15）
+
+本轮补齐了“量化基线 + 依赖审计”相关的可执行项，结果如下：
+
+- `deps:*` 脚本改为优先使用 `npm_execpath`，避免被本地 `node_modules/.bin/npm` 误导版本。
+- 依赖安全审计：`npm run deps:audit`（`NO_UPDATE_NOTIFIER=1`）检出 112 个漏洞（9 low / 30 moderate / 61 high / 12 critical），其中包含 Angular 与工具链深层依赖的告警，需分层梳理后处理。
+- 代码质量基线：`npm run lint:progressive` 输出 `no matching files to lint`，需要先定义评分口径与采样范围。
+- 构建基线：`npm run build` 全量构建通过，总耗时 1m30.62；过程中出现 npm update check 权限告警（建议使用 `NO_UPDATE_NOTIFIER=1` 或修复 configstore 权限）。
+
+---
+
+## 9. 结论
 
 本阶段已经完成“从应用无法稳定启动，到恢复稳定，再到持续做低风险安全/性能收口”的核心工作。当前最重要的成果不是某一个单点优化，而是建立了一条可持续推进的稳定基线：
 

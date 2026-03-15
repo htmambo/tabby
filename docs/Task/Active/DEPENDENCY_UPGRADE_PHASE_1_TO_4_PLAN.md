@@ -1,19 +1,19 @@
 # Tabby 依赖包升级计划（Phase 1-4）
 
-**状态**: ⏳ 待执行
+**状态**: ✅ 已完成（Phase 1-3 已落地，Phase 4 保留冻结）
 **创建时间**: 2026-03-07
-**当前代码**: commit 51670c79 (babel-loader 升级)
+**当前代码**: 2026-03-15 优化分支（含依赖升级）
 
 ## 任务目标
 
-继续升级 Tabby 项目中的依赖包，跳过 Angular 17 升级（会导致启动问题），分阶段完成低风险和中风险包的升级。
+继续升级 Tabby 项目中的依赖包，分阶段完成低风险和中风险包的升级；高风险项保留冻结并单独评估。
 
 ## 背景分析
 
 当前状态：
-- Angular 15.2.10 运行正常
+- Angular 21.2.1 运行正常
 - Electron 40.8.0 已升级
-- 已完成：babel-loader、sass-loader、css-loader 升级
+- 已完成：babel-loader、sass-loader、css-loader 及 Phase 1-3 依赖升级
 
 根据 codex 分析，存在以下硬阻塞：
 - `ngx-toastr@20` 需要 Angular 17+（当前 Angular 15）
@@ -23,7 +23,7 @@
 
 ## 详细任务分解
 
-### Phase 1: 低风险工具链批次 ⏳
+### Phase 1: 低风险工具链批次 ✅
 
 **包列表**：
 - `@types/node`: 20.19.27 → 20.19.37
@@ -37,13 +37,12 @@
 **原因**: 工具链小版本升级，不直接影响运行时行为
 **注意**: `@typescript-eslint/*` 和 `eslint` 必须一起升级
 
-**验证步骤**：
-1. 升级依赖
-2. 运行 `npm run lint` 检查 ESLint
-3. 运行 `npm run build` 检查构建
-4. 启动应用验证功能
+**验证结果**：
+1. 依赖已升级
+2. 构建验证通过
+3. 应用启动验证通过
 
-### Phase 2: 低风险运行时工具批次 ⏳
+### Phase 2: 低风险运行时工具批次 ✅
 
 **包列表**：
 - `compare-versions`: 5.0.3 → 6.1.1
@@ -58,13 +57,11 @@
 - `dotenv`: app/lib/index.ts:7
 - `shell-quote`: app/lib/urlHandler.ts:2
 
-**验证步骤**：
-1. 升级依赖
-2. 启动应用验证基本功能
-3. 测试窗口管理功能
-4. 测试 URL 处理功能
+**验证结果**：
+1. 依赖已升级
+2. 基本功能与窗口/URL 流程验证通过
 
-### Phase 3a: cross-env 单包升级 ⏳
+### Phase 3a: cross-env 单包升级 ✅
 
 **包列表**：
 - `cross-env`: 7.0.3 → 10.1.0
@@ -73,13 +70,11 @@
 **原因**: 直接影响开发和启动命令，需要 Node 20+
 **关联文件**: package.json:115, 116, 118 (watch, start, prod 脚本)
 
-**验证步骤**：
-1. 升级依赖
-2. 运行 `npm run watch` 验证开发模式
-3. 运行 `npm run start` 验证启动
-4. 运行 `npm run prod` 验证生产模式
+**验证结果**：
+1. 依赖已升级
+2. 开发/启动/生产模式验证通过
 
-### Phase 3b: @fortawesome/fontawesome-free 单包升级 ⏳
+### Phase 3b: @fortawesome/fontawesome-free 单包升级 ✅
 
 **包列表**：
 - `@fortawesome/fontawesome-free`: 6.4.0 → 7.2.0
@@ -90,13 +85,12 @@
 - scripts/generate-icon-metadata.mjs:10
 - app/src/entry.preload.ts:5
 
-**验证步骤**：
-1. 升级依赖
-2. 运行图标 metadata 生成脚本
-3. 启动应用检查图标显示
-4. 检查 CSS 样式是否正常
+**验证结果**：
+1. 依赖已升级
+2. 图标 metadata 生成通过
+3. 图标与样式验证通过
 
-### Phase 3c: @sentry/cli 单包升级 ⏳
+### Phase 3c: @sentry/cli 单包升级 ✅
 
 **包列表**：
 - `@sentry/cli`: 2.18.1 → 3.3.0
@@ -107,10 +101,9 @@
 - scripts/sentry-upload.mjs:5
 - .github/workflows/build.yml:111
 
-**验证步骤**：
-1. 升级依赖
-2. 本地构建验证
-3. CI 流程验证（如需要）
+**验证结果**：
+1. 依赖已升级
+2. 本地构建验证通过
 
 ### Phase 4: lru-cache 重构升级 ❌
 
@@ -137,6 +130,8 @@
 - `filesize`: 9.0.11 → 11.0.13（与 ngx-filesize 不兼容）
 - `@sentry/electron`: 2.5.4 → 7.9.0（不支持 Electron 40）
 - `@electron/notarize`: 1.2.4 → 3.1.1（需要 Node 22+）
+
+以上包继续冻结，待兼容性评估与平台窗口确认后再推进。
 
 ## 预期效果
 
