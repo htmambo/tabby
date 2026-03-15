@@ -5,7 +5,7 @@
         "target": "es2022",
         "moduleResolution": "bundler",
         "declaration": false,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "removeComments": false,
         "esModuleInterop": true,
         "emitDecoratorMetadata": true,
@@ -31,7 +31,8 @@
     "compileOnSave": false,
     "include": [
         "src/**/*.ts",
-        "lib/sentry.ts"
+        "lib/sentry.ts",
+        "types/**/*.d.ts"
     ],
     "exclude": [
         "dist",

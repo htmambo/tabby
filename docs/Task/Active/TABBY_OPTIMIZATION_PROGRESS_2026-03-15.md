@@ -1073,6 +1073,15 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-auto-sudo-password/src/index.ts`
 - `tabby-ai-assistant/src/index.ts`
 
+### 3.84 renderer tsconfig 启用 noImplicitAny
+
+为 renderer 侧 `app/tsconfig.json` 启用 `noImplicitAny`，补齐内置模块索引签名与类型声明文件引入，确保 renderer 路径可独立通过类型检查。
+
+涉及文件：
+
+- `app/tsconfig.json`
+- `app/src/plugins.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1826,6 +1835,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - 以上模块类型检查全部通过（未新增 TypeScript 错误）
+
+在 renderer 启用 noImplicitAny 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p app/tsconfig.json --noEmit
+```
+
+结果：
+
+- `app/tsconfig.json` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

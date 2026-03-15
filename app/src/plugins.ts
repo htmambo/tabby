@@ -106,7 +106,7 @@ const builtinPluginRoots = new Set<string>([
     ...builtinPluginRootPaths.map(x => normalizePathForCompare(x)),
 ])
 
-const cachedBuiltinModules = {
+const cachedBuiltinModules: Record<string, unknown> = {
     '@angular/animations': angularAnimations,
     '@angular/cdk/drag-drop': angularCdkDragDrop,
     '@angular/cdk/clipboard': angularCdkClipboard,
@@ -324,7 +324,7 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
 async function getPluginCandidateLocation (paths: any): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocationsPromises: Promise<{ pluginDir: string, packageName: string }[]>[] = []
 
-    const processedPaths = []
+    const processedPaths: string[] = []
 
     for (let pluginDir of paths) {
         if (processedPaths.includes(pluginDir)) {
