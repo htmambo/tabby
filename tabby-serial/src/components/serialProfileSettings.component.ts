@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Component } from '@angular/core'
-import { debounceTime, distinctUntilChanged, map } from 'rxjs'
+import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, map } from 'rxjs'
 import { FullyDefined, HostAppService, Platform, ProfileSettingsComponent } from 'tabby-core'
 import { SerialPortInfo, BAUD_RATES, SerialProfile } from '../api'
 import { SerialService } from '../services/serial.service'
@@ -21,11 +21,11 @@ export class SerialProfileSettingsComponent implements ProfileSettingsComponent<
         public hostApp: HostAppService,
     ) { }
 
-    portsAutocomplete = text$ => text$.pipe(map(() => {
+    portsAutocomplete: OperatorFunction<string, string[]> = (text$: Observable<string>) => text$.pipe(map(() => {
         return this.foundPorts.map(x => x.name)
     }))
 
-    baudratesAutocomplete = text$ => text$.pipe(
+    baudratesAutocomplete: OperatorFunction<string, Array<number | null>> = (text$: Observable<string>) => text$.pipe(
         debounceTime(200),
         distinctUntilChanged(),
         map((q: string) => [
@@ -34,7 +34,7 @@ export class SerialProfileSettingsComponent implements ProfileSettingsComponent<
         ]),
     )
 
-    portsFormatter = port => {
+    portsFormatter = (port: string | null) => {
         const p = this.foundPorts.find(x => x.name === port)
         if (p?.description) {
             return `${port} (${p.description})`

@@ -158,7 +158,7 @@ export class SerialSession extends BaseSession {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-empty-function
-    resize (_, __) {
+    resize (_columns?: number, _rows?: number) {
         this.streamProcessor.resize()
     }
 

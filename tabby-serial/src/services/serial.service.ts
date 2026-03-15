@@ -19,7 +19,7 @@ export class SerialService {
 
     async listPorts (): Promise<SerialPortInfo[]> {
         try {
-            return (await this.detectBinding().list()).map(x => ({
+            return (await this.detectBinding().list()).map((x: { path: string, manufacturer?: string | null, serialNumber?: string | null }) => ({
                 name: x.path,
                 description: `${x.manufacturer ?? ''} ${x.serialNumber ?? ''}`.trim() || undefined,
             }))

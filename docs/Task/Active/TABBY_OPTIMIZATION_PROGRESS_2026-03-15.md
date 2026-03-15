@@ -883,6 +883,18 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-local/src/components/environmentEditor.component.ts`
 - `tabby-local/src/components/shellSettingsTab.component.ts`
 
+### 3.67 tabby-serial noImplicitAny 阶段落地
+
+为 `tabby-serial` 启用 `noImplicitAny`，补齐串口会话、串口配置面板与串口服务的显式类型，并新增模块声明覆盖缺失依赖类型，保证串口插件路径可独立通过类型检查。
+
+涉及文件：
+
+- `tabby-serial/tsconfig.json`
+- `tabby-serial/types/legacy-modules.d.ts`
+- `tabby-serial/src/api.ts`
+- `tabby-serial/src/components/serialProfileSettings.component.ts`
+- `tabby-serial/src/services/serial.service.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1480,6 +1492,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-local` 类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-serial` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-serial/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-serial` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 
