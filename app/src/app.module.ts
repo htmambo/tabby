@@ -3,6 +3,23 @@ import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
 
+type ZoneSymbolProvider = {
+    __symbol__?: (name: string) => string
+}
+
+function patchZoneAwareRequestAnimationFrame (): void {
+    const zone = (window as Window & { Zone?: ZoneSymbolProvider }).Zone
+    const zoneSymbol = zone?.__symbol__?.('requestAnimationFrame')
+    if (!zoneSymbol) {
+        return
+    }
+    const windowAny = window as Window & Record<string, unknown>
+    const zoneRequestAnimationFrame = windowAny[zoneSymbol]
+    if (typeof zoneRequestAnimationFrame === 'function') {
+        window.requestAnimationFrame = zoneRequestAnimationFrame as typeof window.requestAnimationFrame
+    }
+}
+
 export function getRootModule (plugins: any[]) {
     const imports = [
         BrowserModule,
@@ -28,7 +45,7 @@ export function getRootModule (plugins: any[]) {
         bootstrap,
     }) class RootModule {
         constructor () {
-            (window as any)['requestAnimationFrame'] = window[window['Zone'].__symbol__('requestAnimationFrame')]
+            patchZoneAwareRequestAnimationFrame()
         }
     }
 

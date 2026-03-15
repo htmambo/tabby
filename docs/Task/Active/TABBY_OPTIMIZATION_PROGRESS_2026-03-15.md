@@ -1001,6 +1001,15 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-core/src/components/appRoot.component.ts`
 - `tabby-core/src/components/safeModeModal.component.ts`
 
+### 3.79 renderer window 访问收敛（Zone RAF / ResizeObserver）
+
+将 `window['Zone']`/`window['ResizeObserver']` 的直接字面量访问收敛为类型化访问与原生全局调用，减少对 `window as any` 的依赖，保持行为不变。
+
+涉及文件：
+
+- `app/src/app.module.ts`
+- `tabby-terminal/src/frontends/xtermFrontend.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1698,6 +1707,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - `tabby-core` 类型检查通过（未新增 TypeScript 错误）
+
+在收敛 renderer window 访问后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-terminal/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-terminal` 类型检查通过（未新增 TypeScript 错误）
 
 ### 5.2 启动冒烟
 

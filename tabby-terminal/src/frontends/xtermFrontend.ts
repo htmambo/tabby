@@ -358,7 +358,7 @@ export class XTermFrontend extends Frontend {
             event.stopPropagation()
         })
 
-        this.resizeObserver = new window['ResizeObserver'](() => {
+        this.resizeObserver = new ResizeObserver(() => {
             if (!this.enableResizing || this.shouldSkipObservedResize()) {
                 return
             }
