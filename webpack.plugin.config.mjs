@@ -3,11 +3,13 @@ import * as path from 'path'
 import wp from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import { AngularWebpackPlugin } from '@ngtools/webpack'
+import * as url from 'url'
 import * as vars from './scripts/vars.mjs'
 
 const bundleAnalyzer = new BundleAnalyzerPlugin({
     analyzerPort: 0,
 })
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 import { createEs2015LinkerPlugin } from '@angular/compiler-cli/linker/babel'
 const linkerPlugin = createEs2015LinkerPlugin({
@@ -22,6 +24,8 @@ const linkerPlugin = createEs2015LinkerPlugin({
 })
 
 export default options => {
+    const isDev = !!process.env.TABBY_DEV
+    const enableCache = !process.env.TABBY_DISABLE_CACHE
     const sassLoader = {
         loader: 'sass-loader',
         options: {
@@ -45,7 +49,17 @@ export default options => {
         devtoolPlugin = wp.EvalSourceMapDevToolPlugin
     }
 
-    const isDev = !!process.env.TABBY_DEV
+    const cacheConfig = enableCache ? {
+        type: 'filesystem',
+        cacheDirectory: path.resolve(options.dirname, 'node_modules', '.webpack-cache'),
+        version: vars.version,
+        buildDependencies: {
+            config: [
+                path.resolve(__dirname, 'webpack.plugin.config.mjs'),
+                path.resolve(options.dirname, 'tsconfig.json'),
+            ],
+        },
+    } : false
     const config = {
         target: 'node',
         entry: 'src/index.ts',
@@ -62,9 +76,11 @@ export default options => {
         optimization:{
             minimize: false,
         },
-        cache: !isDev ? false : {
-            type: 'filesystem',
-            cacheDirectory: path.resolve(options.dirname, 'node_modules', '.webpack-cache'),
+        cache: cacheConfig,
+        performance: isDev ? false : {
+            hints: 'warning',
+            maxAssetSize: 15 * 1024 * 1024,
+            maxEntrypointSize: 20 * 1024 * 1024,
         },
         resolve: {
             alias: options.alias ?? {},

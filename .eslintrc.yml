@@ -50,15 +50,15 @@ overrides:
     '@typescript-eslint/no-require-imports': off
     '@typescript-eslint/no-parameter-properties': off
     '@typescript-eslint/explicit-function-return-type': off
-    '@typescript-eslint/no-explicit-any': off
+    '@typescript-eslint/no-explicit-any': warn
     '@typescript-eslint/no-magic-numbers': off
     '@typescript-eslint/member-delimiter-style': off
     '@typescript-eslint/promise-function-async': off
     '@typescript-eslint/require-array-sort-compare': off
-    '@typescript-eslint/no-floating-promises': off
-    '@typescript-eslint/prefer-readonly': off
-    '@typescript-eslint/require-await': off
-    '@typescript-eslint/strict-boolean-expressions': off
+    '@typescript-eslint/no-floating-promises': warn
+    '@typescript-eslint/prefer-readonly': warn
+    '@typescript-eslint/require-await': warn
+    '@typescript-eslint/strict-boolean-expressions': warn
     '@typescript-eslint/max-params': off
     '@typescript-eslint/prefer-destructuring': off
     '@typescript-eslint/no-misused-promises':
@@ -141,7 +141,7 @@ overrides:
     - exceptAfterSingleLine: true
     '@typescript-eslint/dot-notation': off
     '@typescript-eslint/no-implicit-any-catch': off
-    '@typescript-eslint/member-ordering': off
+    '@typescript-eslint/member-ordering': warn
     '@typescript-eslint/no-var-requires': off
     '@typescript-eslint/no-unsafe-argument': off
     '@typescript-eslint/restrict-plus-operands': off

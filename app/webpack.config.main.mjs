@@ -4,19 +4,38 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
+const isDev = !!process.env.TABBY_DEV
+const enableCache = !process.env.TABBY_DISABLE_CACHE
+const fastBuild = !!process.env.TABBY_FAST_BUILD
+
 const config = {
     name: 'tabby-main',
     target: 'electron-main',
     entry: {
         main: path.resolve(__dirname, 'lib/index.ts'),
     },
-    mode: process.env.TABBY_DEV ? 'development' : 'production',
+    mode: isDev ? 'development' : 'production',
     context: __dirname,
     devtool: 'source-map',
     output: {
         path: path.join(__dirname, 'dist'),
         pathinfo: true,
         filename: '[name].js',
+    },
+    cache: enableCache ? {
+        type: 'filesystem',
+        cacheDirectory: path.resolve(__dirname, 'node_modules', '.webpack-cache'),
+        buildDependencies: {
+            config: [
+                path.resolve(__dirname, 'webpack.config.main.mjs'),
+                path.resolve(__dirname, 'tsconfig.main.json'),
+            ],
+        },
+    } : false,
+    performance: isDev ? false : {
+        hints: 'warning',
+        maxAssetSize: 15 * 1024 * 1024,
+        maxEntrypointSize: 20 * 1024 * 1024,
     },
     resolve: {
         modules: ['lib/', 'node_modules', '../node_modules'].map(x => path.join(__dirname, x)),
@@ -30,6 +49,8 @@ const config = {
                     loader: 'ts-loader',
                     options: {
                         configFile: path.resolve(__dirname, 'tsconfig.main.json'),
+                        transpileOnly: fastBuild,
+                        happyPackMode: fastBuild,
                     },
                 },
             },
@@ -73,6 +94,7 @@ const config = {
 
 if (process.env.BUNDLE_ANALYZER) {
     config.plugins.push(new BundleAnalyzerPlugin())
+    config.cache = false
 }
 
 export default () => config

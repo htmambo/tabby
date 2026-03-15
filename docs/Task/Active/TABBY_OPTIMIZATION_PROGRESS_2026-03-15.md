@@ -744,6 +744,46 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 
 本轮对项目中剩余 `setTimeout` / `setInterval` 进行了复扫。确认这些延迟要么已具备清理与托管机制，要么属于一次性 UI 延迟且不影响退出或生命周期收敛，未发现新的低风险可收口点。
 
+### 3.58 Webpack 持久化缓存与性能预算
+
+为 app renderer/main 与插件通用配置引入 filesystem cache，增加 `TABBY_DISABLE_CACHE` 开关与构建依赖跟踪；在 production 下补齐温和的 performance budget，避免异常体积增长被忽略；主进程 `ts-loader` 增加 `TABBY_FAST_BUILD` 快速编译开关（默认关闭）。
+
+涉及文件：
+
+- `app/webpack.config.mjs`
+- `app/webpack.config.main.mjs`
+- `webpack.plugin.config.mjs`
+
+### 3.59 Bundle 分析开关补齐
+
+补齐 renderer 侧 `BUNDLE_ANALYZER` 开关，并确保与 filesystem cache 互斥；插件侧继续使用 `PLUGIN_BUNDLE_ANALYZER=<plugin>`；主进程保留 `BUNDLE_ANALYZER` 开关。
+
+涉及文件：
+
+- `app/webpack.config.mjs`
+- `app/webpack.config.main.mjs`
+- `webpack.plugin.config.mjs`
+
+### 3.60 ESLint 规则恢复（首批）
+
+把 `no-explicit-any` / `no-floating-promises` / `require-await` / `strict-boolean-expressions` / `prefer-readonly` / `member-ordering` 调整为 `warn`，作为分阶段恢复规则的起点。
+
+涉及文件：
+
+- `.eslintrc.yml`
+
+### 3.61 依赖管理自动化
+
+新增 `deps:check` / `deps:audit` / `deps:update` 脚本与 CI workflow，支持定期过期依赖检查与安全审计。
+
+涉及文件：
+
+- `package.json`
+- `scripts/deps-check.mjs`
+- `scripts/deps-audit.mjs`
+- `scripts/deps-update.mjs`
+- `.github/workflows/deps-check.yml`
+
 ---
 
 ## 4. 关键文件索引
@@ -1278,6 +1318,19 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 - 全量 multi-compiler 构建通过（覆盖 app renderer/main 与所有 `tabby-*` 模块）
 - 仍仅保留既有 Sass `@import` / 内建函数弃用 warning（`tabby-core` 主题、`ngx-toastr`、`tabby-serial`/`tabby-telnet`、`tabby-ai-assistant`）
 - 未出现新增 TypeScript / 模板 / Webpack 错误
+
+在引入 filesystem cache 与性能预算后，再次执行全量构建验证：
+
+```bash
+env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config webpack.config.mjs --mode=production
+```
+
+结果：
+
+- 全量 multi-compiler 构建通过
+- 新增 webpack cache 解析提示：根 `webpack.config.mjs` 使用动态 `import(x)`，导致 buildDependencies 解析警告（不阻塞构建）
+- 新增 cache 序列化大字符串提示（不阻塞构建）
+- 仍保留既有 Sass `@import` / 内建函数弃用 warning
 
 ### 5.2 启动冒烟
 
