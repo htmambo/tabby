@@ -43,7 +43,7 @@ export class StartPageComponent implements OnDestroy {
     }
 
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    buttonsTrackBy (_, btn: StartPageCommand): any {
+    buttonsTrackBy (_index: number, btn: StartPageCommand): any {
         return btn.label + btn.icon
     }
 

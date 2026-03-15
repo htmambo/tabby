@@ -26,7 +26,7 @@ export abstract class Logger {
 
 export class ConsoleLogger extends Logger {
     protected doLog (level: string, ...args: any[]): void {
-        console[level](`%c[${this.name}]`, 'color: #aaa', ...args)
+        ;(console as any)[level](`%c[${this.name}]`, 'color: #aaa', ...args)
     }
 }
 

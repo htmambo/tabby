@@ -19,13 +19,13 @@ export function isWindowsBuild (build: number): boolean {
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function getCSSFontFamily (config: any): string {
-    let fonts: string[] = config.terminal.font.split(',').map(x => x.trim().replaceAll('"', ''))
+    let fonts: string[] = config.terminal.font.split(',').map((x: string) => x.trim().replaceAll('"', ''))
     if (config.terminal.fallbackFont) {
         fonts.push(config.terminal.fallbackFont)
     }
     fonts.push('monospace-fallback')
     fonts.push('monospace')
-    fonts = fonts.map(x => `"${x}"`)
+    fonts = fonts.map((x: string) => `"${x}"`)
     return fonts.join(', ')
 }
 

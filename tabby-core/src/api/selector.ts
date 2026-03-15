@@ -8,5 +8,5 @@ export interface SelectorOption<T> {
     freeInputEquivalent?: string
     color?: string
     weight?: number
-    callback?: (string?) => void
+    callback?: (input?: string) => void
 }

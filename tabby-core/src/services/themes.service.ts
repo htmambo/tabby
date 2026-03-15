@@ -55,14 +55,14 @@ export class ThemesService {
         const theme = this._getActiveColorScheme()
         const isDark = Color(theme.background).luminosity() < Color(theme.foreground).luminosity()
 
-        function more (some, factor) {
+        function more (some: string, factor: number) {
             if (isDark) {
                 return Color(some).darken(factor)
             }
             return Color(some).lighten(factor)
         }
 
-        function less (some, factor) {
+        function less (some: string, factor: number) {
             if (!isDark) {
                 return Color(some).darken(factor)
             }
@@ -72,9 +72,9 @@ export class ThemesService {
         const background = this.getVibrancyBackground(Color(theme.background), configStore.appearance)
         // const background = theme.background
         const backgroundMore = more(background.string(), 0.25).string()
-        const themeBackgroundRgb = Color(theme.background).rgb().array().map(x => Math.round(x)).join(', ')
-        const themeForegroundRgb = Color(theme.foreground).rgb().array().map(x => Math.round(x)).join(', ')
-        const bodyBackgroundRgb = background.rgb().array().map(x => Math.round(x)).join(', ')
+        const themeBackgroundRgb = Color(theme.background).rgb().array().map((x: number) => Math.round(x)).join(', ')
+        const themeForegroundRgb = Color(theme.foreground).rgb().array().map((x: number) => Math.round(x)).join(', ')
+        const bodyBackgroundRgb = background.rgb().array().map((x: number) => Math.round(x)).join(', ')
         // const backgroundMore =more(theme.background, 0.25).string()
         const accentIndex = 4
         const vars: Record<string, string> = {}
@@ -214,7 +214,7 @@ export class ThemesService {
         return Math.min(1, numericOpacity)
     }
 
-    private getVibrancyBackground (background: Color, appearance: Record<string, unknown>): Color {
+    private getVibrancyBackground (background: any, appearance: Record<string, unknown>): any {
         if (!appearance.vibrancy) {
             return background
         }
@@ -229,13 +229,13 @@ export class ThemesService {
         return `${(this.defaultVibrancyOverlayAlpha * this.getVibrancyOpacityFactor(appearance)).toFixed(3)}`
     }
 
-    private ensureContrast (color: Color, against: Color): Color {
+    private ensureContrast (color: any, against: any): any {
         const a = this.increaseContrast(color, against, 1.1)
         const b = this.increaseContrast(color, against, 0.9)
         return a.contrast(against) > b.contrast(against) ? a : b
     }
 
-    private increaseContrast (color: Color, against: Color, step=1.1): Color {
+    private increaseContrast (color: any, against: any, step=1.1): any {
         color = color.hsl()
         color.color[2] = Math.max(color.color[2], 0.01)
         while (

@@ -78,18 +78,18 @@ export class ProfilesService {
     * arg: clone (default: false) -> return deepclone Array
     */
     async getProfiles (options?: { includeBuiltin?: boolean, clone?: boolean }): Promise<PartialProfile<Profile>[]> {
-        let list = this.config.store.profiles ?? []
+        let list: PartialProfile<Profile>[] = this.config.store.profiles ?? []
         if (options?.includeBuiltin ?? true) {
             const lists = await Promise.all(this.config.enabledServices(this.profileProviders).map(x => x.getBuiltinProfiles()))
             list = [
                 ...this.config.store.profiles ?? [],
-                ...lists.reduce((a, b) => a.concat(b), []),
+                ...lists.reduce((a: PartialProfile<Profile>[], b: PartialProfile<Profile>[]) => a.concat(b), [] as PartialProfile<Profile>[]),
             ]
         }
 
-        const sortKey = p => `${this.resolveProfileGroupName(p.group ?? '')} / ${p.name}`
-        list.sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
-        list.sort((a, b) => (a.isBuiltin ? 1 : 0) - (b.isBuiltin ? 1 : 0))
+        const sortKey = (p: PartialProfile<Profile>) => `${this.resolveProfileGroupName(p.group ?? '')} / ${p.name}`
+        list.sort((a: PartialProfile<Profile>, b: PartialProfile<Profile>) => sortKey(a).localeCompare(sortKey(b)))
+        list.sort((a: PartialProfile<Profile>, b: PartialProfile<Profile>) => (a.isBuiltin ? 1 : 0) - (b.isBuiltin ? 1 : 0))
         return options?.clone ? deepClone(list) : list
     }
 
@@ -102,7 +102,7 @@ export class ProfilesService {
             profile.id = `${profile.type}:custom:${slugify(profile.name)}:${uuidv4()}`
         }
 
-        const cProfile = this.config.store.profiles.find(p => p.id === profile.id)
+        const cProfile = this.config.store.profiles.find((p: PartialProfile<Profile>) => p.id === profile.id)
         if (cProfile) {
             throw new Error(`Cannot insert new Profile, duplicated Id: ${profile.id}`)
         }
@@ -114,7 +114,7 @@ export class ProfilesService {
     * Write a Profile in config
     */
     async writeProfile (profile: PartialProfile<Profile>): Promise<void> {
-        const cProfile = this.config.store.profiles.find(p => p.id === profile.id)
+        const cProfile = this.config.store.profiles.find((p: PartialProfile<Profile>) => p.id === profile.id)
         if (cProfile) {
             // Fully replace the config
             for (const k in cProfile) {
@@ -130,7 +130,7 @@ export class ProfilesService {
     */
     async deleteProfile (profile: PartialProfile<Profile>): Promise<void> {
         this.providerForProfile(profile)?.deleteProfile(this.getConfigProxyForProfile(profile))
-        this.config.store.profiles = this.config.store.profiles.filter(p => p.id !== profile.id)
+        this.config.store.profiles = this.config.store.profiles.filter((p: PartialProfile<Profile>) => p.id !== profile.id)
 
         const profileHotkeyName = ProfilesService.getProfileHotkeyName(profile)
         if (this.config.store.hotkeys.profile.hasOwnProperty(profileHotkeyName)) {
@@ -158,7 +158,7 @@ export class ProfilesService {
             }
         }
 
-        this.config.store.profiles = this.config.store.profiles.filter(x => !filter(x))
+        this.config.store.profiles = this.config.store.profiles.filter((x: PartialProfile<Profile>) => !filter(x))
     }
 
     async openNewTabForProfile <P extends Profile> (profile: PartialProfile<P>): Promise<BaseTabComponent|null> {
@@ -193,7 +193,7 @@ export class ProfilesService {
 
         let recentProfiles: PartialProfile<Profile>[] = JSON.parse(window.localStorage['recentProfiles'] ?? '[]')
         if (this.config.store.terminal.showRecentProfiles > 0) {
-            recentProfiles = recentProfiles.filter(x => x.group !== profile.group || x.name !== profile.name)
+            recentProfiles = recentProfiles.filter((x: PartialProfile<Profile>) => x.group !== profile.group || x.name !== profile.name)
             recentProfiles.unshift(profile)
             recentProfiles = recentProfiles.slice(0, this.config.store.terminal.showRecentProfiles)
         } else {
@@ -298,8 +298,8 @@ export class ProfilesService {
                             description: `(${provider.name.toUpperCase()})`,
                             icon: 'fas fa-arrow-right',
                             weight: provider.id !== this.config.store.defaultQuickConnectProvider ? 1 : 0,
-                            callback: query => {
-                                const profile = provider.quickConnect(query)
+                            callback: (query?: string) => {
+                                const profile = provider.quickConnect(query ?? '')
                                 resolve(profile)
                             },
                         })
@@ -379,7 +379,7 @@ export class ProfilesService {
     * Does not return builtin groups
     */
     getSyncProfileGroups (): PartialProfileGroup<ProfileGroup>[] {
-        return deepClone(this.config.store.groups ?? [])
+        return deepClone(this.config.store.groups ?? []) as PartialProfileGroup<ProfileGroup>[]
     }
 
     /**
@@ -394,12 +394,12 @@ export class ProfilesService {
         }
 
         let groups: PartialProfileGroup<ProfileGroup>[] = this.getSyncProfileGroups()
-        groups = groups.map(x => {
+        groups = groups.map((x: PartialProfileGroup<ProfileGroup>) => {
             x.editable = true
 
             if (options?.includeProfiles) {
-                x.profiles = profiles.filter(p => p.group === x.id)
-                profiles = profiles.filter(p => p.group !== x.id)
+                x.profiles = profiles.filter((p: PartialProfile<Profile>) => p.group === x.id)
+                profiles = profiles.filter((p: PartialProfile<Profile>) => p.group !== x.id)
             }
 
             return x
@@ -421,8 +421,8 @@ export class ProfilesService {
             }
 
             if (options.includeProfiles) {
-                for (const profile of profiles.filter(p => p.isBuiltin)) {
-                    let group: PartialProfileGroup<ProfileGroup> | undefined = builtInGroups.find(g => g.id === slugify(profile.group ?? 'built-in'))
+                for (const profile of profiles.filter((p: PartialProfile<Profile>) => p.isBuiltin)) {
+                    let group: PartialProfileGroup<ProfileGroup> | undefined = builtInGroups.find((g: PartialProfileGroup<ProfileGroup>) => g.id === slugify(profile.group ?? 'built-in'))
                     if (!group) {
                         group = {
                             id: `${slugify(profile.group!)}`,
@@ -436,7 +436,7 @@ export class ProfilesService {
                     group.profiles!.push(profile)
                 }
 
-                ungrouped.profiles = profiles.filter(p => !p.isBuiltin)
+                ungrouped.profiles = profiles.filter((p: PartialProfile<Profile>) => !p.isBuiltin)
             }
 
             groups = groups.concat(builtInGroups)
@@ -455,7 +455,7 @@ export class ProfilesService {
             group.id = `${uuidv4()}`
         }
 
-        const cProfileGroup = this.config.store.groups.find(p => p.id === group.id)
+        const cProfileGroup = this.config.store.groups.find((p: PartialProfileGroup<ProfileGroup>) => p.id === group.id)
         if (cProfileGroup) {
             throw new Error(`Cannot insert new ProfileGroup, duplicated Id: ${group.id}`)
         }
@@ -470,7 +470,7 @@ export class ProfilesService {
         delete group.profiles
         delete group.editable
 
-        const cGroup = this.config.store.groups.find(g => g.id === group.id)
+        const cGroup = this.config.store.groups.find((g: PartialProfileGroup<ProfileGroup>) => g.id === group.id)
         if (cGroup) {
             Object.assign(cGroup, group)
         }
@@ -480,11 +480,11 @@ export class ProfilesService {
     * Delete a ProfileGroup from config
     */
     async deleteProfileGroup (group: PartialProfileGroup<ProfileGroup>, options?: { deleteProfiles?: boolean }): Promise<void> {
-        this.config.store.groups = this.config.store.groups.filter(g => g.id !== group.id)
+        this.config.store.groups = this.config.store.groups.filter((g: PartialProfileGroup<ProfileGroup>) => g.id !== group.id)
         if (options?.deleteProfiles) {
-            await this.bulkDeleteProfiles((p) => p.group === group.id)
+            await this.bulkDeleteProfiles((p: PartialProfile<Profile>) => p.group === group.id)
         } else {
-            for (const profile of this.config.store.profiles.filter(x => x.group === group.id)) {
+            for (const profile of this.config.store.profiles.filter((x: PartialProfile<Profile>) => x.group === group.id)) {
                 delete profile.group
             }
         }
@@ -500,7 +500,7 @@ export class ProfilesService {
     * Resolve and return ProfileGroup Name from ProfileGroup ID
     */
     resolveProfileGroupName (groupId: string): string {
-        return this.config.store.groups.find(g => g.id === groupId)?.name ?? groupId
+        return this.config.store.groups.find((g: PartialProfileGroup<ProfileGroup>) => g.id === groupId)?.name ?? groupId
     }
 
     /**
@@ -509,7 +509,7 @@ export class ProfilesService {
     * arg: skipUserDefaults -> do not merge global provider defaults in ConfigProxy
     */
     getProviderProfileGroupDefaults (groupId: string, provider: ProfileProvider<Profile>): any {
-        return this.getSyncProfileGroups().find(g => g.id === groupId)?.defaults?.[provider.id] ?? {}
+        return this.getSyncProfileGroups().find((g: PartialProfileGroup<ProfileGroup>) => g.id === groupId)?.defaults?.[provider.id] ?? {}
     }
 
 }

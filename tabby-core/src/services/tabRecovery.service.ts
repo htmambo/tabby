@@ -76,7 +76,7 @@ export class TabRecoveryService {
             if (tab.color) {
                 token.tabColor = tab.color
             }
-            token.disableDynamicTitle = tab['disableDynamicTitle']
+            token.disableDynamicTitle = (tab as { disableDynamicTitle?: boolean }).disableDynamicTitle
         }
         return token
     }

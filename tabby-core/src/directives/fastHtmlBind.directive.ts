@@ -31,7 +31,7 @@ export class FastHtmlBindDirective implements OnChanges, OnDestroy {
             }
             link.setAttribute('href', safeHref)
             link.setAttribute('rel', 'noopener noreferrer')
-            link.onclick = event => {
+            link.onclick = (event: MouseEvent) => {
                 event.preventDefault()
                 this.platform.openExternal(safeHref)
             }

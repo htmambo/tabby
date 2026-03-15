@@ -31,7 +31,7 @@ export class TransfersMenuComponent {
     }
 
     showTransfer (transfer: FileTransfer): void {
-        const fp = transfer['filePath']
+        const fp = (transfer as { filePath?: string }).filePath
         if (fp) {
             this.platform.showItemInFolder(fp)
         }

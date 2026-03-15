@@ -14,19 +14,19 @@ import { PartialProfileGroup, ProfileGroup } from '../api/profileProvider'
 const deepmerge = require('deepmerge')
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const configMerge = (a, b) => deepmerge(a, b, { arrayMerge: (_d, s) => s }) // eslint-disable-line @typescript-eslint/no-var-requires
+export const configMerge = (a: any, b: any) => deepmerge(a, b, { arrayMerge: (_d: any, s: any) => s }) // eslint-disable-line @typescript-eslint/no-var-requires
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const configMergeByDefault = (a, b) => deepmerge(a, b) // eslint-disable-line @typescript-eslint/no-var-requires
+export const configMergeByDefault = (a: any, b: any) => deepmerge(a, b) // eslint-disable-line @typescript-eslint/no-var-requires
 
 const LATEST_VERSION = 1
 
-function isStructuralMember (v): v is AnyRec {
+function isStructuralMember (v: any): v is AnyRec {
     return v instanceof Object && !(v instanceof Array) &&
         Object.keys(v).length > 0 && !v.__nonStructural
 }
 
-function isNonStructuralObjectMember (v): boolean {
+function isNonStructuralObjectMember (v: any): boolean {
     return v instanceof Object && (v instanceof Array || v.__nonStructural)
 }
 
@@ -199,11 +199,11 @@ export class ConfigService {
     }
 
     getDefaults (): Record<string, any> {
-        const cleanup = o => {
+        const cleanup = (o: any): any => {
             if (o instanceof Array) {
                 return o.map(cleanup)
             } else if (o instanceof Object) {
-                const r = {}
+                const r: Record<string, any> = {}
                 for (const k of Object.keys(o)) {
                     if (k !== '__nonStructural') {
                         r[k] = cleanup(o[k])
@@ -277,10 +277,11 @@ export class ConfigService {
         }
         if (!this.servicesCache) {
             this.servicesCache = {}
-            for (const imp of window['pluginModules']) {
+            const pluginModules = (window as any).pluginModules as any[] | undefined
+            for (const imp of pluginModules ?? []) {
                 const module = imp.ngModule || imp
                 if (module.ɵinj?.providers) {
-                    this.servicesCache[module.pluginName] = module.ɵinj.providers.map(provider => {
+                    this.servicesCache[module.pluginName] = module.ɵinj.providers.map((provider: any) => {
                         return provider.useClass ?? provider.useExisting ?? provider
                     })
                 }
@@ -315,7 +316,7 @@ export class ConfigService {
     }
 
     // eslint-disable-next-line max-statements
-    private migrate (config) {
+    private migrate (config: any) {
         config.version ??= 0
         if (config.version < 1) {
             for (const connection of config.ssh?.connections ?? []) {
@@ -366,7 +367,7 @@ export class ConfigService {
             for (const p of config.profiles ?? []) {
                 if (p.type === 'ssh') {
                     if (p.options.jumpHost) {
-                        p.options.jumpHost = config.profiles.find(x => x.name === p.options.jumpHost)?.id
+                        p.options.jumpHost = config.profiles.find((x: any) => x.name === p.options.jumpHost)?.id
                     }
                 }
             }
@@ -457,7 +458,7 @@ export class ConfigService {
         }
     }
 
-    private async maybeDecryptConfig (store) {
+    private async maybeDecryptConfig (store: any) {
         if (!store.encrypted) {
             return store
         }
@@ -513,7 +514,7 @@ export class ConfigService {
         }
     }
 
-    private async maybeEncryptConfig (store) {
+    private async maybeEncryptConfig (store: any) {
         if (!store.encrypted) {
             return store
         }

@@ -70,7 +70,7 @@ const PROVIDERS = [
     {
         provide: LOCALE_ID,
         deps: [LocaleService],
-        useFactory: locale => locale.getLocale(),
+        useFactory: (locale: LocaleService) => locale.getLocale(),
     },
     {
         provide: MESSAGE_FORMAT_CONFIG,
@@ -232,8 +232,8 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
                 freeInputPattern: this.translate.instant('Connect to "%s"...'),
                 icon: 'fas fa-arrow-right',
                 description: `(${provider.name.toUpperCase()})`,
-                callback: query => {
-                    const p = provider.quickConnect(query)
+                callback: (query?: string) => {
+                    const p = provider.quickConnect(query ?? '')
                     if (p) {
                         this.profilesService.openNewTabForProfile(p)
                     }

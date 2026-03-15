@@ -14,7 +14,7 @@ export class SafeModeModalComponent {
     constructor (
         public modalInstance: NgbActiveModal,
     ) {
-        this.error = window['safeModeReason']
+        this.error = (window as any).safeModeReason as Error
     }
 
     ngOnInit (): void {

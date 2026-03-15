@@ -802,6 +802,33 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `app/lib/urlHandler.ts`
 - `app/lib/window.ts`
 
+### 3.63 tabby-core noImplicitAny 阶段落地
+
+为 `tabby-core` 启用 `noImplicitAny`，补齐核心服务/组件/工具内的显式类型与必要的类型兜底，新增模块声明以消除缺失类型依赖。该阶段只针对 `tabby-core`，不影响其它插件的编译策略。
+
+涉及文件：
+
+- `tabby-core/tsconfig.json`
+- `tabby-core/types/legacy-modules.d.ts`
+- `tabby-core/src/api/selector.ts`
+- `tabby-core/src/components/appRoot.component.ts`
+- `tabby-core/src/components/safeModeModal.component.ts`
+- `tabby-core/src/components/startPage.component.ts`
+- `tabby-core/src/components/tabBody.component.ts`
+- `tabby-core/src/components/transfersMenu.component.ts`
+- `tabby-core/src/directives/fastHtmlBind.directive.ts`
+- `tabby-core/src/index.ts`
+- `tabby-core/src/services/config.service.ts`
+- `tabby-core/src/services/hotkeys.service.ts`
+- `tabby-core/src/services/hotkeys.util.ts`
+- `tabby-core/src/services/locale.service.ts`
+- `tabby-core/src/services/log.service.ts`
+- `tabby-core/src/services/profiles.service.ts`
+- `tabby-core/src/services/tabRecovery.service.ts`
+- `tabby-core/src/services/themes.service.ts`
+- `tabby-core/src/services/vault.service.ts`
+- `tabby-core/src/utils.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1359,6 +1386,16 @@ env NODE_OPTIONS=--max_old_space_size=8192 ./node_modules/.bin/webpack --config 
 结果：
 
 - 主进程类型检查通过（noImplicitAny 已开启）
+
+在启用 `tabby-core` 的 `noImplicitAny` 后，补充运行类型检查：
+
+```bash
+./node_modules/.bin/tsc -p tabby-core/tsconfig.json --noEmit
+```
+
+结果：
+
+- `tabby-core` 类型检查通过（noImplicitAny 已开启）
 
 ### 5.2 启动冒烟
 

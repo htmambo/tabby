@@ -3,17 +3,19 @@ import { getRuntimePlatform } from '../api/rendererRuntime'
 const runtimePlatform = getRuntimePlatform()
 
 /* eslint-disable @typescript-eslint/no-type-alias */
-export const metaKeyName = {
+const metaKeyMap: Record<string, string> = {
     darwin: '⌘',
     win32: 'Win',
     linux: 'Super',
-}[runtimePlatform]
+}
+export const metaKeyName = metaKeyMap[runtimePlatform] ?? 'Meta'
 
-export const altKeyName = {
+const altKeyMap: Record<string, string> = {
     darwin: '⌥',
     win32: 'Alt',
     linux: 'Alt',
-}[runtimePlatform]
+}
+export const altKeyName = altKeyMap[runtimePlatform] ?? 'Alt'
 
 export interface KeyEventData {
     ctrlKey?: boolean

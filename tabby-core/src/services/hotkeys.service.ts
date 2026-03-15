@@ -132,7 +132,7 @@ export class HotkeysService implements OnDestroy {
             return
         }
 
-        nativeEvent['event'] = eventName
+        (nativeEvent as any).event = eventName
 
         const eventData = {
             ctrlKey: nativeEvent.ctrlKey,
@@ -301,11 +301,15 @@ export class HotkeysService implements OnDestroy {
             metaKey: metaKeyName,
             altKey: altKeyName,
             shiftKey: 'Shift',
-        })) {
-            if (!event[prop] && this.pressedKeys.has(key)) {
+        }) as Array<[keyof KeyEventData, string | undefined]>) {
+            if (!key) {
+                continue
+            }
+            const flag = (event as unknown as Record<string, boolean | undefined>)[prop]
+            if (!flag && this.pressedKeys.has(key)) {
                 this.removePressedKey(key)
             }
-            if (event[prop] && !this.pressedKeys.has(key)) {
+            if (flag && !this.pressedKeys.has(key)) {
                 this.addPressedKey(key, event)
             }
         }
@@ -329,12 +333,12 @@ export class HotkeysService implements OnDestroy {
         this.pressedHotkey = null
     }
 
-    private getHotkeysConfig () {
+    private getHotkeysConfig (): Record<string, string[][]> {
         return this.getHotkeysConfigRecursive(this.config.store.hotkeys)
     }
 
-    private getHotkeysConfigRecursive (branch: any) {
-        const keys = {}
+    private getHotkeysConfigRecursive (branch: any): Record<string, string[][]> {
+        const keys: Record<string, string[][]> = {}
         for (const key in branch) {
             let value = branch[key]
             if (value instanceof Object && !(value instanceof Array)) {

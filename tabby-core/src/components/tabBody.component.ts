@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, ViewChild, HostBinding, ViewContainerRef, OnChanges } from '@angular/core'
+import { Component, Input, ViewChild, HostBinding, ViewContainerRef, OnChanges, SimpleChanges } from '@angular/core'
 import { BaseTabComponent } from '../components/baseTab.component'
 
 /** @hidden */
@@ -19,7 +19,7 @@ export class TabBodyComponent implements OnChanges {
     @Input() tab: BaseTabComponent
     @ViewChild('placeholder', { read: ViewContainerRef }) placeholder?: ViewContainerRef
 
-    ngOnChanges (changes) {
+    ngOnChanges (changes: SimpleChanges) {
         if (changes.tab) {
             this.placeholder?.detach()
             Promise.resolve().then(() => {

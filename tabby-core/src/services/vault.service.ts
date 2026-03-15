@@ -367,7 +367,7 @@ export class VaultService {
         let vaultSecret = vault.secrets.find(s => s.type === type && this.keyMatches(key, s))
         if (!vaultSecret) {
             // search for secret without host in vault (like a default user/password used in multiple servers)
-            key['host'] = null
+            ;(key as Record<string, unknown>)['host'] = null
             vaultSecret = vault.secrets.find(s => s.type === type && this.keyMatches(key, s))
         }
         return vaultSecret ?? null
@@ -409,7 +409,9 @@ export class VaultService {
     }
 
     private keyMatches (key: VaultSecretKey, secret: VaultSecret): boolean {
-        return Object.keys(key).every(k => secret.key[k] === key[k])
+        const secretKey = secret.key as Record<string, unknown>
+        const matchKey = key as Record<string, unknown>
+        return Object.keys(key).every(k => secretKey[k] === matchKey[k])
     }
 
     setStore (store: StoredVault|null): void {

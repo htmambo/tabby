@@ -54,7 +54,7 @@ registerLocaleData(localeUK)
 registerLocaleData(localeZH)
 
 function flattenMessageFormatTranslation (po: any) {
-    const translation = {}
+    const translation: Record<string, string> = {}
     po = po.translations['']
     for (const k of Object.keys(po)) {
         translation[k] = po[k].msgstr[0] || k
@@ -206,7 +206,7 @@ export class LocaleService {
     }
 
     private patchTranslateService (translate: TranslateService) {
-        translate['_defaultTranslation'] = null
+        ;(translate as any)._defaultTranslation = null
         const oldGetParsedResult = translate.getParsedResult.bind(translate)
 
         // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -214,14 +214,14 @@ export class LocaleService {
             if (typeof key !== 'string') {
                 return oldGetParsedResult(key, interpolateParams ?? {})
             }
-            if (!this._defaultTranslation) {
+            if (!(this as any)._defaultTranslation) {
                 const po = require(`../../../locale/en-US.po`)
-                this._defaultTranslation = flattenMessageFormatTranslation(po)
+                ;(this as any)._defaultTranslation = flattenMessageFormatTranslation(po)
             }
             const fallbackLang = this.defaultLang || 'en-US'
             this.store.translations[fallbackLang] ??= {}
             this.store.translations[fallbackLang][key] ??= this.compiler.compile(
-                this._defaultTranslation[key] || key,
+                (this as any)._defaultTranslation[key] || key,
                 fallbackLang,
             )
             return oldGetParsedResult(key, interpolateParams ?? {})

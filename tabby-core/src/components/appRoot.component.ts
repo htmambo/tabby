@@ -346,7 +346,7 @@ export class AppRootComponent implements OnDestroy {
             this.app.closeWindow()
         })
 
-        if (window['safeModeReason']) {
+        if ((window as any).safeModeReason) {
             ngbModal.open(SafeModeModalComponent)
         }
 
