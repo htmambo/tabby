@@ -410,6 +410,8 @@ export class AppRootComponent implements OnDestroy {
                         this.runInAngular(() => {
                             this.updatesAvailable = available
                         })
+                    }).catch(() => {
+                        // 更新检查失败，忽略错误
                     })
                 }
             }, 3600 * 12 * 1000)
