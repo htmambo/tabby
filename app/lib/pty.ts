@@ -221,7 +221,7 @@ export class PTY {
     private outputQueue: PTYDataQueue
     exited = false
 
-    constructor (private id: string, private app: Application, ...args: any[]) {
+    constructor (private id: string, private app: Application, private manager: PTYManager, ...args: any[]) {
         const normalizedArgs = [...args]
         if (normalizedArgs[2] && typeof normalizedArgs[2] === 'object') {
             normalizedArgs[2] = normalizeSpawnOptions(normalizedArgs[2] as TabbyPTYSpawnOptions)
@@ -241,6 +241,8 @@ export class PTY {
         this.pty.onData(data => this.outputQueue.push(Buffer.from(data)))
         this.pty.onExit(() => {
             this.exited = true
+            // 清理 manager 中的引用，避免内存泄漏
+            this.manager.cleanupPTY(this.id)
         })
     }
 
@@ -276,6 +278,14 @@ export class PTY {
 export class PTYManager {
     private ptys: Record<string, PTY|undefined> = {}
     private truePIDCache: Record<string, Promise<number>|undefined> = {}
+
+    /**
+     * 清理已退出的 PTY 引用，防止内存泄漏
+     */
+    cleanupPTY (id: string): void {
+        delete this.ptys[id]
+        delete this.truePIDCache[id]
+    }
 
     private async getChildProcessesByPID (parentPID: number): Promise<PTYChildProcess[]> {
         if (!parentPID) {
@@ -379,7 +389,7 @@ export class PTYManager {
             const id = uuidv4().toString()
             event.returnValue = id
             delete this.truePIDCache[id]
-            this.ptys[id] = new PTY(id, app, ...options)
+            this.ptys[id] = new PTY(id, app, this, ...options)
         })
 
         ipcMain.on('pty:exists', (event, id) => {
