@@ -1290,10 +1290,33 @@ export class AiAssistantService implements OnDestroy {
                         complete: () => {
                             // 使用 IIFE 确保异步操作被正确执行
                             (async () => {
+                                // 🔴 取消检查点 1: 流完成后立即检查
+                                if (!agentState.isActive) {
+                                    this.logger.info('Agent cancelled after stream complete, stopping execution')
+                                    subscriber.next({
+                                        type: 'agent_complete',
+                                        reason: 'user_cancel',
+                                        totalRounds: agentState.currentRound,
+                                    })
+                                    subscriber.complete()
+                                    resolve()
+                                    return
+                                }
+
                                 // 发送 round_end 事件
-                                subscriber.next({ type: 'round_end', round: agentState.currentRound })
+                                if (agentState.isActive) {
+                                    subscriber.next({ type: 'round_end', round: agentState.currentRound })
+                                }
                                 callbacks.onRoundEnd?.(agentState.currentRound)
                                 this.logger.debug(`Round ${agentState.currentRound} ended, messages in conversation: ${conversationMessages.length}`)
+
+                                // 🔴 取消检查点 2: 写入消息历史前
+                                if (!agentState.isActive) {
+                                    this.logger.info('Agent cancelled before writing message history')
+                                    subscriber.complete()
+                                    resolve()
+                                    return
+                                }
 
                                 // 将本轮 AI 回复添加到消息历史
                                 // 关键修复：即使没有文本内容，只要有工具调用也必须添加 assistant 消息
@@ -1333,7 +1356,7 @@ export class AiAssistantService implements OnDestroy {
                                 )
                                 const noActualToolCalls = pendingToolCalls.length === 0
 
-                                if (hasInvokeText && noActualToolCalls && agentState.currentRound < maxRounds) {
+                                if (hasInvokeText && noActualToolCalls && agentState.currentRound < maxRounds && agentState.isActive) {
                                     this.logger.warn('Detected <invoke> text without actual tool calls, forcing retry', {
                                         round: agentState.currentRound,
                                         textPreview: roundTextContent.slice(0, 200),
@@ -1348,10 +1371,12 @@ export class AiAssistantService implements OnDestroy {
                                     })
 
                                     // 发送重试事件
-                                    subscriber.next({
-                                        type: 'text_delta',
-                                        textDelta: '\n\n[系统：检测到格式错误，正在重试...]\n',
-                                    })
+                                    if (agentState.isActive) {
+                                        subscriber.next({
+                                            type: 'text_delta',
+                                            textDelta: '\n\n[系统：检测到格式错误，正在重试...]\n',
+                                        })
+                                    }
 
                                     // 强制重试
                                     try {
@@ -1359,6 +1384,19 @@ export class AiAssistantService implements OnDestroy {
                                     } catch (retryError) {
                                         this.logger.error('Retry round error', retryError)
                                     }
+                                    return
+                                }
+
+                                // 🔴 取消检查点 3: 终止判断前
+                                if (!agentState.isActive) {
+                                    this.logger.info('Agent cancelled before termination check')
+                                    subscriber.next({
+                                        type: 'agent_complete',
+                                        reason: 'user_cancel',
+                                        totalRounds: agentState.currentRound,
+                                    })
+                                    subscriber.complete()
+                                    resolve()
                                     return
                                 }
 
@@ -1380,12 +1418,39 @@ export class AiAssistantService implements OnDestroy {
                                 if (pendingToolCalls.length > 0) {
                                     this.logger.info(`Round ${agentState.currentRound}: ${pendingToolCalls.length} tools to execute`)
 
+                                    // 🔴 取消检查点 4: 执行工具前
+                                    if (!agentState.isActive) {
+                                        this.logger.info('Agent cancelled before tool execution')
+                                        subscriber.next({
+                                            type: 'agent_complete',
+                                            reason: 'user_cancel',
+                                            totalRounds: agentState.currentRound,
+                                        })
+                                        subscriber.complete()
+                                        resolve()
+                                        return
+                                    }
+
                                     // 执行所有工具
                                     const toolResults = await this.executeToolsSequentially(
                                         pendingToolCalls,
                                         subscriber,
                                         agentState,
                                     )
+
+                                    // 🔴 取消检查点 5: 工具执行后
+                                    if (!agentState.isActive) {
+                                        this.logger.info('Agent cancelled after tool execution, results received but not continuing')
+                                        // 工具已执行，结果已收集，但不再继续后续轮次
+                                        subscriber.next({
+                                            type: 'agent_complete',
+                                            reason: 'user_cancel',
+                                            totalRounds: agentState.currentRound,
+                                        })
+                                        subscriber.complete()
+                                        resolve()
+                                        return
+                                    }
 
                                     // 将工具结果添加到消息历史（每个工具结果作为独立消息）
                                     const toolResultMessages = this.buildToolResultMessages(toolResults)
@@ -1427,6 +1492,19 @@ export class AiAssistantService implements OnDestroy {
                                         return
                                     }
 
+                                    // 🔴 取消检查点 6: 递归下一轮前
+                                    if (!agentState.isActive) {
+                                        this.logger.info('Agent cancelled before next round')
+                                        subscriber.next({
+                                            type: 'agent_complete',
+                                            reason: 'user_cancel',
+                                            totalRounds: agentState.currentRound,
+                                        })
+                                        subscriber.complete()
+                                        resolve()
+                                        return
+                                    }
+
                                     // 继续下一轮（添加递归安全保护）
                                     try {
                                         await runSingleRound()
@@ -1443,6 +1521,20 @@ export class AiAssistantService implements OnDestroy {
                                     // 如果 checkTermination 返回 shouldTerminate: false（检测到未完成暗示），继续下一轮
                                     if (!termination.shouldTerminate) {
                                         this.logger.info(`No tools but incomplete hint detected (${termination.reason}), continuing to next round`)
+
+                                        // 🔴 取消检查点 7: 无工具时继续下一轮前
+                                        if (!agentState.isActive) {
+                                            this.logger.info('Agent cancelled before continuing without tools')
+                                            subscriber.next({
+                                                type: 'agent_complete',
+                                                reason: 'user_cancel',
+                                                totalRounds: agentState.currentRound,
+                                            })
+                                            subscriber.complete()
+                                            resolve()
+                                            return
+                                        }
+
                                         try {
                                             await runSingleRound()
                                         } catch (recursionError) {
@@ -1510,6 +1602,17 @@ export class AiAssistantService implements OnDestroy {
         const results: ToolResult[] = []
 
         for (const toolCall of toolCalls) {
+            // 🔴 取消检查点（工具循环内）：每个工具执行前检查
+            if (agentState && !agentState.isActive) {
+                this.logger.info('Agent cancelled during tool execution loop, stopping', {
+                    executedCount: results.length,
+                    remainingCount: toolCalls.length - results.length,
+                    nextTool: toolCall.name,
+                })
+                // 返回已收集的结果，不再执行剩余工具
+                break
+            }
+
             // 发送 tool_executing 事件
             subscriber.next({
                 type: 'tool_executing',
