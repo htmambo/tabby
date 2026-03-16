@@ -8,7 +8,7 @@
  * 4. 提供任务查询和取消功能
  */
 
-import { Injectable } from '@angular/core'
+import { Injectable, OnDestroy } from '@angular/core'
 import { Subject, Observable, Subscription, interval } from 'rxjs'
 import {
     AsyncTask,
@@ -21,7 +21,7 @@ import { TerminalManagerService } from './terminal-manager.service'
 import { LoggerService } from '../core/logger.service'
 
 @Injectable({ providedIn: 'root' })
-export class AsyncTaskManagerService {
+export class AsyncTaskManagerService implements OnDestroy {
     // ========== 状态管理 ==========
 
     /** 所有异步任务 */
@@ -434,6 +434,9 @@ export class AsyncTaskManagerService {
                 errorMessage,
             },
         })
+
+        // 自动清理超过 1 小时的已完成任务
+        this.cleanupCompletedTasks()
     }
 
     /**
@@ -448,5 +451,25 @@ export class AsyncTaskManagerService {
      */
     private emitEvent(event: AsyncTaskEvent): void {
         this.taskEventSubject.next(event)
+    }
+
+    ngOnDestroy(): void {
+        // 清理所有待启动的任务
+        this.pendingStartHandles.forEach((handle) => {
+            window.clearTimeout(handle)
+        })
+        this.pendingStartHandles.clear()
+
+        // 停止所有监控
+        this.monitoringIntervals.forEach((monitoring) => {
+            monitoring.subscription.unsubscribe()
+        })
+        this.monitoringIntervals.clear()
+
+        // 清理所有任务
+        this.tasks.clear()
+
+        // 完成 Subject
+        this.taskEventSubject.complete()
     }
 }
