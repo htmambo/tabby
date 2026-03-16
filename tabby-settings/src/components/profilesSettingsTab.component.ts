@@ -45,15 +45,19 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
     async ngOnInit (): Promise<void> {
         await this.refreshProfileGroups()
         await this.refreshProfiles()
-        this.subscribeUntilDestroyed(this.config.changed$, () => this.refreshProfileGroups())
-        this.subscribeUntilDestroyed(this.config.changed$, () => this.refreshProfiles())
+        // 合并订阅，避免重复刷新
+        this.subscribeUntilDestroyed(this.config.changed$, () => {
+            void this.refreshProfileGroups()
+            void this.refreshProfiles()
+        })
     }
 
     async refreshProfiles (): Promise<void> {
-        this.builtinProfiles = (await this.profilesService.getProfiles()).filter(x => x.isBuiltin)
-        this.customProfiles = (await this.profilesService.getProfiles()).filter(x => !x.isBuiltin)
-        this.templateProfiles = this.builtinProfiles.filter(x => x.isTemplate)
-        this.builtinProfiles = this.builtinProfiles.filter(x => !x.isTemplate)
+        // 只调用一次 getProfiles()，然后分离结果
+        const allProfiles = await this.profilesService.getProfiles()
+        this.builtinProfiles = allProfiles.filter(x => x.isBuiltin && !x.isTemplate)
+        this.templateProfiles = allProfiles.filter(x => x.isTemplate)
+        this.customProfiles = allProfiles.filter(x => !x.isBuiltin)
     }
 
     launchProfile (profile: PartialProfile<Profile>): void {

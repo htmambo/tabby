@@ -127,6 +127,8 @@ export class AppRootComponent implements OnDestroy {
     activeRoyalTab: BaseTabComponent|null = null
     royalSingleExpandMode = false
     royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
+    /** 用于检测 profile 相关配置是否变化的缓存 */
+    private lastProfileConfigHash: string = ''
     royalSessionGroups: RoyalNavigationGroup[] = []
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
@@ -400,7 +402,10 @@ export class AppRootComponent implements OnDestroy {
             this.config.changed$.subscribe(() => {
                 this.runInAngular(() => {
                     this.syncWindowOpacity()
-                    void this.refreshRoyalConnections()
+                    // 只有 profile 相关配置变化时才刷新连接侧栏
+                    if (this.hasProfileConfigChanged()) {
+                        void this.refreshRoyalConnections()
+                    }
                 })
             })
 
@@ -1307,10 +1312,42 @@ export class AppRootComponent implements OnDestroy {
             }
 
             this.royalConnectionGroups = mapped
+            // 更新配置哈希缓存
+            this.lastProfileConfigHash = this.computeProfileConfigHash()
             this.scheduleRoyalActiveSync()
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }
+    }
+
+    /**
+     * 检测 profile 相关配置是否发生变化
+     */
+    private hasProfileConfigChanged (): boolean {
+        const currentHash = this.computeProfileConfigHash()
+        if (currentHash !== this.lastProfileConfigHash) {
+            this.lastProfileConfigHash = currentHash
+            return true
+        }
+        return false
+    }
+
+    /**
+     * 计算 profile 相关配置的哈希值
+     */
+    private computeProfileConfigHash (): string {
+        const store = this.config.store
+        // 只关注影响连接侧栏的配置项
+        const relevantConfig = {
+            profiles: store.profiles,
+            groups: store.groups,
+            profileBlacklist: store.profileBlacklist,
+            profileDefaults: store.profileDefaults,
+            terminal: {
+                showBuiltinProfiles: store.terminal?.showBuiltinProfiles,
+            },
+        }
+        return JSON.stringify(relevantConfig)
     }
 
     private intoRoyalConnectionGroup (group: PartialProfileGroup<ProfileGroup>): RoyalConnectionGroup {

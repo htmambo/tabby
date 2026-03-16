@@ -62,13 +62,23 @@ export class SettingsTabComponent extends BaseTabComponent {
 
         this.configDefaults = yaml.dump(config.getDefaults())
 
+        // 只在需要时更新 configFile（例如查看 Config file 标签页时）
+        // 避免每次配置变更都进行全量序列化
+        this.subscribeUntilDestroyed(config.changed$, () => {
+            // 只在当前显示 Config file 标签页时才重新读取
+            if (this.activeTab === 'config-file') {
+                this.configFile = config.readRaw()
+            }
+        })
+
         const onConfigChange = () => {
-            this.configFile = config.readRaw()
             this.padWindowControls = hostApp.platform === Platform.macOS
                 && config.store.appearance.tabsLocation !== 'top'
         }
 
         this.subscribeUntilDestroyed(config.changed$, onConfigChange)
+        // 初始化时读取一次
+        this.configFile = config.readRaw()
         onConfigChange()
     }
 
