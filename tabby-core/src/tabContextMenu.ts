@@ -132,7 +132,11 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
         const process = await tab.getCurrentProcess()
         const items: MenuItemOptions[] = []
 
-        const extTab: (BaseTabComponent & { __completionNotificationEnabled?: boolean, __outputNotificationSubscription?: Subscription|null }) = tab
+        const extTab: (BaseTabComponent & {
+            __completionNotificationEnabled?: boolean
+            __completionNotificationSubscription?: Subscription|null
+            __outputNotificationSubscription?: Subscription|null
+        }) = tab
 
         if (process) {
             items.push({
@@ -147,7 +151,7 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
                     extTab.__completionNotificationEnabled = !extTab.__completionNotificationEnabled
 
                     if (extTab.__completionNotificationEnabled) {
-                        this.app.observeTabCompletion(tab).subscribe(() => {
+                        extTab.__completionNotificationSubscription = this.app.observeTabCompletion(tab).subscribe(() => {
                             const notification = new Notification(this.translate.instant('Process completed'), {
                                 body: process.name,
                             })
@@ -156,9 +160,13 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
                                 notification.close()
                             }
                             extTab.__completionNotificationEnabled = false
+                            extTab.__completionNotificationSubscription?.unsubscribe()
+                            extTab.__completionNotificationSubscription = null
                         })
                     } else {
                         this.app.stopObservingTabCompletion(tab)
+                        extTab.__completionNotificationSubscription?.unsubscribe()
+                        extTab.__completionNotificationSubscription = null
                     }
                 },
             })

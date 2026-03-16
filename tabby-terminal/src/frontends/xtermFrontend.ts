@@ -98,6 +98,15 @@ export class XTermFrontend extends Frontend {
     private pendingObservedResizeFrame: number|null = null
     private readonly observedResizeResumeDelay = 120
 
+    // Bound event handlers for proper cleanup
+    private boundDragOver: (event: any) => void
+    private boundDrop: (event: DragEvent) => void
+    private boundMouseDown: (event: MouseEvent) => void
+    private boundMouseUp: (event: MouseEvent) => void
+    private boundMouseWheel: (event: WheelEvent) => void
+    private boundContextMenu: (event: MouseEvent) => void
+    private attachedHost?: HTMLElement
+
     private configService: ConfigService
     private hotkeysService: HotkeysService
     private platformService: PlatformService
@@ -132,6 +141,17 @@ export class XTermFrontend extends Frontend {
         })
         this.flowControl = new FlowControl(this.xterm)
         this.xtermCore = (this.xterm as any)._core
+
+        // Initialize bound event handlers for proper cleanup
+        this.boundDragOver = (event: any) => this.dragOver.next(event)
+        this.boundDrop = (event: DragEvent) => this.drop.next(event)
+        this.boundMouseDown = (event: MouseEvent) => this.mouseEvent.next(event)
+        this.boundMouseUp = (event: MouseEvent) => this.mouseEvent.next(event)
+        this.boundMouseWheel = (event: WheelEvent) => this.mouseEvent.next(event as MouseEvent)
+        this.boundContextMenu = (event: MouseEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+        }
 
         this.xterm.onBinary(data => {
             this.input.next(Buffer.from(data, 'binary'))
@@ -347,16 +367,13 @@ export class XTermFrontend extends Frontend {
             }
         })
 
-        host.addEventListener('dragOver', (event: any) => this.dragOver.next(event))
-        host.addEventListener('drop', event => this.drop.next(event))
-
-        host.addEventListener('mousedown', event => this.mouseEvent.next(event))
-        host.addEventListener('mouseup', event => this.mouseEvent.next(event))
-        host.addEventListener('mousewheel', event => this.mouseEvent.next(event as MouseEvent))
-        host.addEventListener('contextmenu', event => {
-            event.preventDefault()
-            event.stopPropagation()
-        })
+        host.addEventListener('dragOver', this.boundDragOver)
+        host.addEventListener('drop', this.boundDrop)
+        host.addEventListener('mousedown', this.boundMouseDown)
+        host.addEventListener('mouseup', this.boundMouseUp)
+        host.addEventListener('mousewheel', this.boundMouseWheel)
+        host.addEventListener('contextmenu', this.boundContextMenu)
+        this.attachedHost = host
 
         this.resizeObserver = new ResizeObserver(() => {
             if (!this.enableResizing || this.shouldSkipObservedResize()) {
@@ -372,6 +389,17 @@ export class XTermFrontend extends Frontend {
         this.resizeObserver?.disconnect()
         this.clearPendingObservedResize()
         delete this.resizeObserver
+
+        // Remove event listeners from host
+        if (this.attachedHost) {
+            this.attachedHost.removeEventListener('dragOver', this.boundDragOver)
+            this.attachedHost.removeEventListener('drop', this.boundDrop)
+            this.attachedHost.removeEventListener('mousedown', this.boundMouseDown)
+            this.attachedHost.removeEventListener('mouseup', this.boundMouseUp)
+            this.attachedHost.removeEventListener('mousewheel', this.boundMouseWheel)
+            this.attachedHost.removeEventListener('contextmenu', this.boundContextMenu)
+            this.attachedHost = undefined
+        }
     }
 
     destroy (): void {

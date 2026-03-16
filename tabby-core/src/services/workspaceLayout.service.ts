@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core'
+import { Injectable, OnDestroy } from '@angular/core'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 
 @Injectable({ providedIn: 'root' })
-export class WorkspaceLayoutService {
+export class WorkspaceLayoutService implements OnDestroy {
     private royalSidebarTransitionToken = 0
     private royalSidebarTransitionActive = new BehaviorSubject(false)
     private royalSidebarTransitionCompleted = new Subject<number>()
@@ -33,5 +33,10 @@ export class WorkspaceLayoutService {
         }
         this.royalSidebarTransitionActive.next(false)
         this.royalSidebarTransitionCompleted.next(token)
+    }
+
+    ngOnDestroy (): void {
+        this.royalSidebarTransitionActive.complete()
+        this.royalSidebarTransitionCompleted.complete()
     }
 }
