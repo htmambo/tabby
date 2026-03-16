@@ -1,4 +1,4 @@
-import { Injectable, Pipe, PipeTransform } from '@angular/core'
+import { Injectable, Pipe, PipeTransform, OnDestroy } from '@angular/core'
 import { formatDate, registerLocaleData } from '@angular/common'
 import { TranslateService, MissingTranslationHandler } from '@ngx-translate/core'
 import { TranslateMessageFormatCompiler } from 'ngx-translate-messageformat-compiler'
@@ -25,7 +25,7 @@ import localeSV from '@angular/common/locales/sv'
 import localeTR from '@angular/common/locales/tr'
 import localeUK from '@angular/common/locales/uk'
 import localeZH from '@angular/common/locales/zh'
-import { Observable, Subject, firstValueFrom } from 'rxjs'
+import { Observable, Subject, Subscription, firstValueFrom } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import { ConfigService } from './config.service'
 import { LogService, Logger } from './log.service'
@@ -75,8 +75,9 @@ export class CustomMissingTranslationHandler extends MissingTranslationHandler {
 }
 
 @Injectable({ providedIn: 'root' })
-export class LocaleService {
+export class LocaleService implements OnDestroy {
     private logger: Logger
+    private subscriptions: Subscription[] = []
 
     static allLanguages = [
         {
@@ -191,18 +192,26 @@ export class LocaleService {
     ) {
         this.patchTranslateService(translate)
         this.logger = log.create('translate')
-        config.changed$.subscribe(() => {
-            this.refresh()
-        })
-        config.ready$.subscribe(() => {
-            this.refresh()
-        })
+        this.subscriptions.push(
+            config.changed$.subscribe(() => {
+                this.refresh()
+            }),
+            config.ready$.subscribe(() => {
+                this.refresh()
+            }),
+        )
 
         const d = new Date()
         if (d.getMonth() === 3 && d.getDate() === 1) {
             LocaleService.allLanguages.find(x => x.code === 'en-US')!.name = 'English (simplified)'
             LocaleService.allLanguages.find(x => x.code === 'en-GB')!.name = 'English (traditional)'
         }
+    }
+
+    ngOnDestroy (): void {
+        this.subscriptions.forEach(s => s.unsubscribe())
+        this.subscriptions = []
+        this.localeChanged.complete()
     }
 
     private patchTranslateService (translate: TranslateService) {

@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@angular/core'
-import { Subject, Observable, lastValueFrom } from 'rxjs'
+import { Inject, Injectable, OnDestroy } from '@angular/core'
+import { Subject, Observable, lastValueFrom, Subscription } from 'rxjs'
 import * as Color from 'color'
 import { ConfigService } from '../services/config.service'
 import { Theme } from '../api/theme'
@@ -8,7 +8,7 @@ import { getRuntimePlatform } from '../api/rendererRuntime'
 import { NewTheme } from '../theme'
 
 @Injectable({ providedIn: 'root' })
-export class ThemesService {
+export class ThemesService implements OnDestroy {
     private readonly linuxMinWindowOpacity = 0.4
     private readonly defaultVibrancyOverlayAlpha = 0.65
     get themeChanged$ (): Observable<Theme> { return this.themeChanged }
@@ -16,6 +16,7 @@ export class ThemesService {
 
     private styleElement: HTMLElement|null = null
     private rootElementStyleBackup = ''
+    private subscriptions: Subscription[] = []
 
     /** @hidden */
     private constructor (
@@ -30,15 +31,23 @@ export class ThemesService {
         void lastValueFrom(config.ready$).then(() => {
             this.applyCurrentTheme()
             this.applyThemeVariables()
-            platform.themeChanged$.subscribe(() => {
-                this.applyCurrentTheme()
-                this.applyThemeVariables()
-            })
-            config.changed$.subscribe(() => {
-                this.applyCurrentTheme()
-                this.applyThemeVariables()
-            })
+            this.subscriptions.push(
+                platform.themeChanged$.subscribe(() => {
+                    this.applyCurrentTheme()
+                    this.applyThemeVariables()
+                }),
+                config.changed$.subscribe(() => {
+                    this.applyCurrentTheme()
+                    this.applyThemeVariables()
+                }),
+            )
         })
+    }
+
+    ngOnDestroy (): void {
+        this.subscriptions.forEach(s => s.unsubscribe())
+        this.subscriptions = []
+        this.themeChanged.complete()
     }
 
     private getConfigStoreOrDefaults (): any {

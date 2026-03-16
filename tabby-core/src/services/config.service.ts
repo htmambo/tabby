@@ -2,8 +2,8 @@ import deepClone from 'clone-deep'
 import deepEqual from 'deep-equal'
 import { v4 as uuidv4 } from 'uuid'
 import * as yaml from 'js-yaml'
-import { Observable, Subject, AsyncSubject, lastValueFrom } from 'rxjs'
-import { Injectable, Inject } from '@angular/core'
+import { Observable, Subject, AsyncSubject, lastValueFrom, Subscription } from 'rxjs'
+import { Injectable, Inject, OnDestroy } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
 import { ConfigProvider } from '../api/configProvider'
 import { PlatformService } from '../api/platform'
@@ -143,7 +143,7 @@ export class ConfigProxy<T extends AnyRec> {
 // export type ConfigProxy<T extends AnyRec> = ProxifiedConfig<T>
 
 @Injectable({ providedIn: 'root' })
-export class ConfigService {
+export class ConfigService implements OnDestroy {
     /**
      * Contains the actual config values
      */
@@ -162,6 +162,7 @@ export class ConfigService {
     private _store: any
     private defaults: any
     private servicesCache: Record<string, Function[]>|null = null // eslint-disable-line @typescript-eslint/ban-types
+    private vaultSubscription: Subscription | null = null
 
     get changed$ (): Observable<void> { return this.changed }
 
@@ -178,11 +179,18 @@ export class ConfigService {
         if (typeof (timer as any)?.unref === 'function') {
             (timer as any).unref()
         }
-        vault.contentChanged$.subscribe(() => {
+        this.vaultSubscription = vault.contentChanged$.subscribe(() => {
             this.store.vault = vault.store
             this.save()
         })
         this.save = serializeFunction(this.save.bind(this))
+    }
+
+    ngOnDestroy (): void {
+        this.vaultSubscription?.unsubscribe()
+        this.vaultSubscription = null
+        this.ready.complete()
+        this.changed.complete()
     }
 
     mergeDefaults (): unknown {
