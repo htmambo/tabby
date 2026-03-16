@@ -702,8 +702,10 @@ export class AppRootComponent implements OnDestroy {
         event.stopPropagation()
 
         const profileID = item.profile.id
-        const boundTab = profileID ? this.getRoyalConnectionBinding(profileID) : null
-        const hasOpenConnections = !!profileID && this.getRoyalSessionTargets().some(target => this.getRoyalTabProfileID(target.targetTab) === profileID)
+        const hasProfileID = typeof profileID === 'string' && profileID.length > 0
+        const canDeleteProfile = hasProfileID && item.profile.isBuiltin !== true
+        const boundTab = hasProfileID ? this.getRoyalConnectionBinding(profileID) : null
+        const hasOpenConnections = hasProfileID && this.getRoyalSessionTargets().some(target => this.getRoyalTabProfileID(target.targetTab) === profileID)
         const menu: MenuItemOptions[] = [
             {
                 label: this.translate.instant('Connect'),
@@ -744,6 +746,20 @@ export class AppRootComponent implements OnDestroy {
                     }
                 },
             },
+        )
+
+        if (canDeleteProfile) {
+            menu.push({
+                type: 'separator',
+            }, {
+                label: this.translate.instant('Delete'),
+                click: () => {
+                    void this.deleteRoyalConnection(item.profile)
+                },
+            })
+        }
+
+        menu.push(
             { type: 'separator' },
             {
                 label: this.translate.instant('Close all connections'),
@@ -1343,6 +1359,37 @@ export class AppRootComponent implements OnDestroy {
         for (const tab of tabs) {
             await this.closeRoyalTab(tab)
         }
+    }
+
+    private async deleteRoyalConnection (profile: PartialProfile<Profile>): Promise<void> {
+        const profileID = typeof profile.id === 'string' && profile.id.length > 0 ? profile.id : null
+        if (profileID === null || profile.isBuiltin === true) {
+            return
+        }
+
+        const confirmed = (await this.platform.showMessageBox(
+            {
+                type: 'warning',
+                message: this.translate.instant('Delete "{name}"?', profile),
+                buttons: [
+                    this.translate.instant('Delete'),
+                    this.translate.instant('Keep'),
+                ],
+                defaultId: 1,
+                cancelId: 1,
+            },
+        )).response === 0
+
+        if (!confirmed) {
+            return
+        }
+
+        await this.closeRoyalConnections(profile)
+        await this.profilesService.deleteProfile(profile)
+        await this.config.save()
+        this.royalConnectionBindings.delete(profileID)
+        this.recomputeRoyalSidebarGroups()
+        this.scheduleViewRefresh()
     }
 
     private async duplicateRoyalTab (tab: BaseTabComponent): Promise<void> {
