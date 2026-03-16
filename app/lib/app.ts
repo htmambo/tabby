@@ -107,6 +107,7 @@ export class Application {
     private bridgeFileTransfers = new Map<string, BridgeFileTransferState>()
     private bridgeFileTransferOwners = new Map<number, Set<string>>()
     private quitRequested = false
+    private readonly shouldQuitWhenLastWindowCloses = process.platform !== 'darwin' || process.env.TABBY_DEV === '1'
     private readonly shellIntegrationWorkflows = ['Open Tabby here.workflow', 'Paste path into Tabby.workflow']
     private readonly shellIntegrationRegistryKeys = [
         {
@@ -125,6 +126,7 @@ export class Application {
             command: 'paste "%V"',
         },
     ]
+
     private bridgeLogWriteQueue = Promise.resolve()
     userPluginsPath: string
 
@@ -215,7 +217,7 @@ export class Application {
         })
 
         app.on('window-all-closed', () => {
-            if (this.quitRequested || process.platform !== 'darwin') {
+            if (this.quitRequested || this.shouldQuitWhenLastWindowCloses) {
                 app.quit()
             }
         })
