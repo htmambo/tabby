@@ -158,13 +158,17 @@ export class ConfigService implements OnDestroy {
     get ready$ (): Observable<boolean> { return this.ready }
 
     private ready = new AsyncSubject<boolean>()
-    private changed = new Subject<void>()
+    private changed = new Subject<number>()
     private _store: any
     private defaults: any
     private servicesCache: Record<string, Function[]>|null = null // eslint-disable-line @typescript-eslint/ban-types
     private vaultSubscription: Subscription | null = null
+    private _storeVersion = 0
 
-    get changed$ (): Observable<void> { return this.changed }
+    get changed$ (): Observable<number> { return this.changed }
+
+    /** 获取当前配置存储版本号，每次 save/load 都会递增 */
+    get storeVersion (): number { return this._storeVersion }
 
     /** @hidden */
     private constructor (
@@ -238,6 +242,7 @@ export class ConfigService implements OnDestroy {
         this.migrate(this._store)
         this.store = new ConfigProxy(this._store, this.defaults)
         this.vault.setStore(this.store.vault)
+        this._storeVersion++
     }
 
     async save (): Promise<void> {
@@ -321,7 +326,8 @@ export class ConfigService implements OnDestroy {
 
     private emitChange (): void {
         this.vault.setStore(this.store.vault)
-        this.changed.next()
+        this._storeVersion++
+        this.changed.next(this._storeVersion)
     }
 
     // eslint-disable-next-line max-statements

@@ -43,7 +43,7 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
     }
 
     /** 用于检测 profile 相关配置是否变化的缓存 */
-    private lastProfileConfigHash: string = ''
+    private lastProfileConfigVersion: number = 0
 
     async ngOnInit (): Promise<void> {
         await this.refreshAll()
@@ -57,31 +57,14 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
 
     /**
      * 检测 profile 相关配置是否发生变化
+     * 使用配置版本号比较，避免 JSON.stringify 开销
      */
     private hasProfileConfigChanged (): boolean {
-        const currentHash = this.computeProfileConfigHash()
-        if (currentHash !== this.lastProfileConfigHash) {
+        if (this.config.storeVersion !== this.lastProfileConfigVersion) {
+            this.lastProfileConfigVersion = this.config.storeVersion
             return true
         }
         return false
-    }
-
-    /**
-     * 计算 profile 相关配置的哈希值
-     */
-    private computeProfileConfigHash (): string {
-        const store = this.config.store
-        // 只关注影响 profiles 列表的配置项
-        const relevantConfig = {
-            profiles: store.profiles,
-            groups: store.groups,
-            profileBlacklist: store.profileBlacklist,
-            profileDefaults: store.profileDefaults,
-            terminal: {
-                showBuiltinProfiles: store.terminal?.showBuiltinProfiles,
-            },
-        }
-        return JSON.stringify(relevantConfig)
     }
 
     /**
@@ -102,9 +85,6 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
         this.builtinProfiles = allProfiles.filter(x => x.isBuiltin && !x.isTemplate)
         this.templateProfiles = allProfiles.filter(x => x.isTemplate)
         this.customProfiles = allProfiles.filter(x => !x.isBuiltin)
-
-        // 更新哈希值，用于下次变更检测
-        this.lastProfileConfigHash = this.computeProfileConfigHash()
     }
 
     launchProfile (profile: PartialProfile<Profile>): void {
