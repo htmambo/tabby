@@ -27,7 +27,7 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                 .input-group
                     .input-group-text
                         i.fas.fa-fw.fa-search
-                    input.form-control(type='search', [placeholder]='"Filter"|translate', [(ngModel)]='filter')
+                    input.form-control(type='search', [placeholder]='"Filter"|translate', [(ngModel)]='filter', (ngModelChange)='onFilterChange()')
 
                 div(ngbDropdown).d-inline-block.flex-shrink-0.ms-3
                     button.btn.btn-primary(ngbDropdownToggle)

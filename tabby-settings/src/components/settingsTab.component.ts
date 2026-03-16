@@ -2,7 +2,7 @@
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import * as yaml from 'js-yaml'
 import { debounce } from 'utils-decorators/dist/esm/debounce/debounce'
-import { Component, Inject, Input, HostBinding, Injector } from '@angular/core'
+import { Component, Inject, Input, HostBinding, Injector, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core'
 import {
     ConfigService,
     BaseTabComponent,
@@ -28,12 +28,15 @@ import { ReleaseNotesComponent } from './releaseNotesTab.component'
     styleUrls: [
         './settingsTab.component.scss',
     ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsTabComponent extends BaseTabComponent {
     @Input() activeTab: string
     Platform = Platform
     configDefaults: any
     configFile: string
+    /** 缓存的配置文件有效性，避免模板每次调用时重新解析 YAML */
+    configFileValid = true
     isShellIntegrationInstalled = false
     checkingForUpdate = false
     updateAvailable = false
@@ -53,6 +56,7 @@ export class SettingsTabComponent extends BaseTabComponent {
         @Inject(SettingsTabProvider) public settingsProviders: SettingsTabProvider[],
         translate: TranslateService,
         injector: Injector,
+        private cdr: ChangeDetectorRef,
     ) {
         super(injector)
         this.setTitle(translate.instant(_('Settings')))
@@ -68,6 +72,7 @@ export class SettingsTabComponent extends BaseTabComponent {
             // 只在当前显示 Config file 标签页时才重新读取
             if (this.activeTab === 'config-file') {
                 this.configFile = config.readRaw()
+                this.configFileValid = true // 外部变更后的配置文件一定是有效的
             }
         })
 
@@ -79,6 +84,7 @@ export class SettingsTabComponent extends BaseTabComponent {
         this.subscribeUntilDestroyed(config.changed$, onConfigChange)
         // 初始化时读取一次
         this.configFile = config.readRaw()
+        this.configFileValid = this.validateYaml(this.configFile)
         onConfigChange()
     }
 
@@ -121,13 +127,33 @@ export class SettingsTabComponent extends BaseTabComponent {
         this.platform.showItemInFolder(this.platform.getConfigPath()!)
     }
 
-    isConfigFileValid () {
+    /**
+     * 更新配置文件有效性缓存
+     * 在 configFile 变化时调用，避免模板热路径重复解析 YAML
+     */
+    onConfigFileChange () {
+        this.configFileValid = this.validateYaml(this.configFile)
+        this.cdr.markForCheck()
+    }
+
+    /**
+     * 验证 YAML 语法
+     */
+    private validateYaml (content: string): boolean {
         try {
-            yaml.load(this.configFile)
+            yaml.load(content)
             return true
         } catch {
             return false
         }
+    }
+
+    /**
+     * @deprecated 使用 configFileValid 属性代替
+     * 保留此方法以兼容可能的外部调用
+     */
+    isConfigFileValid () {
+        return this.configFileValid
     }
 
     async checkForUpdates () {

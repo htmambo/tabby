@@ -1,6 +1,6 @@
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import deepClone from 'clone-deep'
-import { Component, Inject } from '@angular/core'
+import { Component, Inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { ConfigService, HostAppService, Profile, SelectorService, ProfilesService, PromptModalComponent, PlatformService, BaseComponent, PartialProfile, ProfileProvider, TranslateService, Platform, ProfileGroup, PartialProfileGroup, QuickConnectProfileProvider } from 'tabby-core'
 import { EditProfileModalComponent } from './editProfileModal.component'
@@ -18,6 +18,7 @@ interface CollapsableProfileGroup extends ProfileGroup {
     standalone: false,
     templateUrl: './profilesSettingsTab.component.pug',
     styleUrls: ['./profilesSettingsTab.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfilesSettingsTabComponent extends BaseComponent {
     builtinProfiles: PartialProfile<Profile>[] = []
@@ -37,6 +38,7 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
         private ngbModal: NgbModal,
         private platform: PlatformService,
         private translate: TranslateService,
+        private cdr: ChangeDetectorRef,
     ) {
         super()
         this.profileProviders.sort((a, b) => a.name.localeCompare(b.name))
@@ -44,6 +46,15 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
 
     /** 用于检测 profile 相关配置是否变化的缓存 */
     private lastProfileConfigVersion: number = 0
+
+    /** 缓存的 profile 描述，避免模板热路径重复调用 profilesService.getDescription() */
+    private profileDescriptionCache = new Map<string, string|null>()
+
+    /** 缓存的 profile 可见性，filter 变化时清空 */
+    private profileVisibilityCache = new Map<string, boolean>()
+
+    /** 缓存的 group 可见性，filter 变化时清空 */
+    private groupVisibilityCache = new Map<string, boolean>()
 
     async ngOnInit (): Promise<void> {
         await this.refreshAll()
@@ -85,6 +96,12 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
         this.builtinProfiles = allProfiles.filter(x => x.isBuiltin && !x.isTemplate)
         this.templateProfiles = allProfiles.filter(x => x.isTemplate)
         this.customProfiles = allProfiles.filter(x => !x.isBuiltin)
+
+        // 清空缓存，因为 profile 数据已更新
+        this.profileDescriptionCache.clear()
+        this.profileVisibilityCache.clear()
+        this.groupVisibilityCache.clear()
+        this.cdr.markForCheck()
     }
 
     launchProfile (profile: PartialProfile<Profile>): void {
@@ -280,15 +297,63 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
     }
 
     isGroupVisible (group: PartialProfileGroup<ProfileGroup>): boolean {
-        return !this.filter || (group.profiles ?? []).some(x => this.isProfileVisible(x))
+        if (!this.filter) {
+            return true
+        }
+        // 使用缓存
+        const cached = this.groupVisibilityCache.get(group.id)
+        if (cached !== undefined) {
+            return cached
+        }
+        const result = (group.profiles ?? []).some(x => this.isProfileVisible(x))
+        this.groupVisibilityCache.set(group.id, result)
+        return result
     }
 
     isProfileVisible (profile: PartialProfile<Profile>): boolean {
-        return !this.filter || (profile.name + '$' + (this.getDescription(profile) ?? '')).toLowerCase().includes(this.filter.toLowerCase())
+        if (!this.filter) {
+            return true
+        }
+        // 使用缓存
+        const cacheKey = profile.id ?? profile.name
+        const cached = this.profileVisibilityCache.get(cacheKey)
+        if (cached !== undefined) {
+            return cached
+        }
+        const result = (profile.name + '$' + (this.getCachedDescription(profile) ?? '')).toLowerCase().includes(this.filter.toLowerCase())
+        this.profileVisibilityCache.set(cacheKey, result)
+        return result
     }
 
+    /**
+     * 获取 profile 描述（带缓存）
+     * 模板调用此方法，避免每次变更检测都调用 profilesService.getDescription()
+     */
     getDescription (profile: PartialProfile<Profile>): string|null {
-        return this.profilesService.getDescription(profile)
+        return this.getCachedDescription(profile)
+    }
+
+    /**
+     * 内部方法：从缓存获取描述，缓存未命中时计算并缓存
+     */
+    private getCachedDescription (profile: PartialProfile<Profile>): string|null {
+        const cacheKey = profile.id ?? profile.name
+        const cached = this.profileDescriptionCache.get(cacheKey)
+        if (cached !== undefined) {
+            return cached
+        }
+        const result = this.profilesService.getDescription(profile)
+        this.profileDescriptionCache.set(cacheKey, result)
+        return result
+    }
+
+    /**
+     * filter 变化时清空可见性缓存
+     */
+    onFilterChange (): void {
+        this.profileVisibilityCache.clear()
+        this.groupVisibilityCache.clear()
+        this.cdr.markForCheck()
     }
 
     getTypeLabel (profile: PartialProfile<Profile>): string {

@@ -1165,6 +1165,9 @@ export class AiAssistantService implements OnDestroy {
             // 将任务强调消息插入到消息列表最前面
             conversationMessages.unshift(taskContextMessage)
 
+            // 内部订阅引用，用于取消时清理
+            let innerSubscription: Subscription | null = null
+
             // 递归执行单轮对话
             const runSingleRound = async (): Promise<void> => {
                 if (!agentState.isActive) {return}
@@ -1209,7 +1212,7 @@ export class AiAssistantService implements OnDestroy {
                     })
 
                     // 直接订阅 provider 的流（不使用 merge，否则需要所有源都 complete）
-                    activeProvider.chatStream(roundRequest).subscribe({
+                    innerSubscription = activeProvider.chatStream(roundRequest).subscribe({
                         next: (event: any) => {
                             switch (event.type) {
                                 case 'text_delta':
@@ -1483,6 +1486,11 @@ export class AiAssistantService implements OnDestroy {
             // 返回取消函数
             return () => {
                 agentState.isActive = false
+                // 取消内部 provider 订阅，触发 abort
+                if (innerSubscription) {
+                    innerSubscription.unsubscribe()
+                    innerSubscription = null
+                }
                 this.logger.info('Agent loop cancelled by subscriber')
             }
         })

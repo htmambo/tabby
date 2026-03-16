@@ -560,10 +560,12 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
                     inputHistoryCount: this.inputHistory.length,
                 })
                 this.initialAutoScrollPending = true
+                this.updateTokenUsage()
             }
         } catch (error) {
             this.logger.error('Failed to load chat history', error)
             this.messages = []
+            this.updateTokenUsage()
         }
     }
 
@@ -613,6 +615,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             timestamp: new Date(),
         }
         this.messages.push(welcomeMessage)
+        this.updateTokenUsage()
     }
 
     /**
@@ -785,6 +788,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             timestamp: new Date(),
         }
         this.messages.push(userMessage)
+        this.updateTokenUsage()
 
         // 滚动到底部
         this.scrollToBottom('auto')
@@ -990,6 +994,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             timestamp: new Date(),
         }
         this.messages.push(userMessage)
+        this.updateTokenUsage()
 
         // 滚动到底部
         this.scrollToBottom('auto')
@@ -1154,10 +1159,25 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * 更新 Token 使用情况
+     * 在消息变化时调用，缓存计算结果避免模板热路径重复计算
      */
     private updateTokenUsage(): void {
-        // 保留空方法以兼容现有调用，Token 使用情况改为实时计算
+        // 计算 token 使用量
+        this._currentTokens = this.messages.reduce((sum, msg) => {
+            const content = typeof msg.content === 'string' ? msg.content : ''
+            return sum + Math.ceil(content.length / 4)
+        }, 0)
+
+        // 计算使用百分比
+        const max = this.maxTokens
+        this._tokenUsagePercent = max ? Math.min(Math.round((this._currentTokens / max) * 100), 100) : 0
     }
+
+    /** 缓存的 token 使用量 */
+    private _currentTokens = 0
+
+    /** 缓存的 token 使用百分比 */
+    private _tokenUsagePercent = 0
 
     /**
      * 获取最大上下文限制
@@ -1167,27 +1187,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * 获取当前消息 Token 使用量（简单估算：每4个字符≈1 Token）
+     * 获取当前消息 Token 使用量（缓存值，避免模板热路径重复计算）
      */
     get currentTokens(): number {
-        return this.messages.reduce((sum, msg) => {
-            const content = typeof msg.content === 'string' ? msg.content : ''
-            return sum + Math.ceil(content.length / 4)
-        }, 0)
+        return this._currentTokens
     }
 
     /**
-     * 获取 Token 使用百分比
+     * 获取 Token 使用百分比（缓存值）
      */
     get tokenUsagePercent(): number {
-        const maxTokens = this.maxTokens
-        if (!maxTokens) {
-            return 0
-        }
-        return Math.min(
-            Math.round((this.currentTokens / maxTokens) * 100),
-            100,
-        )
+        return this._tokenUsagePercent
     }
 
     /**
