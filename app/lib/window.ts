@@ -47,6 +47,10 @@ export class Window {
     private isFluentVibrancy = false
     private dockHidden = false
     private pendingTimeouts = new Set<ReturnType<typeof setTimeout>>()
+    /** 存储已注册的 ipcMain 监听器，用于窗口销毁时清理 */
+    private registeredIpcHandlers = new Map<string, (...args: any[]) => void>()
+    /** 存储已注册的 autoUpdater 监听器，用于窗口销毁时清理 */
+    private registeredUpdaterHandlers = new Map<string, (...args: any[]) => void>()
 
     get visible$ (): Observable<boolean> { return this.visible }
     get closed$ (): Observable<void> { return this.closed }
@@ -580,7 +584,7 @@ export class Window {
             return { action: 'deny' }
         })
 
-        ipcMain.on('window-set-disable-vibrancy-while-dragging', (_event, value) => {
+        this.registerIpcHandler('window-set-disable-vibrancy-while-dragging', (_event, value) => {
             this.disableVibrancyWhileDragging = value && this.configStore.hacks?.disableVibrancyWhileDragging
         })
 
@@ -600,11 +604,11 @@ export class Window {
         this.window.on('move', onBoundsChange)
         this.window.on('resize', onBoundsChange)
 
-        ipcMain.on('window-set-traffic-light-position', (_event, x, y) => {
+        this.registerIpcHandler('window-set-traffic-light-position', (_event, x, y) => {
             this.window.setWindowButtonPosition({ x, y })
         })
 
-        ipcMain.on('window-set-opacity', (_event, opacity) => {
+        this.registerIpcHandler('window-set-opacity', (_event, opacity) => {
             this.window.setOpacity(opacity)
         })
 
@@ -612,21 +616,21 @@ export class Window {
             this.window?.setProgressBar(value, { mode: value < 0 ? 'none' : 'normal' })
         })
 
-        ipcMain.on('bridge:window:get-minimum-size', event => {
+        this.registerIpcHandler('bridge:window:get-minimum-size', event => {
             if (!this.window || event.sender !== this.window.webContents) {
                 return
             }
             event.returnValue = this.window.getMinimumSize()
         })
 
-        ipcMain.on('bridge:window:get-position', event => {
+        this.registerIpcHandler('bridge:window:get-position', event => {
             if (!this.window || event.sender !== this.window.webContents) {
                 return
             }
             event.returnValue = this.window.getPosition()
         })
 
-        ipcMain.on('bridge:window:is-maximized', event => {
+        this.registerIpcHandler('bridge:window:is-maximized', event => {
             if (!this.window || event.sender !== this.window.webContents) {
                 return
             }
@@ -634,34 +638,52 @@ export class Window {
         })
     }
 
+    /**
+     * 注册 IPC 监听器并跟踪，用于窗口销毁时清理
+     */
+    private registerIpcHandler (event: string, handler: (...args: any[]) => void): void {
+        ipcMain.on(event, handler)
+        this.registeredIpcHandlers.set(event, handler)
+    }
+
     on (event: string, listener: (...args: any[]) => void): void {
-        ipcMain.on(event, (e, ...args) => {
+        const wrappedListener = (e: any, ...args: any[]) => {
             if (!this.window || e.sender !== this.window.webContents) {
                 return
             }
             listener(e, ...args)
-        })
+        }
+        ipcMain.on(event, wrappedListener)
+        this.registeredIpcHandlers.set(event, wrappedListener)
     }
 
     private setupUpdater () {
         autoUpdater.autoDownload = true
         autoUpdater.autoInstallOnAppQuit = true
 
-        autoUpdater.on('update-available', () => {
+        const updateAvailableHandler = () => {
             this.send('updater:update-available')
-        })
+        }
+        autoUpdater.on('update-available', updateAvailableHandler)
+        this.registeredUpdaterHandlers.set('update-available', updateAvailableHandler)
 
-        autoUpdater.on('update-not-available', () => {
+        const updateNotAvailableHandler = () => {
             this.send('updater:update-not-available')
-        })
+        }
+        autoUpdater.on('update-not-available', updateNotAvailableHandler)
+        this.registeredUpdaterHandlers.set('update-not-available', updateNotAvailableHandler)
 
-        autoUpdater.on('error', err => {
+        const errorHandler = (err: Error) => {
             this.send('updater:error', err)
-        })
+        }
+        autoUpdater.on('error', errorHandler)
+        this.registeredUpdaterHandlers.set('error', errorHandler)
 
-        autoUpdater.on('update-downloaded', () => {
+        const updateDownloadedHandler = () => {
             this.send('updater:update-downloaded')
-        })
+        }
+        autoUpdater.on('update-downloaded', updateDownloadedHandler)
+        this.registeredUpdaterHandlers.set('update-downloaded', updateDownloadedHandler)
 
         this.on('updater:check-for-updates', () => {
             autoUpdater.checkForUpdates()
@@ -674,6 +696,19 @@ export class Window {
 
     private destroy () {
         this.clearPendingTimeouts()
+
+        // 清理已注册的 ipcMain 监听器，防止内存泄漏
+        for (const [event, handler] of this.registeredIpcHandlers) {
+            ipcMain.removeListener(event, handler)
+        }
+        this.registeredIpcHandlers.clear()
+
+        // 清理已注册的 autoUpdater 监听器，防止内存泄漏
+        for (const [event, handler] of this.registeredUpdaterHandlers) {
+            autoUpdater.removeListener(event, handler)
+        }
+        this.registeredUpdaterHandlers.clear()
+
         this.window = null
         this.closed.next()
         this.visible.complete()
