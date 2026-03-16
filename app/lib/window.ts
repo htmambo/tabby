@@ -50,7 +50,7 @@ export class Window {
     /** 存储已注册的 ipcMain 监听器，用于窗口销毁时清理 */
     private registeredIpcHandlers = new Map<string, (...args: any[]) => void>()
     /** 存储已注册的 autoUpdater 监听器，用于窗口销毁时清理 */
-    private registeredUpdaterHandlers = new Map<string, (...args: any[]) => void>()
+    private registeredUpdaterHandlers: Array<{event: string, handler: (...args: any[]) => void}> = []
     /** app:ready 监听器，用于窗口销毁时清理 */
     private appReadyListener: ((event: IpcMainEvent) => void) | null = null
     /** ready Promise 的 resolve 函数 */
@@ -672,25 +672,25 @@ export class Window {
             this.send('updater:update-available')
         }
         autoUpdater.on('update-available', updateAvailableHandler)
-        this.registeredUpdaterHandlers.set('update-available', updateAvailableHandler)
+        this.registeredUpdaterHandlers.push({event: 'update-available', handler: updateAvailableHandler})
 
         const updateNotAvailableHandler = () => {
             this.send('updater:update-not-available')
         }
         autoUpdater.on('update-not-available', updateNotAvailableHandler)
-        this.registeredUpdaterHandlers.set('update-not-available', updateNotAvailableHandler)
+        this.registeredUpdaterHandlers.push({event: 'update-not-available', handler: updateNotAvailableHandler})
 
         const errorHandler = (err: Error) => {
             this.send('updater:error', err)
         }
         autoUpdater.on('error', errorHandler)
-        this.registeredUpdaterHandlers.set('error', errorHandler)
+        this.registeredUpdaterHandlers.push({event: 'error', handler: errorHandler})
 
         const updateDownloadedHandler = () => {
             this.send('updater:update-downloaded')
         }
         autoUpdater.on('update-downloaded', updateDownloadedHandler)
-        this.registeredUpdaterHandlers.set('update-downloaded', updateDownloadedHandler)
+        this.registeredUpdaterHandlers.push({event: 'update-downloaded', handler: updateDownloadedHandler})
 
         this.on('updater:check-for-updates', () => {
             autoUpdater.checkForUpdates()
@@ -717,10 +717,10 @@ export class Window {
         this.registeredIpcHandlers.clear()
 
         // 清理已注册的 autoUpdater 监听器，防止内存泄漏
-        for (const [event, handler] of this.registeredUpdaterHandlers) {
-            autoUpdater.removeListener(event, handler)
+        for (const {event, handler} of this.registeredUpdaterHandlers) {
+            autoUpdater.removeListener(event as keyof import('electron-updater/out/AppUpdater').AppUpdaterEvents, handler)
         }
-        this.registeredUpdaterHandlers.clear()
+        this.registeredUpdaterHandlers = []
 
         this.window = null
         this.closed.next()
