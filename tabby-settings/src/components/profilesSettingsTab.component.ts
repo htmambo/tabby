@@ -43,18 +43,28 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
     }
 
     async ngOnInit (): Promise<void> {
-        await this.refreshProfileGroups()
-        await this.refreshProfiles()
-        // 合并订阅，避免重复刷新
+        await this.refreshAll()
+        // 只在 profile 相关配置变化时刷新
         this.subscribeUntilDestroyed(this.config.changed$, () => {
-            void this.refreshProfileGroups()
-            void this.refreshProfiles()
+            void this.refreshAll()
         })
     }
 
-    async refreshProfiles (): Promise<void> {
-        // 只调用一次 getProfiles()，然后分离结果
-        const allProfiles = await this.profilesService.getProfiles()
+    /**
+     * 统一刷新方法，避免重复枚举 profile
+     */
+    private async refreshAll (): Promise<void> {
+        // 一次调用获取 groups（包含 profiles），然后从中提取 profiles
+        const groups = await this.profilesService.getProfileGroups({ includeNonUserGroup: true, includeProfiles: true })
+        groups.sort((a, b) => a.name.localeCompare(b.name))
+        groups.sort((a, b) => (a.id === 'built-in' || !a.editable ? 1 : 0) - (b.id === 'built-in' || !a.editable ? 1 : 0))
+        groups.sort((a, b) => (a.id === 'ungrouped' ? 0 : 1) - (b.id === 'ungrouped' ? 0 : 1))
+
+        const profileGroupCollapsed = JSON.parse(window.localStorage.profileGroupCollapsed ?? '{}')
+        this.profileGroups = groups.map(g => ProfilesSettingsTabComponent.intoPartialCollapsableProfileGroup(g, profileGroupCollapsed[g.id] ?? false))
+
+        // 从 groups 中提取所有 profiles，避免再次调用 getProfiles()
+        const allProfiles = groups.flatMap(g => g.profiles ?? [])
         this.builtinProfiles = allProfiles.filter(x => x.isBuiltin && !x.isTemplate)
         this.templateProfiles = allProfiles.filter(x => x.isTemplate)
         this.customProfiles = allProfiles.filter(x => !x.isBuiltin)
@@ -250,15 +260,6 @@ export class ProfilesSettingsTabComponent extends BaseComponent {
             await this.profilesService.deleteProfileGroup(group, { deleteProfiles })
             await this.config.save()
         }
-    }
-
-    async refreshProfileGroups (): Promise<void> {
-        const profileGroupCollapsed = JSON.parse(window.localStorage.profileGroupCollapsed ?? '{}')
-        const groups = await this.profilesService.getProfileGroups({ includeNonUserGroup: true, includeProfiles: true })
-        groups.sort((a, b) => a.name.localeCompare(b.name))
-        groups.sort((a, b) => (a.id === 'built-in' || !a.editable ? 1 : 0) - (b.id === 'built-in' || !b.editable ? 1 : 0))
-        groups.sort((a, b) => (a.id === 'ungrouped' ? 0 : 1) - (b.id === 'ungrouped' ? 0 : 1))
-        this.profileGroups = groups.map(g => ProfilesSettingsTabComponent.intoPartialCollapsableProfileGroup(g, profileGroupCollapsed[g.id] ?? false))
     }
 
     isGroupVisible (group: PartialProfileGroup<ProfileGroup>): boolean {
