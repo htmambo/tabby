@@ -88,6 +88,8 @@ export class ElectronUpdaterService extends UpdaterService {
                 } catch (e) {
                     this.electronUpdaterAvailable = false
                     this.logger.info('Electron updater unavailable, falling back', e)
+                    cancel()  // 清理已注册的监听器
+                    reject(e)  // 确保 Promise 能够 settle
                 }
             })
         } else {

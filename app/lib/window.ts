@@ -51,6 +51,10 @@ export class Window {
     private registeredIpcHandlers = new Map<string, (...args: any[]) => void>()
     /** 存储已注册的 autoUpdater 监听器，用于窗口销毁时清理 */
     private registeredUpdaterHandlers = new Map<string, (...args: any[]) => void>()
+    /** app:ready 监听器，用于窗口销毁时清理 */
+    private appReadyListener: ((event: IpcMainEvent) => void) | null = null
+    /** ready Promise 的 resolve 函数 */
+    private readyResolve: (() => void) | null = null
 
     get visible$ (): Observable<boolean> { return this.visible }
     get closed$ (): Observable<void> { return this.closed }
@@ -267,14 +271,17 @@ export class Window {
         this.setupWindowManagement()
         this.setupUpdater()
 
-        this.ready = new Promise(resolve => {
-            const listener = (event: IpcMainEvent) => {
-                if (event.sender === this.window.webContents) {
-                    ipcMain.removeListener('app:ready', listener as any)
-                    resolve()
-                }
+        // 创建 ready Promise，监听器存储以便 destroy() 时清理
+        this.appReadyListener = (event: IpcMainEvent) => {
+            if (event.sender === this.window.webContents) {
+                ipcMain.removeListener('app:ready', this.appReadyListener!)
+                this.appReadyListener = null
+                this.readyResolve!()
             }
-            ipcMain.on('app:ready', listener)
+        }
+        ipcMain.on('app:ready', this.appReadyListener)
+        this.ready = new Promise<void>(resolve => {
+            this.readyResolve = resolve
         })
     }
 
@@ -696,6 +703,12 @@ export class Window {
 
     private destroy () {
         this.clearPendingTimeouts()
+
+        // 清理 app:ready 监听器，防止内存泄漏
+        if (this.appReadyListener) {
+            ipcMain.removeListener('app:ready', this.appReadyListener)
+            this.appReadyListener = null
+        }
 
         // 清理已注册的 ipcMain 监听器，防止内存泄漏
         for (const [event, handler] of this.registeredIpcHandlers) {

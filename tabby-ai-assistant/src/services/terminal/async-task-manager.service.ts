@@ -48,10 +48,28 @@ export class AsyncTaskManagerService implements OnDestroy {
     /** 任务 ID 前缀 */
     private readonly TASK_ID_PREFIX = 'task_'
 
+    /** 定期清理间隔：5分钟 */
+    private readonly CLEANUP_INTERVAL_MS = 5 * 60 * 1000
+
+    /** 定期清理定时器 */
+    private cleanupTimer?: number
+
     constructor(
         private terminalManager: TerminalManagerService,
         private logger: LoggerService,
-    ) {}
+    ) {
+        // 启动定期清理定时器
+        this.startPeriodicCleanup()
+    }
+
+    /**
+     * 启动定期清理已完成任务的定时器
+     */
+    private startPeriodicCleanup(): void {
+        this.cleanupTimer = window.setInterval(() => {
+            this.cleanupCompletedTasks()
+        }, this.CLEANUP_INTERVAL_MS)
+    }
 
     // ========== 公共 API ==========
 
@@ -454,6 +472,12 @@ export class AsyncTaskManagerService implements OnDestroy {
     }
 
     ngOnDestroy(): void {
+        // 停止定期清理定时器
+        if (this.cleanupTimer) {
+            window.clearInterval(this.cleanupTimer)
+            this.cleanupTimer = undefined
+        }
+
         // 清理所有待启动的任务
         this.pendingStartHandles.forEach((handle) => {
             window.clearTimeout(handle)
