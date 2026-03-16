@@ -26,7 +26,7 @@
 #define fg_main               #f7eded
 !
 ! 终端底色：当 Tabby 配置为使用配色方案背景，而不是跟随应用主题背景时生效。
-#define bg_terminal           #1f1013
+#define bg_terminal           #320610
 !
 ! 光标填充色：用于块光标、竖线光标和下划线光标本体。
 #define cursor_fill           #fff2f2
