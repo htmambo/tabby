@@ -139,6 +139,10 @@
    - `tabby-electron/src/sshImporters.ts` 中 `Unexpected/Invalid value` 解析日志降为 `console.debug`。
 4. 删除不可达冗余代码：
    - `tabby-electron/src/services/updater.service.ts` 内 `check()` 中 `return` 之后的监听逻辑属于不可达代码，已移除。
+5. 主进程错误上报链路移除：
+   - 删除 `app/lib/sentry.ts`，并从主进程与 preload 入口移除加载。
+   - 删除 `scripts/sentry-upload.mjs` 并移除 CI 中的符号上传步骤。
+   - 从 `package.json` 中移除 `@sentry/electron` 与 `@sentry/cli` 依赖声明。
 
 **验证**：
 - `./node_modules/.bin/tsc -p app/tsconfig.main.json --pretty false`
@@ -149,6 +153,7 @@
 - `./node_modules/.bin/tsc -p tabby-settings/tsconfig.typings.json --pretty false`（补充验证）
 - `./node_modules/.bin/tsc -p tabby-local/tsconfig.typings.json --pretty false`（补充验证）
 - `./node_modules/.bin/tsc -p tabby-auto-sudo-password/tsconfig.typings.json --pretty false`（补充验证）
+- `./node_modules/.bin/tsc -p app/tsconfig.main.json --pretty false`（Sentry 移除后验证）
 - `./node_modules/.bin/tsc -p tabby-core/tsconfig.typings.json --pretty false`（补充验证）
 - `./node_modules/.bin/tsc -p tabby-terminal/tsconfig.typings.json --pretty false`（补充验证）
 - `./node_modules/.bin/tsc -p tabby-ssh/tsconfig.typings.json --pretty false`（补充验证）
@@ -160,6 +165,7 @@
 - `./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false`（四次验证）
 - `./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false`（五次验证）
 - `./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false`（六次验证）
+- `./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false`（滚动按钮结构绑定移除后验证）
 - `./node_modules/.bin/tsc -p tabby-telnet/tsconfig.typings.json --pretty false`（补充验证）
 - `./node_modules/.bin/tsc -p tabby-core/tsconfig.typings.json --pretty false`（NG0100 修复后验证）
 - `./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false`（滚动按钮 NG0100 修复后验证）
@@ -253,6 +259,9 @@ AI Assistant 日志数量明显更多，但其中一部分可能承担排障职�
    - `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts` 中改为异步 `detectChanges`，移除全局 `appRef.tick()`，避免 NG0100 抖动。
 8. 侧边栏滚动按钮状态更新修复：
    - `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts` 中滚动按钮状态更新改为先赋值再调度检测，避免 `showScrollBottom` 在同一检测周期内抖动引发 NG0100。
+9. 侧边栏滚动按钮结构绑定移除：
+   - `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts` 中将滚动按钮从 `*ngIf` 改为常驻 DOM。
+   - `tabby-ai-assistant/src/components/chat/ai-sidebar.component.scss` 中新增 `.is-hidden`，由组件直接切换类名控制显隐，避免第 184/189 行结构绑定继续触发 NG0100。
 
 ### 阶段 5：构建脚本与配置清理 ⏸
 

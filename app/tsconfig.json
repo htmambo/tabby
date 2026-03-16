@@ -31,7 +31,6 @@
     "compileOnSave": false,
     "include": [
         "src/**/*.ts",
-        "lib/sentry.ts",
         "types/**/*.d.ts"
     ],
     "exclude": [

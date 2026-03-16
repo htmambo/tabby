@@ -11,7 +11,6 @@ require("dotenv/config");
 (_b = (_d = process.env).TABBY_CONFIG_DIRECTORY) !== null && _b !== void 0 ? _b : (_d.TABBY_CONFIG_DIRECTORY = electron_1.app.getPath('userData'));
 require("v8-compile-cache");
 require("source-map-support/register");
-require("./sentry");
 require("./lru");
 const cli_1 = require("./cli");
 const app_1 = require("./app");

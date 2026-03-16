@@ -111,15 +111,6 @@ jobs:
         KEYGEN_TOKEN: ${{ secrets.KEYGEN_TOKEN }}
         # DEBUG: electron-builder,electron-builder:*
 
-    - name: Upload symbols
-      run: |
-        sudo npm install -g @sentry/cli --unsafe-perm
-        ./scripts/sentry-upload.mjs
-      env:
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-        SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-
     - name: Package artifacts
       run: |
         mkdir artifact-dmg
@@ -251,16 +242,6 @@ jobs:
     - name: Build web resources (amd64 only)
       run: zsh -c 'tar czf tabby-web.tar.gz (tabby-*|web)/dist'
       if: matrix.build-arch == 'x64'
-
-    - name: Upload symbols (amd64 only)
-      run: |
-        sudo npm install -g @sentry/cli --unsafe-perm
-        ./scripts/sentry-upload.mjs
-      if: matrix.build-arch == 'x64'
-      env:
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-        SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
     - name: Upload packages to packagecloud.io
       uses: TykTechnologies/packagecloud-action@main
@@ -411,15 +392,6 @@ jobs:
         ARCH: ${{matrix.arch}}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         KEYGEN_TOKEN: ${{ secrets.KEYGEN_TOKEN }}
-
-    - name: Upload symbols
-      run: |
-        npm install @sentry/cli
-        node scripts/sentry-upload.mjs
-      env:
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-        SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
     - name: Package artifacts
       run: |

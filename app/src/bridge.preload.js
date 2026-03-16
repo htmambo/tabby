@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer, shell, webUtils } from 'electron';
-import '../lib/sentry';
 import { ALLOWED_RUNTIME_ENV_KEYS } from '../../tabby-core/src/api/runtimeEnv';
 const nodeRequire = __non_webpack_require__;
 const os = nodeRequire('os');

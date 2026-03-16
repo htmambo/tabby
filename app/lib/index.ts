@@ -11,7 +11,6 @@ process.env.TABBY_CONFIG_DIRECTORY ??= app.getPath('userData')
 
 import 'v8-compile-cache'
 import 'source-map-support/register'
-import './sentry'
 import './lru'
 import { parseArgs } from './cli'
 import { Application } from './app'

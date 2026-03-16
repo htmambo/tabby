@@ -18,8 +18,6 @@
     "@ng-bootstrap/ng-bootstrap": "^20.0.0",
     "@ngtools/webpack": "^21.2.1",
     "@popperjs/core": "^2.11.8",
-    "@sentry/cli": "3.3.0",
-    "@sentry/electron": "7.10.0",
     "@tabby-gang/to-string-loader": "^1.1.7-beta.2",
     "@types/deep-equal": "1.0.1",
     "@types/electron-debug": "^2.1.0",

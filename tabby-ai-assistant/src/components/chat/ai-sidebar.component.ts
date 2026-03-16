@@ -206,12 +206,12 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
             </div>
 
             <!-- Scroll buttons -->
-            <button *ngIf="showScrollTop" type="button" class="scroll-btn scroll-top" (click)="scrollToTop()" [title]="'Scroll to Top' | translate">
+            <button #scrollTopButton type="button" class="scroll-btn scroll-top is-hidden" (click)="scrollToTop()" [title]="'Scroll to Top' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
                 </svg>
             </button>
-            <button *ngIf="showScrollBottom" type="button" class="scroll-btn scroll-bottom" (click)="scrollToBottom()" [title]="'Scroll to Bottom' | translate">
+            <button #scrollBottomButton type="button" class="scroll-btn scroll-bottom is-hidden" (click)="scrollToBottom()" [title]="'Scroll to Bottom' | translate">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L7.293 8 1.646 2.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
@@ -275,6 +275,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     @ViewChild('chatContainer') chatContainerRef!: ElementRef
     @ViewChild('textInput') textInput!: ElementRef<HTMLTextAreaElement>
+    @ViewChild('scrollTopButton') scrollTopButtonRef?: ElementRef<HTMLButtonElement>
+    @ViewChild('scrollBottomButton') scrollBottomButtonRef?: ElementRef<HTMLButtonElement>
 
     // 服务引用（由 AiSidebarService 注入）
     sidebarService!: AiSidebarService
@@ -409,6 +411,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     ngAfterViewInit(): void {
         // 强制设置滚动样式 - 绕过 CSS 优先级问题
         this.forceScrollStyles()
+        this.applyScrollButtonVisibility()
         this.scheduleDetectChanges()
         if (this.initialAutoScrollPending && this.chatContainerRef?.nativeElement) {
             this.initialAutoScrollPending = false
@@ -1342,8 +1345,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.queuedScrollState = null
             this.showScrollTop = state.showTop
             this.showScrollBottom = state.showBottom
-            this.scheduleDetectChanges()
+            this.applyScrollButtonVisibility()
         }, 0)
+    }
+
+    private applyScrollButtonVisibility(): void {
+        this.scrollTopButtonRef?.nativeElement.classList.toggle('is-hidden', !this.showScrollTop)
+        this.scrollBottomButtonRef?.nativeElement.classList.toggle('is-hidden', !this.showScrollBottom)
     }
 
     /**

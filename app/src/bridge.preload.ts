@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer, shell, webUtils } from 'electron'
-import '../lib/sentry'
 import type { BridgeIPCListener, TabbyBridge } from './tabby-bridge'
 import type { TabbyRuntimeBridge } from '../../tabby-core/src/api/rendererRuntime'
 import { ALLOWED_RUNTIME_ENV_KEYS } from '../../tabby-core/src/api/runtimeEnv'

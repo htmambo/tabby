@@ -76,6 +76,7 @@ class Application {
         this.bridgeFileTransfers = new Map();
         this.bridgeFileTransferOwners = new Map();
         this.quitRequested = false;
+        this.shouldQuitWhenLastWindowCloses = process.platform !== 'darwin' || process.env.TABBY_DEV === '1';
         this.shellIntegrationWorkflows = ['Open Tabby here.workflow', 'Paste path into Tabby.workflow'];
         this.shellIntegrationRegistryKeys = [
             {
@@ -164,7 +165,7 @@ class Application {
             this.quitRequested = true;
         });
         electron_1.app.on('window-all-closed', () => {
-            if (this.quitRequested || process.platform !== 'darwin') {
+            if (this.quitRequested || this.shouldQuitWhenLastWindowCloses) {
                 electron_1.app.quit();
             }
         });
