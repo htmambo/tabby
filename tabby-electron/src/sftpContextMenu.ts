@@ -1,5 +1,6 @@
 import * as path from 'path'
 import { Injectable } from '@angular/core'
+import { Subscription } from 'rxjs'
 import { MenuItemOptions, TranslateService, chmodPath, readPathStat } from 'tabby-core'
 import { SFTPFile, SFTPPanelComponent, SFTPContextMenuItemProvider, SFTPSession } from 'tabby-ssh'
 import { ElectronPlatformService } from './services/platform.service'
@@ -55,6 +56,7 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
         let pollInFlight = false
         let syncInFlight = false
         let syncPending = false
+        let sftpCloseSubscription: Subscription | null = null
 
         const stopWatching = () => {
             if (stopped) {
@@ -68,6 +70,10 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
             if (pollTimer !== null) {
                 window.clearInterval(pollTimer)
                 pollTimer = null
+            }
+            if (sftpCloseSubscription) {
+                sftpCloseSubscription.unsubscribe()
+                sftpCloseSubscription = null
             }
             void tempDir.cleanup().catch(() => null)
         }
@@ -122,9 +128,8 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
             }
         }
 
-        const sftpCloseSubscription = sftp.closed$.subscribe(() => {
+        sftpCloseSubscription = sftp.closed$.subscribe(() => {
             stopWatching()
-            sftpCloseSubscription.unsubscribe()
         })
 
         pollStartTimeout = window.setTimeout(() => {
