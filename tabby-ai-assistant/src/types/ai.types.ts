@@ -455,6 +455,8 @@ export interface AgentState {
     toolCallHistory: ToolCallRecord[];
     lastAiResponse: string;
     isActive: boolean;
+    /** AbortController 用于传播取消信号到子操作 */
+    abortController?: AbortController;
 }
 
 // 工具调用记录

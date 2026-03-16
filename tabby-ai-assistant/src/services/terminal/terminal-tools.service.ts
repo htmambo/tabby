@@ -38,6 +38,13 @@ export interface ToolResult {
 }
 
 /**
+ * 工具调用上下文，包含取消支持
+ */
+export interface ToolExecutionContext {
+    signal?: AbortSignal;
+}
+
+/**
  * 终端工具服务
  * 定义 AI 可调用的终端相关工具
  */
@@ -321,9 +328,20 @@ export class TerminalToolsService implements OnDestroy {
 
     /**
      * 执行工具调用
+     * @param toolCall 工具调用请求
+     * @param context 可选的执行上下文，包含 AbortSignal 用于取消
      */
-    async executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
+    async executeToolCall(toolCall: ToolCall, context?: ToolExecutionContext): Promise<ToolResult> {
         this.logger.info('Executing tool call', { name: toolCall.name, input: toolCall.input })
+
+        // 🔴 检查是否已取消
+        if (context?.signal?.aborted) {
+            return {
+                tool_use_id: toolCall.id,
+                content: 'Operation cancelled',
+                is_error: true,
+            }
+        }
 
         try {
             let result = ''
@@ -354,6 +372,7 @@ export class TerminalToolsService implements OnDestroy {
                         toolCall.input.command,
                         toolCall.input.execute ?? true,
                         toolCall.input.terminal_index,
+                        context?.signal,
                     )
                     break
                 case 'get_terminal_list':
@@ -567,9 +586,15 @@ export class TerminalToolsService implements OnDestroy {
 
     /**
      * 写入终端 - 带执行反馈和智能等待
+     * @param signal 可选的 AbortSignal 用于取消操作
      */
-    private async writeToTerminal(command: string, execute: boolean, terminalIndex?: number): Promise<string> {
+    private async writeToTerminal(command: string, execute: boolean, terminalIndex?: number, signal?: AbortSignal): Promise<string> {
         this.logger.debug('writeToTerminal called', { command, execute, terminalIndex })
+
+        // 🔴 检查是否已取消
+        if (signal?.aborted) {
+            return '(操作已取消)'
+        }
 
         let success = false
 
@@ -597,8 +622,13 @@ export class TerminalToolsService implements OnDestroy {
 
         this.logger.debug('Smart wait for command', { command, baseCommand, waitTime })
 
-        // 初始等待
-        await this.sleep(waitTime)
+        // 初始等待（带取消支持）
+        await this.sleep(waitTime, signal)
+
+        // 🔴 等待后检查取消
+        if (signal?.aborted) {
+            return `✅ 命令已发送: ${command}\n⚠️ 用户取消了等待输出`
+        }
 
         // 直接从 xterm buffer 读取
         const terminals = this.terminalManager.getAllTerminals()
@@ -615,13 +645,22 @@ export class TerminalToolsService implements OnDestroy {
                 let retryCount = 0
                 const maxRetries = 3
 
-                while (retryCount < maxRetries && !this.isCommandComplete(output)) {
+                while (retryCount < maxRetries && !this.isCommandComplete(output) && !signal?.aborted) {
                     this.logger.debug(`Command still running, retry ${retryCount + 1}/${maxRetries}`)
-                    await this.sleep(1000)
+                    await this.sleep(1000, signal)
+                    // 🔴 轮询中检查取消
+                    if (signal?.aborted) {
+                        break
+                    }
                     output = this.readFromXtermBuffer(terminal, 50)
                     retryCount++
                 }
             }
+        }
+
+        // 🔴 最终检查取消
+        if (signal?.aborted) {
+            return `✅ 命令已执行: ${command}\n⚠️ 用户取消了等待输出`
         }
 
         // 返回执行结果
@@ -643,8 +682,19 @@ export class TerminalToolsService implements OnDestroy {
         this.pendingSleeps.clear()
     }
 
-    private sleep (ms: number): Promise<void> {
-        return new Promise(resolve => {
+    /**
+     * 延迟执行，支持 AbortSignal 取消
+     * @param ms 延迟时间（毫秒）
+     * @param signal 可选的 AbortSignal 用于取消
+     */
+    private sleep (ms: number, signal?: AbortSignal): Promise<void> {
+        return new Promise((resolve, reject) => {
+            // 🔴 如果已经取消，立即返回
+            if (signal?.aborted) {
+                resolve()
+                return
+            }
+
             const handle = setTimeout(() => {
                 this.pendingSleeps.delete(handle)
                 resolve()
@@ -652,6 +702,16 @@ export class TerminalToolsService implements OnDestroy {
             this.pendingSleeps.set(handle, resolve)
             if (typeof (handle as any)?.unref === 'function') {
                 (handle as any).unref()
+            }
+
+            // 🔴 监听取消事件
+            if (signal) {
+                const abortHandler = () => {
+                    clearTimeout(handle)
+                    this.pendingSleeps.delete(handle)
+                    resolve() // 正常返回，让调用者决定如何处理
+                }
+                signal.addEventListener('abort', abortHandler, { once: true })
             }
         })
     }

@@ -16,13 +16,28 @@ export class SecurityValidatorService {
 
     /**
      * 验证并确认命令执行
+     * @param command 要验证的命令
+     * @param explanation 命令说明
+     * @param _context 上下文（可选）
+     * @param signal 可选的 AbortSignal，用于取消操作
      */
     async validateAndConfirm(
         command: string,
         explanation: string,
         _context?: unknown,
+        signal?: AbortSignal,
     ): Promise<ValidationResult> {
         this.logger.info('Validating command', { command })
+
+        // 🔴 检查是否已取消
+        if (signal?.aborted) {
+            return {
+                approved: false,
+                riskLevel: RiskLevel.HIGH,
+                reason: 'Operation cancelled',
+                timestamp: new Date(),
+            }
+        }
 
         try {
             // 1. 风险评估
@@ -30,6 +45,16 @@ export class SecurityValidatorService {
             const riskLevel = assessment.level
 
             this.logger.debug('Risk assessment completed', { riskLevel, score: assessment.score })
+
+            // 🔴 风险评估后检查取消
+            if (signal?.aborted) {
+                return {
+                    approved: false,
+                    riskLevel,
+                    reason: 'Operation cancelled',
+                    timestamp: new Date(),
+                }
+            }
 
             // 2. 检查用户同意
             const hasConsent = await this.consentManager.hasConsent(command, riskLevel)
@@ -47,7 +72,23 @@ export class SecurityValidatorService {
             if (riskLevel === RiskLevel.CRITICAL || riskLevel === RiskLevel.HIGH) {
                 // 高风险需要密码确认
                 this.logger.warn('High risk command detected, requesting password', { command })
-                const passwordValid = await this.passwordManager.requestPassword()
+
+                // 🔴 设置取消监听器
+                const passwordValid = await this.withAbortSignal(
+                    signal,
+                    this.passwordManager.requestPassword(),
+                )
+
+                // 🔴 密码验证后检查取消
+                if (signal?.aborted) {
+                    return {
+                        approved: false,
+                        riskLevel,
+                        reason: 'Operation cancelled',
+                        timestamp: new Date(),
+                    }
+                }
+
                 if (!passwordValid) {
                     return {
                         approved: false,
@@ -59,11 +100,23 @@ export class SecurityValidatorService {
             } else if (riskLevel === RiskLevel.MEDIUM) {
                 // 中风险需要显式确认
                 this.logger.info('Medium risk command, requesting user confirmation', { command })
-                const confirmed = await this.consentManager.requestConsent(
-                    command,
-                    explanation,
-                    riskLevel,
+
+                // 🔴 设置取消监听器
+                const confirmed = await this.withAbortSignal(
+                    signal,
+                    this.consentManager.requestConsent(command, explanation, riskLevel),
                 )
+
+                // 🔴 用户确认后检查取消
+                if (signal?.aborted) {
+                    return {
+                        approved: false,
+                        riskLevel,
+                        reason: 'Operation cancelled',
+                        timestamp: new Date(),
+                    }
+                }
+
                 if (!confirmed) {
                     return {
                         approved: false,
@@ -85,6 +138,15 @@ export class SecurityValidatorService {
             }
 
         } catch (error) {
+            // 如果是取消导致的错误，返回取消结果
+            if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+                return {
+                    approved: false,
+                    riskLevel: RiskLevel.HIGH,
+                    reason: 'Operation cancelled',
+                    timestamp: new Date(),
+                }
+            }
             this.logger.error('Command validation failed', error)
             return {
                 approved: false,
@@ -93,6 +155,33 @@ export class SecurityValidatorService {
                 timestamp: new Date(),
             }
         }
+    }
+
+    /**
+     * 辅助方法：为 Promise 添加 AbortSignal 支持
+     */
+    private async withAbortSignal<T>(signal: AbortSignal | undefined, promise: Promise<T>): Promise<T> {
+        if (!signal) {
+            return promise
+        }
+
+        return new Promise((resolve, reject) => {
+            const abortHandler = () => {
+                reject(new DOMException('Operation cancelled', 'AbortError'))
+            }
+
+            signal.addEventListener('abort', abortHandler)
+
+            promise
+                .then(result => {
+                    signal.removeEventListener('abort', abortHandler)
+                    resolve(result)
+                })
+                .catch(error => {
+                    signal.removeEventListener('abort', abortHandler)
+                    reject(error)
+                })
+        })
     }
 
     /**

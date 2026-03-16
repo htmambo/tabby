@@ -1148,6 +1148,7 @@ export class AiAssistantService implements OnDestroy {
             toolCallHistory: [],
             lastAiResponse: '',
             isActive: true,
+            abortController: new AbortController(),
         }
 
         return new Observable<AgentStreamEvent>((subscriber) => {
@@ -1578,6 +1579,10 @@ export class AiAssistantService implements OnDestroy {
             // 返回取消函数
             return () => {
                 agentState.isActive = false
+                // 🔴 触发 AbortController 以传播取消信号到子操作
+                if (agentState.abortController && !agentState.abortController.signal.aborted) {
+                    agentState.abortController.abort()
+                }
                 // 取消内部 provider 订阅，触发 abort
                 if (innerSubscription) {
                     innerSubscription.unsubscribe()
@@ -1632,6 +1637,8 @@ export class AiAssistantService implements OnDestroy {
                     const validation = await this.securityValidator.validateAndConfirm(
                         command,
                         'AI 请求执行此命令',
+                        undefined,
+                        agentState?.abortController?.signal,  // 🔴 传递 AbortSignal
                     )
 
                     if (!validation.approved) {
@@ -1674,9 +1681,32 @@ export class AiAssistantService implements OnDestroy {
                     }
 
                     this.logger.info('Command approved by user', { command, riskLevel: validation.riskLevel })
+
+                    // 🔴 取消检查点：validateAndConfirm 返回后
+                    if (agentState && !agentState.isActive) {
+                        this.logger.info('Agent cancelled after validation, skipping command execution')
+                        results.push({
+                            tool_use_id: toolCall.id,
+                            name: toolCall.name,
+                            content: '命令验证通过但用户取消了 Agent 执行',
+                            is_error: true,
+                        })
+                        continue
+                    }
                 }
 
-                const result = await this.terminalTools.executeToolCall(toolCall)
+                const result = await this.terminalTools.executeToolCall(
+                    toolCall,
+                    { signal: agentState?.abortController?.signal },  // 🔴 传递 AbortSignal
+                )
+
+                // 🔴 取消检查点：executeToolCall 返回后
+                if (agentState && !agentState.isActive) {
+                    this.logger.info('Agent cancelled after tool execution, result received but not continuing')
+                    // 工具已执行完成，结果已获取，但不再继续后续流程
+                    // 仍然记录结果，让调用者知道工具已被执行
+                }
+
                 const duration = Date.now() - startTime
 
                 // 添加工具名称到结果中
