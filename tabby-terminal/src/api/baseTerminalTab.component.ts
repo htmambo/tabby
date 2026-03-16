@@ -19,6 +19,8 @@ import { getTerminalBackgroundColor } from '../helpers'
 const INACTIVE_TAB_UNLOAD_DELAY = 1000 * 30
 const OSC_FOCUS_IN = Buffer.from('\x1b[I') as Uint8Array
 const OSC_FOCUS_OUT = Buffer.from('\x1b[O') as Uint8Array
+const SESSION_OUTPUT_BATCH_DELAY_MS = 8
+const SESSION_OUTPUT_IMMEDIATE_FLUSH_CHARS = 32 * 1024
 
 /**
  * A class to base your custom terminal tabs on
@@ -167,6 +169,8 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     private frontendWriteLock = Promise.resolve()
     private pendingVisibleFrontendActionFrame: number|null = null
     private pendingTimeouts = new Set<number>()
+    private pendingPassthroughWriteHandle: number|null = null
+    private pendingPassthroughWriteBuffer = ''
 
     get input$ (): Observable<Buffer> {
         if (!this.frontend) {
@@ -655,12 +659,14 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     /** @hidden */
     ngOnDestroy (): void {
         this.clearPendingTimeouts()
+        this.clearPendingPassthroughWrite()
         this.clearPendingVisibleFrontendAction()
         super.ngOnDestroy()
         this.stopSpinner()
     }
 
     async destroy (): Promise<void> {
+        this.clearPendingPassthroughWrite()
         this.frontend?.detach(this.content.nativeElement)
         this.frontend?.destroy()
         this.frontend = undefined
@@ -707,6 +713,54 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             window.clearTimeout(handle)
         }
         this.pendingTimeouts.clear()
+    }
+
+    private queuePassthroughWrite (data: string): void {
+        if (!data) {
+            return
+        }
+
+        this.pendingPassthroughWriteBuffer += data
+        if (this.pendingPassthroughWriteBuffer.length >= SESSION_OUTPUT_IMMEDIATE_FLUSH_CHARS) {
+            void this.flushPendingPassthroughWrite()
+            return
+        }
+
+        if (this.pendingPassthroughWriteHandle !== null) {
+            return
+        }
+
+        this.pendingPassthroughWriteHandle = window.setTimeout(() => {
+            this.pendingPassthroughWriteHandle = null
+            void this.flushPendingPassthroughWrite()
+        }, SESSION_OUTPUT_BATCH_DELAY_MS)
+    }
+
+    private async flushPendingPassthroughWrite (): Promise<void> {
+        if (this.pendingPassthroughWriteHandle !== null) {
+            window.clearTimeout(this.pendingPassthroughWriteHandle)
+            this.pendingPassthroughWriteHandle = null
+        }
+
+        const data = this.pendingPassthroughWriteBuffer
+        if (!data) {
+            return
+        }
+
+        this.pendingPassthroughWriteBuffer = ''
+        try {
+            await this.write(data)
+        } catch (error) {
+            this.logger.debug('Skipping batched terminal write:', error)
+        }
+    }
+
+    private clearPendingPassthroughWrite (): void {
+        if (this.pendingPassthroughWriteHandle !== null) {
+            window.clearTimeout(this.pendingPassthroughWriteHandle)
+            this.pendingPassthroughWriteHandle = null
+        }
+        this.pendingPassthroughWriteBuffer = ''
     }
 
     private scheduleVisibleFrontendAction (frontend: XTermFrontend, action: () => void): void {
@@ -878,11 +932,10 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             throw new Error('Session not set')
         }
 
-        // this.session.output$.bufferTime(10).subscribe((datas) => {
         this.attachSessionHandler(this.session.output$, data => {
             if (this.enablePassthrough) {
                 this.output.next(data)
-                this.write(data)
+                this.queuePassthroughWrite(data)
             }
         })
 
@@ -893,10 +946,12 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         })
 
         this.attachSessionHandler(this.session.closed$, () => {
+            void this.flushPendingPassthroughWrite()
             this.onSessionClosed(destroyOnSessionClose)
         })
 
         this.attachSessionHandler(this.session.destroyed$, () => {
+            void this.flushPendingPassthroughWrite()
             this.onSessionDestroyed()
         })
     }

@@ -94,7 +94,7 @@ export class TerminalManagerService {
         private logger: LoggerService,
         private zone: NgZone,
     ) {
-        this.logger.info('TerminalManagerService initialized')
+        this.logger.debug('TerminalManagerService initialized')
 
         // 监听标签页变化
         this.app.tabsChanged$.subscribe(() => {
@@ -129,7 +129,7 @@ export class TerminalManagerService {
             }
         }
 
-        this.logger.info('Getting all terminals', {
+        this.logger.debug('Getting all terminals', {
             topLevelTabs: allTabs.length,
             foundTerminals: terminals.length,
             terminalTitles: terminals.map(t => t.title),
@@ -172,7 +172,7 @@ export class TerminalManagerService {
             const fullCommand = execute ? command + '\r' : command
 
             // 调试：检查终端对象状态
-            this.logger.info('Terminal object details', {
+            this.logger.debug('Terminal object details', {
                 hasSession: !!(terminal as any).session,
                 hasFrontend: !!(terminal as any).frontend,
                 hasSendInput: typeof terminal.sendInput === 'function',
@@ -181,18 +181,18 @@ export class TerminalManagerService {
 
             // 优先使用 sendInput（标准 API）
             if (typeof terminal.sendInput === 'function') {
-                this.logger.info('Using terminal.sendInput')
+                this.logger.debug('Using terminal.sendInput')
                 terminal.sendInput(fullCommand)
-                this.logger.info('Command sent via sendInput', { command, execute })
+                this.logger.debug('Command sent via sendInput', { command, execute })
                 return true
             }
 
             // 备用：使用 session.write
             const session = (terminal as any).session
             if (session && typeof session.write === 'function') {
-                this.logger.info('Using session.write')
+                this.logger.debug('Using session.write')
                 session.write(fullCommand)
-                this.logger.info('Command sent via session.write', { command, execute })
+                this.logger.debug('Command sent via session.write', { command, execute })
                 return true
             }
 
@@ -404,7 +404,7 @@ export class TerminalManagerService {
                 }
             })
 
-            this.logger.info('Focused terminal', {
+            this.logger.debug('Focused terminal', {
                 index,
                 title: targetTerminal.title,
             })
@@ -751,7 +751,7 @@ export class TerminalManagerService {
             this.monitoringIntervals.set(terminalId, subscription)
         })
 
-        this.logger.info('Started continuous monitoring', {
+        this.logger.debug('Started continuous monitoring', {
             terminalCount: terminals.length,
             intervalMs,
         })
@@ -772,7 +772,7 @@ export class TerminalManagerService {
             this.monitoringIntervals.clear()
         }
 
-        this.logger.info('Stopped continuous monitoring', { terminalId: terminalId ?? 'all' })
+        this.logger.debug('Stopped continuous monitoring', { terminalId: terminalId ?? 'all' })
     }
 
     /**

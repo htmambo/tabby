@@ -34,7 +34,7 @@ export default () => {
         mode: isDev ? 'development' : 'production',
         optimization:{
             minimize: false,
-            concatenateModules: false,
+            concatenateModules: !isDev,
         },
         cache: enableCache ? {
             type: 'filesystem',
@@ -55,7 +55,7 @@ export default () => {
         devtool: 'source-map',
         output: {
             path: path.join(__dirname, 'dist'),
-            pathinfo: true,
+            pathinfo: isDev,
             filename: '[name].js',
             publicPath: 'auto',
         },

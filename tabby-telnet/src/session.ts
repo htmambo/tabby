@@ -116,7 +116,7 @@ export class TelnetSession extends BaseSession {
 
     emitServiceMessage (msg: string): void {
         this.serviceMessage.next(msg)
-        this.logger.info(stripAnsi(msg))
+        this.logger.debug(stripAnsi(msg))
     }
 
     onData (data: Buffer): void {

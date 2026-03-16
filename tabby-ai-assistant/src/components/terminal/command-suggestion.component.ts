@@ -189,6 +189,10 @@ export class CommandSuggestionComponent implements OnInit, OnDestroy {
         this.close()
     }
 
+    trackSuggestion(_index: number, suggestion: CommandResponse): string {
+        return suggestion.command
+    }
+
     close(): void {
         this.closed.emit()
         this.suggestions = []

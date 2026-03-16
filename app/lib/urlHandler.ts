@@ -53,7 +53,7 @@ export function parseTabbyURL (url: string, cwd: string = process.cwd()): any {
             argv[key] = parsedValue
         }
 
-        console.log(`URL Handler - Safely parsed [${url}] to:`, JSON.stringify(argv))
+        console.debug(`URL Handler - Safely parsed [${url}] to:`, JSON.stringify(argv))
         return argv
     } catch (e) {
         console.error('Failed to parse tabby:// URL:', e)

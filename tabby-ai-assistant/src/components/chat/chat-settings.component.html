@@ -9,7 +9,7 @@
             <label>{{ t.chatSettings.fontSize }}</label>
             <div class="font-size-selector">
                 <button
-                    *ngFor="let size of fontSizes"
+                    *ngFor="let size of fontSizes; trackBy: trackFontSize"
                     type="button"
                     class="font-size-btn"
                     [class.active]="settings.fontSize === size"

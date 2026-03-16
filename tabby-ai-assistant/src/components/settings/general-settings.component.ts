@@ -137,7 +137,7 @@ export class GeneralSettingsComponent implements OnInit {
         })
         this.configuredProviderCount = this.availableProviders.filter(provider => provider.configured).length
 
-        this.logger.info('Loaded providers from config', { count: this.availableProviders.length })
+        this.logger.debug('Loaded providers from config', { count: this.availableProviders.length })
     }
 
     /**
@@ -154,6 +154,18 @@ export class GeneralSettingsComponent implements OnInit {
             vllm: '本地运行的 vLLM 服务 (端口 8000)',
         }
         return descriptions[key] ?? `${this.providerNames[key] ?? key} 提供商`
+    }
+
+    trackProvider(_index: number, provider: { name: string }): string {
+        return provider.name
+    }
+
+    trackLanguage(_index: number, language: { value: string }): string {
+        return language.value
+    }
+
+    trackSidebarPosition(_index: number, position: { value: string }): string {
+        return position.value
     }
 
     private isLocalProvider(providerName: string): boolean {

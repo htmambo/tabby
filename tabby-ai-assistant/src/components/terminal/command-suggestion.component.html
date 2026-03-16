@@ -7,7 +7,7 @@
         </button>
     </div>
     <div class="suggestion-list">
-        <div *ngFor="let suggestion of suggestions" class="suggestion-item" (click)="selectSuggestion(suggestion)">
+        <div *ngFor="let suggestion of suggestions; trackBy: trackSuggestion" class="suggestion-item" (click)="selectSuggestion(suggestion)">
             <div class="suggestion-command">
                 <code>{{ suggestion.command }}</code>
             </div>

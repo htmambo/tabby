@@ -32,7 +32,7 @@ export class Compaction {
      * 保留关键信息，移除重复、冗长或无关的内容
      */
     async prune(messages: ApiMessage[]): Promise<PruneResult> {
-        this.logger.info('Executing Prune algorithm', { messageCount: messages.length })
+        this.logger.debug('Executing Prune algorithm', { messageCount: messages.length })
 
         let tokensSaved = 0
         let partsCompacted = 0
@@ -47,7 +47,7 @@ export class Compaction {
             }
         }
 
-        this.logger.info('Prune completed', {
+        this.logger.debug('Prune completed', {
             originalCount: messages.length,
             processedCount: processedMessages.length,
             tokensSaved,
@@ -66,7 +66,7 @@ export class Compaction {
      * 将多个消息合并为一个摘要，保留核心信息
      */
     async compact(messages: ApiMessage[]): Promise<CompactionResult> {
-        this.logger.info('Executing Compact algorithm', { messageCount: messages.length })
+        this.logger.debug('Executing Compact algorithm', { messageCount: messages.length })
 
         const condenseId = `compact_${Date.now()}`
 
@@ -103,7 +103,7 @@ export class Compaction {
             const summaryTokens = this.estimateTokens(summary)
             const tokensSaved = originalTokens - summaryTokens
 
-            this.logger.info('Compact completed', {
+            this.logger.debug('Compact completed', {
                 condenseId,
                 originalTokens,
                 summaryTokens,
@@ -137,7 +137,7 @@ export class Compaction {
      * 保留最近的消息，移除较早的消息
      */
     truncate(messages: ApiMessage[]): TruncationResult {
-        this.logger.info('Executing Truncate algorithm', { messageCount: messages.length })
+        this.logger.debug('Executing Truncate algorithm', { messageCount: messages.length })
 
         const truncationId = `truncate_${Date.now()}`
         const messagesToKeep = Math.min(this.config.messagesToKeep, messages.length)
@@ -161,7 +161,7 @@ export class Compaction {
         // 估算节省的Token数（移除的消息）
         const removedTokens = this.calculateTotalTokens(removedMessages)
 
-        this.logger.info('Truncate completed', {
+        this.logger.debug('Truncate completed', {
             originalCount: messages.length,
             keptCount: keptMessages.length,
             removedCount: removedMessages.length,
@@ -183,7 +183,7 @@ export class Compaction {
         result: PruneResult | CompactionResult | TruncationResult;
         messages: ApiMessage[];
     }> {
-        this.logger.info('Executing Smart Compact', {
+        this.logger.debug('Executing Smart Compact', {
             messageCount: messages.length,
             tokenBudget,
         })
@@ -193,7 +193,7 @@ export class Compaction {
 
         // 策略1：轻度压缩 - Prune（使用率 < 80%）
         if (usageRate < 0.8) {
-            this.logger.info('Using Prune strategy (light compression)')
+            this.logger.debug('Using Prune strategy (light compression)')
             const pruneResult = await this.prune(messages)
             return {
                 strategy: 'prune',
@@ -204,7 +204,7 @@ export class Compaction {
 
         // 策略2：中度压缩 - Compact（使用率 < 95%）
         if (usageRate < 0.95) {
-            this.logger.info('Using Compact strategy (medium compression)')
+            this.logger.debug('Using Compact strategy (medium compression)')
             const compactResult = await this.compact(messages)
             return {
                 strategy: 'compact',
@@ -214,7 +214,7 @@ export class Compaction {
         }
 
         // 策略3：重度压缩 - Truncate（使用率 >= 95%）
-        this.logger.info('Using Truncate strategy (heavy compression)')
+        this.logger.debug('Using Truncate strategy (heavy compression)')
         const truncateResult = this.truncate(messages)
         return {
             strategy: 'truncate',
@@ -228,7 +228,7 @@ export class Compaction {
      */
     updateConfig(newConfig: Partial<ContextConfig>): void {
         this.config = { ...this.config, ...newConfig }
-        this.logger.info('Compaction config updated', { config: this.config })
+        this.logger.debug('Compaction config updated', { config: this.config })
     }
 
     /**

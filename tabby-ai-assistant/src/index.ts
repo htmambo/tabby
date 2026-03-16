@@ -223,7 +223,7 @@ export default class AiAssistantModule implements OnDestroy {
         private terminalManager: TerminalManagerService,
         hotkeys: HotkeysService,
     ) {
-        console.log('[AiAssistantModule] Module initialized')
+        console.debug('[AiAssistantModule] Module initialized')
 
         // 等待应用就绪后初始化
         this.readySubscription = this.app.ready$.subscribe(() => {

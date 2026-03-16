@@ -90,15 +90,6 @@ export class ElectronUpdaterService extends UpdaterService {
                     this.logger.info('Electron updater unavailable, falling back', e)
                 }
             })
-
-            this.electron.ipcRenderer.on('updater:update-available', () => {
-                this.logger.info('Update available')
-            })
-
-            this.electron.ipcRenderer.once('updater:update-not-available', () => {
-                this.logger.info('No updates')
-            })
-
         } else {
             this.logger.debug('Checking for updates through fallback method.')
             const response = await axios.get(UPDATES_URL)

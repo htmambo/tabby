@@ -1092,6 +1092,175 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `scripts/lint-progressive.mjs`
 - `package.json`
 
+### 3.86 AiSidebar 显式滚动调度收口
+
+`AiSidebarComponent` 仍保留一条旧的滚动链：在流式渲染和历史恢复阶段只设置标志位，再由 `ngAfterViewChecked()` 在视图检查后消费。这会把滚动副作用挂到每轮变更检测上，也更容易诱发开发态 `NG0100` 噪声。
+
+本轮已改为显式调度：
+
+1. 移除 `AfterViewChecked` 依赖与 `shouldScrollToBottom` 标志位。
+2. 新增 `requestScrollToBottom()`，统一把“需要滚动到底部”的请求收敛为一次待执行调度，并复用现有 `scheduleDetectChanges()` 在 DOM 落地后触发滚动。
+3. 历史恢复、流式文本/工具事件、流结束、公开 `scrollToBottom()` 入口均切到新调度路径。
+4. `scheduleAutoScroll()` / `performScrollToBottom()` 现在可接收 `ScrollBehavior`，保留现有行为同时避免重复滚动调用。
+
+结果：
+
+- `AiSidebarComponent` 不再在每轮 `AfterViewChecked` 中附带滚动逻辑
+- 滚动、副作用与变更检测的边界更清晰
+- 与 `ChatInterfaceComponent` 已落地的显式滚动模式保持一致
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts`
+
+### 3.87 AI Chat 列表复用与日志降噪补充
+
+在继续复扫后，又补了两处非常低风险的小收口：
+
+1. `CommandSuggestionComponent` 的建议列表补齐 `trackBy`，按命令文本复用节点。
+2. `CommandPreviewComponent` 的替代命令列表补齐 `trackBy`，减少替代项切换时的重复重建。
+3. `AiSidebarComponent` 顶部 provider 切换下拉的 `providerOptions` 补齐 `trackBy`，避免 provider 状态刷新时整组 `<option>` 无差别重建。
+4. `ChatInterfaceComponent` / `AiSidebarComponent` 中 `Loaded chat history`、`Stream completed`、`Chat history saved` 这类高频生命周期日志从 `info` 降为 `debug`。
+5. `ChatHistoryService` 中高频的 `Session saved` / `Loaded sessions from file storage` 同步降为 `debug`，避免服务层继续覆盖组件侧降噪收益。
+
+结果：
+
+- 建议列表与替代命令列表在内容更新时可更稳定地复用 DOM
+- DevTools / 日志输出里的聊天生命周期噪声进一步下降
+- 行为语义保持不变，不影响消息流、命令执行或持久化
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/terminal/command-suggestion.component.ts`
+- `tabby-ai-assistant/src/components/terminal/command-suggestion.component.html`
+- `tabby-ai-assistant/src/components/terminal/command-preview.component.ts`
+- `tabby-ai-assistant/src/components/terminal/command-preview.component.html`
+- `tabby-ai-assistant/src/components/chat/chat-interface.component.ts`
+- `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts`
+- `tabby-ai-assistant/src/services/chat/chat-history.service.ts`
+
+### 3.88 AiSidebar 全局错误吞掉逻辑移除
+
+`AiSidebarComponent` 之前会在构造函数里重写 `window.console.error`，把包含 `NG0100` / `ExpressionChangedAfterItHasBeenCheckedError` 的报错直接吞掉。这个做法会污染整个 renderer 的错误观测面，而且随着滚动调度链已经改为显式调度，继续保留该全局 monkey patch 已没有合理性。
+
+本轮已直接移除这段逻辑，结果：
+
+- renderer 的 `console.error` 恢复原始行为
+- `AiSidebarComponent` 不再通过全局补丁掩盖运行时错误
+- 后续如果再出现 `NG0100`，会以真实错误暴露，便于继续精确修复
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/chat/ai-sidebar.component.ts`
+
+### 3.89 AI 设置面板枚举列表复用补充
+
+继续复扫后，又把几处会反复刷新的设置型枚举列表补齐了 `trackBy`：
+
+1. `ChatSettingsComponent` 的字体大小按钮列表按数值复用。
+2. `GeneralSettingsComponent` 的 provider 卡片、语言下拉、侧边栏位置按钮分别按稳定 value/name 复用。
+3. `GeneralSettingsComponent` 的初始化 provider 加载日志从 `info` 降为 `debug`，避免设置面板打开时增加无意义日志噪声。
+
+结果：
+
+- 设置面板在配置刷新或语言切换时，静态枚举项更容易复用 DOM
+- 打开 AI 设置页时的初始化日志进一步收敛
+- 不影响设置保存、provider 切换或侧边栏位置切换逻辑
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/chat/chat-settings.component.ts`
+- `tabby-ai-assistant/src/components/chat/chat-settings.component.html`
+- `tabby-ai-assistant/src/components/settings/general-settings.component.ts`
+- `tabby-ai-assistant/src/components/settings/general-settings.component.html`
+
+### 3.90 AI 安全/设置辅助列表复用补充
+
+本轮继续把剩余几处“值稳定、关系简单”的辅助列表补齐 `trackBy`：
+
+1. `RiskConfirmDialogComponent` 的安全建议列表按建议文本复用。
+2. `AiSettingsTabComponent` 的设置页 tabs 按 tab id 复用。
+3. `SecuritySettingsComponent` 的危险模式列表按 `pattern + index` 复用，兼容重复项与删除操作。
+
+结果：
+
+- AI 设置主导航与安全确认弹窗在状态变化时减少无意义节点重建
+- 危险模式列表在增删时更稳定
+- 不改变原有确认、切页或安全配置逻辑
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/security/risk-confirm-dialog.component.ts`
+- `tabby-ai-assistant/src/components/security/risk-confirm-dialog.component.html`
+- `tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts`
+- `tabby-ai-assistant/src/components/settings/ai-settings-tab.component.html`
+- `tabby-ai-assistant/src/components/settings/security-settings.component.ts`
+- `tabby-ai-assistant/src/components/settings/security-settings.component.html`
+
+### 3.91 ProviderConfig 动态列表复用补充
+
+`ProviderConfigComponent` 模板里原本存在多处“函数返回数组”的 `*ngFor`，包括云端/本地 provider 列表以及每个 provider 的字段列表。这类场景如果没有 `trackBy`，在变更检测时更容易把整段卡片和表单字段重建。
+
+本轮已补齐：
+
+1. 云端 provider 列表按 `providerName` 复用。
+2. 本地 provider 列表按 `providerName` 复用。
+3. provider 字段列表按 `field.key` 复用。
+
+结果：
+
+- provider 展开/收起、状态刷新或焦点切换时，DOM 复用更稳定
+- 不改变 provider 配置读写、连接测试和启用开关逻辑
+- 对“函数返回数组”的模板重绘成本做了最小侵入收口
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/settings/provider-config.component.ts`
+- `tabby-ai-assistant/src/components/settings/provider-config.component.html`
+
+### 3.92 SSH `reuseSession` 故障规避提示补充
+
+针对“大输出命令卡住后，关闭标签和重连都变慢”的真实场景，本轮没有直接修改 `reuseSession` 默认值，而是先补了最小风险的显式提示：
+
+1. 在 SSH profile 设置页的 `Reuse session for multiple tabs` 选项下增加场景化说明。
+2. 当 `reuseSession` 处于开启状态时，界面会直接提示：
+   - 大输出或卡死命令可能让标签关闭与后续重连变慢
+   - 排障时可关闭该选项以隔离 tab
+
+结果：
+
+- 用户在 SSH 配置界面里可以直接看到规避路径
+- 不改变现有复用默认行为，不影响当前稳定连接逻辑
+- 为后续是否调整默认策略保留兼容空间
+
+涉及文件：
+
+- `tabby-ssh/src/components/sshProfileSettings.component.pug`
+
+### 3.93 TerminalTools 调试日志降噪
+
+继续复扫 AI Assistant 运行路径后，本轮把 `TerminalToolsService` 中一批明显属于调试追踪的日志从 `info` 降到了 `debug`，包括：
+
+1. `【DEBUG】Terminal structure debug`
+2. `【DEBUG】Using buffer path`
+3. `【DEBUG】Buffer info`
+4. `【DEBUG】Read completed`
+5. `writeToTerminal called`
+6. `Sending command to ...`
+7. `sendCommand... result`
+8. `Smart wait for command`
+9. `Command still running, retry ...`
+
+结果：
+
+- AI Assistant 终端工具在常规使用时不再用 `info` 刷大量内部追踪日志
+- 真正的失败路径仍保持 `warn/error`
+- 终端工具行为完全不变，只调整观测粒度
+
+涉及文件：
+
+- `tabby-ai-assistant/src/services/terminal/terminal-tools.service.ts`
+
 ---
 
 ## 4. 关键文件索引
@@ -1214,6 +1383,19 @@ StartPage 的命令列表在 `afterNextRender` 回调中同步回写，部分环
 - `tabby-core` 构建通过
 - 没有新增类型错误或模板错误
 - 仍仅保留既有 Sass 弃用 warning
+
+在继续把 `AiSidebarComponent` 的滚动逻辑从 `AfterViewChecked` 切到显式调度后，又额外执行了轻量类型验证：
+
+```bash
+./node_modules/.bin/tsc -p tabby-ai-assistant/tsconfig.typings.json --pretty false
+```
+
+结果：
+
+- `tabby-ai-assistant` typings 检查通过
+- 没有新增 TypeScript 语法或类型错误
+
+在继续补齐命令建议/替代列表 `trackBy` 与 chat 生命周期日志降噪后，又重新执行了同一条轻量类型验证，结果仍然通过。
 
 在收口 RecoveryProvider 抽象后，又重新执行了：
 
@@ -2143,3 +2325,198 @@ Top 规则（前 5）：
 - 主进程 PTY 与文件系统桥接能力已经更统一
 
 后续如果继续推进，应避免在当前稳定基线上直接冲击高风险兼容链路，而应转向“单独立项、分阶段替换”的方式处理剩余核心问题。
+
+---
+
+## 12. 2026-03-16 新增收口与文档复核
+
+### 12.1 依赖安全基线已清零
+
+本轮重新复核后，当前依赖审计结果已经收敛到可接受基线：
+
+- 根目录 `npm audit --audit-level=low`：`found 0 vulnerabilities`
+- `tabby-terminal`：`yarn audit --level low` -> `0 vulnerabilities found`
+- `tabby-ssh`：`yarn audit --level low` -> `0 vulnerabilities found`
+- `tabby-electron`：`yarn audit --level low` -> `0 vulnerabilities found`
+
+说明：
+
+- 这一结果建立在本轮已经完成的 `patch-package` 升级、`tmp-promise` 替换、`@luminati-io/socksv5` 移除等整改之上。
+- 当前仍可能看到 `punycode` / `url.parse()` 的 runtime deprecation 提示，但它们不是本轮 audit 的未修复漏洞项。
+
+### 12.2 HTTP MCP transport 成功路径挂起已修复
+
+此前 `HTTPStreamTransport.send()` 在成功路径没有显式：
+
+- 从 `pendingRequests` 删除请求
+- 调用 `resolve(response)`
+
+结果是：
+
+- 普通 HTTP 响应可能悬挂
+- `pendingRequests` 可能在成功路径滞留
+
+现已修复为与 `SSETransport` 同类的完成逻辑：
+
+- 成功后读取 pending 条目
+- 删除 map 中对应项
+- 显式 `resolve(response)`
+
+涉及文件：
+
+- `tabby-ai-assistant/src/services/mcp/transports/http-transport.ts:98`
+
+### 12.3 SSH shell 显式关闭与订阅收口
+
+根据 `docs/Task/Active/TABBY_PERFORMANCE_MEMORY_REVIEW_2026-03-16.md` 的分析，本轮确认并修复了 `SSHShellSession` 的真实释放缺口：
+
+1. 增加统一 `Subscription` 聚合，集中管理：
+   - `ssh.serviceMessage$`
+   - `ssh.willDestroy$`
+   - `shell.data$`
+   - `shell.eof$`
+   - `shell.closed$`
+
+2. `destroy()` 改为幂等的 promise 路径，避免重复 teardown 交错执行。
+
+3. 销毁时显式执行：
+   - `shell.eof()`
+   - `shell.close()`
+
+结果：
+
+- SSH 标签关闭时不再只依赖空实现的 `kill()`
+- shell channel 有了明确关闭动作
+- 监听器不会继续悬挂在旧 shell / session 上
+
+涉及文件：
+
+- `tabby-ssh/src/session/shell.ts:11`
+
+### 12.4 关闭标签恢复快照已降载
+
+参考性能方案文档后，本轮吸收了“关闭标签”和“应用重启恢复”应区分策略的思路，但采用的是更保守的落地方式：
+
+1. `closeTab()` 生成“最近关闭标签恢复” token 时，不再默认按完整 recovery scrollback 配置保存。
+2. 关闭标签路径改为传入较小的 scrollback 预算：`200` 行。
+3. 对 `savedState` 再增加字符串大小保护，超过阈值时直接丢弃状态体，仅保留必要恢复元信息。
+4. `closeTab()` / `closeAllTabs()` 现在会等待支持异步销毁的 tab 完成 teardown，而不是直接 fire-and-forget。
+5. 应用整体恢复 `saveTabs()` 仍沿用原有恢复策略，不直接改变用户的“重启后恢复标签”行为。
+
+结果：
+
+- 关闭超大输出终端时的瞬时序列化成本下降
+- `closedTabsStack` 的内存滞留上限被进一步压低
+- 不需要引入新的设置项，也不改变已有恢复功能入口
+
+涉及文件：
+
+- `tabby-core/src/services/app.service.ts:382`
+- `tabby-terminal/src/api/connectableTerminalTab.component.ts:123`
+- `tabby-local/src/components/terminalTab.component.ts:79`
+- `tabby-terminal/src/frontends/xtermFrontend.ts:601`
+
+### 12.5 对两份性能文档的复核结论
+
+新增文档：
+
+- `docs/Task/Active/TABBY_PERFORMANCE_MEMORY_OPTIMIZATION_PLAN_2026-03-16.md`
+- `docs/Task/Active/TABBY_PERFORMANCE_MEMORY_REVIEW_2026-03-16.md`
+
+复核后的判断如下：
+
+可以直接吸收的结论：
+
+- 生产构建参数仍有继续收敛空间
+- 关闭标签时 recovery snapshot 过重
+- SSH shell/channel 关闭不彻底是高优先级真实问题
+- 插件加载阻塞 bootstrap 仍是启动时长的重要因素
+
+需要修正后再采用的结论：
+
+- `HTTPStreamTransport.pendingRequests` 问题不是“只有泄漏风险”，而是成功路径本身就缺 `resolve/delete`；现已直接修复。
+- 文档中关于若干已处理问题的描述需要视为“阶段性分析”，不能当作当前代码现状原样执行。
+
+暂不建议立即大改的结论：
+
+- 把插件启动彻底拆成“核心壳先起、插件后补”
+- 大范围给根组件链统一切 `OnPush`
+- 直接调整 Angular 启动模式 / JIT-AOT 主链
+
+这些方向本身并非错误，但都属于高兼容性风险项，应该单独成阶段推进，不能与当前低风险收口混做。
+
+### 12.6 轻量验证状态
+
+按当前策略，仅执行语法/类型这一层的轻量验证，不把全量构建作为每一步的阻塞项。
+
+本轮已执行：
+
+- `node scripts/build-typings.mjs`
+
+结果：
+
+- typings 顺序构建通过
+- 至少说明本轮 `tabby-core` / `tabby-terminal` / `tabby-local` / `tabby-ssh` / `tabby-ai-assistant` 的接口联动没有引入显式类型回归
+
+### 12.7 terminal 输出 batching 已落地
+
+结合专项分析中“高频小块输出会放大 promise 链和 xterm 写入调度成本”的判断，本轮先采用了最小侵入方案：
+
+1. 不修改 `BaseSession` / PTY / SSH 协议语义。
+2. 仅在 `BaseTerminalTabComponent` 中对 `session.output$` 的 passthrough 写入做短窗口聚合。
+3. 聚合策略：
+   - 常规情况按 `8ms` 小窗口合并
+   - 累积到 `32KB` 时立即 flush
+4. `output$` 事件本身仍按原始粒度发出，避免影响调试器和上层观察者；只有写入 frontend 的路径被合并。
+
+结果：
+
+- 大量小块输出时，`write(data)` 调用次数下降
+- `frontendWriteLock` 串行链长度下降
+- 进度检测和 xterm 写入都在更大的块上执行
+
+涉及文件：
+
+- `tabby-terminal/src/api/baseTerminalTab.component.ts:19`
+
+### 12.8 AI Chat 流式渲染边界已做低风险收口
+
+本轮没有直接切 `OnPush`，因为那会牵涉到流式消息更新路径和显式变更通知，兼容性风险更高；但已经先处理了两类低风险问题：
+
+1. 去掉 `AfterViewChecked` 驱动的滚动到底逻辑，改为显式、可合并的滚动调度。
+2. 内部自动滚动默认改用 `auto` 行为，避免流式输出时反复触发平滑滚动动画。
+3. 消息列表与 `uiBlocks` 列表补齐 `trackBy`。
+4. 时间字符串格式化增加缓存，减少重复 `toLocaleTimeString()` 调用。
+
+结果：
+
+- 流式输出期间不再每轮依赖 `AfterViewChecked` 检查滚动标志
+- DOM diff 可更稳定地复用消息节点和工具块节点
+- 长聊天会话下每次变更检测的重复工作量下降
+
+涉及文件：
+
+- `tabby-ai-assistant/src/components/chat/chat-interface.component.ts:21`
+- `tabby-ai-assistant/src/components/chat/chat-interface.component.html:33`
+
+### 12.9 生产构建参数已做第一轮保守收敛
+
+针对性能文档里关于 release 构建仍偏调试模式的判断，本轮只吸收“低风险、低兼容影响”的两项：
+
+1. renderer 生产模式恢复 `concatenateModules`
+2. main / renderer 生产模式关闭 `output.pathinfo`
+
+本轮刻意没有直接改动：
+
+- renderer `minimize`
+- `hidden-source-map`
+
+原因：
+
+- `minimize` 可能扩大运行时兼容面变化，适合放到下一轮单独验证
+- `hidden-source-map` 会影响当前基于 source map 的本地堆栈映射与排障路径
+
+涉及文件：
+
+- `app/webpack.config.mjs:34`
+- `app/webpack.config.main.mjs:17`

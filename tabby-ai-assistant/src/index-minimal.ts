@@ -26,6 +26,6 @@ import { SettingsTabProvider } from 'tabby-settings'
 })
 export default class AiAssistantModule {
     constructor() {
-        console.log('AiAssistantModule initialized (minimal version)')
+        console.debug('AiAssistantModule initialized (minimal version)')
     }
 }

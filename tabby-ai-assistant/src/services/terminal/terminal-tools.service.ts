@@ -450,7 +450,7 @@ export class TerminalToolsService implements OnDestroy {
     private readFromXtermBuffer(terminal: any, lines: number): string {
         try {
             // === 调试代码：记录终端结构 ===
-            this.logger.info('【DEBUG】Terminal structure debug', {
+            this.logger.debug('【DEBUG】Terminal structure debug', {
                 hasTerminal: !!terminal,
                 terminalType: terminal?.constructor?.name,
                 hasFrontend: !!terminal?.frontend,
@@ -470,15 +470,15 @@ export class TerminalToolsService implements OnDestroy {
             if (terminal.frontend?.xterm?.buffer?.active) {
                 buffer = terminal.frontend.xterm.buffer.active
                 bufferSource = 'frontend.xterm.buffer.active'
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+                this.logger.debug('【DEBUG】Using buffer path: ' + bufferSource)
             } else if (terminal.frontend?.buffer?.active) {
                 buffer = terminal.frontend.buffer.active
                 bufferSource = 'frontend.buffer.active'
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+                this.logger.debug('【DEBUG】Using buffer path: ' + bufferSource)
             } else if (terminal.frontend?._core?.buffer?.active) {
                 buffer = terminal.frontend._core.buffer.active
                 bufferSource = 'frontend._core.buffer.active'
-                this.logger.info('【DEBUG】Using buffer path: ' + bufferSource)
+                this.logger.debug('【DEBUG】Using buffer path: ' + bufferSource)
             } else {
                 this.logger.warn('【DEBUG】No standard buffer path found, trying alternatives', {
                     hasContent: !!terminal.content,
@@ -501,7 +501,7 @@ export class TerminalToolsService implements OnDestroy {
             }
 
             const totalLines = buffer.length || 0
-            this.logger.info('【DEBUG】Buffer info', {
+            this.logger.debug('【DEBUG】Buffer info', {
                 totalLines,
                 requestedLines: lines,
                 bufferSource,
@@ -527,7 +527,7 @@ export class TerminalToolsService implements OnDestroy {
             }
 
             const finalOutput = result.join('\n') || '(终端输出为空)'
-            this.logger.info('【DEBUG】Read completed', {
+            this.logger.debug('【DEBUG】Read completed', {
                 linesRead: result.length,
                 outputLength: finalOutput.length,
             })
@@ -569,20 +569,20 @@ export class TerminalToolsService implements OnDestroy {
      * 写入终端 - 带执行反馈和智能等待
      */
     private async writeToTerminal(command: string, execute: boolean, terminalIndex?: number): Promise<string> {
-        this.logger.info('writeToTerminal called', { command, execute, terminalIndex })
+        this.logger.debug('writeToTerminal called', { command, execute, terminalIndex })
 
         let success = false
 
         if (terminalIndex !== undefined) {
             // 向指定索引的终端写入
-            this.logger.info('Sending command to terminal index', { terminalIndex })
+            this.logger.debug('Sending command to terminal index', { terminalIndex })
             success = this.terminalManager.sendCommandToIndex(terminalIndex, command, execute)
-            this.logger.info('sendCommandToIndex result', { success })
+            this.logger.debug('sendCommandToIndex result', { success })
         } else {
             // 向当前活动终端写入
-            this.logger.info('Sending command to active terminal')
+            this.logger.debug('Sending command to active terminal')
             success = this.terminalManager.sendCommand(command, execute)
-            this.logger.info('sendCommand result', { success })
+            this.logger.debug('sendCommand result', { success })
         }
 
         if (!success) {
@@ -595,7 +595,7 @@ export class TerminalToolsService implements OnDestroy {
         const baseCommand = this.extractBaseCommand(command)
         const waitTime = this.getWaitTimeForCommand(baseCommand)
 
-        this.logger.info('Smart wait for command', { command, baseCommand, waitTime })
+        this.logger.debug('Smart wait for command', { command, baseCommand, waitTime })
 
         // 初始等待
         await this.sleep(waitTime)
@@ -616,7 +616,7 @@ export class TerminalToolsService implements OnDestroy {
                 const maxRetries = 3
 
                 while (retryCount < maxRetries && !this.isCommandComplete(output)) {
-                    this.logger.info(`Command still running, retry ${retryCount + 1}/${maxRetries}`)
+                    this.logger.debug(`Command still running, retry ${retryCount + 1}/${maxRetries}`)
                     await this.sleep(1000)
                     output = this.readFromXtermBuffer(terminal, 50)
                     retryCount++

@@ -94,7 +94,7 @@ export class CheckpointManager {
         private fileStorage: FileStorageService,
     ) {
         this.loadCheckpoints()
-        this.logger.info('CheckpointManager initialized')
+        this.logger.debug('CheckpointManager initialized')
     }
 
     /**
@@ -135,7 +135,7 @@ export class CheckpointManager {
         // 强制执行限制
         this.enforceSessionLimit(sessionId)
 
-        this.logger.info('Checkpoint created', {
+        this.logger.debug('Checkpoint created', {
             checkpointId,
             sessionId,
             messageCount: messages.length,
@@ -157,7 +157,7 @@ export class CheckpointManager {
         // 验证检查点完整性
         this.validateCheckpoint(checkpoint)
 
-        this.logger.info('Checkpoint restored', {
+        this.logger.debug('Checkpoint restored', {
             checkpointId,
             sessionId: checkpoint.sessionId,
             messageCount: checkpoint.messages.length,
@@ -250,7 +250,7 @@ export class CheckpointManager {
 
         this.updateCheckpoint(archivedCheckpoint)
 
-        this.logger.info('Checkpoint archived', { checkpointId })
+        this.logger.debug('Checkpoint archived', { checkpointId })
     }
 
     /**
@@ -263,7 +263,7 @@ export class CheckpointManager {
         this.checkpointsSubject.next(filteredCheckpoints)
         this.removeFromStorage(checkpointId)
 
-        this.logger.info('Checkpoint deleted', { checkpointId })
+        this.logger.debug('Checkpoint deleted', { checkpointId })
     }
 
     /**
@@ -283,7 +283,7 @@ export class CheckpointManager {
 
             // 2. 如果数据太小，不进行压缩
             if (originalSize < this.MIN_COMPRESSION_SIZE) {
-                this.logger.info('Checkpoint too small for compression', {
+                this.logger.debug('Checkpoint too small for compression', {
                     checkpointId,
                     size: originalSize,
                 })
@@ -324,7 +324,7 @@ export class CheckpointManager {
 
             this.updateCheckpoint(compressedCheckpoint)
 
-            this.logger.info('Checkpoint compressed successfully', {
+            this.logger.debug('Checkpoint compressed successfully', {
                 checkpointId,
                 originalSize,
                 compressedSize,
@@ -395,7 +395,7 @@ export class CheckpointManager {
         }
 
         if (compressedCount > 0) {
-            this.logger.info('Auto-compression completed', {
+            this.logger.debug('Auto-compression completed', {
                 compressedCount,
                 overallRatio: this.getOverallCompressionRatio(),
             })
@@ -474,7 +474,7 @@ export class CheckpointManager {
         const remainingCheckpoints = allCheckpoints.filter(cp => validSessionIds.has(cp.sessionId))
         this.checkpointsSubject.next(remainingCheckpoints)
 
-        this.logger.info('Cleaned up orphaned checkpoints', {
+        this.logger.debug('Cleaned up orphaned checkpoints', {
             removedCount: orphanedCheckpoints.length,
         })
 
@@ -498,7 +498,7 @@ export class CheckpointManager {
         const remainingCheckpoints = allCheckpoints.filter(cp => cp.createdAt >= cutoffTime)
         this.checkpointsSubject.next(remainingCheckpoints)
 
-        this.logger.info('Auto cleanup completed', {
+        this.logger.debug('Auto cleanup completed', {
             removedCount: expiredCheckpoints.length,
             remainingCount: remainingCheckpoints.length,
         })
@@ -613,7 +613,7 @@ export class CheckpointManager {
             // 保存到存储
             this.saveCheckpoint(checkpoint)
 
-            this.logger.info('Checkpoint imported', {
+            this.logger.debug('Checkpoint imported', {
                 checkpointId: checkpoint.id,
                 sessionId: checkpoint.sessionId,
             })
@@ -758,7 +758,7 @@ export class CheckpointManager {
                 this.delete(cp.id)
             })
 
-            this.logger.info('Enforced checkpoint limit', {
+            this.logger.debug('Enforced checkpoint limit', {
                 sessionId,
                 deletedCount: toDelete.length,
             })
@@ -812,7 +812,7 @@ export class CheckpointManager {
 
             if (checkpoints.length > 0) {
                 this.checkpointsSubject.next(checkpoints)
-                this.logger.info('Loaded checkpoints from file storage', {
+                this.logger.debug('Loaded checkpoints from file storage', {
                     count: checkpoints.length,
                 })
             }

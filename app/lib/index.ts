@@ -48,7 +48,7 @@ ipcMain.on('app:new-window', () => {
 })
 
 process.on('uncaughtException' as any, (err: Error) => {
-    console.log(err)
+    console.error(err)
     application.broadcast('uncaughtException', err)
 })
 
@@ -63,7 +63,7 @@ app.on('activate', async () => {
 // Handle URL scheme on macOS
 app.on('open-url', async (event, url) => {
     event.preventDefault()
-    console.log('Received open-url event:', url)
+    console.debug('Received open-url event:', url)
     if (!application.hasWindows()) {
         process.argv.push(url)
     } else {

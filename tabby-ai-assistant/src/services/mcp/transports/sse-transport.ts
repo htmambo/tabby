@@ -121,7 +121,7 @@ export class SSETransport extends BaseTransport {
 
         this.eventStreamController = controller
         this.streamReadyState = 1
-        console.log('[MCP SSE] Connection opened')
+        console.debug('[MCP SSE] Connection opened')
 
         this.eventStreamTask = this.consumeEventStream(response.body, controller).catch(error => {
             if (controller.signal.aborted || this.destroyed) {
@@ -240,7 +240,7 @@ export class SSETransport extends BaseTransport {
 
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++
-            console.log(`[MCP SSE] Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
+            console.debug(`[MCP SSE] Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
 
             this.clearReconnectTimer()
             this.reconnectTimer = setTimeout(() => {

@@ -278,7 +278,7 @@ export function initModuleLookup (userPluginsPath: string): void {
             if (builtinPackagePath) {
                 registerPluginRuntimeRoot(builtinPackagePath)
                 cachedBuiltinModules[m] = nodeRequire(builtinPackagePath)
-                console.info(`Pinned builtin module ${m} to ${builtinPackagePath}`)
+                console.debug(`Pinned builtin module ${m} to ${builtinPackagePath}`)
             } else {
                 cachedBuiltinModules[m] = nodeRequire(m)
             }
@@ -362,7 +362,7 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
         let author = info.author
         author = author.name || author
 
-        console.log(`Found ${name} in ${pluginDir}`)
+        console.debug(`Found ${name} in ${pluginDir}`)
 
         return {
             name: name,
@@ -395,13 +395,13 @@ function cleanupStaleUserPluginCopy (stalePlugin: PluginInfo, builtinPlugin: Plu
         return
     }
     if (!isManagedUserPluginCopy(stalePlugin.path)) {
-        console.info(`Skip cleanup for ${stalePlugin.packageName}: path is outside managed user plugin cache (${stalePlugin.path})`)
+        console.debug(`Skip cleanup for ${stalePlugin.packageName}: path is outside managed user plugin cache (${stalePlugin.path})`)
         return
     }
 
     rm(stalePlugin.path, { recursive: true, force: true })
         .then(() => {
-            console.info(`Removed stale cached plugin ${stalePlugin.packageName}@${stalePlugin.version}, using builtin ${builtinPlugin.version}`)
+            console.debug(`Removed stale cached plugin ${stalePlugin.packageName}@${stalePlugin.version}, using builtin ${builtinPlugin.version}`)
         })
         .catch(error => {
             console.warn(`Failed to remove stale cached plugin ${stalePlugin.packageName} at ${stalePlugin.path}`, error)
@@ -412,7 +412,7 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
     // 优先非 legacy 插件
     if (existing.isLegacy !== candidate.isLegacy) {
         const preferred = existing.isLegacy ? candidate : existing
-        console.info(`Plugin ${candidate.packageName} already exists, using ${preferred.packageName} (non-legacy preferred)`)
+        console.debug(`Plugin ${candidate.packageName} already exists, using ${preferred.packageName} (non-legacy preferred)`)
         return preferred
     }
 
@@ -423,16 +423,16 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
         const builtin = existing.isBuiltin ? existing : candidate
         const cached = existing.isBuiltin ? candidate : existing
         if (builtin.version !== cached.version) {
-            console.info(`Plugin ${cached.packageName} cache version ${cached.version} differs from builtin ${builtin.version}, using builtin`)
+            console.debug(`Plugin ${cached.packageName} cache version ${cached.version} differs from builtin ${builtin.version}, using builtin`)
         } else {
-            console.info(`Plugin ${cached.packageName} cache version matches builtin (${builtin.version}), using builtin`)
+            console.debug(`Plugin ${cached.packageName} cache version matches builtin (${builtin.version}), using builtin`)
         }
         cleanupStaleUserPluginCopy(cached, builtin)
         return builtin
     }
 
     // 同来源重复（都内置或都非内置）时保留先发现的一项
-    console.info(`Plugin ${candidate.packageName} already exists, keeping ${existing.packageName}`)
+    console.debug(`Plugin ${candidate.packageName} already exists, keeping ${existing.packageName}`)
     return existing
 }
 
@@ -493,7 +493,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 } catch {
                     // Ignore resolution errors here; the actual load attempt below will report them if needed.
                 }
-                console.info(`Loading ${foundPlugin.name}: ${resolvedPath}`)
+                console.debug(`Loading ${foundPlugin.name}: ${resolvedPath}`)
                 const packageModule = nodeRequire(foundPlugin.path)
                 const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
                 const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
@@ -510,7 +510,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
                 if (pluginManifest) {
                     pluginModule.pluginManifest = pluginManifest
                 }
-                console.info(`Loaded ${foundPlugin.name}:`, {
+                console.debug(`Loaded ${foundPlugin.name}:`, {
                     hasDefaultExport: !!packageModule.default,
                     hasBootstrapExport: !!packageModule.bootstrap,
                     pluginName: pluginModule.pluginName,

@@ -247,6 +247,14 @@ export class ProviderConfigComponent implements OnInit, OnChanges {
         return providerName in this.localProviderTemplates
     }
 
+    trackProviderName(_index: number, providerName: string): string {
+        return providerName
+    }
+
+    trackProviderField(_index: number, field: ProviderField): string {
+        return field.key
+    }
+
     /**
      * 检测本地供应商状态
      */

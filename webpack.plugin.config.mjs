@@ -68,13 +68,14 @@ export default options => {
         output: {
             path: path.resolve(options.dirname, 'dist'),
             filename: 'index.js',
-            pathinfo: true,
+            pathinfo: isDev,
             libraryTarget: 'umd',
             publicPath: 'auto',
         },
         mode: isDev ? 'development' : 'production',
         optimization:{
             minimize: false,
+            concatenateModules: !isDev,
         },
         cache: cacheConfig,
         performance: isDev ? false : {
@@ -86,7 +87,9 @@ export default options => {
             alias: options.alias ?? {},
             modules: ['.', 'src', 'node_modules', '../app/node_modules', '../node_modules'].map(x => path.join(options.dirname, x)),
             extensions: ['.ts', '.js'],
-            mainFields: options.mainFields ?? ['esm2015', 'browser', 'module', 'main'],
+            aliasFields: [],
+            conditionNames: ['node', 'import', 'require', 'default'],
+            mainFields: options.mainFields ?? ['esm2015', 'module', 'main'],
         },
         ignoreWarnings: [/Failed to parse source map/],
         module: {

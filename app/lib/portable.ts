@@ -6,6 +6,6 @@ const appPath = path.dirname(electron.app.getPath('exe'))
 
 const portableData = path.join(appPath, 'data')
 if (fs.existsSync(portableData)) {
-    console.log('reset user data to ' + portableData)
+    console.debug('reset user data to ' + portableData)
     electron.app.setPath('userData', portableData)
 }

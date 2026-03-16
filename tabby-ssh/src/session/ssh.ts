@@ -601,11 +601,11 @@ export class SSHSession {
 
     emitServiceMessage (msg: string): void {
         this.serviceMessage.next(msg)
-        this.logger.info(stripAnsi(msg))
+        this.logger.debug(stripAnsi(msg))
     }
 
     emitKeyboardInteractivePrompt (prompt: KeyboardInteractivePrompt): void {
-        this.logger.info('Keyboard-interactive auth:', prompt.name, prompt.instruction)
+        this.logger.debug('Keyboard-interactive auth:', prompt.name, prompt.instruction)
         this.emitServiceMessage(colors.bgBlackBright(' ') + ' ' + this.translate.instant('Keyboard-interactive auth requested: {name}', { name: prompt.name }))
         if (prompt.instruction) {
             for (const line of prompt.instruction.split('\n')) {

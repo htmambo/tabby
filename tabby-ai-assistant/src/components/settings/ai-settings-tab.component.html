@@ -35,7 +35,7 @@
 
     <!-- 标签页导航 -->
     <div class="settings-tabs">
-        <div *ngFor="let tab of tabs"
+        <div *ngFor="let tab of tabs; trackBy: trackTab"
              class="tab-item"
              [class.active]="activeTab === tab.id"
              [attr.data-tab]="tab.id"

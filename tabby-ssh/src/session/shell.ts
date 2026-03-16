@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import stripAnsi from 'strip-ansi'
 import { Injector } from '@angular/core'
 import { LogService, TranslateService } from 'tabby-core'
@@ -15,6 +15,8 @@ export class SSHShellSession extends BaseSession {
     private ssh: SSHSession|null
     private shellEnded = false
     private translate: TranslateService
+    private subscriptions = new Subscription()
+    private destroyPromise: Promise<void> | null = null
 
     constructor (
         injector: Injector,
@@ -25,7 +27,7 @@ export class SSHShellSession extends BaseSession {
         this.translate = injector.get(TranslateService)
         this.ssh = ssh
         this.setLoginScriptsOptions(this.profile.options)
-        this.ssh.serviceMessage$.subscribe(m => this.serviceMessage.next(m))
+        this.subscriptions.add(this.ssh.serviceMessage$.subscribe(m => this.serviceMessage.next(m)))
         this.middleware.push(new UTF8SplitterMiddleware())
         this.middleware.push(new InputProcessor(profile.options.input))
     }
@@ -50,16 +52,16 @@ export class SSHShellSession extends BaseSession {
             throw new Error(this.translate.instant('Remote rejected opening a shell channel: {error}', { error: `${err}` }))
         }
 
-        this.ssh.willDestroy$.subscribe(() => {
-            this.destroy()
-        })
+        this.subscriptions.add(this.ssh.willDestroy$.subscribe(() => {
+            void this.destroy()
+        }))
 
         this.open = true
         this.logger.debug('Shell open')
 
         this.loginScriptProcessor?.executeUnconditionalScripts()
 
-        this.shell.data$.subscribe({
+        this.subscriptions.add(this.shell.data$.subscribe({
             next: data => {
                 this.emitOutput(Buffer.from(data))
             },
@@ -67,20 +69,20 @@ export class SSHShellSession extends BaseSession {
                 this.logger.warn('Shell stream error:', err)
                 this.handleShellEnd('stream error')
             },
-        })
+        }))
 
-        this.shell.eof$.subscribe(() => {
+        this.subscriptions.add(this.shell.eof$.subscribe(() => {
             this.handleShellEnd('EOF')
-        })
+        }))
 
-        this.shell.closed$.subscribe(() => {
+        this.subscriptions.add(this.shell.closed$.subscribe(() => {
             this.handleShellEnd('close')
-        })
+        }))
     }
 
     emitServiceMessage (msg: string): void {
         this.serviceMessage.next(msg)
-        this.logger.info(stripAnsi(msg))
+        this.logger.debug(stripAnsi(msg))
     }
 
     resize (columns: number, rows: number): void {
@@ -105,17 +107,16 @@ export class SSHShellSession extends BaseSession {
     }
 
     kill (_signal?: string): void {
-        // this.shell?.signal(signal ?? 'TERM')
+        void this.closeShellChannel()
     }
 
     async destroy (): Promise<void> {
-        this.logger.debug('Closing shell')
-        this.shellEnded = true
-        this.serviceMessage.complete()
-        this.kill()
-        this.ssh?.unref()
-        this.ssh = null
-        await super.destroy()
+        if (this.destroyPromise) {
+            return this.destroyPromise
+        }
+
+        this.destroyPromise = this.performDestroy()
+        return this.destroyPromise
     }
 
     async getChildProcesses (): Promise<any[]> {
@@ -139,7 +140,42 @@ export class SSHShellSession extends BaseSession {
             return
         }
         this.shellEnded = true
-        this.logger.info(`Shell session ended (${reason})`)
+        this.logger.debug(`Shell session ended (${reason})`)
         void this.destroy()
+    }
+
+    private async performDestroy (): Promise<void> {
+        this.logger.debug('Closing shell')
+        this.shellEnded = true
+
+        const ssh = this.ssh
+        this.ssh = null
+
+        this.subscriptions.unsubscribe()
+        this.serviceMessage.complete()
+        await this.closeShellChannel()
+
+        ssh?.unref()
+        await super.destroy()
+    }
+
+    private async closeShellChannel (): Promise<void> {
+        const shell = this.shell
+        this.shell = undefined
+        if (!shell) {
+            return
+        }
+
+        try {
+            await shell.eof()
+        } catch (error) {
+            this.logger.debug('Shell EOF failed during destroy:', error)
+        }
+
+        try {
+            await shell.close()
+        } catch (error) {
+            this.logger.debug('Shell close failed during destroy:', error)
+        }
     }
 }

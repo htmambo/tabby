@@ -236,7 +236,7 @@ export class AppRootComponent implements OnDestroy {
         }
         this.pendingViewRefresh = this.scheduleTimeout(() => {
             this.pendingViewRefresh = null
-            this.changeDetector.detectChanges()
+            this.changeDetector.markForCheck()
         }, delay)
     }
 
@@ -288,7 +288,7 @@ export class AppRootComponent implements OnDestroy {
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
-        this.logger.info('v', this.platform.getAppVersion())
+        this.logger.debug('v', this.platform.getAppVersion())
 
         this.app.activeTabChange$.subscribe(() => {
             this.scheduleActiveTabSync()

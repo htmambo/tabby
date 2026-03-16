@@ -77,6 +77,10 @@ export class TerminalTabComponent extends BaseTerminalTabComponent<LocalProfile>
     }
 
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<any> {
+        const recoveryOptions = options as (GetRecoveryTokenOptions & { recoveryScrollbackLines?: number }) | undefined
+        const frontend = this.frontend as (typeof this.frontend & {
+            saveState: (options?: { scrollback?: number }) => any
+        }) | undefined
         const cwd = this.session ? await this.session.getWorkingDirectory() : null
         return {
             type: 'app:local-tab',
@@ -88,7 +92,9 @@ export class TerminalTabComponent extends BaseTerminalTabComponent<LocalProfile>
                     restoreFromPTYID: options?.includeState && this.session?.getID(),
                 },
             },
-            savedState: options?.includeState && this.frontend?.saveState(),
+            savedState: options?.includeState && frontend?.saveState({
+                scrollback: recoveryOptions?.recoveryScrollbackLines,
+            }),
         }
     }
 

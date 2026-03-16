@@ -178,6 +178,10 @@ export class CommandPreviewComponent implements OnDestroy {
         }
     }
 
+    trackAlternative(index: number, alt: { command?: string }): string {
+        return `${alt.command ?? 'alternative'}-${index}`
+    }
+
     private scheduleStatusReset(delayMs: number): void {
         this.clearStatusResetTimer()
         this.statusResetTimer = window.setTimeout(() => {

@@ -1,7 +1,7 @@
-import socksv5 from '@luminati-io/socksv5'
 import { Server, Socket, createServer } from 'net'
 
 import { ForwardedPortConfig, PortForwardType } from '../api'
+import { createSocks5Server, type SocksAccept, type SocksProxyInfo, type SocksReject } from './socksServer'
 
 export class ForwardedPort implements ForwardedPortConfig {
     type: PortForwardType
@@ -30,24 +30,18 @@ export class ForwardedPort implements ForwardedPortConfig {
             })
         } else if (this.type === PortForwardType.Dynamic) {
             return new Promise((resolve, reject) => {
-                type SocksProxyInfo = { dstAddr: string, dstPort: number }
-                type SocksAccept = (allow?: boolean) => Socket
-                type SocksReject = () => void
-                type SocksServer = Server & { useAuth?: (auth: unknown) => void }
-                this.listener = socksv5.createServer((info: SocksProxyInfo, acceptConnection: SocksAccept, rejectConnection: SocksReject) => {
+                this.listener = createSocks5Server((info: SocksProxyInfo, acceptConnection: SocksAccept, rejectConnection: SocksReject) => {
                     callback(
-                        () => acceptConnection(true),
+                        () => acceptConnection(),
                         () => rejectConnection(),
                         null,
                         null,
                         info.dstAddr,
                         info.dstPort,
                     )
-                }) as SocksServer
+                })
                 this.listener.on('error', reject)
                 this.listener.listen(this.port, this.host, resolve)
-                const socksListener = this.listener as SocksServer
-                socksListener.useAuth?.(socksv5.auth.None())
             })
         } else {
             throw new Error('Invalid forward type for a local listener')

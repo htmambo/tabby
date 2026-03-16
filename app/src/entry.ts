@@ -46,7 +46,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
         (document.querySelector('.progress .bar') as HTMLElement).style.width = `${100 * current / total}%` // eslint-disable-line
     })
 
-    console.info('Loaded plugin modules summary:', JSON.stringify(pluginModules.map(x => ({
+    console.debug('Loaded plugin modules summary:', JSON.stringify(pluginModules.map(x => ({
         pluginName: x?.pluginName,
         hasBootstrap: !!x?.bootstrap,
         moduleName: x?.constructor?.name,
@@ -67,7 +67,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
 }
 
 ipc.once('start', async (bootstrapData: BootstrapData) => {
-    console.log('Window bootstrap data:', bootstrapData)
+    console.debug('Window bootstrap data:', bootstrapData)
 
     initModuleLookup(bootstrapData.userPluginsPath)
 
@@ -78,7 +78,7 @@ ipc.once('start', async (bootstrapData: BootstrapData) => {
     }
     plugins = plugins.filter(x => x.name !== 'web')
 
-    console.log('Starting with plugins:', plugins)
+    console.debug('Starting with plugins:', plugins)
     try {
         await bootstrap(bootstrapData, plugins)
     } catch (error) {

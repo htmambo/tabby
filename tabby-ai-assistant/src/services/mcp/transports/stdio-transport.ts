@@ -218,7 +218,7 @@ export class StdioTransport extends BaseTransport {
      */
     private handleClose(code: number | null, signal?: string | null): void {
         if (!this.isDestroyed()) {
-            console.log('[MCP Stdio] Process closed', { code, signal })
+            console.debug('[MCP Stdio] Process closed', { code, signal })
             this.teardownConnection()
             const reason = code !== null ? `code ${code}` : `signal ${signal ?? 'unknown'}`
             this.rejectPendingRequests(new Error(`Process exited with ${reason}`))

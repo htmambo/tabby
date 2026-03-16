@@ -134,7 +134,7 @@ ${themeStyles}
             detail: { theme, effectiveTheme },
         }))
 
-        console.log('[ThemeService] Theme applied dynamically:', { theme, effectiveTheme })
+        console.debug('[ThemeService] Theme applied dynamically:', { theme, effectiveTheme })
     }
 
     /**

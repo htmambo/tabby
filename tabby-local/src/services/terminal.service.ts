@@ -39,7 +39,7 @@ export class TerminalService {
         cwd = cwd ?? fullProfile.options.cwd
 
         if (cwd && !await pathExists(cwd)) {
-            console.warn('Ignoring non-existent CWD:', cwd)
+            this.logger.debug('Ignoring non-existent CWD:', cwd)
             cwd = null
         }
 

@@ -19,7 +19,7 @@ const config = {
     devtool: 'source-map',
     output: {
         path: path.join(__dirname, 'dist'),
-        pathinfo: true,
+        pathinfo: isDev,
         filename: '[name].js',
     },
     cache: enableCache ? {

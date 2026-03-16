@@ -121,10 +121,16 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
     }
 
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<RecoveryToken> {
+        const recoveryOptions = options as (GetRecoveryTokenOptions & { recoveryScrollbackLines?: number }) | undefined
+        const frontend = this.frontend as (typeof this.frontend & {
+            saveState: (options?: { scrollback?: number }) => any
+        }) | undefined
         return {
             type: `app:${this.profile.type}-tab`,
             profile: this.profile,
-            savedState: options?.includeState && this.frontend?.saveState(),
+            savedState: options?.includeState && frontend?.saveState({
+                scrollback: recoveryOptions?.recoveryScrollbackLines,
+            }),
         }
     }
 

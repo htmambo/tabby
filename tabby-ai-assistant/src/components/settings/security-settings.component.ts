@@ -101,6 +101,10 @@ export class SecuritySettingsComponent implements OnInit {
         this.dangerousPatterns.splice(index, 1)
     }
 
+    trackDangerousPattern(index: number, pattern: string): string {
+        return `${pattern}-${index}`
+    }
+
     saveSettings(): void {
         this.config.updateSecurityConfig(this.settings)
         this.logger.info('Security settings saved', this.settings)

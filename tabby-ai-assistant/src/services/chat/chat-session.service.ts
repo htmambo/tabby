@@ -42,7 +42,7 @@ export class ChatSessionService {
     createSession(): string {
         this.currentSessionId = this.generateSessionId()
         this.messagesSubject.next([])
-        this.logger.info('Created new chat session', { sessionId: this.currentSessionId })
+        this.logger.debug('Created new chat session', { sessionId: this.currentSessionId })
         return this.currentSessionId
     }
 
@@ -66,17 +66,17 @@ export class ChatSessionService {
             }))
 
             this.messagesSubject.next(chatMessages)
-            this.logger.info('Loaded session history', {
+            this.logger.debug('Loaded session history', {
                 sessionId,
                 messageCount: chatMessages.length,
             })
         } else {
             // 新会话，清空当前消息
             this.messagesSubject.next([])
-            this.logger.info('Started new session', { sessionId })
+            this.logger.debug('Started new session', { sessionId })
         }
 
-        this.logger.info('Switched to session', { sessionId })
+        this.logger.debug('Switched to session', { sessionId })
     }
 
     /**
@@ -126,7 +126,7 @@ export class ChatSessionService {
                 assistantMessage,
             ])
 
-            this.logger.info('Message sent successfully', {
+            this.logger.debug('Message sent successfully', {
                 sessionId: this.currentSessionId,
                 messageId: assistantMessage.id,
             })
@@ -150,7 +150,7 @@ export class ChatSessionService {
      */
     clearSession(): void {
         this.messagesSubject.next([])
-        this.logger.info('Cleared chat session', {
+        this.logger.debug('Cleared chat session', {
             sessionId: this.currentSessionId,
         })
     }
@@ -162,7 +162,7 @@ export class ChatSessionService {
         const currentMessages = this.messagesSubject.value
         const filteredMessages = currentMessages.filter(msg => msg.id !== messageId)
         this.messagesSubject.next(filteredMessages)
-        this.logger.info('Deleted message', { messageId, sessionId: this.currentSessionId })
+        this.logger.debug('Deleted message', { messageId, sessionId: this.currentSessionId })
     }
 
     /**
@@ -199,7 +199,7 @@ export class ChatSessionService {
             const data = JSON.parse(sessionData)
             this.currentSessionId = data.sessionId
             this.messagesSubject.next(data.messages || [])
-            this.logger.info('Imported session', { sessionId: this.currentSessionId })
+            this.logger.debug('Imported session', { sessionId: this.currentSessionId })
         } catch (error) {
             this.logger.error('Failed to import session', error)
             throw new Error('Invalid session data format')
@@ -262,7 +262,7 @@ export class ChatSessionService {
         const currentCheckpoints = this.checkpointsSubject.value
         this.checkpointsSubject.next([...currentCheckpoints, checkpoint])
 
-        this.logger.info('Checkpoint created', {
+        this.logger.debug('Checkpoint created', {
             checkpointId,
             sessionId: this.currentSessionId,
             messageCount: currentMessages.length,
@@ -294,7 +294,7 @@ export class ChatSessionService {
 
         this.messagesSubject.next(restoredMessages)
 
-        this.logger.info('Checkpoint restored', {
+        this.logger.debug('Checkpoint restored', {
             checkpointId,
             sessionId: this.currentSessionId,
             messageCount: restoredMessages.length,
@@ -310,7 +310,7 @@ export class ChatSessionService {
 
         this.checkpointsSubject.next(filteredCheckpoints)
 
-        this.logger.info('Checkpoint deleted', { checkpointId, sessionId: this.currentSessionId })
+        this.logger.debug('Checkpoint deleted', { checkpointId, sessionId: this.currentSessionId })
     }
 
     /**
@@ -345,7 +345,7 @@ export class ChatSessionService {
             this.checkpointsSubject.next([])
         }
 
-        this.logger.info('Checkpoints cleared', { sessionId: sessionId ?? 'all' })
+        this.logger.debug('Checkpoints cleared', { sessionId: sessionId ?? 'all' })
     }
 
     /**
@@ -355,7 +355,7 @@ export class ChatSessionService {
         try {
             // 使用 CheckpointManager 的压缩功能
             await this.checkpointManager.compressForCheckpoint(checkpointId)
-            this.logger.info('Checkpoint compressed', { checkpointId })
+            this.logger.debug('Checkpoint compressed', { checkpointId })
         } catch (error) {
             this.logger.error('Failed to compress checkpoint', { checkpointId, error })
             throw error
@@ -398,7 +398,7 @@ export class ChatSessionService {
                 this.checkpointsSubject.next(restoredCheckpoints)
             }
 
-            this.logger.info('Session with checkpoints imported', {
+            this.logger.debug('Session with checkpoints imported', {
                 sessionId: this.currentSessionId,
                 checkpointCount: data.checkpoints?.length || 0,
             })
@@ -498,26 +498,26 @@ export class ChatSessionService {
         this.syncMessagesToHistory()
         // 检查是否需要管理上下文
         if (this.contextManager.shouldManageContext(this.currentSessionId)) {
-            this.logger.info('Context management triggered', {
+            this.logger.debug('Context management triggered', {
                 sessionId: this.currentSessionId,
             })
             try {
                 const results = await this.contextManager.manageContext(this.currentSessionId)
                 // 记录压缩结果
                 if (results.compactionResult) {
-                    this.logger.info('Context compacted', {
+                    this.logger.debug('Context compacted', {
                         tokensSaved: results.compactionResult.tokensSaved,
                         summary: results.compactionResult.summary?.substring(0, 100),
                     })
                 }
                 if (results.pruneResult && results.pruneResult.pruned) {
-                    this.logger.info('Context pruned', {
+                    this.logger.debug('Context pruned', {
                         tokensSaved: results.pruneResult.tokensSaved,
                         partsCompacted: results.pruneResult.partsCompacted,
                     })
                 }
                 if (results.truncationResult) {
-                    this.logger.info('Context truncated', {
+                    this.logger.debug('Context truncated', {
                         messagesRemoved: results.truncationResult.messagesRemoved,
                     })
                 }
@@ -558,7 +558,7 @@ export class ChatSessionService {
             timestamp: new Date(msg.ts),
         }))
         this.messagesSubject.next(chatMessages)
-        this.logger.info('Messages reloaded after context management', {
+        this.logger.debug('Messages reloaded after context management', {
             messageCount: chatMessages.length,
             sessionId: this.currentSessionId,
         })

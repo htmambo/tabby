@@ -2,7 +2,7 @@ import { Injectable, Inject, OnDestroy } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { Observable, Subject, AsyncSubject, takeUntil, debounceTime, lastValueFrom } from 'rxjs'
 
-import { BaseTabComponent } from '../components/baseTab.component'
+import { BaseTabComponent, GetRecoveryTokenOptions } from '../components/baseTab.component'
 import { RenameTabModalComponent } from '../components/renameTabModal.component'
 import { StartupTabsRecoveryModalComponent } from '../components/startupTabsRecoveryModal.component'
 import { SelectorOption } from '../api/selector'
@@ -15,6 +15,9 @@ import { ConfigService } from './config.service'
 import { RecoveredTabsState, TabRecoveryService } from './tabRecovery.service'
 import { TabsService, NewTabParameters } from './tabs.service'
 import { SelectorService } from './selector.service'
+
+const CLOSED_TAB_RECOVERY_SCROLLBACK_LINES = 200
+const CLOSED_TAB_RECOVERY_MAX_STATE_CHARS = 256 * 1024
 
 class CompletionObserver {
     get done$ (): Observable<void> { return this.done }
@@ -383,12 +386,19 @@ export class AppService implements OnDestroy {
         if (checkCanClose && !await tab.canClose()) {
             return
         }
-        const token = await this.tabRecovery.getFullRecoveryToken(tab, { includeState: true })
+        const recoveryOptions: GetRecoveryTokenOptions & { recoveryScrollbackLines?: number } = {
+            includeState: true,
+            recoveryScrollbackLines: CLOSED_TAB_RECOVERY_SCROLLBACK_LINES,
+        }
+        const token = await this.tabRecovery.getFullRecoveryToken(tab, recoveryOptions)
         if (token) {
+            if (typeof token.savedState === 'string' && token.savedState.length > CLOSED_TAB_RECOVERY_MAX_STATE_CHARS) {
+                delete token.savedState
+            }
             this.closedTabsStack.push(token)
             this.closedTabsStack = this.closedTabsStack.slice(-5)
         }
-        tab.destroy()
+        await this.destroyTab(tab)
     }
 
     async duplicateTab (tab: BaseTabComponent): Promise<BaseTabComponent|null> {
@@ -408,9 +418,7 @@ export class AppService implements OnDestroy {
                 return false
             }
         }
-        for (const tab of this.tabs) {
-            tab.destroy(true)
-        }
+        await Promise.all([...this.tabs].map(tab => this.destroyTab(tab, true)))
         return true
     }
 
@@ -430,6 +438,11 @@ export class AppService implements OnDestroy {
             const recoveryAwareTab = tab as BaseTabComponent & { prepareForRecoverySave?: () => Promise<void> }
             await recoveryAwareTab.prepareForRecoverySave?.()
         }))
+    }
+
+    private async destroyTab (tab: BaseTabComponent, skipDestroyedEvent = false): Promise<void> {
+        const destroy = tab.destroy as (skipDestroyedEvent?: boolean) => void | Promise<void>
+        await Promise.resolve(destroy.call(tab, skipDestroyedEvent))
     }
 
     /** @hidden */

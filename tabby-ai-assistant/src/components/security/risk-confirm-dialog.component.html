@@ -44,7 +44,7 @@
             <div class="info-section" *ngIf="suggestions.length > 0">
                 <label>安全建议:</label>
                 <ul class="suggestions-list">
-                    <li *ngFor="let suggestion of suggestions">
+                    <li *ngFor="let suggestion of suggestions; trackBy: trackSuggestion">
                         <i class="fa fa-lightbulb-o"></i>
                         <span>{{ suggestion }}</span>
                     </li>

@@ -40,7 +40,7 @@ export class ReleaseNotesComponent extends BaseTabComponent {
         }
 
         this.loadingReleases = true
-        console.log('Loading releases page', page)
+        console.debug('Loading releases page', page)
         try {
             const response = await axios.get(`https://api.github.com/repos/htmambo/tabby/releases?page=${page}`, {
                 headers: { Accept: 'application/vnd.github.v3+json' },

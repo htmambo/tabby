@@ -85,7 +85,7 @@ export class Memory {
         private summaryService: SummaryService,
         private fileStorage: FileStorageService,
     ) {
-        this.logger.info('Memory system initialized')
+        this.logger.debug('Memory system initialized')
         this.loadFromStorage()
     }
 
@@ -129,7 +129,7 @@ export class Memory {
         // 持久化存储
         this.saveToStorage()
 
-        this.logger.info('Memory stored', {
+        this.logger.debug('Memory stored', {
             id: memoryId,
             layer,
             contentLength: content.length,
@@ -241,7 +241,7 @@ export class Memory {
             }
         }
 
-        this.logger.info('Created memories from messages', {
+        this.logger.debug('Created memories from messages', {
             messageCount: messages.length,
             memoryCount: memoryIds.length,
             layer,
@@ -280,7 +280,7 @@ export class Memory {
             tags: ['summary', 'session'],
         })
 
-        this.logger.info('Created mid-term summary', {
+        this.logger.debug('Created mid-term summary', {
             sessionId,
             summaryLength: summary.length,
             originalMessageCount: summaryResult.originalMessageCount,
@@ -379,7 +379,7 @@ export class Memory {
 
         if (cleanedCount > 0) {
             this.saveToStorage()
-            this.logger.info('Cleaned up memories', { cleanedCount })
+            this.logger.debug('Cleaned up memories', { cleanedCount })
         }
 
         return cleanedCount
@@ -402,7 +402,7 @@ export class Memory {
         }
 
         this.saveToStorage()
-        this.logger.info('Cleared memory layer', { layer })
+        this.logger.debug('Cleared memory layer', { layer })
     }
 
     /**
@@ -502,7 +502,7 @@ export class Memory {
                 this.midTermMemories = new Map(data.midTerm || [])
                 this.longTermMemories = new Map(data.longTerm || [])
 
-                this.logger.info('Loaded memories from file storage', {
+                this.logger.debug('Loaded memories from file storage', {
                     shortTerm: this.shortTermMemories.size,
                     midTerm: this.midTermMemories.size,
                     longTerm: this.longTermMemories.size,

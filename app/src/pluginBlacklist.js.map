@@ -1,0 +1,1 @@
+{"version":3,"file":"pluginBlacklist.js","sourceRoot":"","sources":["pluginBlacklist.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,gBAAgB,GAAG;IAC5B,yBAAyB,EAAE,yBAAyB;IACpD,oBAAoB,EAAE,cAAc;IACpC,0BAA0B,EAAE,yBAAyB;IACrD,uBAAuB,EAAE,yBAAyB;IAClD,wBAAwB,EAAE,+CAA+C;IACzE,iCAAiC,EAAE,+CAA+C;IAClF,6BAA6B,EAAE,+CAA+C;IAC9E,WAAW,EAAE,aAAa;IAC1B,8BAA8B,EAAE,aAAa;CAChD,CAAA"}

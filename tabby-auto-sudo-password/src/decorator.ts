@@ -43,7 +43,6 @@ export class AutoSudoPasswordMiddleware extends SessionMiddleware {
     }
 
     async handlePrompt (username: string): Promise<void> {
-        console.log(`Detected sudo prompt for user: ${username}`)
         const pw = await this.ps.loadPassword(this.profile, username)
         if (pw) {
             this.outputToTerminal.next(Buffer.from(this.pasteHint))
@@ -51,12 +50,6 @@ export class AutoSudoPasswordMiddleware extends SessionMiddleware {
         }
     }
 
-    async loadPassword (username: string): Promise<string| null> {
-        if (this.profile.options.user !== username) {
-            return null
-        }
-        return this.ps.loadPassword(this.profile, username)
-    }
 }
 
 @Injectable()

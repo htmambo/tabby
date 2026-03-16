@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, ApplicationRef, NgZone } from '@angular/core'
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, ViewEncapsulation, HostBinding, ChangeDetectorRef, NgZone } from '@angular/core'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { marked } from 'marked'
@@ -33,7 +33,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                                 [ngModel]="selectedProvider"
                                 (ngModelChange)="onProviderSelectionChange($event)"
                                 [title]="'Current Provider' | translate">
-                            <option *ngFor="let provider of providerOptions"
+                            <option *ngFor="let provider of providerOptions; trackBy: trackProviderOption"
                                     [ngValue]="provider.name"
                                     [disabled]="!provider.enabled || !provider.configured">
                                 {{ provider.displayName }}{{ provider.configured ? '' : ('(Not Configured)' | translate) }}{{ provider.enabled ? '' : ('(Disabled)' | translate) }}
@@ -84,7 +84,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
 
             <!-- Messages -->
             <div class="ai-sidebar-messages" #chatContainer (scroll)="onScroll($event)" (wheel)="onWheel($event)">
-                <div *ngFor="let message of messages; let i = index" class="message-item" [ngClass]="message.role" [attr.data-message-id]="message.id">
+                <div *ngFor="let message of messages; let i = index; trackBy: trackMessage" class="message-item" [ngClass]="message.role" [attr.data-message-id]="message.id">
                     <div class="message-avatar">
                         <svg *ngIf="message.role === 'user'" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
@@ -114,7 +114,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
 
                         <!-- 新数据：遍历 uiBlocks -->
                         <ng-container *ngIf="message.uiBlocks && message.uiBlocks.length > 0">
-                            <ng-container *ngFor="let block of message.uiBlocks">
+                            <ng-container *ngFor="let block of message.uiBlocks; trackBy: trackUiBlock">
 
                                 <!-- 1. 文本块 -->
                                 <div *ngIf="block.type === 'text'"
@@ -265,7 +265,7 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
     styleUrls: ['./ai-sidebar.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, AfterViewInit {
+export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     // HostBinding 确保样式正确应用
     @HostBinding('style.display') displayStyle = 'flex'
     @HostBinding('style.flex-direction') flexDirection = 'column'
@@ -303,7 +303,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private readonly MAX_AGENT_HISTORY = 10
 
     private destroy$ = new Subject<void>()
-    private shouldScrollToBottom = false
+    private scrollToBottomPending = false
+    private pendingScrollToBottomBehavior: ScrollBehavior = 'auto'
+    private pendingScrollToBottomForce = false
     private pendingLoadingUpdate: number | null = null
     private pendingScrollUpdate: number | null = null
     private queuedScrollState: { showTop: boolean; showBottom: boolean } | null = null
@@ -319,6 +321,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     private aiStartScrollPending = false
     private userScrolledDuringResponse = false
     private pendingTimeouts = new Set<number>()
+    private timestampLabelCache = new Map<number, string>()
 
     constructor(
         private aiService: AiAssistantService,
@@ -329,23 +332,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         private contextManager: ContextManager,
         private toolStreamProcessor: ToolStreamProcessorService,
         private cdr: ChangeDetectorRef,
-        private appRef: ApplicationRef,
         private ngZone: NgZone,
         private electron: ElectronService,
         private translate: TranslateService,
-    ) {
-        // 开发模式下过滤 NG0100 错误
-        if (typeof window !== 'undefined') {
-            const originalError = window.console.error.bind(window.console)
-            window.console.error = (...args: any[]) => {
-                const msg = args.join(' ')
-                if (msg.includes('NG0100') || msg.includes('ExpressionChangedAfterItHasBeenCheckedError')) {
-                    return
-                }
-                originalError(...args)
-            }
-        }
-    }
+    ) {}
 
     ngOnInit(): void {
         // 监听主题变化
@@ -419,7 +409,11 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     ngAfterViewInit(): void {
         // 强制设置滚动样式 - 绕过 CSS 优先级问题
         this.forceScrollStyles()
-        this.cdr.detectChanges()
+        this.scheduleDetectChanges()
+        if (this.initialAutoScrollPending && this.chatContainerRef?.nativeElement) {
+            this.initialAutoScrollPending = false
+            this.requestScrollToBottom('auto', true)
+        }
     }
 
     /**
@@ -436,17 +430,6 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 this.logger.debug('[AI Sidebar] Scroll styles applied via JS')
             }
         }, 100)  // 延迟确保 DOM 已渲染
-    }
-
-    ngAfterViewChecked(): void {
-        if (this.shouldScrollToBottom) {
-            this.scheduleAutoScroll(true)
-            this.shouldScrollToBottom = false
-        }
-        if (this.initialAutoScrollPending && this.chatContainerRef?.nativeElement) {
-            this.initialAutoScrollPending = false
-            this.scheduleAutoScroll(true)
-        }
     }
 
     /**
@@ -547,6 +530,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             if (recentSessions.length > 0) {
                 const lastSession = recentSessions[0]
                 this.currentSessionId = lastSession.sessionId
+                this.timestampLabelCache.clear()
                 this.messages = lastSession.messages.map(msg => ({
                     ...msg,
                     timestamp: new Date(msg.timestamp),
@@ -567,7 +551,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                 }
                 this.historyIndex = -1
                 this.tempInput = ''
-                this.logger.info('Loaded chat history', {
+                this.logger.debug('Loaded chat history', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
                     inputHistoryCount: this.inputHistory.length,
@@ -800,7 +784,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.messages.push(userMessage)
 
         // 滚动到底部
-        this.scheduleTimeout(() => this.scrollToBottom(), 0)
+        this.scrollToBottom('auto')
 
         // 显示加载状态
         this.setLoadingState(true)
@@ -841,7 +825,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.logger.error('Failed to send message with agent', error)
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
             this.finalizeStream()
-            this.scheduleTimeout(() => this.scrollToBottom(), 0)
+            this.scrollToBottom('auto')
         }
     }
 
@@ -946,9 +930,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
 
         const shouldForceScroll = event.type !== 'round_end'
         if (shouldForceScroll) {
-            this.shouldScrollToBottom = true
-            this.scheduleAutoScroll()
-            this.scheduleDetectChanges()
+            this.requestScrollToBottom('auto')
         } else {
             // 中间轮次结束时，等 DOM 落地后再触发滚动刷新
             this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
@@ -982,7 +964,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.setLoadingState(false)
         this.updateTokenUsage()
         this.saveChatHistory()
-        this.shouldScrollToBottom = true
+        this.requestScrollToBottom('auto', true)
         this.scheduleDetectChanges(() => {
             this.scheduleScrollRefresh()
             this.scheduleScrollToAiMessageStart()
@@ -1007,7 +989,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         this.messages.push(userMessage)
 
         // 滚动到底部
-        this.scheduleTimeout(() => this.scrollToBottom(), 0)
+        this.scrollToBottom('auto')
 
         // 显示加载状态
         this.setLoadingState(true)
@@ -1042,7 +1024,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             // 文本流式显示
                             if (event.textDelta) {
                                 aiMessage.content += event.textDelta
-                                this.shouldScrollToBottom = true
+                                this.requestScrollToBottom('auto')
                             }
                             break
 
@@ -1056,7 +1038,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                     startTime: Date.now(),
                                 })
                             }
-                            this.shouldScrollToBottom = true
+                            this.requestScrollToBottom('auto')
                             break
 
                         case 'tool_use_end':
@@ -1072,7 +1054,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                 )
                                 pendingTools.delete(event.toolCall.id)
                             }
-                            this.shouldScrollToBottom = true
+                            this.requestScrollToBottom('auto')
                             break
 
                         case 'tool_result':
@@ -1090,7 +1072,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                                 /🔧 正在执行 \w+\.\.\./,
                                 `❌ 工具执行失败: ${event.error}`,
                             )
-                            this.shouldScrollToBottom = true
+                            this.requestScrollToBottom('auto')
                             break
 
                         case 'tool_use_delta':
@@ -1101,13 +1083,13 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                             if (toolResults.length > 0) {
                                 aiMessage.content += toolResults.join('')
                             }
-                            this.logger.info('Stream completed')
+                            this.logger.debug('Stream completed')
                             this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                             break
 
                         case 'error':
                             aiMessage.content += `\n\n❌ 错误: ${event.error ?? 'Unknown error'}`
-                            this.shouldScrollToBottom = true
+                            this.requestScrollToBottom('auto')
                             break
                     }
                 }),
@@ -1115,14 +1097,14 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
                     this.logger.error('Stream error', error)
                     aiMessage.content += `\n\n❌ 错误: ${error instanceof Error ? error.message : 'Unknown error'}`
                     this.setLoadingState(false)
-                    this.shouldScrollToBottom = true
+                    this.requestScrollToBottom('auto', true)
                     this.saveChatHistory()
                 }),
                 complete: () => this.runInAngular(() => {
                     this.setLoadingState(false)
                     this.updateTokenUsage()
                     this.saveChatHistory()
-                    this.shouldScrollToBottom = true
+                    this.requestScrollToBottom('auto', true)
                     this.scheduleDetectChanges(() => this.scheduleScrollRefresh())
                 }),
             })
@@ -1134,7 +1116,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             aiMessage.content = `抱歉，我遇到了一些问题：${error instanceof Error ? error.message : 'Unknown error'}\n\n请稍后重试。`
             this.setLoadingState(false)
             this.updateTokenUsage()
-            this.scheduleTimeout(() => this.scrollToBottom(), 0)
+            this.scrollToBottom('auto')
         }
     }
 
@@ -1222,6 +1204,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             // 创建新会话
             this.currentSessionId = this.generateSessionId()
             this.messages = []
+            this.timestampLabelCache.clear()
             this.inputHistory = []
             this.historyIndex = -1
             this.tempInput = ''
@@ -1277,9 +1260,8 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     /**
      * 滚动到底部（公开方法）
      */
-    scrollToBottom(): void {
-        this.shouldScrollToBottom = true
-        this.scheduleAutoScroll(true)
+    scrollToBottom(behavior: ScrollBehavior = 'auto'): void {
+        this.requestScrollToBottom(behavior, true)
     }
 
     /**
@@ -1295,10 +1277,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
     /**
      * 实际执行滚动到底部
      */
-    private performScrollToBottom(): void {
+    private performScrollToBottom(behavior: ScrollBehavior = 'auto'): void {
         const chatContainer = this.chatContainerRef?.nativeElement
         if (chatContainer) {
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' })
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior })
         }
     }
 
@@ -1355,20 +1337,19 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         }
 
         this.pendingScrollUpdate = this.scheduleTimeout(() => {
-            this.runInAngular(() => {
-                this.pendingScrollUpdate = null
-                const state = this.queuedScrollState ?? { showTop, showBottom }
-                this.queuedScrollState = null
-                this.showScrollTop = state.showTop
-                this.showScrollBottom = state.showBottom
-            })
+            this.pendingScrollUpdate = null
+            const state = this.queuedScrollState ?? { showTop, showBottom }
+            this.queuedScrollState = null
+            this.showScrollTop = state.showTop
+            this.showScrollBottom = state.showBottom
+            this.scheduleDetectChanges()
         }, 0)
     }
 
     /**
      * 调度自动滚动，确保 DOM 渲染完成后再滚动
      */
-    private scheduleAutoScroll(force = false): void {
+    private scheduleAutoScroll(force = false, behavior: ScrollBehavior = 'auto'): void {
         if (!force && !this.isUserNearBottom) {
             return
         }
@@ -1379,8 +1360,30 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 this.autoScrollPending = false
-                this.performScrollToBottom()
+                this.performScrollToBottom(behavior)
             })
+        })
+    }
+
+    /**
+     * 显式调度滚动到底部，避免依赖 AfterViewChecked
+     */
+    private requestScrollToBottom(behavior: ScrollBehavior = 'auto', force = false): void {
+        if (behavior === 'smooth' || !this.scrollToBottomPending) {
+            this.pendingScrollToBottomBehavior = behavior
+        }
+        this.pendingScrollToBottomForce = this.pendingScrollToBottomForce || force
+        if (this.scrollToBottomPending) {
+            return
+        }
+        this.scrollToBottomPending = true
+        this.scheduleDetectChanges(() => {
+            this.scrollToBottomPending = false
+            const pendingBehavior = this.pendingScrollToBottomBehavior
+            const pendingForce = this.pendingScrollToBottomForce
+            this.pendingScrollToBottomBehavior = 'auto'
+            this.pendingScrollToBottomForce = false
+            this.scheduleAutoScroll(pendingForce, pendingBehavior)
         })
     }
 
@@ -1410,7 +1413,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         const delta = 2
         const up = Math.max(before - delta, 0)
 
-        this.logger.info('[AI Sidebar] Scroll refresh scheduled', {
+        this.logger.debug('[AI Sidebar] Scroll refresh scheduled', {
             before,
             delta,
             up,
@@ -1424,7 +1427,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             container.dispatchEvent(new Event('scroll'))
             // 强制一次 reflow，确保 scrollTop 写入生效
             void container.offsetHeight
-            this.logger.info('[AI Sidebar] Scroll refresh (up)', {
+            this.logger.debug('[AI Sidebar] Scroll refresh (up)', {
                 before,
                 delta,
                 up,
@@ -1437,7 +1440,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             requestAnimationFrame(() => {
                 container.scrollTop = max
                 container.dispatchEvent(new Event('scroll'))
-                this.logger.info('[AI Sidebar] Scroll refresh (down)', {
+                this.logger.debug('[AI Sidebar] Scroll refresh (down)', {
                     before,
                     delta,
                     up,
@@ -1514,13 +1517,9 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
             this.runInAngular(() => {
                 this.detectChangesPending = false
                 try {
-                    this.appRef.tick()
+                    this.cdr.detectChanges()
                 } catch {
-                    try {
-                        this.cdr.detectChanges()
-                    } catch {
-                        // 忽略销毁期间的变更检测异常
-                    }
+                    // 忽略销毁期间的变更检测异常
                 }
                 const callbacks = this.pendingAfterDetectChanges.splice(0)
                 for (const callback of callbacks) {
@@ -1550,7 +1549,7 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
         try {
             if (this.messages.length > 0 && this.currentSessionId) {
                 this.chatHistory.saveSession(this.currentSessionId, this.messages, undefined, [...this.inputHistory])
-                this.logger.info('Chat history saved', {
+                this.logger.debug('Chat history saved', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
                 })
@@ -1578,10 +1577,17 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      * 获取消息时间格式
      */
     formatTimestamp(timestamp: Date): string {
-        return timestamp.toLocaleTimeString('zh-CN', {
+        const cacheKey = timestamp.getTime()
+        const cached = this.timestampLabelCache.get(cacheKey)
+        if (cached) {
+            return cached
+        }
+        const formatted = timestamp.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
         })
+        this.timestampLabelCache.set(cacheKey, formatted)
+        return formatted
     }
 
     /**
@@ -1626,6 +1632,27 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewChecked, 
      */
     isSameDay(date1: Date, date2: Date): boolean {
         return date1.toDateString() === date2.toDateString()
+    }
+
+    trackMessage(_index: number, message: ChatMessage): string {
+        return message.id
+    }
+
+    trackProviderOption(_index: number, provider: { name: string }): string {
+        return provider.name
+    }
+
+    trackUiBlock(index: number, block: { id?: string; type?: string; round?: number; text?: string }): string {
+        if (block.id) {
+            return block.id
+        }
+        if (block.type === 'divider' && block.round !== undefined) {
+            return `divider-${block.round}`
+        }
+        if (block.type === 'status' && block.text) {
+            return `status-${block.text}-${index}`
+        }
+        return `${block.type ?? 'block'}-${index}`
     }
 
     /**

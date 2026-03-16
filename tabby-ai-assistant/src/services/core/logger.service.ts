@@ -12,6 +12,12 @@ export class LoggerService {
     private loadLogLevel(): void {
         // 从配置中加载日志级别
         try {
+            const savedLevel = localStorage.getItem('ai-assistant-log-level')
+            if (savedLevel === 'debug' || savedLevel === 'info' || savedLevel === 'warn' || savedLevel === 'error') {
+                this.logLevel = savedLevel
+                return
+            }
+
             const config = localStorage.getItem('ai-assistant-config')
             if (config) {
                 const parsed = JSON.parse(config)

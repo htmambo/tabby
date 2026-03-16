@@ -65,7 +65,7 @@ export class TokenBudget {
             bufferPercentage: 0.10,
         }
 
-        this.logger.info('TokenBudget initialized', { config: this.config })
+        this.logger.debug('TokenBudget initialized', { config: this.config })
     }
 
     /**
@@ -259,7 +259,7 @@ export class TokenBudget {
     reset(sessionId?: string): void {
         this.currentUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
-        this.logger.info('Token budget reset', { sessionId })
+        this.logger.debug('Token budget reset', { sessionId })
     }
 
     /**
@@ -267,7 +267,7 @@ export class TokenBudget {
      */
     updateStrategy(strategy: Partial<BudgetStrategy>): void {
         this.strategy = { ...this.strategy, ...strategy }
-        this.logger.info('Budget strategy updated', { strategy: this.strategy })
+        this.logger.debug('Budget strategy updated', { strategy: this.strategy })
     }
 
     /**
@@ -282,7 +282,7 @@ export class TokenBudget {
      */
     updateConfig(config: Partial<ContextConfig>): void {
         this.config = { ...this.config, ...config }
-        this.logger.info('TokenBudget config updated', { config: this.config })
+        this.logger.debug('TokenBudget config updated', { config: this.config })
     }
 
     /**

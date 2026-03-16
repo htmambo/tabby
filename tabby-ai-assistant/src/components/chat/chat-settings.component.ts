@@ -124,6 +124,10 @@ export class ChatSettingsComponent implements OnInit {
         document.documentElement.style.setProperty('--chat-font-size', `${size}px`)
     }
 
+    trackFontSize(_index: number, size: number): number {
+        return size
+    }
+
     /**
      * 切换紧凑模式
      */

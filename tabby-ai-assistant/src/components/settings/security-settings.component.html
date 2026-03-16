@@ -59,7 +59,7 @@
     <div class="settings-section">
         <h4>{{ t.security.dangerousPatterns }}</h4>
         <div class="pattern-list">
-            <div *ngFor="let pattern of dangerousPatterns; let i = index" class="pattern-item">
+            <div *ngFor="let pattern of dangerousPatterns; let i = index; trackBy: trackDangerousPattern" class="pattern-item">
                 <code>{{ pattern }}</code>
                 <button type="button" class="btn-icon" (click)="removeDangerousPattern(i)">
                     <i class="fa fa-times"></i>

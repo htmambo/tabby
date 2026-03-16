@@ -48,7 +48,7 @@ export class SerialService {
             try {
                 localStorage.setItem('lastSerialConnection', JSON.stringify(profile))
             } catch (error) {
-                console.warn('Failed to persist last serial connection', error)
+                console.debug('Failed to persist last serial connection', error)
             }
         }
         return this.injector.get(ProfilesService).openNewTabForProfile(profile) as Promise<SerialTabComponent|null>

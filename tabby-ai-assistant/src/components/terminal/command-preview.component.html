@@ -46,7 +46,7 @@
         <div class="alternatives-section" *ngIf="command.alternatives && command.alternatives.length > 0">
             <label>替代方案:</label>
             <div class="alternatives-list">
-                <div *ngFor="let alt of command.alternatives" class="alternative-item" (click)="selectAlternative(alt)">
+                <div *ngFor="let alt of command.alternatives; trackBy: trackAlternative" class="alternative-item" (click)="selectAlternative(alt)">
                     <code>{{ alt.command }}</code>
                     <span class="alt-confidence">{{ (alt.confidence * 100).toFixed(0) }}%</span>
                 </div>

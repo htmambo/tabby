@@ -106,10 +106,19 @@ export class HTTPStreamTransport extends BaseTransport {
 
         return new Promise((resolve, reject) => {
             this.pendingRequests.set(request.id, { resolve, reject })
-            this.sendRaw(request).catch((error) => {
-                this.pendingRequests.delete(request.id)
-                reject(error)
-            })
+            void this.sendRaw(request)
+                .then(response => {
+                    const pending = this.pendingRequests.get(request.id!)
+                    if (!pending) {
+                        return
+                    }
+                    this.pendingRequests.delete(request.id!)
+                    pending.resolve(response)
+                })
+                .catch(error => {
+                    this.pendingRequests.delete(request.id!)
+                    reject(error)
+                })
         })
     }
 

@@ -30,7 +30,7 @@
         <div class="ai-chat-container" #chatContainer (scroll)="onScroll($event)">
             <div class="messages-wrapper">
                 <!-- 消息分组 -->
-                <ng-container *ngFor="let message of messages; let i = index">
+                <ng-container *ngFor="let message of messages; let i = index; trackBy: trackMessage">
                     <!-- 检查是否需要显示日期分隔线 -->
                     <div *ngIf="i === 0 || !isSameDay(message.timestamp, messages[i-1].timestamp)"
                         class="date-separator">
@@ -75,7 +75,7 @@
                                     
                                     <!-- 新数据：uiBlocks -->
                                     <ng-container *ngIf="message.uiBlocks && message.uiBlocks.length > 0">
-                                        <ng-container *ngFor="let block of message.uiBlocks">
+                                        <ng-container *ngFor="let block of message.uiBlocks; trackBy: trackUiBlock">
                                             
                                             <!-- 文本块 -->
                                             <div *ngIf="block.type === 'text'" class="text-block">

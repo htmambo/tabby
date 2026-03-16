@@ -9,4 +9,3 @@ declare module 'hexer';
 declare module 'buffer-replace';
 declare module 'binstring';
 declare module 'zmodem.js';
-declare module '@luminati-io/socksv5';

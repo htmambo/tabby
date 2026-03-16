@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation } from '@angular/core'
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ViewEncapsulation } from '@angular/core'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { ChatMessage, MessageRole } from '../../types/ai.types'
@@ -18,7 +18,7 @@ import { AnyUIStreamEvent } from '../../services/tools/types/ui-stream-event.typ
     styleUrls: ['./chat-interface.component.scss'],
     encapsulation: ViewEncapsulation.None,
 })
-export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class ChatInterfaceComponent implements OnInit, OnDestroy {
     @ViewChild('chatContainer') chatContainerRef!: ElementRef
 
     messages: ChatMessage[] = []
@@ -36,15 +36,16 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     fontSize = 14
 
     private destroy$ = new Subject<void>()
-    private shouldScrollToBottom = false
+    private scrollToBottomPending = false
+    private pendingScrollToBottomBehavior: ScrollBehavior = 'auto'
     private activeAiMessageId: string | null = null
     private aiStartScrollPending = false
     private userScrolledDuringResponse = false
     private isUserNearBottom = true
     private readonly AUTO_SCROLL_THRESHOLD = 80
     private scrollRefreshPending = false
-    private notificationSound: HTMLAudioElement | null = null
     private pendingTimeouts = new Set<number>()
+    private timestampLabelCache = new Map<number, string>()
 
     constructor(
         private aiService: AiAssistantService,
@@ -118,13 +119,6 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.destroy$.complete()
     }
 
-    ngAfterViewChecked(): void {
-        if (this.shouldScrollToBottom) {
-            this.performScrollToBottom()
-            this.shouldScrollToBottom = false
-        }
-    }
-
     /**
      * 加载当前提供商信息
      */
@@ -158,11 +152,12 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             if (recentSessions.length > 0) {
                 const lastSession = recentSessions[0]
                 this.currentSessionId = lastSession.sessionId
+                this.timestampLabelCache.clear()
                 this.messages = lastSession.messages.map(msg => ({
                     ...msg,
                     timestamp: new Date(msg.timestamp),
                 }))
-                this.logger.info('Loaded chat history', {
+                this.logger.debug('Loaded chat history', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
                 })
@@ -205,7 +200,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.messages.push(userMessage)
 
         // 滚动到底部
-        this.scheduleTimeout(() => this.scrollToBottom(), 0)
+        this.scrollToBottom('auto')
 
         // 清空输入框
         content = ''
@@ -245,7 +240,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             this.logger.error('Failed to send message with agent', error)
             aiMessage.content = `${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}\n\n${this.translate.instant('Tip: use Alt+C to open AI chat')}`
             this.isLoading = false
-            this.scheduleTimeout(() => this.scrollToBottom(), 0)
+            this.scrollToBottom('auto')
         }
     }
 
@@ -323,7 +318,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
         const shouldForceScroll = event.type !== 'round_end'
         if (shouldForceScroll) {
-            this.shouldScrollToBottom = true
+            this.scrollToBottom('auto')
         }
     }
 
@@ -334,7 +329,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.logger.error('Agent stream error', error)
         message.content += `\n\n❌ ${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}`
         this.isLoading = false
-        this.shouldScrollToBottom = true
+        this.scrollToBottom('auto')
         this.scheduleScrollToAiMessageStart()
         this.saveChatHistory()
     }
@@ -345,7 +340,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     private handleStreamComplete(): void {
         this.isLoading = false
         this.saveChatHistory()
-        this.shouldScrollToBottom = true
+        this.scrollToBottom('auto')
         this.scheduleScrollToAiMessageStart()
     }
 
@@ -367,7 +362,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         this.messages.push(userMessage)
 
         // 滚动到底部
-        this.scheduleTimeout(() => this.scrollToBottom(), 0)
+        this.scrollToBottom('auto')
 
         // 清空输入框
         content = ''
@@ -403,7 +398,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                     // 文本增量 - 逐字显示
                     if (event.type === 'text_delta' && event.textDelta) {
                         aiMessage.content += event.textDelta
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                     } else if (event.type === 'tool_use_start') {
                         // 工具调用开始 - 显示提示
                         const toolName = event.toolCall?.name ? ` (${event.toolCall.name})` : ''
@@ -416,7 +411,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                                 startTime: Date.now(),
                             })
                         }
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                     } else if (event.type === 'tool_use_end') {
                         // 工具调用完成 - 更新状态
                         if (event.toolCall) {
@@ -431,7 +426,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
                             pendingToolCalls.delete(event.toolCall.id)
                         }
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                     } else if (event.type === 'tool_result' && event.result) {
                         // 工具结果 - 追加到消息
                         const isError = event.result.is_error
@@ -449,19 +444,19 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                         // 格式化工具结果
                         const formattedResult = `\n\n${icon} ${header}:\n\`\`\`\n${resultPreview}\n\`\`\``
                         aiMessage.content += formattedResult
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                     } else if (event.type === 'tool_error' && event.error) {
                         // 工具错误
                         aiMessage.content = aiMessage.content.replace(
                             /🔧 正在执行工具.*?\.\.\./g,
                             `❌ 工具执行失败: ${event.error}`,
                         )
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                     } else if (event.type === 'message_end') {
                         // 消息结束
-                        this.logger.info('Stream completed')
+                        this.logger.debug('Stream completed')
                         this.playNotificationSound()
-                        this.shouldScrollToBottom = true
+                        this.scrollToBottom('auto')
                         this.scheduleScrollRefresh()
                     }
                 },
@@ -469,14 +464,14 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
                     this.logger.error('Stream error', error)
                     aiMessage.content += `\n\n${this.translate.instant('Error occurred')}: ${error instanceof Error ? error.message : 'Unknown error'}`
                     this.isLoading = false
-                    this.shouldScrollToBottom = true
+                    this.scrollToBottom('auto')
                     this.scheduleScrollRefresh()
                     this.saveChatHistory()
                 },
                 complete: () => {
                     this.isLoading = false
                     this.saveChatHistory()
-                    this.shouldScrollToBottom = true
+                    this.scrollToBottom('auto')
                     this.scheduleScrollRefresh()
                 },
             })
@@ -493,7 +488,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             }
             this.messages.push(errorMessage)
             this.isLoading = false
-            this.scheduleTimeout(() => this.scrollToBottom(), 0)
+            this.scrollToBottom('auto')
         }
     }
 
@@ -509,6 +504,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
             // 创建新会话
             this.currentSessionId = this.generateSessionId()
             this.messages = []
+            this.timestampLabelCache.clear()
             this.sendWelcomeMessage()
 
             // 确保重置加载状态
@@ -516,7 +512,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
             // 延迟滚动和恢复焦点，确保DOM已更新
             this.scheduleTimeout(() => {
-                this.scrollToBottom()
+                this.scrollToBottom('auto')
                 // 尝试恢复输入框焦点
                 const inputElement = document.querySelector<HTMLTextAreaElement>('.chat-textarea')
                 inputElement?.focus()
@@ -598,8 +594,20 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     /**
      * 滚动到底部（公开方法）
      */
-    scrollToBottom(): void {
-        this.shouldScrollToBottom = true
+    scrollToBottom(behavior: ScrollBehavior = 'smooth'): void {
+        if (behavior === 'smooth' || !this.scrollToBottomPending) {
+            this.pendingScrollToBottomBehavior = behavior
+        }
+        if (this.scrollToBottomPending) {
+            return
+        }
+        this.scrollToBottomPending = true
+        this.scheduleTimeout(() => {
+            this.scrollToBottomPending = false
+            const pendingBehavior = this.pendingScrollToBottomBehavior
+            this.pendingScrollToBottomBehavior = 'auto'
+            this.performScrollToBottom(pendingBehavior)
+        }, 0)
     }
 
     /**
@@ -615,10 +623,10 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
     /**
      * 实际执行滚动到底部
      */
-    private performScrollToBottom(): void {
+    private performScrollToBottom(behavior: ScrollBehavior = 'auto'): void {
         const chatContainer = this.chatContainerRef?.nativeElement || document.querySelector('.ai-chat-container')
         if (chatContainer) {
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' })
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior })
         }
     }
 
@@ -646,7 +654,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         const delta = 12
         const up = Math.max(container.scrollTop - delta, 0)
         container.scrollTop = up
-        this.logger.info('[Chat Interface] Scroll refresh (up)', {
+        this.logger.debug('[Chat Interface] Scroll refresh (up)', {
             delta,
             up,
             max,
@@ -655,7 +663,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         })
         this.scheduleTimeout(() => {
             container.scrollTop = max
-            this.logger.info('[Chat Interface] Scroll refresh (down)', {
+            this.logger.debug('[Chat Interface] Scroll refresh (down)', {
                 delta,
                 up,
                 max,
@@ -751,7 +759,7 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
         try {
             if (this.messages.length > 0 && this.currentSessionId) {
                 this.chatHistory.saveSession(this.currentSessionId, this.messages)
-                this.logger.info('Chat history saved', {
+                this.logger.debug('Chat history saved', {
                     sessionId: this.currentSessionId,
                     messageCount: this.messages.length,
                 })
@@ -795,10 +803,17 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
      * 获取消息时间格式
      */
     formatTimestamp(timestamp: Date): string {
-        return timestamp.toLocaleTimeString('zh-CN', {
+        const cacheKey = timestamp.getTime()
+        const cached = this.timestampLabelCache.get(cacheKey)
+        if (cached) {
+            return cached
+        }
+        const formatted = timestamp.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
         })
+        this.timestampLabelCache.set(cacheKey, formatted)
+        return formatted
     }
 
     /**
@@ -823,6 +838,9 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
 
             oscillator.start(audioContext.currentTime)
             oscillator.stop(audioContext.currentTime + 0.2)
+            oscillator.onended = () => {
+                void audioContext.close().catch(() => null)
+            }
         } catch (error) {
             // 忽略音频播放错误
         }
@@ -841,6 +859,23 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy, AfterViewCheck
      */
     isSameDay(date1: Date, date2: Date): boolean {
         return date1.toDateString() === date2.toDateString()
+    }
+
+    trackMessage(_index: number, message: ChatMessage): string {
+        return message.id
+    }
+
+    trackUiBlock(index: number, block: { id?: string; type?: string; round?: number; text?: string }): string {
+        if (block.id) {
+            return block.id
+        }
+        if (block.type === 'divider' && block.round !== undefined) {
+            return `divider-${block.round}`
+        }
+        if (block.type === 'status' && block.text) {
+            return `status-${block.text}-${index}`
+        }
+        return `${block.type ?? 'block'}-${index}`
     }
 }
 

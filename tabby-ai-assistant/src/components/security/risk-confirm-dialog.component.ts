@@ -110,4 +110,8 @@ export class RiskConfirmDialogComponent {
     isHighRisk(): boolean {
         return this.riskLevel === RiskLevel.HIGH || this.riskLevel === RiskLevel.CRITICAL
     }
+
+    trackSuggestion(_index: number, suggestion: string): string {
+        return suggestion
+    }
 }

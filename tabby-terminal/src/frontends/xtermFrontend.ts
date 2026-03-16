@@ -598,7 +598,14 @@ export class XTermFrontend extends Frontend {
         this.focus()
     }
 
-    private getRecoveryScrollbackLines (): number {
+    private getRecoveryScrollbackLines (options?: { scrollback?: number }): number {
+        if (options?.scrollback !== undefined) {
+            const overridden = Number(options.scrollback)
+            if (!Number.isFinite(overridden)) {
+                return 0
+            }
+            return Math.min(MAX_RECOVERY_SCROLLBACK_LINES, Math.max(0, Math.round(overridden)))
+        }
         const configured = Number(this.configService.store.terminal.recoveryScrollbackLines)
         if (!Number.isFinite(configured)) {
             return DEFAULT_RECOVERY_SCROLLBACK_LINES
@@ -606,11 +613,11 @@ export class XTermFrontend extends Frontend {
         return Math.min(MAX_RECOVERY_SCROLLBACK_LINES, Math.max(0, Math.round(configured)))
     }
 
-    saveState (): any {
+    saveState (options?: { scrollback?: number }): any {
         return this.serializeAddon.serialize({
             excludeAltBuffer: true,
             excludeModes: true,
-            scrollback: this.getRecoveryScrollbackLines(),
+            scrollback: this.getRecoveryScrollbackLines(options),
         })
     }
 

@@ -40,7 +40,7 @@ export class Session extends BaseSession {
             let cwd = options.cwd || getRuntimeEnv('HOME')
 
             if (cwd && !await pathExists(cwd)) {
-                console.warn('Ignoring non-existent CWD:', cwd)
+                this.logger.debug('Ignoring non-existent CWD:', cwd)
                 cwd = undefined
             }
 
@@ -166,7 +166,7 @@ export class Session extends BaseSession {
         try {
             cwd = await this.pty?.getWorkingDirectory() ?? null
         } catch (exc) {
-            console.info('Could not read working directory:', exc)
+            console.debug('Could not read working directory:', exc)
         }
 
         if (cwd) {

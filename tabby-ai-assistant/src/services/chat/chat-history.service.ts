@@ -88,7 +88,7 @@ export class ChatHistoryService {
             this.sessionsSubject.next(trimmedSessions)
             this.saveToStorage(trimmedSessions)
 
-            this.logger.info('Session saved', { sessionId, title: sessionTitle })
+            this.logger.debug('Session saved', { sessionId, title: sessionTitle })
 
         } catch (error) {
             this.logger.error('Failed to save session', { error, sessionId })
@@ -112,7 +112,7 @@ export class ChatHistoryService {
         const filteredSessions = sessions.filter(s => s.sessionId !== sessionId)
         this.sessionsSubject.next(filteredSessions)
         this.saveToStorage(filteredSessions)
-        this.logger.info('Session deleted', { sessionId })
+        this.logger.debug('Session deleted', { sessionId })
     }
 
     /**
@@ -121,7 +121,7 @@ export class ChatHistoryService {
     clearAllHistory(): void {
         this.sessionsSubject.next([])
         this.saveToStorage([])
-        this.logger.info('All chat history cleared')
+        this.logger.debug('All chat history cleared')
     }
 
     /**
@@ -220,7 +220,7 @@ export class ChatHistoryService {
             this.sessionsSubject.next(sessions)
             this.saveToStorage(sessions)
 
-            this.logger.info('History imported', {
+            this.logger.debug('History imported', {
                 sessionCount: sessions.length,
             })
 
@@ -241,7 +241,7 @@ export class ChatHistoryService {
                     updatedAt: new Date(s.updatedAt),
                 }))
                 this.sessionsSubject.next(sessions)
-                this.logger.info('Loaded sessions from file storage', { count: sessions.length })
+                this.logger.debug('Loaded sessions from file storage', { count: sessions.length })
             }
         } catch (error) {
             this.logger.error('Failed to load sessions from storage', error)
@@ -286,7 +286,7 @@ export class ChatHistoryService {
             }
             this.sessionsSubject.next([...sessions])
             this.saveToStorage(sessions)
-            this.logger.info('Context info updated', { sessionId })
+            this.logger.debug('Context info updated', { sessionId })
         }
     }
 
@@ -387,7 +387,7 @@ export class ChatHistoryService {
                 this.saveToStorage(mergedSessions.slice(0, MAX_SESSIONS))
             }
 
-            this.logger.info('Session(s) with context imported successfully')
+            this.logger.debug('Session(s) with context imported successfully')
         } catch (error) {
             this.logger.error('Failed to import session with context', error)
             throw new Error('Invalid session file format')
@@ -410,7 +410,7 @@ export class ChatHistoryService {
                 }
                 this.sessionsSubject.next([...sessions])
                 this.saveToStorage(sessions)
-                this.logger.info('Compressed data cleaned for session', { sessionId })
+                this.logger.debug('Compressed data cleaned for session', { sessionId })
             }
         } else {
             // 清理所有会话的压缩数据
@@ -421,7 +421,7 @@ export class ChatHistoryService {
             })
             this.sessionsSubject.next([...sessions])
             this.saveToStorage(sessions)
-            this.logger.info('All compressed data cleaned')
+            this.logger.debug('All compressed data cleaned')
         }
     }
 
@@ -518,7 +518,7 @@ export class ChatHistoryService {
 
             this.sessionsSubject.next([...sessions])
             this.saveToStorage(sessions)
-            this.logger.info('Compaction event recorded', { sessionId, type, tokensSaved })
+            this.logger.debug('Compaction event recorded', { sessionId, type, tokensSaved })
         }
     }
 

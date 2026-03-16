@@ -226,6 +226,7 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                 .header
                     .title(translate) Reuse session for multiple tabs
                     .description Multiplex multiple shells through the same connection
+                    .description.text-warning(*ngIf='profile.options.reuseSession', translate) Large-output or stuck commands can make tab closing and reconnects slower. Disable this to isolate tabs when troubleshooting.
                 toggle([(ngModel)]='profile.options.reuseSession')
 
             .form-line

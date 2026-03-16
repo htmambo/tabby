@@ -217,7 +217,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                         options[targetName] = basicString
                     }
                 } else {
-                    console.log('Unexpected value in settings for ' + key)
+                    console.debug('Unexpected value in settings for ' + key)
                 }
                 break
 
@@ -228,7 +228,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                 if (typeof numberString === 'string') {
                     options[targetName] = parseInt(numberString, 10)
                 } else {
-                    console.log('Unexpected value in settings for ' + key)
+                    console.debug('Unexpected value in settings for ' + key)
                 }
                 break
 
@@ -241,10 +241,10 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                     if (!isNaN(parsedSeconds) && parsedSeconds >= 0) {
                         options[targetName] = parsedSeconds * 1000
                     } else {
-                        console.log(`Invalid value for ${key}: "${secondsString}"`)
+                        console.debug(`Invalid value for ${key}: "${secondsString}"`)
                     }
                 } else {
-                    console.log('Unexpected value in settings for ' + key)
+                    console.debug('Unexpected value in settings for ' + key)
                 }
                 break
 
@@ -256,7 +256,7 @@ async function convertHostToSSHProfile (host: string, settings: Record<string, s
                 if ( booleanString === 'yes' || booleanString === 'no' ) {
                     options[targetName] = booleanString === 'yes'
                 } else {
-                    console.log('Unexpected value in settings for ' + key)
+                    console.debug('Unexpected value in settings for ' + key)
                 }
                 break
 

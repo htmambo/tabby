@@ -10,7 +10,7 @@
         </div>
 
         <div class="providers-grid">
-            <div *ngFor="let providerName of getVisibleCloudProviders()"
+            <div *ngFor="let providerName of getVisibleCloudProviders(); trackBy: trackProviderName"
                  class="provider-card"
                  [class.configured]="hasConfig(providerName)"
                  [class.expanded]="expandedProvider === providerName">
@@ -52,7 +52,7 @@
                             </div>
                         </div>
 
-                        <div *ngFor="let field of cloudProviderTemplates[providerName].fields" class="form-group">
+                        <div *ngFor="let field of cloudProviderTemplates[providerName].fields; trackBy: trackProviderField" class="form-group">
                             <label>
                                 {{ t.providers[field.key] || field.label }}
                                 <span *ngIf="isRequired(field)" class="required">*</span>
@@ -124,7 +124,7 @@
         </div>
 
         <div class="providers-grid">
-            <div *ngFor="let providerName of getVisibleLocalProviders()"
+            <div *ngFor="let providerName of getVisibleLocalProviders(); trackBy: trackProviderName"
                  class="provider-card"
                  [class.configured]="hasConfig(providerName)"
                  [class.expanded]="expandedProvider === providerName">
@@ -173,7 +173,7 @@
                             </div>
                         </div>
 
-                        <div *ngFor="let field of localProviderTemplates[providerName].fields" class="form-group">
+                        <div *ngFor="let field of localProviderTemplates[providerName].fields; trackBy: trackProviderField" class="form-group">
                             <label>
                                 {{ t.providers[field.key] || field.label }}
                                 <span *ngIf="isRequired(field)" class="required">*</span>

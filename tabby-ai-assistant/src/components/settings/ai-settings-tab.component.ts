@@ -108,6 +108,10 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
         }
     }
 
+    trackTab(_index: number, tab: { id: AiSettingsTabId }): AiSettingsTabId {
+        return tab.id
+    }
+
     /**
      * 加载设置
      */

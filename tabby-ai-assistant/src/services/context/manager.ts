@@ -33,7 +33,7 @@ export class ContextManager {
         this.config = { ...DEFAULT_CONTEXT_CONFIG }
         // 动态获取当前供应商的上下文限制
         this.updateContextLimit()
-        this.logger.info('ContextManager initialized', { config: this.config })
+        this.logger.debug('ContextManager initialized', { config: this.config })
     }
 
     /**
@@ -43,7 +43,7 @@ export class ContextManager {
         const providerContextWindow = this.configService.getActiveProviderContextWindow()
         if (providerContextWindow !== this.config.maxContextTokens) {
             this.config.maxContextTokens = providerContextWindow
-            this.logger.info('Context limit updated', {
+            this.logger.debug('Context limit updated', {
                 newLimit: providerContextWindow,
             })
         }
@@ -125,7 +125,7 @@ export class ContextManager {
         pruneResult?: PruneResult;
         truncationResult?: TruncationResult;
     }> {
-        this.logger.info('Starting context management', { sessionId })
+        this.logger.debug('Starting context management', { sessionId })
 
         const session = this.chatHistoryService.loadSession(sessionId)
         if (!session) {
@@ -143,7 +143,7 @@ export class ContextManager {
 
         // 1. 首先尝试裁剪（Prune）- 移除工具输出中的冗余信息
         if (usageRate >= this.config.pruneThreshold) {
-            this.logger.info('Prune threshold exceeded, applying prune', {
+            this.logger.debug('Prune threshold exceeded, applying prune', {
                 sessionId,
                 usageRate,
                 threshold: this.config.pruneThreshold,
@@ -157,7 +157,7 @@ export class ContextManager {
         )
 
         if (currentUsageRate >= this.config.compactThreshold) {
-            this.logger.info('Compact threshold exceeded, applying compact', {
+            this.logger.debug('Compact threshold exceeded, applying compact', {
                 sessionId,
                 usageRate: currentUsageRate,
                 threshold: this.config.compactThreshold,
@@ -171,14 +171,14 @@ export class ContextManager {
         )
 
         if (finalUsageRate >= 0.95) {
-            this.logger.info('Severe threshold exceeded, applying truncate', {
+            this.logger.debug('Severe threshold exceeded, applying truncate', {
                 sessionId,
                 usageRate: finalUsageRate,
             })
             results.truncationResult = await this.truncate(sessionId, results.compactionResult?.messages || results.pruneResult?.messages || messages)
         }
 
-        this.logger.info('Context management completed', {
+        this.logger.debug('Context management completed', {
             sessionId,
             results: Object.keys(results),
         })
@@ -229,7 +229,7 @@ export class ContextManager {
      * 滑动窗口截断
      */
     async truncate(sessionId: string, messages: ApiMessage[]): Promise<TruncationResult> {
-        this.logger.info('Applying truncate', { sessionId, messageCount: messages.length })
+        this.logger.debug('Applying truncate', { sessionId, messageCount: messages.length })
 
         const truncationId = `truncate_${Date.now()}`
         const messagesToKeep = Math.min(this.config.messagesToKeep, messages.length)
@@ -268,7 +268,7 @@ export class ContextManager {
      * 清理孤儿标记
      */
     cleanupOrphanedTags(sessionId: string): number {
-        this.logger.info('Cleaning up orphaned tags', { sessionId })
+        this.logger.debug('Cleaning up orphaned tags', { sessionId })
 
         const session = this.chatHistoryService.loadSession(sessionId)
         if (!session) {
@@ -309,7 +309,7 @@ export class ContextManager {
         })
 
         if (cleanedCount > 0) {
-            this.logger.info('Cleaned orphaned tags', { sessionId, count: cleanedCount })
+            this.logger.debug('Cleaned orphaned tags', { sessionId, count: cleanedCount })
         }
 
         return cleanedCount
@@ -320,7 +320,7 @@ export class ContextManager {
      */
     updateConfig(newConfig: Partial<ContextConfig>): void {
         this.config = { ...this.config, ...newConfig }
-        this.logger.info('Context config updated', { config: this.config })
+        this.logger.debug('Context config updated', { config: this.config })
     }
 
     /**
@@ -334,7 +334,7 @@ export class ContextManager {
      * 压缩（Compact）- 使用AI生成摘要
      */
     private async compact(sessionId: string, messages: ApiMessage[]): Promise<CompactionResult> {
-        this.logger.info('Applying compact', { sessionId, messageCount: messages.length })
+        this.logger.debug('Applying compact', { sessionId, messageCount: messages.length })
 
         try {
             const condenseId = `compact_${Date.now()}`
@@ -428,7 +428,7 @@ export class ContextManager {
      * 裁剪（Prune）- 移除工具输出中的冗余信息
      */
     private async prune(sessionId: string, messages: ApiMessage[]): Promise<PruneResult> {
-        this.logger.info('Applying prune', { sessionId, messageCount: messages.length })
+        this.logger.debug('Applying prune', { sessionId, messageCount: messages.length })
 
         let tokensSaved = 0
         let partsCompacted = 0

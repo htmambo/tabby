@@ -1,9 +1,9 @@
-import * as tmp from 'tmp-promise'
 import * as path from 'path'
 import { Injectable } from '@angular/core'
 import { MenuItemOptions, TranslateService, chmodPath, readPathStat } from 'tabby-core'
 import { SFTPFile, SFTPPanelComponent, SFTPContextMenuItemProvider, SFTPSession } from 'tabby-ssh'
 import { ElectronPlatformService } from './services/platform.service'
+import { createTemporaryDirectory } from './utils/tempFiles'
 
 
 /** @hidden */
@@ -37,7 +37,7 @@ export class EditSFTPContextMenu extends SFTPContextMenuItemProvider {
     }
 
     private async edit (item: SFTPFile, sftp: SFTPSession) {
-        const tempDir = await tmp.dir({ unsafeCleanup: true })
+        const tempDir = await createTemporaryDirectory('tabby-sftp-')
         const tempPath = path.join(tempDir.path, item.name)
         const transfer = await this.platform.startDownload(item.name, item.mode, item.size, tempPath)
         if (!transfer) {
