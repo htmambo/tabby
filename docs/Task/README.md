@@ -4,6 +4,7 @@
 - 🔄 [Tabby 项目全面优化](Active/TABBY_OPTIMIZATION_PLAN.md) - 开始于 2026-03-07
 - 📝 [Tabby 优化阶段性进展快照（2026-03-15）](Active/TABBY_OPTIMIZATION_PROGRESS_2026-03-15.md)
 - 🔄 [依赖升级 Phase 1 到 4](Active/DEPENDENCY_UPGRADE_PHASE_1_TO_4_PLAN.md)
+- ⏳ [piz 功能迁移](Active/PIZ_MIGRATION_PLAN_2026-03-17.md) - 计划于 2026-03-17
 
 ## 已完成任务 (Archive)
 ### 2026-03
