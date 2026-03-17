@@ -45,7 +45,8 @@ import { ProviderConfig, PROVIDER_DEFAULTS, ProviderConfigUtils } from '../../ty
                 <div class="header-actions">
                     <button type="button" class="btn btn-link btn-sm btn-close-sidebar" (click)="hideSidebar()" [title]="'Hide Sidebar' | translate">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                            <path *ngIf="!isSidebarOnRight" fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                            <path *ngIf="isSidebarOnRight" fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 0 0 .708L10.293 8l-5.647 5.646a.5.5 0 0 0 .708.708l6-6a.5.5 0 0 0 0-.708l-6-6a.5.5 0 0 0-.708 0z"/>
                         </svg>
                     </button>
                     <button type="button" class="btn btn-link btn-sm" (click)="openSettings()" [title]="'Open Settings' | translate">
@@ -324,6 +325,10 @@ export class AiSidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     private userScrolledDuringResponse = false
     private pendingTimeouts = new Set<number>()
     private timestampLabelCache = new Map<number, string>()
+
+    get isSidebarOnRight(): boolean {
+        return this.sidebarService?.getSidebarPosition?.() === 'right'
+    }
 
     constructor(
         private aiService: AiAssistantService,

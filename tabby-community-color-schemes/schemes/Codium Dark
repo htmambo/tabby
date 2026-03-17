@@ -1,7 +1,7 @@
 !
 ! Codium Dark (from codium-dark.json)
 !
-*.foreground:  #e7bbf7
+*.foreground:  #f7eded
 *.background:  #2c1438
 *.cursorColor: #e7bbf7
 *.selectionBackground: #58257280
