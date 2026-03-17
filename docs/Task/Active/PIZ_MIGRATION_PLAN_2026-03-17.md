@@ -40,8 +40,9 @@
 
 | 文件 | 改动类型 | 说明 |
 |-----|---------|------|
-| `src/types/security.types.ts` | 修改 | 新增 InjectionPattern 类型 |
-| `src/services/security/risk-assessment.service.ts` | 修改 | 添加注入检测规则 |
+| `tabby-ai-assistant/src/types/security.types.ts` | 修改 | 新增 InjectionPattern 类型 |
+| `tabby-ai-assistant/src/services/security/risk-assessment.service.ts` | 修改 | 添加注入检测规则 |
+| `tabby-ai-assistant/src/services/security/risk-assessment.service.spec.ts` | 新增/修改 | 注入检测单测 |
 
 #### 1.2 实现步骤
 
@@ -66,7 +67,7 @@ export interface InjectionPattern {
 3. **扩展 performAssessment 方法**
    - 在现有危险模式检测后添加注入检测
    - 注入模式匹配直接提升至 HIGH/CRITICAL 级别
-   - 添加详细的检测报告字段
+   - 添加详细的检测报告字段（包含 `category`、`severity`、`pattern` 命中信息）
 
 #### 1.3 验收标准
 
@@ -110,12 +111,12 @@ describe('Injection Detection', () => {
 
 | 文件 | 改动类型 | 说明 |
 |-----|---------|------|
-| `src/services/chat/command-cache.service.ts` | 新增 | 命令缓存服务 |
-| `src/types/ai.types.ts` | 修改 | 扩展缓存相关类型 |
-| `src/services/chat/command-generator.service.ts` | 修改 | 接入缓存逻辑 |
-| `src/services/core/file-storage.service.ts` | 修改 | 支持缓存持久化 |
-| `src/components/settings/data-settings.component.ts` | 修改 | 添加清除缓存 UI |
-| `src/index.ts` | 修改 | 注册新 Provider |
+| `tabby-ai-assistant/src/services/chat/command-cache.service.ts` | 新增 | 命令缓存服务 |
+| `tabby-ai-assistant/src/types/ai.types.ts` | 修改 | 扩展缓存相关类型 |
+| `tabby-ai-assistant/src/services/chat/command-generator.service.ts` | 修改 | 接入缓存逻辑 |
+| `tabby-ai-assistant/src/services/core/file-storage.service.ts` | 修改 | 支持缓存持久化 |
+| `tabby-ai-assistant/src/components/settings/data-settings.component.ts` | 修改 | 添加清除缓存 UI |
+| `tabby-ai-assistant/src/index.ts` | 修改 | 注册新 Provider（如需 DI） |
 
 #### 2.2 数据结构设计
 
@@ -124,7 +125,7 @@ describe('Injection Detection', () => {
 export interface CommandCacheEntry {
     id: string;
     naturalLanguage: string;    // 用户原始输入
-    contextHash: string;        // 上下文指纹 (OS + shell + cwd hash)
+    contextHash: string;        // 上下文指纹 (OS + shell + LLM 配置 hash)
     command: string;            // 生成的命令
     explanation: string;        // 命令说明
     confidence: number;         // 置信度
@@ -143,7 +144,6 @@ export interface CommandCacheConfig {
     enabled: boolean;
     maxSize: number;            // 最大条目数
     defaultTtl: number;         // 默认过期时间（秒）
-    contextSimilarityThreshold: number;  // 上下文相似度阈值
 }
 
 // 默认配置
@@ -151,7 +151,6 @@ const DEFAULT_CACHE_CONFIG: CommandCacheConfig = {
     enabled: true,
     maxSize: 500,
     defaultTtl: 7 * 24 * 3600,  // 7 天
-    contextSimilarityThreshold: 0.7,
 }
 ```
 
@@ -161,7 +160,7 @@ const DEFAULT_CACHE_CONFIG: CommandCacheConfig = {
    - 实现 `get()`, `set()`, `delete()`, `clear()` 方法
    - 实现 TTL 过期检查（定时任务，每分钟）
    - 实现 LRU 淘汰策略
-   - 实现上下文 hash 计算
+   - 实现上下文 hash 计算（包含 provider/model/temperature/maxTokens）
 
 2. **实现缓存持久化**
    - 使用 FileStorageService 存储到本地
@@ -178,21 +177,68 @@ const DEFAULT_CACHE_CONFIG: CommandCacheConfig = {
    - 清除缓存按钮
    - 缓存统计显示
 
+#### 2.3.1 配置落点与持久化（新增）
+
+- **配置落点（用户可配置项）**：放在 `config.store.pluginConfig['ai-assistant'].commandCache`
+- **配置建议字段**：`enabled`、`maxSize`、`defaultTtl`
+- **缓存数据持久化**：使用 `FileStorageService`，写入插件数据目录下的 `command-cache.json`
+
+示例结构：
+```typescript
+// ConfigService 存储结构（用户配置）
+config.store.pluginConfig['ai-assistant'] = {
+  ...,
+  commandCache: {
+    enabled: true,
+    maxSize: 500,
+    defaultTtl: 7 * 24 * 3600,
+  },
+}
+
+// FileStorageService 存储（缓存内容）
+fileStorage.save('command-cache.json', cacheData)
+```
+
+#### 2.3.2 配置读取/写入路径（新增）
+
+- **读取路径**：`CommandCacheService` 初始化时读取 `config.store.pluginConfig['ai-assistant'].commandCache`，若为空使用 `DEFAULT_CACHE_CONFIG`
+- **写入路径**：设置页修改配置后调用 `config.save()`，缓存服务应订阅 `config.changed$` 以动态生效
+- **禁用策略**：`enabled = false` 时跳过 `get()`/`set()`，可选提供“一键清空缓存”按钮
+
+#### 2.3.3 设置页交互与统计（新增）
+
+- **UI 放置**：复用现有 `app-data-settings`，新增“命令缓存”小节
+- **建议字段**：缓存开关、最大条目数、默认 TTL（天）
+- **统计展示**：`entries`、`hits`、`misses`、`hitRate`、`lastEvictAt`
+- **操作**：清空缓存按钮（确认弹窗），导出/导入可复用现有数据管理入口
+
+#### 2.3.4 数据文件与迁移（新增）
+
+- **文件名**：`command-cache.json`
+- **落盘位置**：插件数据目录（由 `FileStorageService` 决定）
+- **迁移策略**：若历史使用 `localStorage`，在 `FileStorageService.migrateFromLocalStorage()` 增加键映射（例如 `tabby-ai-assistant-command-cache`）
+
 #### 2.4 缓存键策略
 
 ```typescript
-// 生成缓存键
-generateCacheKey(naturalLanguage: string, context: TerminalContext): string {
+// 生成缓存键（首版采用精确匹配，不做相似度）
+generateCacheKey(naturalLanguage: string, context: TerminalContext, llm: ProviderContext): string {
     const contextFingerprint = this.hashContext({
         os: context.systemInfo.platform,
         shell: context.session.shell,
         // cwd 不参与 hash，因为相同命令在不同目录可能有相同语义
     })
-    return `${naturalLanguage.toLowerCase().trim()}:${contextFingerprint}`
+    const llmFingerprint = this.hashContext({
+        provider: llm.provider,
+        model: llm.model,
+        temperature: llm.temperature,
+        maxTokens: llm.maxTokens,
+    })
+    return `${naturalLanguage.toLowerCase().trim()}:${contextFingerprint}:${llmFingerprint}`
 }
 
 // 上下文 hash
-private hashContext(ctx: { os: string; shell: string }): string {
+private hashContext(ctx: { os: string; shell: string } | Record<string, unknown>): string {
     const str = JSON.stringify(ctx)
     // 使用简单的 hash 算法
     let hash = 0
@@ -249,6 +295,38 @@ describe('CommandCacheService', () => {
 })
 ```
 
+#### 2.7 端到端执行流程（新增）
+
+```
+用户输入
+  -> CommandGeneratorService.generateCommand()
+     -> CommandCacheService.get(key)
+        -> 命中? 是 -> 返回缓存结果 (fromCache=true)
+                 否 -> 调用 LLM
+                       -> 解析/校验响应
+                       -> CommandCacheService.set(key, entry)
+                       -> 返回结果 (fromCache=false)
+```
+
+关键分支：
+- `enabled=false`：跳过 `get/set`，直接走 LLM
+- 解析失败：回退为单命令结果（不写入缓存）
+
+#### 2.8 测试矩阵（新增）
+
+| 场景 | 输入/操作 | 期望结果 |
+|------|-----------|----------|
+| 缓存命中 | 相同输入 + 相同上下文 + 相同 LLM 配置 | 直接返回缓存，`fromCache=true` |
+| 缓存未命中 | 首次输入 | 调用 LLM，缓存写入 |
+| 缓存禁用 | `enabled=false` | 不读不写缓存 |
+| TTL 过期 | 等待超过 TTL | 命中失效，重新生成 |
+| LRU 淘汰 | 超过 `maxSize` | 最旧未访问条目被删除 |
+| 多候选解析失败 | LLM 返回非 JSON | 回退单命令，不写缓存 |
+| 配置变更生效 | 修改 maxSize/TTL | 运行中立即生效 |
+| 清空缓存 | 点击清除 | 缓存文件清空，统计归零 |
+| 导入/导出 | 导出后再导入 | 数据一致、统计正确 |
+| 迁移 | localStorage 存在旧键 | 启动迁移并落盘 |
+
 ---
 
 ### Task 3: 多候选命令生成
@@ -262,10 +340,10 @@ describe('CommandCacheService', () => {
 
 | 文件 | 改动类型 | 说明 |
 |-----|---------|------|
-| `src/types/ai.types.ts` | 修改 | 扩展 CommandResponse 类型 |
-| `src/services/chat/command-generator.service.ts` | 修改 | 生成多候选 |
-| `src/components/terminal/command-preview.component.ts` | 修改 | 显示多候选 UI |
-| `src/components/terminal/command-suggestion.component.ts` | 修改 | 多候选选择交互 |
+| `tabby-ai-assistant/src/types/ai.types.ts` | 修改 | 扩展 CommandResponse 类型 |
+| `tabby-ai-assistant/src/services/chat/command-generator.service.ts` | 修改 | 生成多候选 |
+| `tabby-ai-assistant/src/components/terminal/command-preview.component.ts` | 修改 | 显示多候选 UI |
+| `tabby-ai-assistant/src/components/terminal/command-suggestion.component.ts` | 修改 | 多候选选择交互 |
 
 #### 3.2 类型扩展
 
@@ -318,7 +396,13 @@ Guidelines:
 }
 ```
 
-#### 3.4 UI 设计
+#### 3.4 解析容错与回退策略（新增）
+
+- JSON 解析失败或缺字段时，回退为单命令结果，并记录日志
+- 可选：触发一次“只返回 JSON”的轻量重试（最多 1 次）
+- 缓存时只存储已通过校验的结构
+
+#### 3.5 UI 设计
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -341,7 +425,7 @@ Guidelines:
 └─────────────────────────────────────────────────────────┘
 ```
 
-#### 3.5 验收标准
+#### 3.6 验收标准
 
 - [ ] LLM 返回 1-3 个候选命令
 - [ ] UI 正确显示所有候选
@@ -361,8 +445,8 @@ Guidelines:
 
 | 文件 | 改动类型 | 说明 |
 |-----|---------|------|
-| `src/types/terminal.types.ts` | 修改 | 新增 FixAttempt 类型 |
-| `src/services/chat/command-generator.service.ts` | 修改 | 实现重试逻辑 |
+| `tabby-ai-assistant/src/types/terminal.types.ts` | 修改 | 新增 FixAttempt 类型 |
+| `tabby-ai-assistant/src/services/chat/command-generator.service.ts` | 修改 | 实现重试逻辑 |
 
 #### 4.2 类型定义
 
@@ -480,23 +564,23 @@ private buildFixPrompt(error: TerminalError, attempts: FixAttempt[]): string {
 
 | 文件路径 | 说明 |
 |---------|------|
-| `src/services/chat/command-cache.service.ts` | 命令缓存服务 |
-| `src/services/chat/command-cache.service.spec.ts` | 缓存服务测试 |
+| `tabby-ai-assistant/src/services/chat/command-cache.service.ts` | 命令缓存服务 |
+| `tabby-ai-assistant/src/services/chat/command-cache.service.spec.ts` | 缓存服务测试 |
 
 ### 修改文件
 
 | 文件路径 | 改动说明 |
 |---------|----------|
-| `src/types/ai.types.ts` | 扩展 CommandResponse、AlternativeCommand |
-| `src/types/security.types.ts` | 扩展 InjectionPattern 类型 |
-| `src/types/terminal.types.ts` | 扩展 FixAttempt、FixOptions |
-| `src/services/security/risk-assessment.service.ts` | 新增注入检测规则 |
-| `src/services/chat/command-generator.service.ts` | 接入缓存 + 多候选 + 重试 |
-| `src/services/core/file-storage.service.ts` | 支持缓存存储 |
-| `src/components/terminal/command-preview.component.ts` | 多候选 UI |
-| `src/components/terminal/command-suggestion.component.ts` | 多候选选择 |
-| `src/components/settings/data-settings.component.ts` | 清除缓存入口 |
-| `src/index.ts` | 注册新 Provider |
+| `tabby-ai-assistant/src/types/ai.types.ts` | 扩展 CommandResponse、AlternativeCommand |
+| `tabby-ai-assistant/src/types/security.types.ts` | 扩展 InjectionPattern 类型 |
+| `tabby-ai-assistant/src/types/terminal.types.ts` | 扩展 FixAttempt、FixOptions |
+| `tabby-ai-assistant/src/services/security/risk-assessment.service.ts` | 新增注入检测规则 |
+| `tabby-ai-assistant/src/services/chat/command-generator.service.ts` | 接入缓存 + 多候选 + 重试 |
+| `tabby-ai-assistant/src/services/core/file-storage.service.ts` | 支持缓存存储 |
+| `tabby-ai-assistant/src/components/terminal/command-preview.component.ts` | 多候选 UI |
+| `tabby-ai-assistant/src/components/terminal/command-suggestion.component.ts` | 多候选选择 |
+| `tabby-ai-assistant/src/components/settings/data-settings.component.ts` | 清除缓存入口 |
+| `tabby-ai-assistant/src/index.ts` | 注册新 Provider |
 
 ---
 
@@ -505,6 +589,7 @@ private buildFixPrompt(error: TerminalError, attempts: FixAttempt[]): string {
 | 风险 | 可能性 | 影响 | 缓解措施 |
 |-----|--------|------|----------|
 | 缓存返回过时命令 | 中 | 中 | 7天 TTL + 用户可手动清除缓存 |
+| 缓存跨模型误命中 | 中 | 中 | 缓存键加入 provider/model/temperature/maxTokens |
 | 多候选增加响应延迟 | 低 | 低 | 一次请求返回，不增加 API 调用 |
 | 注入检测误报正常命令 | 低 | 中 | 保留白名单机制，用户可覆盖 |
 | 重试循环执行危险命令 | 中 | 高 | 每次重试均经过完整安全验证 |
