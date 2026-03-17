@@ -6,6 +6,8 @@ import { TerminalContextService } from '../terminal/terminal-context.service'
 import { SecurityValidatorService } from '../security/security-validator.service'
 import { LoggerService } from '../core/logger.service'
 import { TranslateService } from 'tabby-core'
+import { CommandCacheService, ContextFingerprint } from './command-cache.service'
+import { ConfigProviderService } from '../core/config-provider.service'
 
 @Injectable({ providedIn: 'root' })
 export class CommandGeneratorService {
@@ -15,6 +17,8 @@ export class CommandGeneratorService {
         private securityValidator: SecurityValidatorService,
         private logger: LoggerService,
         private translate: TranslateService,
+        private commandCache: CommandCacheService,
+        private config: ConfigProviderService,
     ) {}
 
     /**
@@ -28,7 +32,53 @@ export class CommandGeneratorService {
             const context = this.terminalContext.getCurrentContext()
             const error = this.terminalContext.getLastError()
 
-            // 构建增强的提示词
+            // 构建上下文指纹用于缓存
+            const providerStatus = this.aiService.getProviderStatus()
+            const providerName = providerStatus?.active?.name ?? 'unknown'
+            const providerConfig = this.config.getProviderConfig(providerName)
+
+            const fingerprint: ContextFingerprint = {
+                os: context?.systemInfo.platform,
+                shell: context?.session.shell,
+                provider: providerName,
+                model: providerConfig?.model ?? 'unknown',
+                temperature: 0.3,
+                maxTokens: 500,
+            }
+
+            // 1. 尝试从缓存获取
+            const cachedEntry = this.commandCache.get(request.naturalLanguage, fingerprint)
+            if (cachedEntry) {
+                this.logger.info('Command cache hit', {
+                    naturalLanguage: request.naturalLanguage,
+                    command: cachedEntry.command,
+                })
+
+                // 安全验证（即使是缓存命令也需要验证）
+                const validation = await this.securityValidator.validateAndConfirm(
+                    cachedEntry.command,
+                    cachedEntry.explanation,
+                    context,
+                )
+
+                if (!validation.approved) {
+                    this.logger.warn('Cached command blocked by security validator', {
+                        reason: validation.reason,
+                    })
+                    // 缓存命令被阻止，继续正常流程
+                } else {
+                    // 返回缓存的命令
+                    return {
+                        command: cachedEntry.command,
+                        explanation: cachedEntry.explanation,
+                        confidence: cachedEntry.confidence,
+                        alternatives: cachedEntry.alternatives,
+                        fromCache: true,
+                    }
+                }
+            }
+
+            // 2. 缓存未命中，构建增强的提示词
             const enhancedPrompt = this.buildEnhancedPrompt(request, context, error)
 
             // 构建聊天请求
@@ -51,13 +101,13 @@ export class CommandGeneratorService {
                 temperature: 0.3, // 使用较低温度确保命令的准确性
             }
 
-            // 调用AI提供商
+            // 3. 调用AI提供商
             const response = await this.aiService.chat(chatRequest)
 
-            // 解析AI响应
+            // 4. 解析AI响应
             const commandResponse = this.parseAiResponse(response.message.content)
 
-            // 安全验证
+            // 5. 安全验证
             const validation = await this.securityValidator.validateAndConfirm(
                 commandResponse.command,
                 commandResponse.explanation,
@@ -68,8 +118,21 @@ export class CommandGeneratorService {
                 throw new Error(`Command blocked by security validator: ${validation.reason}`)
             }
 
+            // 6. 写入缓存
+            this.commandCache.set(
+                request.naturalLanguage,
+                fingerprint,
+                commandResponse.command,
+                commandResponse.explanation,
+                commandResponse.confidence,
+                commandResponse.alternatives,
+            )
+
             this.logger.info('Command generated successfully', { commandResponse })
-            return commandResponse
+            return {
+                ...commandResponse,
+                fromCache: false,
+            }
 
         } catch (error) {
             this.logger.error('Failed to generate command', error)
@@ -223,10 +286,18 @@ export class CommandGeneratorService {
 
         prompt += `\n请按照以下JSON格式返回：\n`
         prompt += `{\n`
-        prompt += `  "command": "具体的命令",\n`
+        prompt += `  "command": "最推荐的命令",\n`
         prompt += `  "explanation": "命令的解释说明",\n`
-        prompt += `  "confidence": 0.95\n`
+        prompt += `  "confidence": 0.95,\n`
+        prompt += `  "alternatives": [\n`
+        prompt += `    {\n`
+        prompt += `      "command": "备选命令1",\n`
+        prompt += `      "explanation": "备选命令解释",\n`
+        prompt += `      "confidence": 0.85\n`
+        prompt += `    }\n`
+        prompt += `  ]\n`
         prompt += `}\n`
+        prompt += `\n注意：请提供2-4个不同的备选命令，特别是当用户需求存在多种实现方式时。每个备选命令应有不同的特点（如简洁性、安全性、兼容性等）。\n`
 
         return prompt
     }
@@ -247,11 +318,21 @@ export class CommandGeneratorService {
             const jsonMatch = content.match(/\{[\s\S]*\}/)
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0])
+                const command = parsed.command || ''
+                const explanation = parsed.explanation || ''
+                const confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 0.5
+
+                // 处理备选命令：验证、去重、排序
+                const alternatives = this.processAlternatives(
+                    parsed.alternatives || [],
+                    command,
+                )
+
                 return {
-                    command: parsed.command || '',
-                    explanation: parsed.explanation || '',
-                    confidence: parsed.confidence || 0.5,
-                    alternatives: parsed.alternatives || [],
+                    command,
+                    explanation,
+                    confidence,
+                    alternatives,
                 }
             }
         } catch (error) {
@@ -268,6 +349,74 @@ export class CommandGeneratorService {
             explanation,
             confidence: 0.5,
         }
+    }
+
+    /**
+     * 处理备选命令列表
+     * 验证、去重、按置信度排序
+     */
+    private processAlternatives(
+        alternatives: Array<{ command: string; explanation: string; confidence: number }>,
+        primaryCommand: string,
+    ): Array<{ command: string; explanation: string; confidence: number }> {
+        if (!alternatives || !Array.isArray(alternatives)) {
+            return []
+        }
+
+        const seen = new Set<string>()
+        seen.add(primaryCommand.trim().toLowerCase()) // 排除主命令
+
+        const validAlternatives: Array<{ command: string; explanation: string; confidence: number }> = []
+
+        for (const alt of alternatives) {
+            // 验证必要字段
+            if (!alt.command || typeof alt.command !== 'string') {
+                continue
+            }
+
+            const trimmedCommand = alt.command.trim()
+            const lowerCommand = trimmedCommand.toLowerCase()
+
+            // 跳过空命令和重复命令
+            if (!trimmedCommand || seen.has(lowerCommand)) {
+                continue
+            }
+
+            // 跳过危险的命令（基本检查）
+            if (this.isDangerousCommand(trimmedCommand)) {
+                this.logger.warn('Skipping dangerous alternative command', { command: trimmedCommand })
+                continue
+            }
+
+            seen.add(lowerCommand)
+
+            validAlternatives.push({
+                command: trimmedCommand,
+                explanation: alt.explanation || '',
+                confidence: typeof alt.confidence === 'number' ? alt.confidence : 0.5,
+            })
+        }
+
+        // 按置信度降序排序
+        validAlternatives.sort((a, b) => b.confidence - a.confidence)
+
+        // 最多保留4个备选
+        return validAlternatives.slice(0, 4)
+    }
+
+    /**
+     * 检查是否为危险命令（快速检查）
+     */
+    private isDangerousCommand(command: string): boolean {
+        const dangerousPatterns = [
+            /^rm\s+-rf\s+\//,           // 删除根目录
+            />\s*\/dev\/sda/,           // 覆盖磁盘
+            /:\(\)\{\s*:\|:&\s*\};:/,   // Fork 炸弹
+            /^mkfs/,                    // 格式化
+            /^dd\s+if=.*of=\/dev/,      // dd 写设备
+        ]
+
+        return dangerousPatterns.some(pattern => pattern.test(command))
     }
 
     /**

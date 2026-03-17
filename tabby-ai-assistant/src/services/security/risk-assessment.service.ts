@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core'
-import { RiskLevel, RiskAssessment } from '../../types/security.types'
+import {
+    RiskLevel,
+    RiskAssessment,
+    InjectionPattern,
+    MatchedInjectionPattern,
+    InjectionCategory,
+} from '../../types/security.types'
 import { LoggerService } from '../core/logger.service'
 
 /**
@@ -8,7 +14,208 @@ import { LoggerService } from '../core/logger.service'
  */
 @Injectable({ providedIn: 'root' })
 export class RiskAssessmentService {
-    // 危险模式匹配规则
+    // 注入检测模式（扩展的 PIZ 风格检测规则）
+    private readonly INJECTION_PATTERNS: InjectionPattern[] = [
+        // 命令替换检测
+        {
+            pattern: /\$\([^)]*\)/,
+            description: '命令替换 $(...)',
+            severity: RiskLevel.CRITICAL,
+            category: 'command-substitution',
+        },
+        {
+            pattern: /`[^`]*`/,
+            description: '反引号命令替换',
+            severity: RiskLevel.CRITICAL,
+            category: 'command-substitution',
+        },
+        {
+            pattern: /\$\([^)]*\)[^)]*\)/,
+            description: '嵌套命令替换',
+            severity: RiskLevel.CRITICAL,
+            category: 'command-substitution',
+        },
+
+        // 编码绕过检测
+        {
+            pattern: /\bbase64\b.*\|.*\b(base64|bash|sh|zsh|python|perl|ruby)\b/,
+            description: 'base64 编码绕过',
+            severity: RiskLevel.CRITICAL,
+            category: 'encoding-bypass',
+        },
+        {
+            pattern: /\bxxd\b.*-r.*\|/,
+            description: 'xxd 十六进制解码绕过',
+            severity: RiskLevel.CRITICAL,
+            category: 'encoding-bypass',
+        },
+        {
+            pattern: /printf\s+['"]?\\x[0-9a-fA-F]+/,
+            description: 'printf 十六进制编码',
+            severity: RiskLevel.HIGH,
+            category: 'encoding-bypass',
+        },
+        {
+            pattern: /\$'\\x[0-9a-fA-F]+/,
+            description: 'ANSI-C 引用十六进制编码',
+            severity: RiskLevel.HIGH,
+            category: 'encoding-bypass',
+        },
+        {
+            pattern: /eval\s+['"]\$?\(/,
+            description: 'eval 动态执行',
+            severity: RiskLevel.CRITICAL,
+            category: 'encoding-bypass',
+        },
+
+        // 远程执行检测
+        {
+            pattern: /\b(curl|wget)\b.*\|\s*(bash|sh|zsh|python|perl|ruby)\b/,
+            description: '远程脚本执行 (curl/wget 管道)',
+            severity: RiskLevel.CRITICAL,
+            category: 'remote-execution',
+        },
+        {
+            pattern: /\b(curl|wget)\b.*>\s*\/tmp\/.*&&.*\b(bash|sh|zsh)\b/,
+            description: '远程脚本下载并执行',
+            severity: RiskLevel.CRITICAL,
+            category: 'remote-execution',
+        },
+        {
+            pattern: /<(?:\(|\s*\()/,
+            description: '进程替换输入',
+            severity: RiskLevel.HIGH,
+            category: 'remote-execution',
+        },
+        {
+            pattern: /\b(scp|rsync)\b.*@\S+:/,
+            description: '远程文件复制',
+            severity: RiskLevel.MEDIUM,
+            category: 'remote-execution',
+        },
+
+        // 反向 shell 检测
+        {
+            pattern: /\/dev\/tcp\//,
+            description: 'Bash /dev/tcp 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\/dev\/udp\//,
+            description: 'Bash /dev/udp 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\bnc\b.*-\s*[elp]/,
+            description: 'Netcat 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\bsocat\b.*TCP.*EXEC/,
+            description: 'Socat 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\bpython\b.*-c.*socket.*connect/,
+            description: 'Python 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\bperl\b.*-e.*socket/,
+            description: 'Perl 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: /\bruby\b.*-e.*TCPSocket/,
+            description: 'Ruby 反向 shell',
+            severity: RiskLevel.CRITICAL,
+            category: 'reverse-shell',
+        },
+        {
+            pattern: />&\s*\d+.*<>&\d+/,
+            description: '文件描述符重定向 (反向 shell 特征)',
+            severity: RiskLevel.HIGH,
+            category: 'reverse-shell',
+        },
+
+        // 权限提升检测
+        {
+            pattern: /\bsudo\b.*-i\b/,
+            description: 'sudo 交互式 root shell',
+            severity: RiskLevel.HIGH,
+            category: 'privilege-escalation',
+        },
+        {
+            pattern: /\bsudo\b.*-s\b/,
+            description: 'sudo shell 模式',
+            severity: RiskLevel.HIGH,
+            category: 'privilege-escalation',
+        },
+        {
+            pattern: /\bsu\b\s+(-|$)/,
+            description: 'su 切换用户',
+            severity: RiskLevel.HIGH,
+            category: 'privilege-escalation',
+        },
+        {
+            pattern: /\bpkexec\b/,
+            description: 'PolKit 权限提升',
+            severity: RiskLevel.HIGH,
+            category: 'privilege-escalation',
+        },
+        {
+            pattern: /\bdoas\b/,
+            description: 'doas 权限提升',
+            severity: RiskLevel.HIGH,
+            category: 'privilege-escalation',
+        },
+
+        // 环境变量注入检测
+        {
+            pattern: /\bexport\s+\w+=\$/,
+            description: '环境变量动态赋值',
+            severity: RiskLevel.MEDIUM,
+            category: 'environment-injection',
+        },
+        {
+            pattern: /\$\{[^}]*\}/,
+            description: '变量扩展 ${...}',
+            severity: RiskLevel.MEDIUM,
+            category: 'environment-injection',
+        },
+        {
+            pattern: /LD_PRELOAD\s*=/,
+            description: 'LD_PRELOAD 库注入',
+            severity: RiskLevel.CRITICAL,
+            category: 'environment-injection',
+        },
+        {
+            pattern: /LD_LIBRARY_PATH\s*=/,
+            description: 'LD_LIBRARY_PATH 库路径注入',
+            severity: RiskLevel.HIGH,
+            category: 'environment-injection',
+        },
+        {
+            pattern: /PATH\s*=.*:\.:/,
+            description: 'PATH 当前目录注入',
+            severity: RiskLevel.HIGH,
+            category: 'environment-injection',
+        },
+        {
+            pattern: /\benv\s+-[iu]\s+\w+\s+\w+/,
+            description: 'env 命令环境变量操作',
+            severity: RiskLevel.MEDIUM,
+            category: 'environment-injection',
+        },
+    ]
+
+    // 危险模式匹配规则（原有规则保留）
     private readonly DANGEROUS_PATTERNS = [
         {
             pattern: /rm\s+-rf\s+\//,
@@ -101,8 +308,28 @@ export class RiskAssessmentService {
             match: string;
             severity: RiskLevel;
         }[] = []
+        const matchedInjectionPatterns: MatchedInjectionPattern[] = []
         let maxSeverity = RiskLevel.LOW
         const reasons: string[] = []
+
+        // 0. 检查注入模式（优先级最高）
+        for (const rule of this.INJECTION_PATTERNS) {
+            if (rule.pattern.test(command)) {
+                const match = command.match(rule.pattern)?.[0] ?? ''
+                matchedInjectionPatterns.push({
+                    pattern: rule.pattern.source,
+                    match,
+                    severity: rule.severity,
+                    category: rule.category,
+                    description: rule.description,
+                })
+                reasons.push(`检测到注入风险 [${rule.category}]：${rule.description}`)
+
+                if (this.getSeverityLevel(rule.severity) > this.getSeverityLevel(maxSeverity)) {
+                    maxSeverity = rule.severity
+                }
+            }
+        }
 
         // 1. 检查危险模式
         for (const rule of this.DANGEROUS_PATTERNS) {
@@ -142,16 +369,17 @@ export class RiskAssessmentService {
         }
 
         // 5. 计算风险分数
-        const score = this.calculateRiskScore(command, maxSeverity, matchedPatterns)
+        const score = this.calculateRiskScore(command, maxSeverity, matchedPatterns, matchedInjectionPatterns)
 
         // 6. 生成建议
-        const suggestions = this.generateSuggestions(command, maxSeverity, reasons)
+        const suggestions = this.generateSuggestions(command, maxSeverity, reasons, matchedInjectionPatterns)
 
         const assessment: RiskAssessment = {
             level: maxSeverity,
             score,
             reasons,
             patterns: matchedPatterns,
+            injectionPatterns: matchedInjectionPatterns.length > 0 ? matchedInjectionPatterns : undefined,
             suggestions,
         }
 
@@ -205,7 +433,12 @@ export class RiskAssessmentService {
     /**
      * 计算风险分数
      */
-    private calculateRiskScore(command: string, level: RiskLevel, patterns: any[]): number {
+    private calculateRiskScore(
+        command: string,
+        level: RiskLevel,
+        patterns: { pattern: string; match: string; severity: RiskLevel }[],
+        injectionPatterns: MatchedInjectionPattern[] = [],
+    ): number {
         let score = 0
 
         // 基础分数
@@ -227,6 +460,16 @@ export class RiskAssessmentService {
         // 根据匹配的模式调整
         score += patterns.length * 10
 
+        // 注入模式额外加权
+        score += injectionPatterns.length * 15
+
+        // 根据注入类别严重程度调整
+        const criticalCategories = new Set(['command-substitution', 'reverse-shell', 'encoding-bypass'])
+        const hasCriticalInjection = injectionPatterns.some(p => criticalCategories.has(p.category))
+        if (hasCriticalInjection) {
+            score += 20
+        }
+
         // 根据命令长度调整（长命令可能更复杂）
         if (command.length > 200) {
             score += 10
@@ -238,7 +481,12 @@ export class RiskAssessmentService {
     /**
      * 生成安全建议
      */
-    private generateSuggestions(_command: string, level: RiskLevel, reasons: string[]): string[] {
+    private generateSuggestions(
+        _command: string,
+        level: RiskLevel,
+        reasons: string[],
+        injectionPatterns: MatchedInjectionPattern[] = [],
+    ): string[] {
         const suggestions: string[] = []
 
         if (level === RiskLevel.CRITICAL) {
@@ -263,6 +511,28 @@ export class RiskAssessmentService {
 
         if (reasons.some(r => r.includes('权限'))) {
             suggestions.push('检查文件权限，避免给予过高的权限')
+        }
+
+        // 根据注入类别添加针对性建议
+        const injectionCategories = new Set(injectionPatterns.map(p => p.category))
+
+        if (injectionCategories.has('command-substitution')) {
+            suggestions.push('检测到命令替换，请验证命令来源是否可信')
+        }
+        if (injectionCategories.has('reverse-shell')) {
+            suggestions.push('检测到反向 shell 特征，请谨慎执行')
+        }
+        if (injectionCategories.has('remote-execution')) {
+            suggestions.push('检测到远程执行，请确认目标 URL 安全')
+        }
+        if (injectionCategories.has('encoding-bypass')) {
+            suggestions.push('检测到编码绕过，请检查是否有隐藏的恶意代码')
+        }
+        if (injectionCategories.has('privilege-escalation')) {
+            suggestions.push('检测到权限提升操作，请确认是否需要 root 权限')
+        }
+        if (injectionCategories.has('environment-injection')) {
+            suggestions.push('检测到环境变量操作，请确认变量值安全')
         }
 
         return suggestions

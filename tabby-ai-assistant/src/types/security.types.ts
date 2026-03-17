@@ -10,6 +10,32 @@ export enum RiskLevel {
     CRITICAL = 'critical',
 }
 
+// 注入模式分类
+export type InjectionCategory =
+    | 'command-substitution'
+    | 'encoding-bypass'
+    | 'remote-execution'
+    | 'privilege-escalation'
+    | 'reverse-shell'
+    | 'environment-injection'
+
+// 注入检测模式
+export interface InjectionPattern {
+    pattern: RegExp;
+    description: string;
+    severity: RiskLevel;
+    category: InjectionCategory;
+}
+
+// 匹配到的注入模式
+export interface MatchedInjectionPattern {
+    pattern: string;
+    match: string;
+    severity: RiskLevel;
+    category: InjectionCategory;
+    description: string;
+}
+
 // 风险评估结果
 export interface RiskAssessment {
     level: RiskLevel;
@@ -20,6 +46,7 @@ export interface RiskAssessment {
         match: string;
         severity: RiskLevel;
     }[];
+    injectionPatterns?: MatchedInjectionPattern[];
     suggestions?: string[];
 }
 

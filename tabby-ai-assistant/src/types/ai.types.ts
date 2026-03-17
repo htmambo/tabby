@@ -115,6 +115,7 @@ export interface CommandResponse {
         explanation: string;
         confidence: number;
     }[];
+    fromCache?: boolean; // 是否来自缓存
 }
 
 // 解释请求
