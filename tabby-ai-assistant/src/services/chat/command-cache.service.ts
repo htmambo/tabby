@@ -1,6 +1,8 @@
 import { Injectable, OnDestroy } from '@angular/core'
+import { Subscription } from 'rxjs'
 import { LoggerService } from '../core/logger.service'
 import { FileStorageService } from '../core/file-storage.service'
+import { ConfigProviderService } from '../core/config-provider.service'
 
 /**
  * 替代命令
@@ -9,6 +11,7 @@ export interface AlternativeCommand {
     command: string
     explanation: string
     confidence: number
+    tags?: string[]  // 标签：如 'safe', 'fast', 'compatible'
 }
 
 /**
@@ -88,12 +91,15 @@ export class CommandCacheService implements OnDestroy {
     }
     private cleanupInterval: ReturnType<typeof setInterval> | null = null
     private initialized = false
+    private configSubscription: Subscription | null = null
 
     constructor(
         private logger: LoggerService,
         private fileStorage: FileStorageService,
+        private configProvider: ConfigProviderService,
     ) {
         this.initialize()
+        this.subscribeToConfigChanges()
     }
 
     ngOnDestroy(): void {
@@ -101,8 +107,50 @@ export class CommandCacheService implements OnDestroy {
             clearInterval(this.cleanupInterval)
             this.cleanupInterval = null
         }
+        if (this.configSubscription) {
+            this.configSubscription.unsubscribe()
+            this.configSubscription = null
+        }
         // 保存缓存到文件
         this.persist()
+    }
+
+    /**
+     * 订阅配置变更
+     */
+    private subscribeToConfigChanges(): void {
+        this.configSubscription = this.configProvider.onConfigChange().subscribe(({ key, value }) => {
+            if (key === 'commandCache' || key === '*') {
+                this.applyExternalConfig(value)
+            }
+        })
+    }
+
+    /**
+     * 应用外部配置
+     */
+    private applyExternalConfig(externalConfig: CommandCacheConfig | undefined): void {
+        if (!externalConfig) {
+            return
+        }
+
+        const oldEnabled = this.config.enabled
+        this.config = { ...DEFAULT_CACHE_CONFIG, ...externalConfig }
+
+        // 如果 maxSize 变小，需要淘汰多余的条目
+        if (externalConfig.maxSize !== undefined && this.cache.size > externalConfig.maxSize) {
+            this.evictLRU(this.cache.size - externalConfig.maxSize)
+        }
+
+        // 配置变更时持久化
+        this.schedulePersist()
+
+        this.logger.info('Applied external command cache config', {
+            enabled: this.config.enabled,
+            maxSize: this.config.maxSize,
+            defaultTtl: this.config.defaultTtl,
+            wasEnabled: oldEnabled,
+        })
     }
 
     /**
@@ -143,6 +191,12 @@ export class CommandCacheService implements OnDestroy {
         if (config.maxSize !== undefined && this.cache.size > config.maxSize) {
             this.evictLRU(this.cache.size - config.maxSize)
         }
+
+        // 同步到全局配置
+        this.configProvider.updateCommandCacheConfig(this.config)
+
+        // 持久化
+        this.schedulePersist()
     }
 
     /**

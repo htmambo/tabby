@@ -6,6 +6,7 @@ import { SecurityConfig } from '../../types/security.types'
 import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types'
 import { ContextConfig } from '../../types/ai.types'
 import { ProxyConfig, DEFAULT_PROXY_CONFIG } from '../../types/proxy.types'
+import { CommandCacheConfig } from '../chat/command-cache.service'
 
 /**
  * AI助手配置
@@ -36,6 +37,9 @@ export interface AiAssistantConfig {
 
     /** 代理配置 */
     proxy: ProxyConfig;
+
+    /** 命令缓存配置 */
+    commandCache?: CommandCacheConfig;
 }
 
 const DEFAULT_CONFIG: AiAssistantConfig = {
@@ -447,5 +451,42 @@ export class ConfigProviderService {
      */
     isProxyEnabled(): boolean {
         return this.config.proxy?.enabled || false
+    }
+
+    // ==================== 命令缓存配置 ====================
+
+    /**
+     * 获取命令缓存配置
+     */
+    getCommandCacheConfig(): CommandCacheConfig {
+        return this.config.commandCache ? { ...this.config.commandCache } : {
+            enabled: true,
+            maxSize: 500,
+            defaultTtl: 7 * 24 * 3600,  // 7 天
+        }
+    }
+
+    /**
+     * 更新命令缓存配置
+     */
+    updateCommandCacheConfig(config: Partial<CommandCacheConfig>): void {
+        this.config.commandCache = { ...this.getCommandCacheConfig(), ...config }
+        this.saveConfig()
+        this.configChange$.next({ key: 'commandCache', value: this.config.commandCache })
+        this.logger.info('Command cache configuration updated', { config: this.config.commandCache })
+    }
+
+    /**
+     * 检查命令缓存是否启用
+     */
+    isCommandCacheEnabled(): boolean {
+        return this.config.commandCache?.enabled ?? true
+    }
+
+    /**
+     * 设置命令缓存启用状态
+     */
+    setCommandCacheEnabled(enabled: boolean): void {
+        this.updateCommandCacheConfig({ enabled })
     }
 }

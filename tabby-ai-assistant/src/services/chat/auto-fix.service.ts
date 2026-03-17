@@ -17,6 +17,31 @@ import { TerminalError, CommandResult } from '../../types/terminal.types'
 import { CommandResponse } from '../../types/ai.types'
 
 /**
+ * 单次修复尝试记录
+ */
+export interface FixAttempt {
+    id: string
+    timestamp: Date
+    command: string
+    explanation: string
+    confidence: number
+    success: boolean
+    error?: string
+    exitCode?: number
+}
+
+/**
+ * 修复选项配置
+ */
+export interface FixOptions {
+    maxAttempts?: number           // 最大尝试次数
+    retryDelayMs?: number          // 重试延迟
+    autoExecute?: boolean          // 是否自动执行
+    skipConfirmation?: boolean     // 跳过确认（仅低风险）
+    includeHistory?: boolean       // 是否包含历史记录
+}
+
+/**
  * 修复建议
  */
 export interface FixSuggestion {
@@ -28,6 +53,8 @@ export interface FixSuggestion {
     confidence: number
     riskLevel: 'low' | 'medium' | 'high'
     autoExecutable: boolean  // 是否可以自动执行
+    attempts: FixAttempt[]   // 尝试历史记录
+    totalAttempts: number    // 总尝试次数
 }
 
 /**
@@ -37,7 +64,8 @@ export interface FixResult {
     success: boolean
     originalCommand: string
     fixedCommand?: string
-    attempts: number
+    attempts: FixAttempt[]   // 尝试历史记录
+    totalAttempts: number
     finalError?: string
     timestamp: Date
 }
@@ -143,7 +171,7 @@ export class AutoFixService implements OnDestroy {
     /**
      * 手动触发修复建议生成
      */
-    async generateFixSuggestion(error: TerminalError): Promise<FixSuggestion | null> {
+    async generateFixSuggestion(error: TerminalError, options?: FixOptions): Promise<FixSuggestion | null> {
         if (!this.config.enabled) {
             return null
         }
@@ -152,7 +180,7 @@ export class AutoFixService implements OnDestroy {
             // 使用 CommandGeneratorService 生成修复命令
             const response = await this.commandGenerator.generateFixForError(error)
 
-            // 构建修复建议
+            // 构建修复建议（包含初始尝试记录）
             const suggestion = this.buildFixSuggestion(error, response)
 
             this.logger.info('Fix suggestion generated', { suggestion })
@@ -172,6 +200,89 @@ export class AutoFixService implements OnDestroy {
     }
 
     /**
+     * 带重试的修复生成
+     * 支持多次尝试，记录每次尝试的结果
+     */
+    async generateFixWithRetry(
+        error: TerminalError,
+        options?: FixOptions,
+    ): Promise<FixSuggestion | null> {
+        if (!this.config.enabled) {
+            return null
+        }
+
+        const maxAttempts = options?.maxAttempts ?? this.config.maxRetries
+        const attempts: FixAttempt[] = []
+        let lastResponse: CommandResponse | null = null
+
+        for (let attemptNum = 1; attemptNum <= maxAttempts; attemptNum++) {
+            try {
+                const response = await this.commandGenerator.generateFixForError(error)
+                lastResponse = response
+
+                const attempt: FixAttempt = {
+                    id: `attempt_${Date.now()}_${attemptNum}`,
+                    timestamp: new Date(),
+                    command: response.command,
+                    explanation: response.explanation,
+                    confidence: response.confidence,
+                    success: true,
+                }
+                attempts.push(attempt)
+
+                // 如果置信度高，提前返回
+                if (response.confidence >= 0.8) {
+                    break
+                }
+
+                // 延迟后重试
+                if (attemptNum < maxAttempts) {
+                    await this.delay(options?.retryDelayMs ?? this.config.retryDelayMs)
+                }
+            } catch (err) {
+                const attempt: FixAttempt = {
+                    id: `attempt_${Date.now()}_${attemptNum}`,
+                    timestamp: new Date(),
+                    command: '',
+                    explanation: '',
+                    confidence: 0,
+                    success: false,
+                    error: err instanceof Error ? err.message : String(err),
+                }
+                attempts.push(attempt)
+
+                // 延迟后重试
+                if (attemptNum < maxAttempts) {
+                    await this.delay(options?.retryDelayMs ?? this.config.retryDelayMs)
+                }
+            }
+        }
+
+        if (!lastResponse) {
+            return null
+        }
+
+        // 构建包含所有尝试记录的建议
+        const suggestion = this.buildFixSuggestion(error, lastResponse)
+        suggestion.attempts = attempts
+        suggestion.totalAttempts = attempts.length
+
+        this.logger.info('Fix with retry generated', {
+            totalAttempts: attempts.length,
+            finalConfidence: lastResponse.confidence,
+        })
+
+        return suggestion
+    }
+
+    /**
+     * 延迟函数
+     */
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    /**
      * 执行修复命令
      */
     async executeFix(suggestion: FixSuggestion): Promise<FixResult> {
@@ -179,7 +290,8 @@ export class AutoFixService implements OnDestroy {
             success: false,
             originalCommand: suggestion.originalCommand,
             fixedCommand: suggestion.suggestedCommand,
-            attempts: 0,
+            attempts: suggestion.attempts ?? [],
+            totalAttempts: suggestion.totalAttempts ?? 1,
             timestamp: new Date(),
         }
 
@@ -204,7 +316,6 @@ export class AutoFixService implements OnDestroy {
 
             // 标记成功（假设执行成功，实际结果由外部反馈）
             result.success = true
-            result.attempts = 1
 
             this.fixEventSubject.next({
                 type: 'fix_succeeded',
@@ -438,6 +549,16 @@ export class AutoFixService implements OnDestroy {
             && riskLevel === 'low'
             && response.confidence >= 0.9
 
+        // 创建初始尝试记录
+        const initialAttempt: FixAttempt = {
+            id: `attempt_${Date.now()}_1`,
+            timestamp: new Date(),
+            command: response.command,
+            explanation: response.explanation,
+            confidence: response.confidence,
+            success: true,
+        }
+
         return {
             id: this.generateSuggestionId(),
             originalCommand: error.command ?? '',
@@ -447,6 +568,8 @@ export class AutoFixService implements OnDestroy {
             confidence: response.confidence,
             riskLevel,
             autoExecutable,
+            attempts: [initialAttempt],
+            totalAttempts: 1,
         }
     }
 

@@ -118,15 +118,23 @@ export class CommandGeneratorService {
                 throw new Error(`Command blocked by security validator: ${validation.reason}`)
             }
 
-            // 6. 写入缓存
-            this.commandCache.set(
-                request.naturalLanguage,
-                fingerprint,
-                commandResponse.command,
-                commandResponse.explanation,
-                commandResponse.confidence,
-                commandResponse.alternatives,
-            )
+            // 6. 写入缓存（仅在解析成功时）
+            if (commandResponse._parseSuccess) {
+                this.commandCache.set(
+                    request.naturalLanguage,
+                    fingerprint,
+                    commandResponse.command,
+                    commandResponse.explanation,
+                    commandResponse.confidence,
+                    commandResponse.alternatives,
+                )
+                this.logger.debug('Command cached due to successful parsing')
+            } else {
+                this.logger.warn('Command not cached due to parsing issues', {
+                    command: commandResponse.command,
+                    confidence: commandResponse.confidence,
+                })
+            }
 
             this.logger.info('Command generated successfully', { commandResponse })
             return {
@@ -311,8 +319,9 @@ export class CommandGeneratorService {
 
     /**
      * 解析AI响应
+     * 返回解析结果，包含是否使用了备选解析的标记
      */
-    private parseAiResponse(content: string): CommandResponse {
+    private parseAiResponse(content: string): CommandResponse & { _parseSuccess: boolean } {
         try {
             // 尝试解析JSON
             const jsonMatch = content.match(/\{[\s\S]*\}/)
@@ -328,11 +337,15 @@ export class CommandGeneratorService {
                     command,
                 )
 
+                // 验证解析结果质量
+                const parseSuccess = this.validateParseResult(command, confidence)
+
                 return {
                     command,
                     explanation,
                     confidence,
                     alternatives,
+                    _parseSuccess: parseSuccess,
                 }
             }
         } catch (error) {
@@ -348,7 +361,39 @@ export class CommandGeneratorService {
             command,
             explanation,
             confidence: 0.5,
+            _parseSuccess: false, // 备选解析标记为失败
         }
+    }
+
+    /**
+     * 验证解析结果质量
+     * 用于决定是否缓存
+     */
+    private validateParseResult(command: string, confidence: number): boolean {
+        // 空命令不缓存
+        if (!command || command.trim().length === 0) {
+            return false
+        }
+
+        // 置信度过低不缓存
+        if (confidence < 0.3) {
+            return false
+        }
+
+        // 命令包含明显错误标记不缓存
+        const invalidPatterns = [
+            /error/i,
+            /failed/i,
+            /unknown command/i,
+            /invalid/i,
+            /^\s*$/,
+        ]
+
+        if (invalidPatterns.some(p => p.test(command))) {
+            return false
+        }
+
+        return true
     }
 
     /**
@@ -356,9 +401,9 @@ export class CommandGeneratorService {
      * 验证、去重、按置信度排序
      */
     private processAlternatives(
-        alternatives: Array<{ command: string; explanation: string; confidence: number }>,
+        alternatives: Array<{ command: string; explanation: string; confidence: number; tags?: string[] }>,
         primaryCommand: string,
-    ): Array<{ command: string; explanation: string; confidence: number }> {
+    ): Array<{ command: string; explanation: string; confidence: number; tags?: string[] }> {
         if (!alternatives || !Array.isArray(alternatives)) {
             return []
         }
@@ -366,7 +411,7 @@ export class CommandGeneratorService {
         const seen = new Set<string>()
         seen.add(primaryCommand.trim().toLowerCase()) // 排除主命令
 
-        const validAlternatives: Array<{ command: string; explanation: string; confidence: number }> = []
+        const validAlternatives: Array<{ command: string; explanation: string; confidence: number; tags?: string[] }> = []
 
         for (const alt of alternatives) {
             // 验证必要字段
@@ -390,10 +435,14 @@ export class CommandGeneratorService {
 
             seen.add(lowerCommand)
 
+            // 自动生成标签（如果未提供）
+            const tags = alt.tags ?? this.generateTags(trimmedCommand)
+
             validAlternatives.push({
                 command: trimmedCommand,
                 explanation: alt.explanation || '',
                 confidence: typeof alt.confidence === 'number' ? alt.confidence : 0.5,
+                tags,
             })
         }
 
@@ -402,6 +451,50 @@ export class CommandGeneratorService {
 
         // 最多保留4个备选
         return validAlternatives.slice(0, 4)
+    }
+
+    /**
+     * 自动生成命令标签
+     */
+    private generateTags(command: string): string[] {
+        const tags: string[] = []
+
+        // 安全相关标签
+        if (/^sudo/.test(command)) {
+            tags.push('elevated')
+        } else if (!/\brm\b|\bdd\b|\bformat\b|\bmkfs\b/.test(command)) {
+            tags.push('safe')
+        }
+
+        // 性能相关标签
+        if (/\|/.test(command)) {
+            tags.push('pipelined')
+        }
+        if (/&&|\|\|/.test(command)) {
+            tags.push('chained')
+        }
+        if (!/&&|\|\||\|/.test(command)) {
+            tags.push('simple')
+        }
+
+        // 兼容性标签
+        if (/\b(ls|cat|grep|find|sed|awk)\b/.test(command)) {
+            tags.push('unix')
+        }
+        if (/\b(dir|type|findstr)\b/.test(command)) {
+            tags.push('windows')
+        }
+        if (/^git\s/.test(command)) {
+            tags.push('git')
+        }
+        if (/^(npm|yarn|pnpm)\s/.test(command)) {
+            tags.push('node')
+        }
+        if (/^(pip|python|python3)\s/.test(command)) {
+            tags.push('python')
+        }
+
+        return tags.length > 0 ? tags : ['general']
     }
 
     /**

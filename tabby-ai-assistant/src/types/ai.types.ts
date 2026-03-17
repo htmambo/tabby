@@ -114,6 +114,7 @@ export interface CommandResponse {
         command: string;
         explanation: string;
         confidence: number;
+        tags?: string[];  // 标签：如 'safe', 'fast', 'compatible'
     }[];
     fromCache?: boolean; // 是否来自缓存
 }

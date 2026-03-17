@@ -346,6 +346,8 @@ export class FileStorageService {
             'ai-assistant-config': 'config',
             'tabby-ai-assistant-context-config': 'context-config',
             'tabby-ai-assistant-auto-compact': 'auto-compact',
+            'tabby-ai-assistant-command-cache': 'command-cache',  // 命令缓存迁移
+            'command-cache': 'command-cache',  // 旧版本兼容
         }
 
         for (const [localStorageKey, filename] of Object.entries(migrationMap)) {
@@ -353,6 +355,16 @@ export class FileStorageService {
                 const value = localStorage.getItem(localStorageKey)
                 if (value) {
                     const data = JSON.parse(value)
+                    // 检查文件是否已存在，避免覆盖
+                    const existingData = this.load<any>(`${filename}${this.FILE_EXTENSION}`, null)
+                    if (existingData && Object.keys(existingData).length > 0) {
+                        this.logger.info('Skipping migration, file already exists', {
+                            key: localStorageKey,
+                            filename,
+                        })
+                        continue
+                    }
+
                     const saved = this.save(`${filename}${this.FILE_EXTENSION}`, data)
                     if (saved) {
                         migratedFiles.push(filename)
