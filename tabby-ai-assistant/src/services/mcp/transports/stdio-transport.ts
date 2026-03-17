@@ -150,9 +150,14 @@ export class StdioTransport extends BaseTransport {
         this.rejectPendingRequests(new Error('Transport disconnected'))
     }
 
-    async send(request: MCPRequest): Promise<MCPResponse> {
+    async send(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse> {
         if (!this.connected || !this.processID) {
             throw new Error('Transport not connected')
+        }
+
+        // 检查是否已取消
+        if (signal?.aborted) {
+            throw new DOMException('Operation cancelled', 'AbortError')
         }
 
         // 确保请求有 ID
@@ -161,12 +166,29 @@ export class StdioTransport extends BaseTransport {
         }
 
         return new Promise((resolve, reject) => {
+            // 监听取消信号
+            const abortHandler = () => {
+                this.pendingRequests.delete(request.id)
+                reject(new DOMException('Operation cancelled', 'AbortError'))
+            }
+            signal?.addEventListener('abort', abortHandler, { once: true })
+
             try {
-                this.pendingRequests.set(request.id, { resolve, reject })
+                this.pendingRequests.set(request.id, {
+                    resolve: (value) => {
+                        signal?.removeEventListener('abort', abortHandler)
+                        resolve(value)
+                    },
+                    reject: (reason) => {
+                        signal?.removeEventListener('abort', abortHandler)
+                        reject(reason)
+                    },
+                })
 
                 const message = JSON.stringify(request) + '\n'
                 getBridgeIPC().send('bridge:subprocess:write', this.processID, message)
             } catch (error) {
+                signal?.removeEventListener('abort', abortHandler)
                 this.pendingRequests.delete(request.id)
                 reject(error)
             }

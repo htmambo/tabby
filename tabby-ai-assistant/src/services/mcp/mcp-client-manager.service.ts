@@ -275,7 +275,7 @@ export class MCPClientManager implements OnDestroy {
             let timeoutId: number | null = null
             try {
                 return await Promise.race([
-                    this.callToolOnce(serverId, toolName, args),
+                    this.callToolOnce(serverId, toolName, args, signal),
                     new Promise<never>((_, reject) => {
                         timeoutId = window.setTimeout(() => {
                             reject(new Error(`Tool call timeout after ${timeout}ms`))
@@ -368,7 +368,7 @@ export class MCPClientManager implements OnDestroy {
     /**
      * 实际执行一次工具调用（内部方法）
      */
-    private async callToolOnce(serverId: string, toolName: string, args: unknown): Promise<unknown> {
+    private async callToolOnce(serverId: string, toolName: string, args: unknown, signal?: AbortSignal): Promise<unknown> {
         const client = this.clients.get(serverId)
         if (!client) {
             throw new Error(`MCP server ${serverId} not connected`)
@@ -382,7 +382,7 @@ export class MCPClientManager implements OnDestroy {
                 name: toolName,
                 arguments: args,
             },
-        })
+        }, signal)
 
         if (response.error) {
             throw new Error(response.error.message)

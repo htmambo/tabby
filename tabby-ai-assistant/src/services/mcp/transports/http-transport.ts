@@ -95,9 +95,14 @@ export class HTTPStreamTransport extends BaseTransport {
         super.destroy()
     }
 
-    async send(request: MCPRequest): Promise<MCPResponse> {
+    async send(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse> {
         if (!this.connected) {
             throw new Error('Transport not connected')
+        }
+
+        // 检查是否已取消
+        if (signal?.aborted) {
+            throw new DOMException('Operation cancelled', 'AbortError')
         }
 
         if (!request.id) {
@@ -105,8 +110,25 @@ export class HTTPStreamTransport extends BaseTransport {
         }
 
         return new Promise((resolve, reject) => {
-            this.pendingRequests.set(request.id, { resolve, reject })
-            void this.sendRaw(request)
+            // 监听取消信号
+            const abortHandler = () => {
+                this.pendingRequests.delete(request.id)
+                reject(new DOMException('Operation cancelled', 'AbortError'))
+            }
+            signal?.addEventListener('abort', abortHandler, { once: true })
+
+            this.pendingRequests.set(request.id, {
+                resolve: (value) => {
+                    signal?.removeEventListener('abort', abortHandler)
+                    resolve(value)
+                },
+                reject: (reason) => {
+                    signal?.removeEventListener('abort', abortHandler)
+                    reject(reason)
+                },
+            })
+
+            void this.sendRaw(request, signal)
                 .then(response => {
                     const pending = this.pendingRequests.get(request.id!)
                     if (!pending) {
@@ -125,8 +147,16 @@ export class HTTPStreamTransport extends BaseTransport {
     /**
      * 发送原始请求
      */
-    private async sendRaw(request: MCPRequest): Promise<MCPResponse> {
+    private async sendRaw(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse> {
         const timeout = this.options.timeout ?? 30000
+
+        // 创建 AbortController 用于合并 timeout 和外部 signal
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+        // 监听外部取消信号
+        const abortHandler = () => controller.abort()
+        signal?.addEventListener('abort', abortHandler, { once: true })
 
         try {
             // 获取代理 agent
@@ -140,7 +170,7 @@ export class HTTPStreamTransport extends BaseTransport {
                     ...this.headers,
                 },
                 body: JSON.stringify(request),
-                signal: AbortSignal.timeout(timeout),
+                signal: controller.signal,
                 ...(agent && { agent }),
             }
 
@@ -166,11 +196,18 @@ export class HTTPStreamTransport extends BaseTransport {
             // 处理普通 JSON 响应
             return await response.json()
         } catch (error) {
+            // 区分取消错误和其他错误
+            if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+                throw new DOMException('Operation cancelled', 'AbortError')
+            }
             if (error instanceof TypeError && error.message.includes('fetch')) {
                 // fetch 不可用（Electron 旧版本）
                 throw new Error('Network request failed. Please ensure the server URL is accessible.')
             }
             throw error
+        } finally {
+            clearTimeout(timeoutId)
+            signal?.removeEventListener('abort', abortHandler)
         }
     }
 

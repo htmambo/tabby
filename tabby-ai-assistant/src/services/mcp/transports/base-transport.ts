@@ -22,8 +22,10 @@ export abstract class BaseTransport {
 
     /**
      * 发送请求并等待响应
+     * @param request MCP 请求
+     * @param signal 可选的 AbortSignal，用于取消请求
      */
-    abstract send(request: MCPRequest): Promise<MCPResponse>
+    abstract send(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse>
 
     /**
      * 消息流 Observable

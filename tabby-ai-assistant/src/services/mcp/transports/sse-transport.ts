@@ -70,9 +70,14 @@ export class SSETransport extends BaseTransport {
         super.destroy()
     }
 
-    async send(request: MCPRequest): Promise<MCPResponse> {
+    async send(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse> {
         if (!this.connected) {
             throw new Error('Transport not connected')
+        }
+
+        // 检查是否已取消
+        if (signal?.aborted) {
+            throw new DOMException('Operation cancelled', 'AbortError')
         }
 
         if (!request.id) {
@@ -80,9 +85,25 @@ export class SSETransport extends BaseTransport {
         }
 
         return new Promise((resolve, reject) => {
-            this.pendingRequests.set(request.id, { resolve, reject })
+            // 监听取消信号
+            const abortHandler = () => {
+                this.pendingRequests.delete(request.id)
+                reject(new DOMException('Operation cancelled', 'AbortError'))
+            }
+            signal?.addEventListener('abort', abortHandler, { once: true })
 
-            void this.sendRequest(request)
+            this.pendingRequests.set(request.id, {
+                resolve: (value) => {
+                    signal?.removeEventListener('abort', abortHandler)
+                    resolve(value)
+                },
+                reject: (reason) => {
+                    signal?.removeEventListener('abort', abortHandler)
+                    reject(reason)
+                },
+            })
+
+            void this.sendRequest(request, signal)
                 .then(response => {
                     const pending = this.pendingRequests.get(request.id!)
                     if (pending && response && typeof response === 'object' && 'id' in response && response.id === request.id) {
@@ -278,8 +299,16 @@ export class SSETransport extends BaseTransport {
         }
     }
 
-    private async sendRequest(request: MCPRequest): Promise<MCPResponse|null> {
+    private async sendRequest(request: MCPRequest, signal?: AbortSignal): Promise<MCPResponse|null> {
         const timeout = 30000
+
+        // 创建 AbortController 用于合并 timeout 和外部 signal
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+        // 监听外部取消信号
+        const abortHandler = () => controller.abort()
+        signal?.addEventListener('abort', abortHandler, { once: true })
 
         try {
             const response = await fetch(this.messageUrl, {
@@ -289,7 +318,7 @@ export class SSETransport extends BaseTransport {
                     ...this.headers,
                 },
                 body: JSON.stringify(request),
-                signal: AbortSignal.timeout(timeout),
+                signal: controller.signal,
             })
 
             if (!response.ok) {
@@ -307,10 +336,17 @@ export class SSETransport extends BaseTransport {
 
             return await response.json()
         } catch (error) {
+            // 区分取消错误和其他错误
+            if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+                throw new DOMException('Operation cancelled', 'AbortError')
+            }
             if (error instanceof TypeError && error.message.includes('fetch')) {
                 throw new Error('Network request failed. Please ensure the server URL is accessible.')
             }
             throw error
+        } finally {
+            clearTimeout(timeoutId)
+            signal?.removeEventListener('abort', abortHandler)
         }
     }
 
