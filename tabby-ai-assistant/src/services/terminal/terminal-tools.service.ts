@@ -436,7 +436,7 @@ export class TerminalToolsService implements OnDestroy {
                 default:
                     // 检查是否是 MCP 工具
                     if (toolCall.name.startsWith('mcp_')) {
-                        result = await this.mcpManager.executeMCPTool(toolCall.name, toolCall.input)
+                        result = await this.mcpManager.executeMCPTool(toolCall.name, toolCall.input, context?.signal)
                         this.logger.info('MCP tool executed', { name: toolCall.name })
                     } else {
                         throw new Error(`Unknown tool: ${toolCall.name}`)

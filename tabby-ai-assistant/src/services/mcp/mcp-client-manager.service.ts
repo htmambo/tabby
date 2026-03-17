@@ -245,7 +245,14 @@ export class MCPClientManager implements OnDestroy {
     /**
      * 调用 MCP 工具（带超时和重试）
      */
-    async callTool(serverId: string, toolName: string, args: unknown): Promise<unknown> {
+    /**
+     * 调用 MCP 工具
+     * @param serverId 服务器 ID
+     * @param toolName 工具名称
+     * @param args 工具参数
+     * @param signal 可选的 AbortSignal，用于取消操作
+     */
+    async callTool(serverId: string, toolName: string, args: unknown, signal?: AbortSignal): Promise<unknown> {
         const client = this.clients.get(serverId)
         if (!client) {
             throw new Error(`MCP server ${serverId} not connected`)
@@ -255,11 +262,16 @@ export class MCPClientManager implements OnDestroy {
             throw new Error(`MCP server ${serverId} is not connected`)
         }
 
+        // 检查是否已取消
+        if (signal?.aborted) {
+            throw new DOMException('Operation cancelled', 'AbortError')
+        }
+
         // 获取超时配置
         const timeout = client.config.timeout ?? this.DEFAULT_TIMEOUT
 
-        // 带超时的调用
-        const callWithTimeout = async (): Promise<unknown> => {
+        // 带超时和取消的调用
+        const callWithTimeoutAndAbort = async (): Promise<unknown> => {
             let timeoutId: number | null = null
             try {
                 return await Promise.race([
@@ -268,6 +280,13 @@ export class MCPClientManager implements OnDestroy {
                         timeoutId = window.setTimeout(() => {
                             reject(new Error(`Tool call timeout after ${timeout}ms`))
                         }, timeout)
+                        // 监听取消信号
+                        signal?.addEventListener('abort', () => {
+                            if (timeoutId !== null) {
+                                window.clearTimeout(timeoutId)
+                            }
+                            reject(new DOMException('Operation cancelled', 'AbortError'))
+                        }, { once: true })
                     }),
                 ])
             } finally {
@@ -283,8 +302,13 @@ export class MCPClientManager implements OnDestroy {
         // 带重试的调用
         let lastError: Error | undefined = undefined
         for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
+            // 每次重试前检查取消
+            if (signal?.aborted) {
+                throw new DOMException('Operation cancelled', 'AbortError')
+            }
+
             try {
-                const result = await callWithTimeout()
+                const result = await callWithTimeoutAndAbort()
 
                 // 记录成功调用
                 this.logToolCall({
@@ -299,6 +323,11 @@ export class MCPClientManager implements OnDestroy {
 
                 return result
             } catch (error: any) {
+                // 如果是取消错误，直接抛出
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    throw error
+                }
+
                 lastError = error
 
                 // 如果还有重试次数，等待后重试
@@ -310,7 +339,7 @@ export class MCPClientManager implements OnDestroy {
                         attempt: attempt + 1,
                         error: error.message,
                     })
-                    await this.sleep(delay)
+                    await this.sleep(delay, signal)
                 }
             }
         }
@@ -384,10 +413,14 @@ export class MCPClientManager implements OnDestroy {
 
     /**
      * 调用工具并格式化结果
+     * @param serverId 服务器 ID
+     * @param toolName 工具名称
+     * @param args 工具参数
+     * @param signal 可选的 AbortSignal，用于取消操作
      */
-    async callToolFormatted(serverId: string, toolName: string, args: unknown): Promise<string> {
+    async callToolFormatted(serverId: string, toolName: string, args: unknown, signal?: AbortSignal): Promise<string> {
         try {
-            const result = await this.callTool(serverId, toolName, args)
+            const result = await this.callTool(serverId, toolName, args, signal)
 
             // 格式化结果
             if (typeof result === 'string') {
@@ -403,6 +436,10 @@ export class MCPClientManager implements OnDestroy {
 
             return JSON.stringify(result, null, 2)
         } catch (error: any) {
+            // 如果是取消错误，返回特定消息
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                return 'Error: Operation cancelled'
+            }
             return `Error: ${error.message}`
         }
     }
@@ -460,8 +497,11 @@ export class MCPClientManager implements OnDestroy {
 
     /**
      * 执行 MCP 工具调用
+     * @param toolName 完整工具名称（格式：mcp_{clientId}_{toolName}）
+     * @param args 工具参数
+     * @param signal 可选的 AbortSignal，用于取消操作
      */
-    async executeMCPTool(toolName: string, args: unknown): Promise<string> {
+    async executeMCPTool(toolName: string, args: unknown, signal?: AbortSignal): Promise<string> {
         const parsed = this.parseToolCall(toolName)
         if (!parsed) {
             return 'Error: Invalid MCP tool name format'
@@ -470,8 +510,12 @@ export class MCPClientManager implements OnDestroy {
         const { clientId, toolName: actualToolName } = parsed
 
         try {
-            return await this.callToolFormatted(clientId, actualToolName, args)
+            return await this.callToolFormatted(clientId, actualToolName, args, signal)
         } catch (error: any) {
+            // 如果是取消错误，返回特定消息
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                return 'Error: Operation cancelled'
+            }
             return `Error: ${error.message}`
         }
     }
@@ -691,7 +735,13 @@ export class MCPClientManager implements OnDestroy {
     /**
      * 延迟辅助方法
      */
-    private sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms))
+    private sleep(ms: number, signal?: AbortSignal): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(resolve, ms)
+            signal?.addEventListener('abort', () => {
+                clearTimeout(timeoutId)
+                reject(new DOMException('Operation cancelled', 'AbortError'))
+            }, { once: true })
+        })
     }
 }
