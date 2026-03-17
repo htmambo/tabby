@@ -8,6 +8,7 @@ import { ConfigProviderService } from '../../services/core/config-provider.servi
 import { ConsentManagerService } from '../../services/security/consent-manager.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ToastService } from '../../services/core/toast.service'
+import { CommandCacheService, CommandCacheStats } from '../../services/chat/command-cache.service'
 import { getTabbyBridge } from '../../../../app/src/tabby-bridge'
 
 /**
@@ -93,6 +94,49 @@ export interface DataFileInfo {
                             <span class="stat-number">{{ statistics.totalConsents }}</span>
                             <span class="stat-text">{{ t?.dataSettings?.consents || '授权记录' }}</span>
                         </div>
+                    </div>
+            </div>
+
+            <!-- 命令缓存设置 -->
+            <div class="cache-section">
+                <div class="section-header-inline">
+                    <h4 class="section-subtitle">
+                        <i class="fa fa-bolt"></i>
+                        {{ t?.dataSettings?.commandCache || '命令缓存' }}
+                    </h4>
+                    <div class="cache-actions">
+                        <button type="button" class="btn-action" (click)="toggleCache()" [class.active]="cacheEnabled">
+                            <i class="fa" [ngClass]="cacheEnabled ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
+                            <span>{{ cacheEnabled ? '已启用' : '已禁用' }}</span>
+                        </button>
+                        <button type="button" class="btn-action" (click)="resetCacheStats()" title="重置统计">
+                            <i class="fa fa-chart-line"></i>
+                            <span>重置统计</span>
+                        </button>
+                        <button type="button" class="btn-action danger" (click)="clearCache()" title="清空缓存">
+                            <i class="fa fa-trash-alt"></i>
+                            <span>清空缓存</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="cache-stats-grid">
+                    <div class="cache-stat-item">
+                        <span class="cache-stat-label">缓存条目</span>
+                        <span class="cache-stat-value">{{ cacheStats.totalEntries }}</span>
+                    </div>
+                    <div class="cache-stat-item">
+                        <span class="cache-stat-label">命中次数</span>
+                        <span class="cache-stat-value success">{{ cacheStats.totalHits }}</span>
+                    </div>
+                    <div class="cache-stat-item">
+                        <span class="cache-stat-label">未命中次数</span>
+                        <span class="cache-stat-value warning">{{ cacheStats.totalMisses }}</span>
+                    </div>
+                    <div class="cache-stat-item">
+                        <span class="cache-stat-label">命中率</span>
+                        <span class="cache-stat-value" [class.success]="cacheStats.hitRate > 0.5" [class.warning]="cacheStats.hitRate <= 0.5 && cacheStats.hitRate > 0" [class.muted]="cacheStats.hitRate === 0">
+                            {{ (cacheStats.hitRate * 100).toFixed(1) }}%
+                        </span>
                     </div>
                 </div>
             </div>
@@ -375,6 +419,67 @@ export interface DataFileInfo {
 
         .stat-text {
             font-size: 0.75rem;
+            color: var(--ai-text-secondary);
+        }
+
+        /* 命令缓存区域 */
+        .cache-section {
+            background: var(--ai-bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--ai-border);
+            margin-bottom: 20px;
+        }
+
+        .cache-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .cache-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .cache-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            background: var(--ai-bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--ai-border);
+        }
+
+        .cache-stat-label {
+            font-size: 0.75rem;
+            color: var(--ai-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .cache-stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--ai-text-primary);
+        }
+
+        .cache-stat-value.success {
+            color: #10b981;
+        }
+
+        .cache-stat-value.warning {
+            color: #f59e0b;
+        }
+
+        .cache-stat-value.muted {
             color: var(--ai-text-secondary);
         }
 
@@ -748,6 +853,20 @@ export class DataSettingsComponent implements OnInit {
         totalConsents: 0,
     }
 
+    /** 命令缓存统计 */
+    cacheStats: CommandCacheStats = {
+        totalEntries: 0,
+        totalHits: 0,
+        totalMisses: 0,
+        hitRate: 0,
+        expiredEntries: 0,
+        oldestEntry: null,
+        newestEntry: null,
+    }
+
+    /** 命令缓存是否启用 */
+    cacheEnabled = true
+
     /** 是否需要从 localStorage 迁移 */
     needsMigration = false
 
@@ -758,6 +877,7 @@ export class DataSettingsComponent implements OnInit {
         private checkpointManager: CheckpointManager,
         private configProvider: ConfigProviderService,
         private consentManager: ConsentManagerService,
+        private commandCache: CommandCacheService,
         private logger: LoggerService,
         private toast: ToastService,
         private translate: TranslateService,
@@ -767,6 +887,7 @@ export class DataSettingsComponent implements OnInit {
         this.loadDataDirectory()
         this.loadDataFiles()
         this.loadStatistics()
+        this.loadCacheStats()
         this.checkMigrationStatus()
     }
 
@@ -799,6 +920,43 @@ export class DataSettingsComponent implements OnInit {
         // 检查点统计
         const checkpointStats = this.checkpointManager.getStatistics()
         this.statistics.totalCheckpoints = checkpointStats.totalCheckpoints
+    }
+
+    /**
+     * 加载命令缓存统计
+     */
+    private loadCacheStats(): void {
+        this.cacheStats = this.commandCache.getStats()
+        this.cacheEnabled = this.commandCache.isEnabled()
+    }
+
+    /**
+     * 切换命令缓存启用状态
+     */
+    toggleCache(): void {
+        this.commandCache.setEnabled(!this.cacheEnabled)
+        this.cacheEnabled = this.commandCache.isEnabled()
+        this.toast.success(this.cacheEnabled ? '命令缓存已启用' : '命令缓存已禁用')
+    }
+
+    /**
+     * 清空命令缓存
+     */
+    clearCache(): void {
+        if (confirm('确定要清空命令缓存吗？此操作不可恢复。')) {
+            this.commandCache.clear()
+            this.loadCacheStats()
+            this.toast.success('命令缓存已清空')
+        }
+    }
+
+    /**
+     * 重置缓存统计
+     */
+    resetCacheStats(): void {
+        this.commandCache.resetStats()
+        this.loadCacheStats()
+        this.toast.success('缓存统计已重置')
     }
 
     /**

@@ -47,8 +47,16 @@
             <label>替代方案:</label>
             <div class="alternatives-list">
                 <div *ngFor="let alt of command.alternatives; trackBy: trackAlternative" class="alternative-item" (click)="selectAlternative(alt)">
-                    <code>{{ alt.command }}</code>
-                    <span class="alt-confidence">{{ (alt.confidence * 100).toFixed(0) }}%</span>
+                    <div class="alt-main">
+                        <code>{{ alt.command }}</code>
+                        <div class="alt-explanation" *ngIf="alt.explanation">{{ alt.explanation }}</div>
+                    </div>
+                    <div class="alt-meta">
+                        <div class="alt-tags" *ngIf="alt.tags && alt.tags.length > 0">
+                            <span *ngFor="let tag of alt.tags" class="alt-tag" [ngClass]="'tag-' + tag">{{ tag }}</span>
+                        </div>
+                        <span class="alt-confidence">{{ (alt.confidence * 100).toFixed(0) }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
