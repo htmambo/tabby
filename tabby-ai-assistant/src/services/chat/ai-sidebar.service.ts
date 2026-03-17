@@ -23,6 +23,11 @@ export interface AiSidebarConfig {
     sidebarVisible?: boolean;
     sidebarCollapsed?: boolean;
     sidebarWidth?: number;
+    displayMode?: 'sidebar' | 'floating';  // 显示模式：侧边栏或浮动窗口
+    floatingX?: number;  // 浮动窗口 X 坐标
+    floatingY?: number;  // 浮动窗口 Y 坐标
+    floatingWidth?: number;  // 浮动窗口宽度
+    floatingHeight?: number;  // 浮动窗口高度
 }
 
 /**
@@ -48,6 +53,18 @@ export class AiSidebarService implements ChatInterfaceOpener {
     private readonly DEFAULT_WIDTH = 320
     private currentWidth: number = this.DEFAULT_WIDTH
     private isResizing = false
+
+    // Floating window constants
+    private readonly DEFAULT_FLOATING_WIDTH = 400
+    private readonly DEFAULT_FLOATING_HEIGHT = 500
+    private readonly MIN_FLOATING_WIDTH = 300
+    private readonly MIN_FLOATING_HEIGHT = 300
+    private isDragging = false
+    private dragStartX = 0
+    private dragStartY = 0
+    private floatingX = 0
+    private floatingY = 0
+    private cleanupDragListeners: (() => void) | null = null
 
     // 预设消息 Subject（用于快捷键功能）
     private presetMessageSubject = new Subject<PresetMessage>()
@@ -159,9 +176,32 @@ export class AiSidebarService implements ChatInterfaceOpener {
      */
     initialize(): void {
         const pluginConfig = this.getPluginConfig()
-        // 默认显示 sidebar，除非明确设置为隐藏
-        if (pluginConfig.sidebarVisible !== false) {
+        // 默认不自动显示，除非明确设置为显示
+        if (pluginConfig.sidebarVisible === true) {
             this.show()
+        }
+    }
+
+    /**
+     * 获取显示模式
+     */
+    getDisplayMode(): 'sidebar' | 'floating' {
+        const pluginConfig = this.getPluginConfig()
+        return pluginConfig.displayMode ?? 'sidebar'
+    }
+
+    /**
+     * 设置显示模式
+     */
+    setDisplayMode(mode: 'sidebar' | 'floating'): void {
+        const pluginConfig = this.getPluginConfig()
+        pluginConfig.displayMode = mode
+        this.savePluginConfig(pluginConfig)
+
+        // 如果正在显示，重新创建以应用新模式
+        if (this._isVisible) {
+            this.destroySidebar()
+            this.createSidebar()
         }
     }
 
@@ -191,12 +231,13 @@ export class AiSidebarService implements ChatInterfaceOpener {
     /**
      * 创建 sidebar 组件
      *
-     * 使用固定定位方案：
-     * 1. 侧边栏 position: fixed，固定在左侧或右侧
-     * 2. 主内容区通过 margin 推开
-     * 这样不改变任何现有元素的 flex 布局
+     * 支持两种显示模式：
+     * 1. sidebar 模式：固定在左侧或右侧，推开主内容区
+     * 2. floating 模式：可拖拽的浮动窗口
      */
     private createSidebar(): void {
+        const displayMode = this.getDisplayMode()
+
         // 使用 createComponent API，传入 EnvironmentInjector 以正确解析模块级依赖
         this.sidebarComponentRef = createComponent(AiSidebarComponent, {
             environmentInjector: this.environmentInjector,
@@ -215,10 +256,29 @@ export class AiSidebarService implements ChatInterfaceOpener {
         domElem.style.width = '100%'
         domElem.style.overflow = 'hidden'
 
-        // 创建 wrapper 元素 - 使用固定定位
+        // 创建 wrapper 元素
         const wrapper = document.createElement('div')
         wrapper.className = 'ai-sidebar-wrapper'
 
+        if (displayMode === 'floating') {
+            // 浮动窗口模式
+            this.setupFloatingWrapper(wrapper, domElem)
+        } else {
+            // 侧边栏模式
+            this.setupSidebarWrapper(wrapper, domElem)
+        }
+
+        // 注入服务引用到组件
+        if (this.sidebarComponentRef) {
+            const component = this.sidebarComponentRef.instance
+            component.sidebarService = this
+        }
+    }
+
+    /**
+     * 设置侧边栏模式的 wrapper
+     */
+    private setupSidebarWrapper(wrapper: HTMLElement, domElem: HTMLElement): void {
         // 加载保存的宽度和位置
         this.currentWidth = this.loadSidebarWidth()
         const position = this.getSidebarPosition()
@@ -295,12 +355,157 @@ export class AiSidebarService implements ChatInterfaceOpener {
 
         // 注入布局 CSS - 只添加 margin-left 把主内容推开
         this.injectLayoutCSS()
+    }
 
-        // 注入服务引用到组件
-        if (this.sidebarComponentRef) {
-            const component = this.sidebarComponentRef.instance
-            component.sidebarService = this
+    /**
+     * 设置浮动窗口模式的 wrapper
+     */
+    private setupFloatingWrapper(wrapper: HTMLElement, domElem: HTMLElement): void {
+        const pluginConfig = this.getPluginConfig()
+
+        // 加载保存的位置和大小
+        const savedX = pluginConfig.floatingX
+        const savedY = pluginConfig.floatingY
+        const savedWidth = pluginConfig.floatingWidth ?? this.DEFAULT_FLOATING_WIDTH
+        const savedHeight = pluginConfig.floatingHeight ?? this.DEFAULT_FLOATING_HEIGHT
+
+        // 计算初始位置（如果没保存过，则居中显示）
+        if (savedX !== undefined && savedY !== undefined) {
+            this.floatingX = savedX
+            this.floatingY = savedY
+        } else {
+            // 居中显示
+            this.floatingX = Math.max(0, (window.innerWidth - savedWidth) / 2)
+            this.floatingY = Math.max(0, (window.innerHeight - savedHeight) / 3)
         }
+
+        wrapper.style.cssText = `
+            position: fixed;
+            left: ${this.floatingX}px;
+            top: ${this.floatingY}px;
+            width: ${savedWidth}px;
+            height: ${savedHeight}px;
+            display: flex;
+            flex-direction: column;
+            background: var(--body-bg, var(--bs-body-bg, #1e1e1e));
+            border: 1px solid var(--bs-border-color, var(--theme-bg-more-2, #333));
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 1001;
+            overflow: hidden;
+            resize: both;
+        `
+
+        // 创建拖拽标题栏
+        const dragHandle = document.createElement('div')
+        dragHandle.className = 'ai-floating-drag-handle'
+        dragHandle.style.cssText = `
+            flex-shrink: 0;
+            height: 28px;
+            background: var(--bs-body-bg, #2d2d2d);
+            border-bottom: 1px solid var(--bs-border-color, #333);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            user-select: none;
+        `
+
+        // 添加拖拽图标
+        const dragIcon = document.createElement('span')
+        dragIcon.innerHTML = '⋮⋮'
+        dragIcon.style.cssText = `
+            color: var(--ai-text-secondary, #adb5bd);
+            font-size: 12px;
+            letter-spacing: 2px;
+        `
+        dragHandle.appendChild(dragIcon)
+
+        // 设置拖拽逻辑
+        this.setupDragHandler(dragHandle, wrapper)
+
+        wrapper.appendChild(dragHandle)
+        wrapper.appendChild(domElem)
+
+        // 插入到 body
+        document.body.appendChild(wrapper)
+
+        this.sidebarElement = wrapper
+    }
+
+    /**
+     * 设置拖拽逻辑（浮动窗口）
+     */
+    private setupDragHandler(handle: HTMLElement, wrapper: HTMLElement): void {
+        const onMouseDown = (e: MouseEvent) => {
+            // 如果点击的是按钮或输入框，不触发拖拽
+            if ((e.target as HTMLElement).tagName === 'BUTTON' ||
+                (e.target as HTMLElement).tagName === 'INPUT' ||
+                (e.target as HTMLElement).tagName === 'TEXTAREA' ||
+                (e.target as HTMLElement).tagName === 'SELECT') {
+                return
+            }
+
+            e.preventDefault()
+            this.isDragging = true
+            this.dragStartX = e.clientX - this.floatingX
+            this.dragStartY = e.clientY - this.floatingY
+
+            document.body.style.cursor = 'move'
+            document.body.style.userSelect = 'none'
+        }
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!this.isDragging) {return}
+
+            const newX = e.clientX - this.dragStartX
+            const newY = e.clientY - this.dragStartY
+
+            // 限制在屏幕范围内
+            this.floatingX = Math.max(0, Math.min(window.innerWidth - 100, newX))
+            this.floatingY = Math.max(0, Math.min(window.innerHeight - 50, newY))
+
+            wrapper.style.left = `${this.floatingX}px`
+            wrapper.style.top = `${this.floatingY}px`
+        }
+
+        const onMouseUp = () => {
+            if (!this.isDragging) {return}
+            this.isDragging = false
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+
+            // 保存位置
+            this.saveFloatingPosition()
+        }
+
+        handle.addEventListener('mousedown', onMouseDown)
+        document.addEventListener('mousemove', onMouseMove)
+        document.addEventListener('mouseup', onMouseUp)
+
+        this.cleanupDragListeners = () => {
+            handle.removeEventListener('mousedown', onMouseDown)
+            document.removeEventListener('mousemove', onMouseMove)
+            document.removeEventListener('mouseup', onMouseUp)
+        }
+    }
+
+    /**
+     * 保存浮动窗口位置
+     */
+    private saveFloatingPosition(): void {
+        const pluginConfig = this.getPluginConfig()
+        pluginConfig.floatingX = this.floatingX
+        pluginConfig.floatingY = this.floatingY
+
+        // 保存大小
+        if (this.sidebarElement) {
+            const rect = this.sidebarElement.getBoundingClientRect()
+            pluginConfig.floatingWidth = Math.max(this.MIN_FLOATING_WIDTH, rect.width)
+            pluginConfig.floatingHeight = Math.max(this.MIN_FLOATING_HEIGHT, rect.height)
+        }
+
+        this.savePluginConfig(pluginConfig)
     }
 
     /**
@@ -320,6 +525,11 @@ export class AiSidebarService implements ChatInterfaceOpener {
         if (this.cleanupResizeHandleListeners) {
             this.cleanupResizeHandleListeners()
             this.cleanupResizeHandleListeners = null
+        }
+
+        if (this.cleanupDragListeners) {
+            this.cleanupDragListeners()
+            this.cleanupDragListeners = null
         }
 
         if (this.sidebarComponentRef) {

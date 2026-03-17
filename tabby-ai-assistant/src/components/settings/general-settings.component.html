@@ -18,7 +18,7 @@
         <div class="section-header">
             <h4>{{ t.general.defaultProvider }}</h4>
             <span class="section-info">
-                {{ translate._('general.providerCount', { count: configuredProviderCount }) }}
+                {{ 'Provider Count' | translate:{ count: configuredProviderCount } }}
                 <strong>{{ getProviderLabel(selectedProvider) }}</strong>
             </span>
         </div>
@@ -153,6 +153,18 @@
                         </button>
                     </div>
                     <p class="form-description">{{ t.general.sidebarPositionDesc || '选择 AI 侧边栏显示在窗口左侧还是右侧' }}</p>
+                </div>
+
+                <div class="form-group">
+                    <label>{{ t.general.displayMode || '显示模式' }}</label>
+                    <div class="position-selector">
+                        <button *ngFor="let mode of displayModes; trackBy: trackDisplayMode" class="position-btn"
+                            [class.active]="displayMode === mode.value" (click)="updateDisplayMode(mode.value)" type="button">
+                            <i class="fa" [ngClass]="mode.icon"></i>
+                            <span>{{ mode.label }}</span>
+                        </button>
+                    </div>
+                    <p class="form-description">{{ t.general.displayModeDesc || '选择 AI 助手的显示方式：侧边栏模式固定在窗口一侧，浮动窗口模式可自由拖拽' }}</p>
                 </div>
             </div>
 

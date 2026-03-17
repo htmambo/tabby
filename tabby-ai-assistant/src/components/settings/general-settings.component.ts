@@ -23,6 +23,7 @@ export class GeneralSettingsComponent implements OnInit {
     isEnabled = true
     language = 'zh-CN'
     sidebarPosition: 'left' | 'right' = 'right'
+    displayMode: 'sidebar' | 'floating' = 'sidebar'
 
     // 本地供应商状态缓存
     private localProviderStatus: Record<string, { text: string; color: string; icon: string; time: number }> = {}
@@ -72,6 +73,11 @@ export class GeneralSettingsComponent implements OnInit {
         { value: 'right', label: '右侧', icon: 'fa-arrow-right' },
     ]
 
+    displayModes = [
+        { value: 'sidebar', label: '侧边栏', icon: 'fa-columns' },
+        { value: 'floating', label: '浮动窗口', icon: 'fa-window-restore' },
+    ]
+
     // 提供商模板，用于显示名称
     private providerNames: Record<string, string> = {
         openai: 'OpenAI',
@@ -106,6 +112,7 @@ export class GeneralSettingsComponent implements OnInit {
         this.isEnabled = this.config.isEnabled() ?? true
         this.language = this.config.get('language', 'zh-CN') ?? 'zh-CN'
         this.sidebarPosition = this.sidebarService.getSidebarPosition()
+        this.displayMode = this.sidebarService.getDisplayMode()
     }
 
     /**
@@ -115,6 +122,15 @@ export class GeneralSettingsComponent implements OnInit {
         this.sidebarPosition = position
         this.sidebarService.setSidebarPosition(position)
         this.logger.info('Sidebar position updated', { position })
+    }
+
+    /**
+     * 更新显示模式
+     */
+    updateDisplayMode(mode: 'sidebar' | 'floating'): void {
+        this.displayMode = mode
+        this.sidebarService.setDisplayMode(mode)
+        this.logger.info('Display mode updated', { mode })
     }
 
     /**
@@ -166,6 +182,10 @@ export class GeneralSettingsComponent implements OnInit {
 
     trackSidebarPosition(_index: number, position: { value: string }): string {
         return position.value
+    }
+
+    trackDisplayMode(_index: number, mode: { value: string }): string {
+        return mode.value
     }
 
     private isLocalProvider(providerName: string): boolean {
