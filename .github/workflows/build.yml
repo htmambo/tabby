@@ -35,7 +35,7 @@ jobs:
       run: yarn run build:typings
 
     - name: Lint
-      run: yarn run lint
+      run: yarn run lint:ci
 
   macOS-Build:
     runs-on: macos-15

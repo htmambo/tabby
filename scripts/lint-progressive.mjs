@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
 
 function getChangedFiles () {
     const base = process.env.LINT_BASE
@@ -15,9 +16,11 @@ function getChangedFiles () {
         .filter(Boolean)
 }
 
+const lintAllChanged = process.env.LINT_ALL_CHANGED === 'true'
 const targets = getChangedFiles()
     .filter(file => file.endsWith('.ts'))
-    .filter(file => file.startsWith('app/src/') || file.startsWith('tabby-core/src/'))
+    .filter(file => lintAllChanged || file.startsWith('app/src/') || file.startsWith('tabby-core/src/'))
+    .filter(file => fs.existsSync(file))
 
 if (!targets.length) {
     console.log('lint:progressive: no matching files to lint')
@@ -27,4 +30,8 @@ if (!targets.length) {
 const eslintBin = './node_modules/.bin/eslint'
 execFileSync(eslintBin, ['--config', '.eslintrc.progressive.yml', '--ext', 'ts', ...targets], {
     stdio: 'inherit',
+    env: {
+        ...process.env,
+        ESLINT_USE_FLAT_CONFIG: 'false',
+    },
 })
