@@ -48,7 +48,7 @@
 !
 ! ANSI 0 / black：
 ! 用于 SGR 30，也常被终端应用拿来表示深色背景块、阴影和低对比分隔元素。
-#define ansi_black            #120607
+#define ansi_black            #57030a
 !
 ! ANSI 1 / red：
 ! 主要错误色 / 危险色。相比原始 Red Alert 的红色更深一些。
@@ -87,7 +87,7 @@
 !
 ! ANSI 8 / bright black：
 ! 常见于弱化文本、行号、低存在感边框和非激活提示符。
-#define ansi_bright_black     #4b2e30
+#define ansi_bright_black     #5e1d21
 !
 ! ANSI 9 / bright red：
 ! 更强的错误色 / 高亮红，适合粗体红文本和更紧急的警示强调。

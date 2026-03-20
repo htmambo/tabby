@@ -1596,7 +1596,6 @@ export class AppRootComponent implements OnDestroy {
         this.destroyed = true
         this.pendingPreloadHideCheck = this.clearScheduledTimeout(this.pendingPreloadHideCheck)
         this.pendingRoyalActiveSync = this.clearScheduledTimeout(this.pendingRoyalActiveSync)
-        this.pendingActiveTabSync = this.clearScheduledTimeout(this.pendingActiveTabSync)
         this.pendingViewRefresh = this.clearScheduledTimeout(this.pendingViewRefresh)
         this.pendingVibrancySync = this.clearScheduledTimeout(this.pendingVibrancySync)
         this.royalSidebarPreviewCloseHandle = this.clearScheduledTimeout(this.royalSidebarPreviewCloseHandle)
