@@ -80,7 +80,7 @@ export class ThemesService implements OnDestroy {
 
         const background = this.getVibrancyBackground(Color(theme.background), configStore.appearance)
         // const background = theme.background
-        const backgroundMore = more(background.string(), 0.25).string()
+        const backgroundMore = more(background.string(), 0.65).string()
         const themeBackgroundRgb = Color(theme.background).rgb().array().map((x: number) => Math.round(x)).join(', ')
         const themeForegroundRgb = Color(theme.foreground).rgb().array().map((x: number) => Math.round(x)).join(', ')
         const bodyBackgroundRgb = background.rgb().array().map((x: number) => Math.round(x)).join(', ')

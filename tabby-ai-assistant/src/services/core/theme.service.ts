@@ -156,13 +156,7 @@ ${themeStyles}
 /* Tech theme specific styles */
 ${this.containerSelectors.join(',\n')} {
     /* 扫描线背景 */
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        color-mix(in srgb, var(--ai-primary) 3%, transparent) 2px,
-        color-mix(in srgb, var(--ai-primary) 3%, transparent) 4px
-    ) !important;
+    background: var(--ai-assistant-message, #2d3748) !important;
 
     /* 发光按钮 */
     .btn {

@@ -628,13 +628,7 @@
     }
 
     .ai-chat-container {
-        background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0, 255, 249, 0.02) 2px,
-            rgba(0, 255, 249, 0.02) 4px
-        ) !important;
+        background: var(--ai-assistant-message, #2d3748) !important;
 
         .message-item {
             &.user-message {

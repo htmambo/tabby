@@ -72,13 +72,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 255, 249, 0.1) 2px,
-                rgba(0, 255, 249, 0.1) 4px
-            ) !important;
+            background: var(--ai-assistant-message, #2d3748) !important;
         }
 
         // 角落装饰

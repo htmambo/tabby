@@ -2,6 +2,7 @@
 import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
+import { Angular21CompatibleToastComponent } from './angular21-compatible-toast.component'
 
 type ZoneSymbolProvider = {
     __symbol__?: (name: string) => string
@@ -23,12 +24,14 @@ function patchZoneAwareRequestAnimationFrame (): void {
 export function getRootModule (plugins: any[]) {
     const imports = [
         BrowserModule,
+        Angular21CompatibleToastComponent,
         ...plugins,
         ToastrModule.forRoot({
             positionClass: 'toast-bottom-center',
             toastClass: 'toast',
             preventDuplicates: true,
             extendedTimeOut: 1000,
+            toastComponent: Angular21CompatibleToastComponent,
         }),
     ]
 

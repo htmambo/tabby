@@ -115,7 +115,6 @@ export class AppRootComponent implements OnDestroy {
     @HostBinding('class.platform-linux') get platformClassLinux (): boolean { return this.hostApp.platform === Platform.Linux }
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
-    activeTab: BaseTabComponent|null = null
     unsortedTabs: BaseTabComponent[] = []
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
@@ -159,7 +158,6 @@ export class AppRootComponent implements OnDestroy {
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
-    private pendingActiveTabSync: number|null = null
     private pendingViewRefresh: number|null = null
     private royalSidebarPreviewCloseHandle: number|null = null
     private royalSidebarTransitionToken: number|null = null
@@ -219,18 +217,7 @@ export class AppRootComponent implements OnDestroy {
         }, delay)
     }
 
-    private scheduleActiveTabSync (delay = 0): void {
-        if (this.pendingActiveTabSync !== null) {
-            return
-        }
-        this.pendingActiveTabSync = this.scheduleTimeout(() => {
-            this.pendingActiveTabSync = null
-            this.runInAngular(() => {
-                this.activeTab = this.app.activeTab
-                this.scheduleViewRefresh()
-            })
-        }, delay)
-    }
+
 
     private scheduleViewRefresh (delay = 0): void {
         if (this.pendingViewRefresh !== null) {
@@ -285,7 +272,6 @@ export class AppRootComponent implements OnDestroy {
         private workspaceLayout: WorkspaceLayoutService,
     ) {
         this.restoreRoyalPreferences()
-        this.activeTab = this.app.activeTab
         this.recomputeRoyalSidebarGroups()
 
         // document.querySelector('app-root')?.remove()
@@ -293,7 +279,6 @@ export class AppRootComponent implements OnDestroy {
         this.logger.debug('v', this.platform.getAppVersion())
 
         this.app.activeTabChange$.subscribe(() => {
-            this.scheduleActiveTabSync()
             this.scheduleRoyalActiveSync()
         })
         this.app.tabsChanged$.subscribe(() => this.scheduleRoyalActiveSync())
