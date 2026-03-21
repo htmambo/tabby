@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, Optional, Inject, HostBinding, HostListener, NgZone } from '@angular/core'
+import { Component, Input, HostBinding, HostListener, Injector, NgZone } from '@angular/core'
 import { auditTime } from 'rxjs'
 import { TabContextMenuItemProvider } from '../api/tabContextMenuProvider'
 import { BaseTabComponent } from './baseTab.component'
-import { HotkeysService } from '../services/hotkeys.service'
 import { AppService } from '../services/app.service'
 import { HostAppService, Platform } from '../api/hostApp'
 import { ConfigService } from '../services/config.service'
@@ -25,25 +24,33 @@ export class TabHeaderComponent extends BaseComponent {
     @Input() progress: number|null
     Platform = Platform
     private dragEndTimeout: number | null = null
+    private contextMenuProvidersInstance: TabContextMenuItemProvider[] | null = null
+    private platformInstance: PlatformService | null = null
 
     constructor (
+        private injector: Injector,
         public app: AppService,
         public config: ConfigService,
         public hostApp: HostAppService,
-        private hotkeys: HotkeysService,
-        private platform: PlatformService,
         private zone: NgZone,
-        @Optional() @Inject(TabContextMenuItemProvider) protected contextMenuProviders: TabContextMenuItemProvider[],
     ) {
         super()
-        this.subscribeUntilDestroyed(this.hotkeys.hotkey$, (hotkey) => {
-            if (this.app.activeTab === this.tab) {
-                if (hotkey === 'rename-tab') {
-                    this.app.renameTab(this.tab)
-                }
-            }
-        })
-        this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
+    }
+
+    protected get contextMenuProviders (): TabContextMenuItemProvider[] {
+        if (this.contextMenuProvidersInstance !== null) {
+            return this.contextMenuProvidersInstance
+        }
+
+        const providers = (this.injector.get<any>(TabContextMenuItemProvider, null, { optional: true }) ?? []) as TabContextMenuItemProvider[]
+        providers.sort((a: TabContextMenuItemProvider, b: TabContextMenuItemProvider) => a.weight - b.weight)
+        this.contextMenuProvidersInstance = providers
+        return providers
+    }
+
+    private get platform (): PlatformService {
+        this.platformInstance ??= this.injector.get(PlatformService)
+        return this.platformInstance
     }
 
     ngOnInit () {

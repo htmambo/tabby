@@ -10,11 +10,11 @@ import { NotificationsService } from './notifications.service'
 import { SelectorService } from './selector.service'
 import { SettingsTabOpener } from '../api/settingsTabOpener'
 import deepClone from 'clone-deep'
-import { v4 as uuidv4 } from 'uuid'
-import slugify from 'slugify'
 
 @Injectable({ providedIn: 'root' })
 export class ProfilesService {
+    private uuidModulePromise: Promise<typeof import('uuid')> | null = null
+    private slugifyModulePromise: Promise<typeof import('slugify')> | null = null
     private profileDefaults: Profile = {
         id: '',
         type: '',
@@ -39,6 +39,16 @@ export class ProfilesService {
         @Inject(ProfileProvider) private profileProviders: ProfileProvider<Profile>[],
         @Optional() private settingsTabOpener: SettingsTabOpener | null,
     ) { }
+
+    private async getUUIDv4 (): Promise<() => string> {
+        const uuidModule = await (this.uuidModulePromise ??= import('uuid'))
+        return uuidModule.v4
+    }
+
+    private async getSlugify (): Promise<(value: string) => string> {
+        const slugifyModule = await (this.slugifyModulePromise ??= import('slugify'))
+        return (slugifyModule.default ?? slugifyModule) as (value: string) => string
+    }
 
     /*
     * Methods used to interact with ProfileProvider
@@ -99,6 +109,10 @@ export class ProfilesService {
     */
     async newProfile (profile: PartialProfile<Profile>, options?: { genId?: boolean }): Promise<void> {
         if (options?.genId ?? true) {
+            const [uuidv4, slugify] = await Promise.all([
+                this.getUUIDv4(),
+                this.getSlugify(),
+            ])
             profile.id = `${profile.type}:custom:${slugify(profile.name)}:${uuidv4()}`
         }
 
@@ -406,6 +420,7 @@ export class ProfilesService {
         })
 
         if (options?.includeNonUserGroup) {
+            const slugify = await this.getSlugify()
             const builtInGroups: PartialProfileGroup<ProfileGroup>[] = []
             builtInGroups.push({
                 id: 'built-in',
@@ -452,6 +467,7 @@ export class ProfilesService {
     */
     async newProfileGroup (group: PartialProfileGroup<ProfileGroup>, options?: { genId?: boolean }): Promise<void> {
         if (options?.genId ?? true) {
+            const uuidv4 = await this.getUUIDv4()
             group.id = `${uuidv4()}`
         }
 

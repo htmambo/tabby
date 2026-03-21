@@ -1,6 +1,4 @@
 import { Injectable, Inject } from '@angular/core'
-import * as mixpanel from 'mixpanel'
-import { v4 as uuidv4 } from 'uuid'
 import { ConfigService } from './config.service'
 import { getRuntimeArch, getRuntimePlatform } from '../api/rendererRuntime'
 import { PlatformService, BOOTSTRAP_DATA, BootstrapData, HostAppService } from '../api'
@@ -9,6 +7,7 @@ import { PlatformService, BOOTSTRAP_DATA, BootstrapData, HostAppService } from '
 export class HomeBaseService {
     appVersion: string
     mixpanel: any
+    private analyticsInitPromise: Promise<void> | null = null
 
     /** @hidden */
     private constructor (
@@ -20,7 +19,7 @@ export class HomeBaseService {
         this.appVersion = platform.getAppVersion()
 
         if (this.config.store.enableAnalytics && !this.config.store.enableWelcomeTab) {
-            this.enableAnalytics()
+            void this.enableAnalytics()
         }
     }
 
@@ -45,11 +44,25 @@ export class HomeBaseService {
         this.platform.openExternal(`https://github.com/htmambo/tabby/issues/new?body=${encodeURIComponent(body)}`)
     }
 
-    enableAnalytics (): void {
+    async enableAnalytics (): Promise<void> {
+        if (this.mixpanel) {
+            return
+        }
+        this.analyticsInitPromise ??= this.initializeAnalytics()
+        await this.analyticsInitPromise
+    }
+
+    private async initializeAnalytics (): Promise<void> {
+        const [mixpanelModule, uuidModule] = await Promise.all([
+            import('mixpanel'),
+            import('uuid'),
+        ])
+        const mixpanel = (mixpanelModule.default ?? mixpanelModule) as any
+        const uuidv4 = uuidModule.v4
         if (!window.localStorage.analyticsUserID) {
             window.localStorage.analyticsUserID = uuidv4()
         }
-        this.mixpanel = (mixpanel as any).init('bb4638b0860eef14c04d4fbc5eb365fa')
+        this.mixpanel = mixpanel.init('bb4638b0860eef14c04d4fbc5eb365fa')
         if (!window.localStorage.installEventSent) {
             this.mixpanel.track('freshInstall', this.getAnalyticsProperties())
             window.localStorage.installEventSent = true

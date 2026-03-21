@@ -1,4 +1,4 @@
-import { Injectable, Inject, OnDestroy } from '@angular/core'
+import { Injectable, Inject, Injector, OnDestroy } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { Observable, Subject, AsyncSubject, takeUntil, debounceTime, lastValueFrom } from 'rxjs'
 
@@ -85,6 +85,8 @@ export class AppService implements OnDestroy {
     private recoverySaveInFlight = false
     private recoverySaveQueued = false
     private recoveryIdleHandle: number | null = null
+    private selectorServiceInstance: SelectorService | null = null
+    private ngbModalInstance: NgbModal | null = null
 
     get activeTabChange$ (): Observable<BaseTabComponent|null> { return this.activeTabChange }
     get tabOpened$ (): Observable<BaseTabComponent> { return this.tabOpened }
@@ -101,13 +103,12 @@ export class AppService implements OnDestroy {
 
     /** @hidden */
     private constructor (
+        private injector: Injector,
         private config: ConfigService,
         private hostApp: HostAppService,
         private hostWindow: HostWindowService,
         private tabRecovery: TabRecoveryService,
         private tabsService: TabsService,
-        private selector: SelectorService,
-        private ngbModal: NgbModal,
         @Inject(BOOTSTRAP_DATA) private bootstrapData: BootstrapData,
     ) {
         this.tabsChanged$.subscribe(() => {
@@ -149,6 +150,16 @@ export class AppService implements OnDestroy {
         })
 
         hostWindow.windowFocused$.subscribe(() => this._activeTab?.emitFocused())
+    }
+
+    private get selector (): SelectorService {
+        this.selectorServiceInstance ??= this.injector.get(SelectorService)
+        return this.selectorServiceInstance
+    }
+
+    private get ngbModal (): NgbModal {
+        this.ngbModalInstance ??= this.injector.get(NgbModal)
+        return this.ngbModalInstance
     }
 
     ngOnDestroy (): void {

@@ -14,14 +14,14 @@
 
 footer.d-flex.align-items-center
     .btn-group.me-auto
-        button.btn.btn-link((click)='homeBase.openGitHub()')
+        button.btn.btn-link((click)='openGitHub()')
             i.fab.fa-github
             span GitHub
-        button.btn.btn-link((click)='homeBase.reportBug()')
+        button.btn.btn-link((click)='reportBug()')
             i.fas.fa-bug
             span(translate) Report a problem
 
     .form-control-static.selectable.no-drag(
         translate='Version: {version}',
-        [translateParams]='{ version: this.homeBase.appVersion }'
+        [translateParams]='{ version: appVersion }'
     )

@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core'
-import axios from 'axios'
-import { lastValueFrom } from 'rxjs'
 
-import { Logger, LogService, ConfigService, UpdaterService, PlatformService, TranslateService, getRuntimeEnv, getRuntimePlatform, isRuntimeDev } from 'tabby-core'
+import { Logger, LogService, UpdaterService, PlatformService, TranslateService, getRuntimeEnv, getRuntimePlatform } from 'tabby-core'
 import { ElectronService } from '../services/electron.service'
 
 const UPDATES_URL = 'https://api.github.com/repos/htmambo/tabby/releases/latest'
@@ -16,7 +14,6 @@ export class ElectronUpdaterService extends UpdaterService {
 
     constructor (
         log: LogService,
-        config: ConfigService,
         private translate: TranslateService,
         private platform: PlatformService,
         private electron: ElectronService,
@@ -44,18 +41,6 @@ export class ElectronUpdaterService extends UpdaterService {
 
         this.downloaded = new Promise<boolean>(resolve => {
             this.electron.ipcRenderer.once('updater:update-downloaded', () => resolve(true))
-        })
-
-        void lastValueFrom(config.ready$).then(() => {
-            if (config.store.enableAutomaticUpdates && this.electronUpdaterAvailable && !isRuntimeDev()) {
-                this.logger.debug('Checking for updates')
-                try {
-                    this.electron.ipcRenderer.send('updater:check-for-updates')
-                } catch (e) {
-                    this.electronUpdaterAvailable = false
-                    this.logger.info('Electron updater unavailable, falling back', e)
-                }
-            }
         })
     }
 
@@ -94,6 +79,8 @@ export class ElectronUpdaterService extends UpdaterService {
             })
         } else {
             this.logger.debug('Checking for updates through fallback method.')
+            const axiosModule = await import('axios')
+            const axios = axiosModule.default ?? axiosModule
             const response = await axios.get(UPDATES_URL)
             const data = response.data
             const version = data.tag_name.substring(1)

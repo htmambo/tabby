@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Optional, NgZone, ChangeDetectorRef, OnDestroy, Injector } from '@angular/core'
+import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, NgZone, ChangeDetectorRef, OnDestroy, Injector } from '@angular/core'
 import { trigger, style, animate, transition, state } from '@angular/animations'
 import { NgbDropdown, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
@@ -155,6 +155,7 @@ export class AppRootComponent implements OnDestroy {
     private readonly royalSidebarTransitionFallbackDelay = 260
     private readonly startupToolbarButtonsDelay = 150
     private readonly startupRoyalConnectionsDelay = 350
+    private readonly startupUpdaterCheckDelay = 1500
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
@@ -167,8 +168,15 @@ export class AppRootComponent implements OnDestroy {
     private destroyed = false
     private pendingTimeouts = new Set<number>()
     private updatesCheckInterval: number | null = null
+    private automaticUpdatesEnabled = false
+    private updaterCheckScheduled = false
+    private updaterServiceInstance: UpdaterService | null = null
     private commandServiceInstance: CommandService | null = null
     private profilesServiceInstance: ProfilesService | null = null
+    private tabsServiceInstance: TabsService | null = null
+    private ngbModalInstance: NgbModal | null = null
+    private sftpTabOpenerInstance: SFTPTabOpener | null | undefined
+    private workspaceLayoutServiceInstance: WorkspaceLayoutService | null = null
 
     private hidePreloadLogo (): void {
         if (this.preloadLogoHidden) {
@@ -256,21 +264,16 @@ export class AppRootComponent implements OnDestroy {
     constructor (
         private injector: Injector,
         private hotkeys: HotkeysService,
-        private tabsService: TabsService,
         private translate: TranslateService,
-        public updater: UpdaterService,
         public hostWindow: HostWindowService,
         public hostApp: HostAppService,
         public config: ConfigService,
         public app: AppService,
         private platform: PlatformService,
         log: LogService,
-        ngbModal: NgbModal,
         _themes: ThemesService,
-        @Optional() private sftpTabOpener: SFTPTabOpener | null,
         private ngZone: NgZone,
         private changeDetector: ChangeDetectorRef,
-        private workspaceLayout: WorkspaceLayoutService,
     ) {
         this.restoreRoyalPreferences()
 
@@ -317,6 +320,9 @@ export class AppRootComponent implements OnDestroy {
                 if (hotkey === 'duplicate-tab') {
                     this.app.duplicateTab(this.app.activeTab)
                 }
+                if (hotkey === 'rename-tab') {
+                    this.app.renameTab(this.app.activeTab)
+                }
                 if (hotkey === 'restart-tab') {
                     this.app.duplicateTab(this.app.activeTab)
                     this.app.closeTab(this.app.activeTab, true)
@@ -335,7 +341,7 @@ export class AppRootComponent implements OnDestroy {
         })
 
         if (getRendererSafeModeReason()) {
-            ngbModal.open(SafeModeModalComponent)
+            this.ngbModal.open(SafeModeModalComponent)
         }
 
         this.app.tabOpened$.subscribe(tab => {
@@ -375,6 +381,7 @@ export class AppRootComponent implements OnDestroy {
                 this.syncWindowOpacity()
                 this.scheduleViewRefresh()
             })
+            this.automaticUpdatesEnabled = !!this.config.store.enableAutomaticUpdates
             this.scheduleTimeout(() => {
                 void this.loadToolbarButtons().catch(error => {
                     this.logger.warn('Failed to load startup toolbar buttons', error)
@@ -389,6 +396,16 @@ export class AppRootComponent implements OnDestroy {
             this.config.changed$.subscribe(() => {
                 this.runInAngular(() => {
                     this.syncWindowOpacity()
+                    const automaticUpdatesEnabled = !!this.config.store.enableAutomaticUpdates
+                    if (automaticUpdatesEnabled !== this.automaticUpdatesEnabled) {
+                        this.automaticUpdatesEnabled = automaticUpdatesEnabled
+                        if (automaticUpdatesEnabled) {
+                            this.scheduleUpdateAvailabilityRefresh()
+                        } else if (this.updatesAvailable) {
+                            this.updatesAvailable = false
+                            this.scheduleViewRefresh()
+                        }
+                    }
                     if (!this.shouldShowRoyalSidebar()) {
                         this.royalConnectionGroups = []
                         this.recomputeRoyalSidebarGroups()
@@ -399,18 +416,16 @@ export class AppRootComponent implements OnDestroy {
                 })
             })
 
+            this.scheduleUpdateAvailabilityRefresh(this.startupUpdaterCheckDelay)
             this.updatesCheckInterval = window.setInterval(() => {
-                if (this.config.store.enableAutomaticUpdates) {
-                    this.updater.check().then(available => {
-                        this.runInAngular(() => {
-                            this.updatesAvailable = available
-                        })
-                    }).catch(() => {
-                        // 更新检查失败，忽略错误
-                    })
-                }
+                this.scheduleUpdateAvailabilityRefresh()
             }, 3600 * 12 * 1000)
         })
+    }
+
+    private get updater (): UpdaterService {
+        this.updaterServiceInstance ??= this.injector.get(UpdaterService)
+        return this.updaterServiceInstance
     }
 
     private get commands (): CommandService {
@@ -421,6 +436,28 @@ export class AppRootComponent implements OnDestroy {
     private get profilesService (): ProfilesService {
         this.profilesServiceInstance ??= this.injector.get(ProfilesService)
         return this.profilesServiceInstance
+    }
+
+    private get tabsService (): TabsService {
+        this.tabsServiceInstance ??= this.injector.get(TabsService)
+        return this.tabsServiceInstance
+    }
+
+    private get ngbModal (): NgbModal {
+        this.ngbModalInstance ??= this.injector.get(NgbModal)
+        return this.ngbModalInstance
+    }
+
+    private get sftpTabOpener (): SFTPTabOpener | null {
+        if (this.sftpTabOpenerInstance === undefined) {
+            this.sftpTabOpenerInstance = this.injector.get(SFTPTabOpener, null)
+        }
+        return this.sftpTabOpenerInstance
+    }
+
+    private get workspaceLayout (): WorkspaceLayoutService {
+        this.workspaceLayoutServiceInstance ??= this.injector.get(WorkspaceLayoutService)
+        return this.workspaceLayoutServiceInstance
     }
 
     async ngOnInit () {
@@ -479,6 +516,41 @@ export class AppRootComponent implements OnDestroy {
         if (this.activeTransfers.length === 0) {
             this.activeTransfersDropdown.close()
         }
+    }
+
+    private scheduleUpdateAvailabilityRefresh (delay = 0): void {
+        if (this.updaterCheckScheduled) {
+            return
+        }
+        this.updaterCheckScheduled = true
+        this.scheduleTimeout(() => {
+            this.updaterCheckScheduled = false
+            if (!this.automaticUpdatesEnabled) {
+                return
+            }
+            void this.refreshUpdateAvailability()
+        }, delay)
+    }
+
+    private async refreshUpdateAvailability (): Promise<void> {
+        try {
+            const available = await this.updater.check()
+            if (this.destroyed) {
+                return
+            }
+            this.runInAngular(() => {
+                this.updatesAvailable = available
+                this.scheduleViewRefresh()
+            })
+        } catch (error) {
+            if (!this.destroyed) {
+                this.logger.warn('Automatic update check failed', error)
+            }
+        }
+    }
+
+    installUpdate (): void {
+        void this.updater.update()
     }
 
     private async getToolbarButtons (aboveZero: boolean): Promise<Command[]> {

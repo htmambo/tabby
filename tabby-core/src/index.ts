@@ -147,6 +147,7 @@ export const manifest: TabbyPluginManifest = {
     ],
 })
 export default class AppModule { // eslint-disable-line @typescript-eslint/no-extraneous-class
+    private commandServiceInstance: CommandService | null = null
     private profilesServiceInstance: ProfilesService | null = null
     private selectorServiceInstance: SelectorService | null = null
     private translateServiceInstance: TranslateService | null = null
@@ -157,7 +158,6 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         config: ConfigService,
         platform: PlatformService,
         hotkeys: HotkeysService,
-        commands: CommandService,
         ngbTooltipConfig: NgbTooltipConfig,
         public locale: LocaleService,
         private ngZone: NgZone,
@@ -209,15 +209,20 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
                 }
                 this.showGroupSelector(group).catch(() => null)
             } else if (hotkey === 'command-selector') {
-                commands.showSelector().catch(() => null)
+                this.commands.showSelector().catch(() => null)
             } else if (hotkey === 'profile-selector') {
-                commands.run('core:profile-selector', {})
+                this.commands.run('core:profile-selector', {})
             }
         })
 
         ngbTooltipConfig.openDelay = 750
         ngbTooltipConfig.placement = 'top bottom auto'
         ngbTooltipConfig.container = 'body'
+    }
+
+    private get commands (): CommandService {
+        this.commandServiceInstance ??= this.injector.get(CommandService)
+        return this.commandServiceInstance
     }
 
     private get profilesService (): ProfilesService {
