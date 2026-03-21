@@ -41,6 +41,9 @@ export class ProfilesService {
     ) { }
 
     private async getUUIDv4 (): Promise<() => string> {
+        if (typeof globalThis.crypto?.randomUUID === 'function') {
+            return () => globalThis.crypto.randomUUID()
+        }
         const uuidModule = await (this.uuidModulePromise ??= import('uuid'))
         return uuidModule.v4
     }

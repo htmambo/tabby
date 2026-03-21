@@ -5,8 +5,15 @@ import { BaseTerminalTabComponent } from './api/baseTerminalTab.component'
 import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
 import { MultifocusService } from './services/multifocus.service'
 import { ConnectableTerminalTabComponent } from './api/connectableTerminalTab.component'
-import { v4 as uuidv4 } from 'uuid'
 import slugify from 'slugify'
+
+async function getUUIDv4 (): Promise<() => string> {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+        return () => globalThis.crypto.randomUUID()
+    }
+    const uuidModule = await import('uuid')
+    return uuidModule.v4
+}
 
 /** @hidden */
 @Injectable()
@@ -194,6 +201,7 @@ export class SaveAsProfileContextMenu extends TabContextMenuItemProvider {
                             options,
                         }
 
+                        const uuidv4 = await getUUIDv4()
                         profile.id = `${profile.type}:custom:${slugify(name)}:${uuidv4()}`
                         profile.group = tab.profile.group
                         profile.icon = tab.profile.icon

@@ -1,6 +1,6 @@
 import * as nodePTY from 'node-pty'
 import { execFile } from 'child_process'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import { getWorkingDirectoryFromPID } from 'native-process-working-directory'
 import { Application } from './app'
@@ -386,7 +386,7 @@ export class PTYManager {
 
     init (app: Application): void {
         ipcMain.on('pty:spawn', (event, ...options) => {
-            const id = uuidv4().toString()
+            const id = randomUUID()
             event.returnValue = id
             delete this.truePIDCache[id]
             this.ptys[id] = new PTY(id, app, this, ...options)

@@ -1,7 +1,5 @@
 import deepClone from 'clone-deep'
 import deepEqual from 'deep-equal'
-import { v4 as uuidv4 } from 'uuid'
-import * as yaml from 'js-yaml'
 import { Observable, Subject, AsyncSubject, lastValueFrom, Subscription } from 'rxjs'
 import { Injectable, Inject, OnDestroy } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
@@ -164,6 +162,9 @@ export class ConfigService implements OnDestroy {
     private servicesCache: Record<string, Function[]>|null = null // eslint-disable-line @typescript-eslint/ban-types
     private vaultSubscription: Subscription | null = null
     private _storeVersion = 0
+    private yamlModule: typeof import('js-yaml') | null = null
+    private yamlModulePromise: Promise<typeof import('js-yaml')> | null = null
+    private uuidModulePromise: Promise<typeof import('uuid')> | null = null
 
     get changed$ (): Observable<number> { return this.changed }
 
@@ -232,6 +233,7 @@ export class ConfigService implements OnDestroy {
     }
 
     async load (): Promise<void> {
+        const yaml = await this.getYaml()
         const content = await this.platform.loadConfig()
         if (content) {
             this._store = yaml.load(content)
@@ -239,7 +241,7 @@ export class ConfigService implements OnDestroy {
             this._store = { version: LATEST_VERSION }
         }
         this._store = await this.maybeDecryptConfig(this._store)
-        this.migrate(this._store)
+        await this.migrate(this._store)
         this.store = new ConfigProxy(this._store, this.defaults)
         this.vault.setStore(this.store.vault)
         this._storeVersion++
@@ -250,6 +252,7 @@ export class ConfigService implements OnDestroy {
         if (!this._store) {
             throw new Error('Cannot save an empty store')
         }
+        const yaml = await this.getYaml()
         // Scrub undefined values
         let cleanStore = JSON.parse(JSON.stringify(this._store))
         cleanStore = await this.maybeEncryptConfig(cleanStore)
@@ -261,6 +264,7 @@ export class ConfigService implements OnDestroy {
      * Reads config YAML as string
      */
     readRaw (): string {
+        const yaml = this.getLoadedYaml()
         // Scrub undefined values
         const cleanStore = JSON.parse(JSON.stringify(this._store))
         return yaml.dump(cleanStore)
@@ -270,6 +274,7 @@ export class ConfigService implements OnDestroy {
      * Writes config YAML as string
      */
     async writeRaw (data: string): Promise<void> {
+        const yaml = await this.getYaml()
         this._store = yaml.load(data)
         await this.save()
         await this.load()
@@ -330,9 +335,34 @@ export class ConfigService implements OnDestroy {
         this.changed.next(this._storeVersion)
     }
 
+    private async getYaml (): Promise<typeof import('js-yaml')> {
+        this.yamlModule ??= await (this.yamlModulePromise ??= import('js-yaml'))
+        return this.yamlModule
+    }
+
+    private getLoadedYaml (): typeof import('js-yaml') {
+        if (!this.yamlModule) {
+            throw new Error('YAML module is not loaded yet')
+        }
+        return this.yamlModule
+    }
+
+    private async getUUIDv4 (): Promise<() => string> {
+        if (typeof globalThis.crypto?.randomUUID === 'function') {
+            return () => globalThis.crypto.randomUUID()
+        }
+        const uuidModule = await (this.uuidModulePromise ??= import('uuid'))
+        return uuidModule.v4
+    }
+
     // eslint-disable-next-line max-statements
-    private migrate (config: any) {
+    private async migrate (config: any) {
         config.version ??= 0
+        let uuidv4: (() => string) | null = null
+        const getUUID = async (): Promise<() => string> => {
+            uuidv4 ??= await this.getUUIDv4()
+            return uuidv4
+        }
         if (config.version < 1) {
             for (const connection of config.ssh?.connections ?? []) {
                 if (connection.privateKey) {
@@ -354,7 +384,7 @@ export class ConfigService implements OnDestroy {
                     delete profile.sessionOptions
                 }
                 profile.type = 'local'
-                profile.id = `local:custom:${uuidv4()}`
+                profile.id = `local:custom:${(await getUUID())()}`
             }
             if (config.terminal?.profiles) {
                 config.profiles = config.terminal.profiles
@@ -368,7 +398,7 @@ export class ConfigService implements OnDestroy {
             delete config.ssh?.recentConnections
             for (const c of config.ssh?.connections ?? []) {
                 const p = {
-                    id: `ssh:${uuidv4()}`,
+                    id: `ssh:${(await getUUID())()}`,
                     type: 'ssh',
                     icon: 'fas fa-desktop',
                     name: c.name,
@@ -388,7 +418,7 @@ export class ConfigService implements OnDestroy {
             }
             for (const c of config.serial?.connections ?? []) {
                 const p = {
-                    id: `serial:${uuidv4()}`,
+                    id: `serial:${(await getUUID())()}`,
                     type: 'serial',
                     icon: 'fas fa-microchip',
                     name: c.name,
@@ -412,7 +442,7 @@ export class ConfigService implements OnDestroy {
         if (config.version < 4) {
             for (const p of config.profiles ?? []) {
                 if (!p.id) {
-                    p.id = `${p.type}:custom:${uuidv4()}`
+                    p.id = `${p.type}:custom:${(await getUUID())()}`
                 }
             }
             config.version = 4
@@ -427,7 +457,7 @@ export class ConfigService implements OnDestroy {
                 let group = groups.find(x => x.name === p.group)
                 if (!group) {
                     group = {
-                        id: `${uuidv4()}`,
+                        id: `${(await getUUID())()}`,
                         name: `${p.group}`,
                     }
                     groups.push(group)

@@ -52,13 +52,20 @@ export class HomeBaseService {
         await this.analyticsInitPromise
     }
 
+    private async getUUIDv4 (): Promise<() => string> {
+        if (typeof globalThis.crypto?.randomUUID === 'function') {
+            return () => globalThis.crypto.randomUUID()
+        }
+        const uuidModule = await import('uuid')
+        return uuidModule.v4
+    }
+
     private async initializeAnalytics (): Promise<void> {
-        const [mixpanelModule, uuidModule] = await Promise.all([
+        const [mixpanelModule, uuidv4] = await Promise.all([
             import('mixpanel'),
-            import('uuid'),
+            this.getUUIDv4(),
         ])
         const mixpanel = (mixpanelModule.default ?? mixpanelModule) as any
-        const uuidv4 = uuidModule.v4
         if (!window.localStorage.analyticsUserID) {
             window.localStorage.analyticsUserID = uuidv4()
         }
