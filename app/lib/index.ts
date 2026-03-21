@@ -11,7 +11,6 @@ process.env.TABBY_CONFIG_DIRECTORY ??= app.getPath('userData')
 
 import 'v8-compile-cache'
 import './lru'
-import { parseArgs } from './cli'
 import { Application } from './app'
 import { loadConfig } from './config'
 
@@ -21,8 +20,23 @@ if (process.env.TABBY_DEV || process.env.CI || process.env.TABBY_RELEASE_SOURCEM
     runtimeRequire('source-map-support/register')
 }
 
+function parseStartupWindowOptions (argv: string[]): { hidden: boolean, d: boolean } {
+    const args = argv[0]?.includes('node') ? argv.slice(2) : argv.slice(1)
+    let hidden = false
+    let d = false
 
-const argv = parseArgs(process.argv, process.cwd())
+    for (const arg of args) {
+        if (arg === '--hidden') {
+            hidden = true
+        } else if (arg === '--debug' || arg === '-d') {
+            d = true
+        }
+    }
+
+    return { hidden, d }
+}
+
+const argv = parseStartupWindowOptions(process.argv)
 
 // eslint-disable-next-line @typescript-eslint/init-declarations
 let configStore: any
