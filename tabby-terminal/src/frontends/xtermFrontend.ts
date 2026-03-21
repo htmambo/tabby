@@ -23,6 +23,33 @@ const COLOR_NAMES = [
 ]
 const DEFAULT_RECOVERY_SCROLLBACK_LINES = 2000
 const MAX_RECOVERY_SCROLLBACK_LINES = 5000
+// On macOS, some IME/layout combinations report standalone punctuation through the textarea
+// input event only after xterm has already derived an ASCII fallback from the physical key.
+// Defer these printable keys so the terminal can prefer the finalized input payload.
+const MACOS_DEFERRED_PRINTABLE_KEY_MAP: Record<string, readonly [string, string]> = {
+    Backquote: ['`', '~'],
+    Digit1: ['1', '!'],
+    Digit2: ['2', '@'],
+    Digit3: ['3', '#'],
+    Digit4: ['4', '$'],
+    Digit5: ['5', '%'],
+    Digit6: ['6', '^'],
+    Digit7: ['7', '&'],
+    Digit8: ['8', '*'],
+    Digit9: ['9', '('],
+    Digit0: ['0', ')'],
+    Minus: ['-', '_'],
+    Equal: ['=', '+'],
+    BracketLeft: ['[', '{'],
+    BracketRight: [']', '}'],
+    Backslash: ['\\', '|'],
+    IntlBackslash: ['\\', '|'],
+    Semicolon: [';', ':'],
+    Quote: ['\'', '"'],
+    Comma: [',', '<'],
+    Period: ['.', '>'],
+    Slash: ['/', '?'],
+}
 
 function getRootCSSVariable (name: string): string | undefined {
     if (typeof window === 'undefined') {
@@ -97,6 +124,10 @@ export class XTermFrontend extends Frontend {
     private skipObservedResizeUntil = 0
     private pendingObservedResizeFrame: number|null = null
     private readonly observedResizeResumeDelay = 120
+    private macOSDeferredPrintableInput: {
+        fallbackText: string
+        timer: ReturnType<typeof setTimeout>
+    } | null = null
 
     // Bound event handlers for proper cleanup
     private boundDragOver: (event: any) => void
@@ -105,6 +136,7 @@ export class XTermFrontend extends Frontend {
     private boundMouseUp: (event: MouseEvent) => void
     private boundMouseWheel: (event: WheelEvent) => void
     private boundContextMenu: (event: MouseEvent) => void
+    private boundDeferredPrintableInput?: (event: Event) => void
     private attachedHost?: HTMLElement
 
     private configService: ConfigService
@@ -154,9 +186,16 @@ export class XTermFrontend extends Frontend {
         }
 
         this.xterm.onBinary(data => {
+            this.clearMacOSDeferredPrintableInput()
             this.input.next(Buffer.from(data, 'binary'))
         })
         this.xterm.onData(data => {
+            if (this.macOSDeferredPrintableInput) {
+                if (data === this.macOSDeferredPrintableInput.fallbackText) {
+                    return
+                }
+                this.clearMacOSDeferredPrintableInput()
+            }
             this.input.next(Buffer.from(data, 'utf-8'))
         })
         this.xterm.onResize(({ cols, rows }) => {
@@ -231,6 +270,14 @@ export class XTermFrontend extends Frontend {
         }
 
         this.xterm.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+            if (event.type === 'keydown' && this.shouldDeferMacOSPrintableInput(event)) {
+                this.scheduleMacOSDeferredPrintableInput(this.getMacOSDeferredPrintableFallback(event)!)
+                return false
+            }
+            if (event.type === 'keypress' && this.macOSDeferredPrintableInput) {
+                return false
+            }
+
             if (isIMEKeyboardEvent(event)) {
                 return true
             }
@@ -287,6 +334,7 @@ export class XTermFrontend extends Frontend {
 
         this.xterm.open(host)
         this.opened = true
+        this.attachMacOSDeferredPrintableInputListener()
 
         // Work around font loading bugs
         await new Promise(resolve => {
@@ -391,6 +439,7 @@ export class XTermFrontend extends Frontend {
         window.removeEventListener('resize', this.resizeHandler)
         this.resizeObserver?.disconnect()
         this.clearPendingObservedResize()
+        this.detachMacOSDeferredPrintableInputListener()
         delete this.resizeObserver
 
         // Remove event listeners from host
@@ -408,6 +457,7 @@ export class XTermFrontend extends Frontend {
     destroy (): void {
         super.destroy()
         this.clearPendingObservedResize()
+        this.detachMacOSDeferredPrintableInputListener()
         this.webGLAddon?.dispose()
         this.canvasAddon?.dispose()
         this.xterm.dispose()
@@ -662,6 +712,101 @@ export class XTermFrontend extends Frontend {
 
     isAlternateScreenActive (): boolean {
         return this.xterm.buffer.active.type === 'alternate'
+    }
+
+    private shouldDeferMacOSPrintableInput (event: KeyboardEvent): boolean {
+        return this.hostApp.platform === Platform.macOS &&
+            event.type === 'keydown' &&
+            !event.isComposing &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.metaKey &&
+            event.keyCode !== 229 &&
+            !!this.getMacOSDeferredPrintableFallback(event)
+    }
+
+    private getMacOSDeferredPrintableFallback (event: KeyboardEvent): string | null {
+        const mapping = MACOS_DEFERRED_PRINTABLE_KEY_MAP[event.code]
+        if (!mapping) {
+            return null
+        }
+        return mapping[event.shiftKey ? 1 : 0] ?? mapping[0]
+    }
+
+    private scheduleMacOSDeferredPrintableInput (fallbackText: string): void {
+        this.clearMacOSDeferredPrintableInput()
+
+        const timer = setTimeout(() => {
+            if (this.macOSDeferredPrintableInput?.timer !== timer) {
+                return
+            }
+
+            const text = this.macOSDeferredPrintableInput.fallbackText
+            this.macOSDeferredPrintableInput = null
+            this.input.next(Buffer.from(text, 'utf-8'))
+        })
+        if (typeof (timer as any)?.unref === 'function') {
+            (timer as any).unref()
+        }
+
+        this.macOSDeferredPrintableInput = {
+            fallbackText,
+            timer,
+        }
+    }
+
+    private clearMacOSDeferredPrintableInput (): void {
+        if (!this.macOSDeferredPrintableInput) {
+            return
+        }
+
+        clearTimeout(this.macOSDeferredPrintableInput.timer)
+        this.macOSDeferredPrintableInput = null
+    }
+
+    private resolveMacOSDeferredPrintableInput (text: string): void {
+        this.clearMacOSDeferredPrintableInput()
+        this.input.next(Buffer.from(text, 'utf-8'))
+    }
+
+    private attachMacOSDeferredPrintableInputListener (): void {
+        if (this.hostApp.platform !== Platform.macOS || this.boundDeferredPrintableInput) {
+            return
+        }
+
+        const textarea = this.xterm.textarea
+        if (!textarea) {
+            return
+        }
+
+        // For some macOS layouts/IMEs, xterm sends raw ASCII punctuation on keydown before the
+        // textarea input event exposes the final user-facing character. Defer those printable
+        // keys and prefer the finalized input event payload instead.
+        this.boundDeferredPrintableInput = (event: Event) => {
+            const inputEvent = event as InputEvent
+            if (!this.macOSDeferredPrintableInput) {
+                return
+            }
+
+            if (inputEvent.isComposing || inputEvent.inputType !== 'insertText' || !inputEvent.data) {
+                return
+            }
+
+            this.resolveMacOSDeferredPrintableInput(inputEvent.data)
+        }
+
+        textarea.addEventListener('input', this.boundDeferredPrintableInput)
+    }
+
+    private detachMacOSDeferredPrintableInputListener (): void {
+        this.clearMacOSDeferredPrintableInput()
+
+        if (!this.boundDeferredPrintableInput) {
+            return
+        }
+
+        this.xterm.textarea?.removeEventListener('input', this.boundDeferredPrintableInput)
+        delete this.boundDeferredPrintableInput
     }
 
     private setFontSize () {
