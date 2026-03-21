@@ -126,7 +126,7 @@ export class XTermFrontend extends Frontend {
     private readonly observedResizeResumeDelay = 120
     private macOSDeferredPrintableInput: {
         fallbackText: string
-        timer: ReturnType<typeof setTimeout>
+        timer: number
     } | null = null
 
     // Bound event handlers for proper cleanup
@@ -736,7 +736,7 @@ export class XTermFrontend extends Frontend {
     private scheduleMacOSDeferredPrintableInput (fallbackText: string): void {
         this.clearMacOSDeferredPrintableInput()
 
-        const timer = setTimeout(() => {
+        const timer: number = window.setTimeout(() => {
             if (this.macOSDeferredPrintableInput?.timer !== timer) {
                 return
             }
@@ -760,7 +760,7 @@ export class XTermFrontend extends Frontend {
             return
         }
 
-        clearTimeout(this.macOSDeferredPrintableInput.timer)
+        window.clearTimeout(this.macOSDeferredPrintableInput.timer)
         this.macOSDeferredPrintableInput = null
     }
 
