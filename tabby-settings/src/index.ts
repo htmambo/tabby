@@ -1,10 +1,11 @@
-import { NgModule } from '@angular/core'
+import { Injector, NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { InfiniteScrollModule } from 'ngx-infinite-scroll'
+import { lastValueFrom } from 'rxjs'
 
-import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest } from 'tabby-core'
+import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest, ConfigService, HostAppService, Platform } from 'tabby-core'
 
 import { EditProfileModalComponent } from './components/editProfileModal.component'
 import { EditProfileGroupModalComponent } from './components/editProfileGroupModal.component'
@@ -43,6 +44,11 @@ const PROVIDERS = [
     { provide: SettingsTabProvider, useClass: ConfigSyncSettingsTabProvider, multi: true },
 ]
 
+function shouldInitializeConfigSync (config: ConfigService): boolean {
+    const sync = config.store?.configSync
+    return !!sync?.auto && !!sync?.host?.trim() && !!sync?.token?.trim() && !!sync?.configID
+}
+
 /** @hidden */
 @NgModule({
     imports: [
@@ -72,7 +78,9 @@ const PROVIDERS = [
 })
 export default class SettingsModule {
     constructor (
-        public configSync: ConfigSyncService,
+        injector: Injector,
+        config: ConfigService,
+        hostApp: HostAppService,
         settingsTabOpener: SettingsTabOpener,
         hotkeys: HotkeysService,
     ) {
@@ -80,6 +88,12 @@ export default class SettingsModule {
             if (hotkey.startsWith('settings-tab.')) {
                 const id = hotkey.substring(hotkey.indexOf('.') + 1)
                 settingsTabOpener.open(id)
+            }
+        })
+
+        void lastValueFrom(config.ready$).then(() => {
+            if (hostApp.platform !== Platform.Web && shouldInitializeConfigSync(config)) {
+                injector.get(ConfigSyncService)
             }
         })
     }

@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core'
+import { Injector, NgModule } from '@angular/core'
 import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService, WIN_BUILD_FLUENT_BG_SUPPORTED, isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider, TabbyPluginManifest } from 'tabby-core'
 import { TerminalColorSchemeProvider, TerminalDecorator } from 'tabby-terminal'
 import { SFTPContextMenuItemProvider, SSHProfileImporter, AutoPrivateKeyLocator } from 'tabby-ssh'
@@ -85,19 +85,26 @@ const PROVIDERS = [
     providers: PROVIDERS,
 })
 export default class ElectronModule {
+    private touchbarServiceInstance: TouchbarService | null = null
+    private dockMenuServiceInstance: DockMenuService | null = null
+    private themesServiceInstance: ThemesService | null = null
+
     constructor (
+        private injector: Injector,
         private config: ConfigService,
         private hostApp: ElectronHostAppService,
         private electron: ElectronService,
         private hostWindow: ElectronHostWindow,
-        touchbar: TouchbarService,
         docking: DockingService,
-        themeService: ThemesService,
         app: AppService,
-        dockMenu: DockMenuService,
     ) {
+        const isMacOS = hostApp.platform === Platform.macOS
+        const supportsDockMenu = hostApp.platform === Platform.macOS || hostApp.platform === Platform.Windows
+
         void lastValueFrom(config.ready$).then(() => {
-            touchbar.update()
+            if (isMacOS) {
+                this.touchbarService.update()
+            }
             docking.dock()
             hostWindow.windowShown$.subscribe(() => {
                 docking.dock()
@@ -105,20 +112,23 @@ export default class ElectronModule {
             this.registerGlobalHotkey()
             this.updateVibrancy()
             this.updateWindowControlsColor()
+            if (supportsDockMenu) {
+                void this.dockMenuService.update()
+            }
         })
 
         config.changed$.subscribe(() => {
             this.registerGlobalHotkey()
         })
 
-        themeService.themeChanged$.subscribe(theme => {
-            if (hostApp.platform === Platform.macOS) {
+        if (isMacOS) {
+            this.themesService.themeChanged$.subscribe(theme => {
                 hostWindow.setTrafficLightPosition(
                     theme.macOSWindowButtonsInsetX ?? 14,
                     theme.macOSWindowButtonsInsetY ?? 11,
                 )
-            }
-        })
+            })
+        }
 
         let lastProgress: number|null = null
         app.tabOpened$.subscribe(tab => {
@@ -141,10 +151,21 @@ export default class ElectronModule {
         })
 
         config.changed$.subscribe(() => this.updateWindowControlsColor())
+    }
 
-        void lastValueFrom(config.ready$).then(() => {
-            dockMenu.update()
-        })
+    private get touchbarService (): TouchbarService {
+        this.touchbarServiceInstance ??= this.injector.get(TouchbarService)
+        return this.touchbarServiceInstance
+    }
+
+    private get dockMenuService (): DockMenuService {
+        this.dockMenuServiceInstance ??= this.injector.get(DockMenuService)
+        return this.dockMenuServiceInstance
+    }
+
+    private get themesService (): ThemesService {
+        this.themesServiceInstance ??= this.injector.get(ThemesService)
+        return this.themesServiceInstance
     }
 
     private registerGlobalHotkey () {
