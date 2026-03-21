@@ -59,6 +59,15 @@ interface RoyalTabTarget {
     targetTab: BaseTabComponent
 }
 
+type IdleRequestCallbackLike = () => void
+type IdleRequestOptionsLike = {
+    timeout?: number
+}
+type IdleCallbackGlobal = typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallbackLike, options?: IdleRequestOptionsLike) => number
+    cancelIdleCallback?: (handle: number) => void
+}
+
 function makeTabAnimation (dimension: string, size: number) {
     return [
         state('in', style({
@@ -156,6 +165,10 @@ export class AppRootComponent implements OnDestroy {
     private readonly startupToolbarButtonsDelay = 150
     private readonly startupRoyalConnectionsDelay = 350
     private readonly startupUpdaterCheckDelay = 1500
+    private readonly startupIdleFallbackDelay = 50
+    private readonly startupToolbarButtonsIdleTimeout = 800
+    private readonly startupRoyalConnectionsIdleTimeout = 1200
+    private readonly startupUpdaterCheckIdleTimeout = 3000
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
@@ -167,6 +180,7 @@ export class AppRootComponent implements OnDestroy {
     private preloadLogoHidden = false
     private destroyed = false
     private pendingTimeouts = new Set<number>()
+    private pendingIdleCallbacks = new Set<number>()
     private updatesCheckInterval: number | null = null
     private automaticUpdatesEnabled = false
     private updaterCheckScheduled = false
@@ -382,17 +396,17 @@ export class AppRootComponent implements OnDestroy {
                 this.scheduleViewRefresh()
             })
             this.automaticUpdatesEnabled = !!this.config.store.enableAutomaticUpdates
-            this.scheduleTimeout(() => {
+            this.scheduleIdleTask(() => {
                 void this.loadToolbarButtons().catch(error => {
                     this.logger.warn('Failed to load startup toolbar buttons', error)
                 })
-            }, this.startupToolbarButtonsDelay)
-            this.scheduleTimeout(() => {
+            }, this.startupToolbarButtonsDelay, this.startupToolbarButtonsIdleTimeout)
+            this.scheduleIdleTask(() => {
                 if (!this.shouldShowRoyalSidebar()) {
                     return
                 }
                 void this.refreshRoyalConnections().then(() => this.scheduleRoyalActiveSync())
-            }, this.startupRoyalConnectionsDelay)
+            }, this.startupRoyalConnectionsDelay, this.startupRoyalConnectionsIdleTimeout)
             this.config.changed$.subscribe(() => {
                 this.runInAngular(() => {
                     this.syncWindowOpacity()
@@ -523,13 +537,13 @@ export class AppRootComponent implements OnDestroy {
             return
         }
         this.updaterCheckScheduled = true
-        this.scheduleTimeout(() => {
+        this.scheduleIdleTask(() => {
             this.updaterCheckScheduled = false
             if (!this.automaticUpdatesEnabled) {
                 return
             }
             void this.refreshUpdateAvailability()
-        }, delay)
+        }, delay, this.startupUpdaterCheckIdleTimeout)
     }
 
     private async refreshUpdateAvailability (): Promise<void> {
@@ -1702,11 +1716,38 @@ export class AppRootComponent implements OnDestroy {
         this.royalSidebarPreviewCloseHandle = this.clearScheduledTimeout(this.royalSidebarPreviewCloseHandle)
         this.royalSidebarTransitionFallbackHandle = this.clearScheduledTimeout(this.royalSidebarTransitionFallbackHandle)
         this.royalRestoreBindingsRetryHandle = this.clearScheduledTimeout(this.royalRestoreBindingsRetryHandle)
+        this.clearPendingIdleCallbacks()
         this.clearPendingTimeouts()
         if (this.updatesCheckInterval !== null) {
             clearInterval(this.updatesCheckInterval)
             this.updatesCheckInterval = null
         }
+    }
+
+    private scheduleIdleTask (fn: () => void, delay = 0, timeout = 1000): void {
+        this.scheduleTimeout(() => {
+            this.scheduleIdleCallback(fn, timeout)
+        }, delay)
+    }
+
+    private scheduleIdleCallback (fn: () => void, timeout = 1000): number | null {
+        if (this.destroyed) {
+            return null
+        }
+        const idleGlobal = globalThis as IdleCallbackGlobal
+        if (idleGlobal.requestIdleCallback) {
+            let handle = 0
+            handle = idleGlobal.requestIdleCallback(() => {
+                this.pendingIdleCallbacks.delete(handle)
+                if (this.destroyed) {
+                    return
+                }
+                fn()
+            }, { timeout })
+            this.pendingIdleCallbacks.add(handle)
+            return handle
+        }
+        return this.scheduleTimeout(fn, this.startupIdleFallbackDelay)
     }
 
     private scheduleTimeout (fn: () => void, delay = 0): number | null {
@@ -1731,6 +1772,18 @@ export class AppRootComponent implements OnDestroy {
         window.clearTimeout(handle)
         this.pendingTimeouts.delete(handle)
         return null
+    }
+
+    private clearPendingIdleCallbacks (): void {
+        const idleGlobal = globalThis as IdleCallbackGlobal
+        if (!idleGlobal.cancelIdleCallback) {
+            this.pendingIdleCallbacks.clear()
+            return
+        }
+        for (const handle of this.pendingIdleCallbacks) {
+            idleGlobal.cancelIdleCallback(handle)
+        }
+        this.pendingIdleCallbacks.clear()
     }
 
     private clearPendingTimeouts (): void {
