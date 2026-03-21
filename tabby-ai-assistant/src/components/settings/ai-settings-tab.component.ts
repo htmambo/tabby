@@ -126,7 +126,25 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
      */
     private loadProviderStatus(): void {
         try {
-            this.providerStatus = this.aiService.getProviderStatus()
+            const allConfigs = this.config.getAllProviderConfigs()
+            const providerNames = Object.keys(allConfigs)
+            const activeProviderName = this.currentProvider
+                || this.config.getDefaultProvider()
+                || providerNames.find(name => allConfigs[name]?.enabled !== false)
+                || ''
+
+            this.providerStatus = {
+                active: activeProviderName ? {
+                    name: activeProviderName,
+                    displayName: allConfigs[activeProviderName]?.displayName ?? activeProviderName,
+                } : null,
+                all: providerNames.map(name => ({
+                    name,
+                    displayName: allConfigs[name]?.displayName ?? name,
+                    configured: true,
+                })),
+                count: providerNames.length,
+            }
         } catch (error) {
             this.providerStatus = { active: null, all: [], count: 0 }
             this.logger.error('Failed to load provider status', error)
@@ -163,7 +181,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
         if (this.aiService.switchProvider(providerName)) {
             this.currentProvider = providerName
             this.config.setDefaultProvider(providerName)
-            this.loadProviderStatus()
+            this.providerStatus = this.aiService.getProviderStatus()
             this.logger.info('Provider switched', { provider: providerName })
         }
     }
@@ -172,7 +190,7 @@ export class AiSettingsTabComponent implements OnInit, OnDestroy {
      * 刷新提供商状态
      */
     async refreshProviderStatus(): Promise<void> {
-        this.loadProviderStatus()
+        this.providerStatus = this.aiService.getProviderStatus()
         this.logger.debug('Provider status refreshed')
     }
 

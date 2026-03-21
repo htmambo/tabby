@@ -1,4 +1,4 @@
-import { Injectable, Optional, OnDestroy } from '@angular/core'
+import { Injectable, Injector, OnDestroy } from '@angular/core'
 import { Observable, from, throwError, Subject, merge, Subscription } from 'rxjs'
 import { catchError, tap, finalize, filter } from 'rxjs/operators'
 import {
@@ -34,28 +34,18 @@ export class AiAssistantService implements OnDestroy {
     private initialized = false
     private pendingProviderRefresh: number | null = null
     private configChangeSubscription: Subscription | null = null
+    private terminalContextInstance: TerminalContextService | null = null
+    private terminalToolsInstance: TerminalToolsService | null = null
+    private terminalManagerInstance: TerminalManagerService | null = null
+    private securityValidatorInstance: SecurityValidatorService | null = null
+    private chatInterfaceOpenerInstance: ChatInterfaceOpener | null | undefined = undefined
 
     constructor(
+        private injector: Injector,
         private providerManager: AiProviderManagerService,
         private config: ConfigProviderService,
-        private terminalContext: TerminalContextService,
-        private terminalTools: TerminalToolsService,
-        private terminalManager: TerminalManagerService,
-        private securityValidator: SecurityValidatorService,
         private logger: LoggerService,
-        @Optional() private chatInterfaceOpener: ChatInterfaceOpener | null,
-        // 注入所有提供商服务
-        @Optional() private openaiProvider: OpenAiProviderService,
-        @Optional() private anthropicProvider: AnthropicProviderService,
-        @Optional() private minimaxProvider: MinimaxProviderService,
-        @Optional() private glmProvider: GlmProviderService,
-        @Optional() private openaiCompatibleProvider: OpenAiCompatibleProviderService,
-        @Optional() private ollamaProvider: OllamaProviderService,
-        @Optional() private vllmProvider: VllmProviderService,
     ) {
-        // 构建提供商映射表
-        this.buildProviderMapping()
-
         this.configChangeSubscription = this.config.onConfigChange().pipe(
             filter(change => change.key === 'defaultProvider' || change.key.startsWith('providers.') || change.key === 'providers' || change.key === '*'),
         ).subscribe(() => {
@@ -75,37 +65,79 @@ export class AiAssistantService implements OnDestroy {
         this.configChangeSubscription = null
     }
 
+    private get terminalContext(): TerminalContextService {
+        this.terminalContextInstance ??= this.injector.get(TerminalContextService)
+        return this.terminalContextInstance
+    }
+
+    private get terminalTools(): TerminalToolsService {
+        this.terminalToolsInstance ??= this.injector.get(TerminalToolsService)
+        return this.terminalToolsInstance
+    }
+
+    private get terminalManager(): TerminalManagerService {
+        this.terminalManagerInstance ??= this.injector.get(TerminalManagerService)
+        return this.terminalManagerInstance
+    }
+
+    private get securityValidator(): SecurityValidatorService {
+        this.securityValidatorInstance ??= this.injector.get(SecurityValidatorService)
+        return this.securityValidatorInstance
+    }
+
+    private get chatInterfaceOpener(): ChatInterfaceOpener | null {
+        if (this.chatInterfaceOpenerInstance === undefined) {
+            this.chatInterfaceOpenerInstance = this.injector.get(ChatInterfaceOpener, null)
+        }
+        return this.chatInterfaceOpenerInstance
+    }
+
+    private getOptional<T>(token: any): T | null {
+        return this.injector.get(token, null)
+    }
+
     /**
      * 构建提供商映射表
      */
     private buildProviderMapping(): void {
-        if (this.openaiProvider) {
-            this.providerMapping['openai'] = this.openaiProvider
+        this.providerMapping = {}
+
+        const providers: Array<[string, BaseAiProvider | null]> = [
+            ['openai', this.getOptional<OpenAiProviderService>(OpenAiProviderService)],
+            ['anthropic', this.getOptional<AnthropicProviderService>(AnthropicProviderService)],
+            ['minimax', this.getOptional<MinimaxProviderService>(MinimaxProviderService)],
+            ['glm', this.getOptional<GlmProviderService>(GlmProviderService)],
+            ['openai-compatible', this.getOptional<OpenAiCompatibleProviderService>(OpenAiCompatibleProviderService)],
+            ['ollama', this.getOptional<OllamaProviderService>(OllamaProviderService)],
+            ['vllm', this.getOptional<VllmProviderService>(VllmProviderService)],
+        ]
+
+        for (const [name, provider] of providers) {
+            if (provider) {
+                this.providerMapping[name] = provider
+            }
         }
-        if (this.anthropicProvider) {
-            this.providerMapping['anthropic'] = this.anthropicProvider
+    }
+
+    private ensureInitialized(): void {
+        if (!this.initialized) {
+            this.initialize()
         }
-        if (this.minimaxProvider) {
-            this.providerMapping['minimax'] = this.minimaxProvider
-        }
-        if (this.glmProvider) {
-            this.providerMapping['glm'] = this.glmProvider
-        }
-        if (this.openaiCompatibleProvider) {
-            this.providerMapping['openai-compatible'] = this.openaiCompatibleProvider
-        }
-        if (this.ollamaProvider) {
-            this.providerMapping['ollama'] = this.ollamaProvider
-        }
-        if (this.vllmProvider) {
-            this.providerMapping['vllm'] = this.vllmProvider
-        }
+    }
+
+    private getActiveProvider(): BaseAiProvider | undefined {
+        this.ensureInitialized()
+        return this.providerManager.getActiveProvider()
     }
 
     /**
      * 初始化AI助手
      */
     initialize(): void {
+        if (this.initialized) {
+            return
+        }
+
         this.logger.info('Initializing AI Assistant...')
 
         // 检查是否启用
@@ -113,6 +145,8 @@ export class AiAssistantService implements OnDestroy {
             this.logger.info('AI Assistant is disabled in configuration')
             return
         }
+
+        this.buildProviderMapping()
 
         // 注册并配置所有提供商
         this.registerAllProviders()
@@ -230,7 +264,7 @@ export class AiAssistantService implements OnDestroy {
      * 聊天功能
      */
     async chat(request: ChatRequest): Promise<ChatResponse> {
-        const activeProvider = this.providerManager.getActiveProvider()
+        const activeProvider = this.getActiveProvider()
         if (!activeProvider) {
             throw new Error('No active AI provider available')
         }
@@ -280,7 +314,7 @@ export class AiAssistantService implements OnDestroy {
      * 流式聊天功能
      */
     chatStream(request: ChatRequest): Observable<any> {
-        const activeProvider = this.providerManager.getActiveProvider() as any
+        const activeProvider = this.getActiveProvider() as any
         if (!activeProvider) {
             return throwError(() => new Error('No active AI provider available'))
         }
@@ -565,7 +599,7 @@ export class AiAssistantService implements OnDestroy {
      * 生成命令
      */
     async generateCommand(request: CommandRequest): Promise<CommandResponse> {
-        const activeProvider = this.providerManager.getActiveProvider()
+        const activeProvider = this.getActiveProvider()
         if (!activeProvider) {
             throw new Error('No active AI provider available')
         }
@@ -592,7 +626,7 @@ export class AiAssistantService implements OnDestroy {
      * 解释命令
      */
     async explainCommand(request: ExplainRequest): Promise<ExplainResponse> {
-        const activeProvider = this.providerManager.getActiveProvider()
+        const activeProvider = this.getActiveProvider()
         if (!activeProvider) {
             throw new Error('No active AI provider available')
         }
@@ -619,7 +653,7 @@ export class AiAssistantService implements OnDestroy {
      * 分析结果
      */
     async analyzeResult(request: AnalysisRequest): Promise<AnalysisResponse> {
-        const activeProvider = this.providerManager.getActiveProvider()
+        const activeProvider = this.getActiveProvider()
         if (!activeProvider) {
             throw new Error('No active AI provider available')
         }
@@ -707,6 +741,7 @@ export class AiAssistantService implements OnDestroy {
      * 获取提供商状态
      */
     getProviderStatus(): any {
+        this.ensureInitialized()
         const activeProvider = this.providerManager.getActiveProvider()
         const allProviders = this.providerManager.getAllProviderInfo()
 
@@ -721,6 +756,7 @@ export class AiAssistantService implements OnDestroy {
      * 切换提供商
      */
     switchProvider(providerName: string): boolean {
+        this.ensureInitialized()
         const success = this.providerManager.setActiveProvider(providerName)
         if (success) {
             this.config.setDefaultProvider(providerName)
@@ -735,6 +771,7 @@ export class AiAssistantService implements OnDestroy {
      * 获取下一个提供商
      */
     switchToNextProvider(): boolean {
+        this.ensureInitialized()
         return this.providerManager.switchToNextProvider()
     }
 
@@ -742,6 +779,7 @@ export class AiAssistantService implements OnDestroy {
      * 获取上一个提供商
      */
     switchToPreviousProvider(): boolean {
+        this.ensureInitialized()
         return this.providerManager.switchToPreviousProvider()
     }
 
@@ -750,6 +788,7 @@ export class AiAssistantService implements OnDestroy {
      */
     async healthCheck(): Promise<{ provider: string; status: string; latency?: number }[]> {
         this.logger.info('Performing health check on all providers')
+        this.ensureInitialized()
         return this.providerManager.checkAllProvidersHealth()
     }
 
@@ -758,6 +797,7 @@ export class AiAssistantService implements OnDestroy {
      */
     async validateConfig(): Promise<{ name: string; valid: boolean; errors: string[] }[]> {
         this.logger.info('Validating all provider configurations')
+        this.ensureInitialized()
         return this.providerManager.validateAllProviders()
     }
 
@@ -794,7 +834,7 @@ export class AiAssistantService implements OnDestroy {
      * 获取建议命令
      */
     async getSuggestedCommands(input: string): Promise<string[]> {
-        const activeProvider = this.providerManager.getActiveProvider()
+        const activeProvider = this.getActiveProvider()
         if (!activeProvider) {
             return []
         }
@@ -1122,6 +1162,8 @@ export class AiAssistantService implements OnDestroy {
         request: ChatRequest,
         config: AgentLoopConfig = {},
     ): Observable<AgentStreamEvent> {
+        this.ensureInitialized()
+
         // 🔥 入口日志 - 确认方法被调用
         this.logger.info('🔥 chatStreamWithAgentLoop CALLED', {
             messagesCount: request.messages?.length,
@@ -1193,7 +1235,7 @@ export class AiAssistantService implements OnDestroy {
                     }
 
                     // 调用流式 API
-                    const activeProvider = this.providerManager.getActiveProvider() as any
+                    const activeProvider = this.getActiveProvider() as any
                     if (!activeProvider) {
                         const error = new Error('No active AI provider available')
                         subscriber.next({ type: 'error', error: error.message })

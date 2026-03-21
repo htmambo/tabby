@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, Injector } from '@angular/core'
 import { ToolbarButtonProvider, ToolbarButton, AppService } from 'tabby-core'
 import { SettingsTabComponent } from 'tabby-settings'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
@@ -10,13 +10,19 @@ import { AiSettingsViewService } from '../../services/core/ai-settings-view.serv
  */
 @Injectable()
 export class AiToolbarButtonProvider extends ToolbarButtonProvider {
+    private sidebarServiceInstance: AiSidebarService | null = null
 
     constructor(
         private app: AppService,
-        private sidebarService: AiSidebarService,
+        private injector: Injector,
         private settingsView: AiSettingsViewService,
     ) {
         super()
+    }
+
+    private get sidebarService(): AiSidebarService {
+        this.sidebarServiceInstance ??= this.injector.get(AiSidebarService)
+        return this.sidebarServiceInstance
     }
 
     provide(): ToolbarButton[] {

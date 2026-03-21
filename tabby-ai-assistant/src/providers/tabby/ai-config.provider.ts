@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core'
 import { ConfigProvider, Platform } from 'tabby-core'
-import { ConfigProviderService } from '../../services/core/config-provider.service'
 
 /**
  * Tabby配置提供者
@@ -70,10 +69,7 @@ export class AiConfigProvider extends ConfigProvider {
         },
     }
 
-    constructor(
-        private configService: ConfigProviderService,
-    ) {
+    constructor() {
         super()
     }
 }
-

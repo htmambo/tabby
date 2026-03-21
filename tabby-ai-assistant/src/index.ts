@@ -1,4 +1,4 @@
-import { NgModule, OnDestroy } from '@angular/core'
+import { Injector, NgModule, OnDestroy } from '@angular/core'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
@@ -215,21 +215,23 @@ export default class AiAssistantModule implements OnDestroy {
     private pendingSidebarInit: ReturnType<typeof setTimeout> | null = null
     private readySubscription: Subscription | null = null
     private hotkeySubscription: Subscription | null = null
+    private sidebarServiceInstance: AiSidebarService | null = null
+    private terminalManagerInstance: TerminalManagerService | null = null
     constructor(
+        private injector: Injector,
         private app: AppService,
         private config: ConfigService,
-        private aiService: AiAssistantService,
-        private sidebarService: AiSidebarService,
-        private terminalManager: TerminalManagerService,
         hotkeys: HotkeysService,
     ) {
         console.debug('[AiAssistantModule] Module initialized')
 
-        // 等待应用就绪后初始化
+        // 等待应用就绪后，仅在需要恢复侧边栏时再解析对应服务。
         this.readySubscription = this.app.ready$.subscribe(() => {
             void lastValueFrom(this.config.ready$).then(() => {
-                // 初始化 AI 服务
-                this.aiService.initialize()
+                const shouldRestoreSidebar = this.config.store.pluginConfig?.['ai-assistant']?.sidebarVisible === true
+                if (!shouldRestoreSidebar) {
+                    return
+                }
 
                 // 延迟 1 秒初始化侧边栏，等待 Tabby DOM 完全准备好
                 // 这与 tabby-ssh-sidebar 的实现保持一致
@@ -261,6 +263,16 @@ export default class AiAssistantModule implements OnDestroy {
         this.hotkeySubscription?.unsubscribe()
         this.readySubscription = null
         this.hotkeySubscription = null
+    }
+
+    private get sidebarService(): AiSidebarService {
+        this.sidebarServiceInstance ??= this.injector.get(AiSidebarService)
+        return this.sidebarServiceInstance
+    }
+
+    private get terminalManager(): TerminalManagerService {
+        this.terminalManagerInstance ??= this.injector.get(TerminalManagerService)
+        return this.terminalManagerInstance
     }
 
     /**

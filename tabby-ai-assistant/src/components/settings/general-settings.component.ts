@@ -1,10 +1,15 @@
-import { Component, Output, EventEmitter, OnInit, ViewEncapsulation } from '@angular/core'
+import { Component, EventEmitter, Injector, OnInit, Output, ViewEncapsulation } from '@angular/core'
 import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { LoggerService } from '../../services/core/logger.service'
 import { ThemeService } from '../../services/core/theme.service'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
 import { ProviderConfig, PROVIDER_DEFAULTS } from '../../types/provider.types'
-import { TranslateService } from 'tabby-core'
+import { ConfigService as TabbyConfigService, TranslateService } from 'tabby-core'
+
+type StoredSidebarConfig = {
+    position?: 'left' | 'right'
+    displayMode?: 'sidebar' | 'floating'
+}
 
 @Component({
     selector: 'app-general-settings',
@@ -29,6 +34,7 @@ export class GeneralSettingsComponent implements OnInit {
     private localProviderStatus: Record<string, { text: string; color: string; icon: string; time: number }> = {}
     private readonly statusCacheDuration = 30000 // 30秒缓存
     private readonly localProviders = ['ollama', 'vllm']
+    private sidebarServiceInstance: AiSidebarService | null = null
     get t(): any {
         if (!this.translate) {
             return { general: {}, providers: {}, security: {}, settings: {} }
@@ -91,11 +97,17 @@ export class GeneralSettingsComponent implements OnInit {
 
     constructor(
         private config: ConfigProviderService,
+        private tabbyConfig: TabbyConfigService,
         private logger: LoggerService,
         private translate: TranslateService,
         private themeService: ThemeService,
-        private sidebarService: AiSidebarService,
+        private injector: Injector,
     ) {}
+
+    private get sidebarService(): AiSidebarService {
+        this.sidebarServiceInstance ??= this.injector.get(AiSidebarService)
+        return this.sidebarServiceInstance
+    }
 
     ngOnInit(): void {
         this.loadSettings()
@@ -108,11 +120,16 @@ export class GeneralSettingsComponent implements OnInit {
      * 加载设置
      */
     private loadSettings(): void {
+        const sidebarConfig = this.getSidebarConfig()
         this.selectedProvider = this.config.getDefaultProvider() ?? ''
         this.isEnabled = this.config.isEnabled() ?? true
         this.language = this.config.get('language', 'zh-CN') ?? 'zh-CN'
-        this.sidebarPosition = this.sidebarService.getSidebarPosition()
-        this.displayMode = this.sidebarService.getDisplayMode()
+        this.sidebarPosition = sidebarConfig.position ?? 'right'
+        this.displayMode = sidebarConfig.displayMode ?? 'sidebar'
+    }
+
+    private getSidebarConfig(): StoredSidebarConfig {
+        return this.tabbyConfig.store.pluginConfig?.['ai-assistant'] ?? {}
     }
 
     /**

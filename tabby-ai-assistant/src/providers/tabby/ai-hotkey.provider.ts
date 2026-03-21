@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core'
-import { HotkeyProvider, HotkeyDescription, TranslateService } from 'tabby-core'
-import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
+import { HotkeyProvider, HotkeyDescription } from 'tabby-core'
 
 /**
  * Tabby热键提供者
@@ -25,15 +24,7 @@ export class AiHotkeyProvider extends HotkeyProvider {
         },
     ]
 
-    constructor(
-        private sidebarService: AiSidebarService,
-        private translate: TranslateService,
-    ) {
-        super()
-    }
-
     async provide(): Promise<HotkeyDescription[]> {
         return this.hotkeys
     }
 }
-
