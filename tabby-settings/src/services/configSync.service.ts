@@ -1,5 +1,3 @@
-import * as yaml from 'js-yaml'
-import axios from 'axios'
 import { Injectable, OnDestroy } from '@angular/core'
 import { lastValueFrom } from 'rxjs'
 import { ConfigService, HostAppService, Logger, LogService, Platform, PlatformService } from 'tabby-core'
@@ -67,6 +65,8 @@ export class ConfigSyncService implements OnDestroy {
     private autoSyncLocalChangeInProgress = false
     private destroyed = false
     private autoSyncSleepHandle: ReturnType<typeof setTimeout> | null = null
+    private yamlModulePromise: Promise<any> | null = null
+    private axiosModulePromise: Promise<any> | null = null
 
     constructor (
         log: LogService,
@@ -159,6 +159,7 @@ export class ConfigSyncService implements OnDestroy {
             return
         }
         try {
+            const yaml = await this.getYaml()
             const data = options.localData ?? await this.readConfigDataForSync()
             const localFingerprint = options.localFingerprint ?? this.serializeForSyncFingerprint(data)
             const currentRemoteConfig = remoteConfig ?? await this.getConfig(this.config.store.configSync.configID)
@@ -197,6 +198,7 @@ export class ConfigSyncService implements OnDestroy {
             return
         }
         try {
+            const yaml = await this.getYaml()
             const config = remoteConfig ?? await this.getConfig(this.config.store.configSync.configID)
             const data = yaml.load(config.content) as any
 
@@ -233,6 +235,7 @@ export class ConfigSyncService implements OnDestroy {
     }
 
     private async readConfigDataForSync (): Promise<any> {
+        const yaml = await this.getYaml()
         const data = yaml.load(await this.platform.loadConfig()) as any
         delete data.configSync
         this.removeNonSyncedConfigPaths(data)
@@ -242,6 +245,7 @@ export class ConfigSyncService implements OnDestroy {
     private async writeConfigDataFromSync (data: any) {
         this.internalConfigWriteInProgress = true
         try {
+            const yaml = await this.getYaml()
             await this.platform.saveConfig(yaml.dump(data))
             await this.config.load()
             await this.config.save()
@@ -253,6 +257,8 @@ export class ConfigSyncService implements OnDestroy {
     private async request (method: 'GET'|'POST'|'PATCH'|'DELETE', url: string, params = {}) {
         const host = this.getNormalizedHost()
         const token = this.getToken()
+        const axiosModule = await this.getAxios()
+        const axios = axiosModule.default ?? axiosModule
 
         url = host + url
         this.logger.debug(`${method} ${url}`, params)
@@ -275,6 +281,16 @@ export class ConfigSyncService implements OnDestroy {
             this.logger.error('Config sync request failed', this.describeRequestError(error))
             throw error
         }
+    }
+
+    private async getYaml (): Promise<any> {
+        this.yamlModulePromise ??= import('js-yaml')
+        return this.yamlModulePromise
+    }
+
+    private async getAxios (): Promise<any> {
+        this.axiosModulePromise ??= import('axios')
+        return this.axiosModulePromise
     }
 
     private describeRequestError (error: unknown): Record<string, unknown> {

@@ -5,7 +5,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { InfiniteScrollModule } from 'ngx-infinite-scroll'
 import { lastValueFrom } from 'rxjs'
 
-import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest, ConfigService, HostAppService, Platform } from 'tabby-core'
+import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest, ConfigService, HostAppService, Platform, AppService } from 'tabby-core'
 
 import { EditProfileModalComponent } from './components/editProfileModal.component'
 import { EditProfileGroupModalComponent } from './components/editProfileGroupModal.component'
@@ -44,6 +44,14 @@ const PROVIDERS = [
     { provide: SettingsTabProvider, useClass: ConfigSyncSettingsTabProvider, multi: true },
 ]
 
+type IdleRequestCallbackLike = () => void
+type IdleRequestOptionsLike = {
+    timeout?: number
+}
+type IdleCallbackGlobal = typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallbackLike, options?: IdleRequestOptionsLike) => number
+}
+
 function shouldInitializeConfigSync (config: ConfigService): boolean {
     const sync = config.store?.configSync
     return !!sync?.auto && !!sync?.host?.trim() && !!sync?.token?.trim() && !!sync?.configID
@@ -77,12 +85,15 @@ function shouldInitializeConfigSync (config: ConfigService): boolean {
     ],
 })
 export default class SettingsModule {
+    private configSyncInitScheduled = false
+
     constructor (
         injector: Injector,
         config: ConfigService,
         hostApp: HostAppService,
         settingsTabOpener: SettingsTabOpener,
         hotkeys: HotkeysService,
+        app: AppService,
     ) {
         hotkeys.hotkey$.subscribe(async hotkey => {
             if (hotkey.startsWith('settings-tab.')) {
@@ -91,11 +102,30 @@ export default class SettingsModule {
             }
         })
 
-        void lastValueFrom(config.ready$).then(() => {
-            if (hostApp.platform !== Platform.Web && shouldInitializeConfigSync(config)) {
-                injector.get(ConfigSyncService)
-            }
+        app.ready$.subscribe(() => {
+            void lastValueFrom(config.ready$).then(() => {
+                if (hostApp.platform !== Platform.Web && shouldInitializeConfigSync(config)) {
+                    this.scheduleConfigSyncInit(() => injector.get(ConfigSyncService))
+                }
+            })
         })
+    }
+
+    private scheduleConfigSyncInit (callback: () => void): void {
+        if (this.configSyncInitScheduled) {
+            return
+        }
+        this.configSyncInitScheduled = true
+
+        const run = () => {
+            callback()
+        }
+        const idleGlobal = globalThis as IdleCallbackGlobal
+        if (idleGlobal.requestIdleCallback) {
+            idleGlobal.requestIdleCallback(run, { timeout: 3000 })
+            return
+        }
+        window.setTimeout(run, 1500)
     }
 }
 
