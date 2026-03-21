@@ -1,19 +1,21 @@
-import { Injectable } from '@angular/core'
+import { Injectable, Injector } from '@angular/core'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { AppService, ConfigService, HotkeysService } from 'tabby-core'
 import { AiAssistantLazyLoaderService } from './ai-lazy-loader.service'
+import { isAiAssistantEnabled } from './ai-enabled-state'
 
 @Injectable({ providedIn: 'root' })
 export class AiAssistantMinimalRuntimeService {
     private initialized = false
     private readySubscription: Subscription | null = null
     private hotkeySubscription: Subscription | null = null
+    private lazyLoaderInstance: AiAssistantLazyLoaderService | null = null
 
     constructor (
         private app: AppService,
         private config: ConfigService,
         private hotkeys: HotkeysService,
-        private lazyLoader: AiAssistantLazyLoaderService,
+        private injector: Injector,
     ) { }
 
     init (): void {
@@ -31,9 +33,17 @@ export class AiAssistantMinimalRuntimeService {
         })
     }
 
+    private get lazyLoader (): AiAssistantLazyLoaderService {
+        this.lazyLoaderInstance ??= this.injector.get(AiAssistantLazyLoaderService)
+        return this.lazyLoaderInstance
+    }
+
     private async restoreSidebarIfNeeded (): Promise<void> {
         try {
             await lastValueFrom(this.config.ready$)
+            if (!isAiAssistantEnabled()) {
+                return
+            }
             if (this.config.store.pluginConfig?.['ai-assistant']?.sidebarVisible !== true) {
                 return
             }
@@ -46,6 +56,16 @@ export class AiAssistantMinimalRuntimeService {
 
     private async handleHotkey (hotkey: string): Promise<void> {
         try {
+            if (![
+                'ai-assistant-toggle',
+                'ai-command-generation',
+                'ai-explain-command',
+            ].includes(hotkey)) {
+                return
+            }
+            if (!isAiAssistantEnabled()) {
+                return
+            }
             switch (hotkey) {
                 case 'ai-assistant-toggle':
                     (await this.lazyLoader.getSidebarService()).toggle()

@@ -3,6 +3,7 @@ import { Subject, Observable } from 'rxjs'
 import { ConfigService, SettingsTabOpener } from 'tabby-core'
 import { AiSidebarComponent } from '../../components/chat/ai-sidebar.component'
 import { ChatInterfaceOpener } from '../../api/chatInterfaceOpener'
+import { ConfigProviderService } from '../core/config-provider.service'
 import { AiSettingsViewService } from '../core/ai-settings-view.service'
 
 /**
@@ -88,14 +89,23 @@ export class AiSidebarService implements ChatInterfaceOpener {
         private injector: Injector,
         private environmentInjector: EnvironmentInjector,
         private config: ConfigService,
+        private aiConfig: ConfigProviderService,
         private settingsView: AiSettingsViewService,
         @Optional() private settingsTabOpener: SettingsTabOpener | null,
     ) { }
+
+    private isAssistantEnabled (): boolean {
+        return this.aiConfig.isEnabled()
+    }
 
     /**
      * 显示 sidebar
      */
     show(): void {
+        if (!this.isAssistantEnabled()) {
+            this.openSettings()
+            return
+        }
         if (this._isVisible) {
             return
         }
@@ -136,6 +146,8 @@ export class AiSidebarService implements ChatInterfaceOpener {
     toggle(): void {
         if (this._isVisible) {
             this.hide()
+        } else if (!this.isAssistantEnabled()) {
+            this.openSettings()
         } else {
             this.show()
         }
@@ -163,6 +175,10 @@ export class AiSidebarService implements ChatInterfaceOpener {
      * @param autoSend 是否自动发送（否则只填充不发送）
      */
     sendPresetMessage(message: string, autoSend = true): void {
+        if (!this.isAssistantEnabled()) {
+            this.openSettings()
+            return
+        }
         if (!this._isVisible) {
             this.show()
         }
@@ -175,6 +191,9 @@ export class AiSidebarService implements ChatInterfaceOpener {
      * 初始化 - 应用启动时调用
      */
     initialize(): void {
+        if (!this.isAssistantEnabled()) {
+            return
+        }
         const pluginConfig = this.getPluginConfig()
         // 默认不自动显示，除非明确设置为显示
         if (pluginConfig.sidebarVisible === true) {

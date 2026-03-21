@@ -222,6 +222,7 @@ export default class AiAssistantModule implements OnDestroy {
         private injector: Injector,
         private app: AppService,
         private config: ConfigService,
+        private aiConfig: ConfigProviderService,
         hotkeys: HotkeysService,
         @Optional() @Inject(AI_ASSISTANT_LAZY_RUNTIME) lazyRuntime: boolean | null,
     ) {
@@ -234,6 +235,9 @@ export default class AiAssistantModule implements OnDestroy {
         // 等待应用就绪后，仅在需要恢复侧边栏时再解析对应服务。
         this.readySubscription = this.app.ready$.subscribe(() => {
             void lastValueFrom(this.config.ready$).then(() => {
+                if (!this.aiConfig.isEnabled()) {
+                    return
+                }
                 const shouldRestoreSidebar = this.config.store.pluginConfig?.['ai-assistant']?.sidebarVisible === true
                 if (!shouldRestoreSidebar) {
                     return
@@ -285,6 +289,16 @@ export default class AiAssistantModule implements OnDestroy {
      * 处理热键事件
      */
     private handleHotkey(hotkey: string): void {
+        if (![
+            'ai-assistant-toggle',
+            'ai-command-generation',
+            'ai-explain-command',
+        ].includes(hotkey)) {
+            return
+        }
+        if (!this.aiConfig.isEnabled()) {
+            return
+        }
         switch (hotkey) {
             case 'ai-assistant-toggle':
                 this.sidebarService.toggle()

@@ -1,18 +1,31 @@
-import { Injectable } from '@angular/core'
+import { Injectable, Injector } from '@angular/core'
 import { ToolbarButtonProvider, ToolbarButton, AppService, ConfigService } from 'tabby-core'
 import { SettingsTabComponent } from 'tabby-settings'
 import { AiSettingsViewService } from '../services/core/ai-settings-view.service'
 import { AiAssistantLazyLoaderService } from './ai-lazy-loader.service'
+import { isAiAssistantEnabled } from './ai-enabled-state'
 
 @Injectable()
 export class AiMinimalToolbarButtonProvider extends ToolbarButtonProvider {
+    private lazyLoaderInstance: AiAssistantLazyLoaderService | null = null
+    private settingsViewInstance: AiSettingsViewService | null = null
+
     constructor (
         private app: AppService,
         private config: ConfigService,
-        private settingsView: AiSettingsViewService,
-        private lazyLoader: AiAssistantLazyLoaderService,
+        private injector: Injector,
     ) {
         super()
+    }
+
+    private get lazyLoader (): AiAssistantLazyLoaderService {
+        this.lazyLoaderInstance ??= this.injector.get(AiAssistantLazyLoaderService)
+        return this.lazyLoaderInstance
+    }
+
+    private get settingsView (): AiSettingsViewService {
+        this.settingsViewInstance ??= this.injector.get(AiSettingsViewService)
+        return this.settingsViewInstance
     }
 
     provide (): ToolbarButton[] {
@@ -30,7 +43,7 @@ export class AiMinimalToolbarButtonProvider extends ToolbarButtonProvider {
                 },
                 submenu: async () => [
                     {
-                        title: this.isSidebarVisible() ? '隐藏侧边栏' : '显示侧边栏',
+                        title: this.getPrimaryActionTitle(),
                         click: () => {
                             void this.toggleSidebar()
                         },
@@ -46,11 +59,26 @@ export class AiMinimalToolbarButtonProvider extends ToolbarButtonProvider {
         ]
     }
 
+    private isAssistantEnabled (): boolean {
+        return isAiAssistantEnabled()
+    }
+
     private isSidebarVisible (): boolean {
         return this.config.store.pluginConfig?.['ai-assistant']?.sidebarVisible === true
     }
 
+    private getPrimaryActionTitle (): string {
+        if (this.isSidebarVisible()) {
+            return '隐藏侧边栏'
+        }
+        return this.isAssistantEnabled() ? '显示侧边栏' : '启用 AI 助手...'
+    }
+
     private async toggleSidebar (): Promise<void> {
+        if (!this.isSidebarVisible() && !this.isAssistantEnabled()) {
+            this.openSettings()
+            return
+        }
         const sidebarService = await this.lazyLoader.getSidebarService()
         sidebarService.toggle()
     }

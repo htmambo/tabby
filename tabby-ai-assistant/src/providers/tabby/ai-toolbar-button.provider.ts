@@ -2,6 +2,7 @@ import { Injectable, Injector } from '@angular/core'
 import { ToolbarButtonProvider, ToolbarButton, AppService } from 'tabby-core'
 import { SettingsTabComponent } from 'tabby-settings'
 import { AiSidebarService } from '../../services/chat/ai-sidebar.service'
+import { ConfigProviderService } from '../../services/core/config-provider.service'
 import { AiSettingsViewService } from '../../services/core/ai-settings-view.service'
 
 /**
@@ -15,6 +16,7 @@ export class AiToolbarButtonProvider extends ToolbarButtonProvider {
     constructor(
         private app: AppService,
         private injector: Injector,
+        private aiConfig: ConfigProviderService,
         private settingsView: AiSettingsViewService,
     ) {
         super()
@@ -36,12 +38,12 @@ export class AiToolbarButtonProvider extends ToolbarButtonProvider {
                 title: 'AI 助手',
                 touchBarTitle: 'AI',
                 click: () => {
-                    this.sidebarService.toggle()
+                    this.toggleSidebar()
                 },
                 submenu: async () => [
                     {
-                        title: this.sidebarService.visible ? '隐藏侧边栏' : '显示侧边栏',
-                        click: () => this.sidebarService.toggle(),
+                        title: this.getPrimaryActionTitle(),
+                        click: () => this.toggleSidebar(),
                     },
                     {
                         title: '设置...',
@@ -50,6 +52,25 @@ export class AiToolbarButtonProvider extends ToolbarButtonProvider {
                 ],
             },
         ]
+    }
+
+    private isAssistantEnabled(): boolean {
+        return this.aiConfig.isEnabled()
+    }
+
+    private getPrimaryActionTitle(): string {
+        if (this.sidebarService.visible) {
+            return '隐藏侧边栏'
+        }
+        return this.isAssistantEnabled() ? '显示侧边栏' : '启用 AI 助手...'
+    }
+
+    private toggleSidebar(): void {
+        if (!this.sidebarService.visible && !this.isAssistantEnabled()) {
+            this.openSettings()
+            return
+        }
+        this.sidebarService.toggle()
     }
 
     /**
