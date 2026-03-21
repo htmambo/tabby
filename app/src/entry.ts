@@ -6,7 +6,7 @@ import './global.scss'
 import './toastr.scss'
 
 // Importing before @angular/*
-import { clearPluginDiscoveryCache, findPlugins, initModuleLookup, loadPlugins } from './plugins'
+import { clearPluginDiscoveryCache, findPlugins, initModuleLookup, loadPlugins, resolvePluginAlternativeEntryPath } from './plugins'
 import { getTabbyBridge } from './tabby-bridge'
 
 import { enableProdMode, NgModuleRef, ApplicationRef } from '@angular/core'
@@ -82,10 +82,18 @@ function splitStartupPlugins (plugins: PluginInfo[], config: Record<string, any>
 
     for (const plugin of plugins) {
         if (delayedPluginNames.has(plugin.name)) {
-            deferredPlugins.push(plugin)
-        } else {
-            startupPlugins.push(plugin)
+            const minimalEntryPath = resolvePluginAlternativeEntryPath(plugin, 'index-minimal.js')
+            if (minimalEntryPath) {
+                startupPlugins.push({
+                    ...plugin,
+                    entryPath: minimalEntryPath,
+                })
+                deferredPlugins.push(plugin)
+                continue
+            }
+            console.warn(`Startup deferral requested for ${plugin.name}, but no minimal entry was found`)
         }
+        startupPlugins.push(plugin)
     }
 
     return {
@@ -112,7 +120,7 @@ function prepareStartupPlugins (bootstrapData: BootstrapData, installedPlugins: 
 
     const { startupPlugins, deferredPlugins } = splitStartupPlugins(plugins, bootstrapData.config)
     if (deferredPlugins.length) {
-        console.info('Skipping optional plugins for startup speed in this session:', deferredPlugins.map(x => x.name))
+        console.info('Deferring optional plugin bundles for startup speed in this session:', deferredPlugins.map(x => x.name))
     }
 
     return startupPlugins

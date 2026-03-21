@@ -1,31 +1,49 @@
 import { NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { FormsModule } from '@angular/forms'
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 
 // Tabby modules
-import TabbyCoreModule, { ToolbarButtonProvider, ConfigProvider, HotkeyProvider } from 'tabby-core'
-import TabbyTerminalModule from 'tabby-terminal'
+import { ToolbarButtonProvider, ConfigProvider, HotkeyProvider, TabbyPluginManifest } from 'tabby-core'
 import { SettingsTabProvider } from 'tabby-settings'
+import { AiConfigProvider } from './providers/tabby/ai-config.provider'
+import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
+import { AiLazySettingsTabComponent } from './minimal/ai-lazy-settings-tab.component'
+import { AiMinimalSettingsTabProvider } from './minimal/ai-settings-tab.provider'
+import { AiMinimalToolbarButtonProvider } from './minimal/ai-toolbar-button.provider'
+import { AiAssistantMinimalRuntimeService } from './minimal/ai-runtime.service'
+
+const PROVIDERS = [
+    { provide: ToolbarButtonProvider, useClass: AiMinimalToolbarButtonProvider, multi: true },
+    { provide: SettingsTabProvider, useClass: AiMinimalSettingsTabProvider, multi: true },
+    { provide: ConfigProvider, useClass: AiConfigProvider, multi: true },
+    { provide: HotkeyProvider, useClass: AiHotkeyProvider, multi: true },
+]
 
 @NgModule({
     imports: [
         CommonModule,
-        FormsModule,
-        TabbyCoreModule,
-        TabbyTerminalModule,
-        NgbModule,
     ],
-    providers: [
-        { provide: ToolbarButtonProvider, useClass: (class {}), multi: true },
-        { provide: SettingsTabProvider, useClass: (class {}), multi: true },
-        { provide: ConfigProvider, useClass: (class {}), multi: true },
-        { provide: HotkeyProvider, useClass: (class {}), multi: true },
+    providers: PROVIDERS,
+    declarations: [
+        AiLazySettingsTabComponent,
     ],
-    declarations: [],
 })
-export default class AiAssistantModule {
-    constructor() {
-        console.debug('AiAssistantModule initialized (minimal version)')
+export default class AiAssistantMinimalModule {
+    constructor (runtime: AiAssistantMinimalRuntimeService) {
+        runtime.init()
     }
+}
+
+export const manifest: TabbyPluginManifest = {
+    name: 'ai-assistant',
+    providers: PROVIDERS,
+}
+
+export const forRoot = (): typeof AiAssistantMinimalModule => {
+    return AiAssistantMinimalModule
+}
+
+declare const module: any
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports.forRoot = forRoot
+    module.exports.default = AiAssistantMinimalModule
 }

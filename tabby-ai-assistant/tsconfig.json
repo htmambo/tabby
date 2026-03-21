@@ -1,6 +1,6 @@
 {
     "extends": "../tsconfig.json",
-    "files": ["src/index.ts", "types/legacy-modules.d.ts"],
+    "files": ["src/index.ts", "src/index-minimal.ts", "types/legacy-modules.d.ts"],
     "exclude": [
         "node_modules",
         "dist",

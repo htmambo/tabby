@@ -443,6 +443,14 @@ function resolveBuiltinPackagePath (packageName: string): string | null {
     return null
 }
 
+export function resolvePluginAlternativeEntryPath (plugin: PluginInfo, entryFileName: string): string | null {
+    if (!plugin.path) {
+        return null
+    }
+    const candidate = path.join(plugin.path, 'dist', entryFileName)
+    return pathExistsSync(candidate) ? candidate : null
+}
+
 export function initModuleLookup (userPluginsPath: string): void {
     for (const modulePath of getInitialModuleLookupPaths()) {
         if (!nodeModule.globalPaths.includes(modulePath)) {
@@ -698,7 +706,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
     const plugins: any[] = []
     const pluginsPromises: Promise<any>[] = []
 
-    foundPlugins.forEach(plugin => registerPluginRuntimeRoot(plugin.path))
+    foundPlugins.forEach(plugin => registerPluginRuntimeRoot(plugin.path ?? plugin.entryPath))
 
     let index = 0
     const setProgress = function () {
@@ -710,16 +718,20 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
     for (const foundPlugin of foundPlugins) {
         pluginsPromises.push((async () => {
             try {
-                let resolvedPath = foundPlugin.path
+                const pluginEntryPath = foundPlugin.entryPath ?? foundPlugin.path
+                if (!pluginEntryPath) {
+                    throw new Error(`Plugin ${foundPlugin.name} has no entry path`)
+                }
+                let resolvedPath = pluginEntryPath
                 try {
-                    if (foundPlugin.path) {
-                        resolvedPath = nodeRequire.resolve(foundPlugin.path)
+                    if (pluginEntryPath) {
+                        resolvedPath = nodeRequire.resolve(pluginEntryPath)
                     }
                 } catch {
                     // Ignore resolution errors here; the actual load attempt below will report them if needed.
                 }
                 console.debug(`Loading ${foundPlugin.name}: ${resolvedPath}`)
-                const packageModule = nodeRequire(foundPlugin.path)
+                const packageModule = nodeRequire(pluginEntryPath)
                 const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
                 const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
                 if (foundPlugin.packageName.startsWith('tabby-')) {

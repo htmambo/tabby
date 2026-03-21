@@ -1,4 +1,4 @@
-import { Injector, NgModule, OnDestroy } from '@angular/core'
+import { Inject, Injector, NgModule, OnDestroy, Optional } from '@angular/core'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
@@ -101,6 +101,7 @@ import { AiToolbarButtonProvider } from './providers/tabby/ai-toolbar-button.pro
 import { AiSettingsTabProvider } from './providers/tabby/ai-settings-tab.provider'
 import { AiConfigProvider } from './providers/tabby/ai-config.provider'
 import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
+import { AI_ASSISTANT_LAZY_RUNTIME } from './minimal/lazy-runtime.token'
 
 const PROVIDERS = [
     // Core Services
@@ -222,8 +223,13 @@ export default class AiAssistantModule implements OnDestroy {
         private app: AppService,
         private config: ConfigService,
         hotkeys: HotkeysService,
+        @Optional() @Inject(AI_ASSISTANT_LAZY_RUNTIME) lazyRuntime: boolean | null,
     ) {
         console.debug('[AiAssistantModule] Module initialized')
+
+        if (lazyRuntime) {
+            return
+        }
 
         // 等待应用就绪后，仅在需要恢复侧边栏时再解析对应服务。
         this.readySubscription = this.app.ready$.subscribe(() => {

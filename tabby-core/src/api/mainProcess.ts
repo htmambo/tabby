@@ -10,6 +10,7 @@ export interface PluginInfo {
     author: string
     homepage?: string
     path?: string
+    entryPath?: string
     info?: any
 }
 
