@@ -385,7 +385,7 @@ export class Application {
             await this.newWindow()
         }
         this.presentAllWindows()
-        this.windows[this.windows.length - 1].passCliArguments(argv, cwd, true)
+        await this.windows[this.windows.length - 1].passCliArguments(argv, cwd, true)
     }
 
     private useBuiltinGraphics (): void {

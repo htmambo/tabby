@@ -8,14 +8,28 @@ import type { AppUpdater } from 'electron-updater'
 import type { AppUpdaterEvents } from 'electron-updater/out/AppUpdater'
 
 import type { Application } from './app'
-import { parseArgs } from './cli'
-import { parseTabbyURL, isTabbyURL } from './urlHandler'
 
 let DwmEnableBlurBehindWindow: any = null
 if (process.platform === 'win32') {
     DwmEnableBlurBehindWindow = require('@tabby-gang/windows-blurbehind').DwmEnableBlurBehindWindow
 }
 const runtimeRequire = createRequire(__filename)
+let cliModulePromise: Promise<typeof import('./cli')> | null = null
+let urlHandlerModulePromise: Promise<typeof import('./urlHandler')> | null = null
+
+function getCliModule (): Promise<typeof import('./cli')> {
+    cliModulePromise ??= import('./cli')
+    return cliModulePromise
+}
+
+function getURLHandlerModule (): Promise<typeof import('./urlHandler')> {
+    urlHandlerModulePromise ??= import('./urlHandler')
+    return urlHandlerModulePromise
+}
+
+function getCLIArgs (argv: string[]): string[] {
+    return argv[0]?.includes('node') ? argv.slice(2) : argv.slice(1)
+}
 
 export interface WindowOptions {
     hidden?: boolean
@@ -485,13 +499,24 @@ export class Window {
         this.window.moveTop()
     }
 
-    passCliArguments (argv: string[], cwd: string, secondInstance: boolean): void {
-        const urlArg = argv.find(arg => isTabbyURL(arg))
+    async passCliArguments (argv: string[], cwd: string, secondInstance: boolean): Promise<void> {
+        const cliArgs = getCLIArgs(argv)
+        const urlArg = cliArgs.find(arg => arg.toLowerCase().startsWith('tabby://'))
         if (urlArg) {
-            this.send('cli', parseTabbyURL(urlArg, cwd), cwd, secondInstance)
-        } else {
-            this.send('cli', parseArgs(argv, cwd), cwd, secondInstance)
+            const urlHandler = await getURLHandlerModule()
+            this.send('cli', urlHandler.parseTabbyURL(urlArg, cwd), cwd, secondInstance)
+            return
         }
+
+        if (!cliArgs.length) {
+            if (secondInstance) {
+                this.send('cli', { _: [] }, cwd, secondInstance)
+            }
+            return
+        }
+
+        const cli = await getCliModule()
+        this.send('cli', cli.parseArgs(argv, cwd), cwd, secondInstance)
     }
 
     private async enableDockedWindowStyles (enabled: boolean) {

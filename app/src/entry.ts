@@ -1,6 +1,5 @@
 import 'zone.js'
 import 'core-js/proposals/reflect-metadata'
-import 'rxjs'
 
 import './global.scss'
 import './toastr.scss'
