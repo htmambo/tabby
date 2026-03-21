@@ -30,9 +30,14 @@ export interface KeyEventData {
 }
 
 const REGEX_LATIN_KEYNAME = /^[A-Za-z]$/
+const IME_EVENT_KEYS = new Set(['Process', 'Dead'])
 
 export type KeyName = string
 export type Keystroke = string
+
+export function isIMEKeyboardEvent (event: Pick<KeyboardEvent, 'isComposing'|'key'> & { keyCode?: number }): boolean {
+    return event.isComposing || IME_EVENT_KEYS.has(event.key) || event.keyCode === 229
+}
 
 export function getKeyName (event: KeyEventData): KeyName {
     // eslint-disable-next-line @typescript-eslint/init-declarations

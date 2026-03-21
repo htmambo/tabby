@@ -2,7 +2,7 @@ import { Injectable, Inject, NgZone, EventEmitter, OnDestroy } from '@angular/co
 import { Observable, Subject, filter, lastValueFrom } from 'rxjs'
 import { HotkeyDescription, HotkeyProvider } from '../api/hotkeyProvider'
 import { getRuntimePlatform } from '../api/rendererRuntime'
-import { KeyEventData, getKeyName, Keystroke, KeyName, getKeystrokeName, metaKeyName, altKeyName } from './hotkeys.util'
+import { KeyEventData, getKeyName, Keystroke, KeyName, getKeystrokeName, metaKeyName, altKeyName, isIMEKeyboardEvent } from './hotkeys.util'
 import { ConfigService } from './config.service'
 import { HostAppService, Platform } from '../api/hostApp'
 import { deprecate } from 'util'
@@ -129,6 +129,12 @@ export class HotkeysService implements OnDestroy {
      */
     pushKeyEvent (eventName: string, nativeEvent: KeyboardEvent): void {
         if (nativeEvent.timeStamp === this.lastEventTimestamp) {
+            return
+        }
+
+        if (isIMEKeyboardEvent(nativeEvent)) {
+            this.clearCurrentKeystrokes()
+            this.lastEventTimestamp = nativeEvent.timeStamp
             return
         }
 
