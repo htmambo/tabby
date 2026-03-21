@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Optional, NgZone, ChangeDetectorRef, OnDestroy } from '@angular/core'
+import { Component, Input, HostListener, HostBinding, ViewChildren, ViewChild, Optional, NgZone, ChangeDetectorRef, OnDestroy, Injector } from '@angular/core'
 import { trigger, style, animate, transition, state } from '@angular/animations'
 import { NgbDropdown, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
@@ -167,6 +167,8 @@ export class AppRootComponent implements OnDestroy {
     private destroyed = false
     private pendingTimeouts = new Set<number>()
     private updatesCheckInterval: number | null = null
+    private commandServiceInstance: CommandService | null = null
+    private profilesServiceInstance: ProfilesService | null = null
 
     private hidePreloadLogo (): void {
         if (this.preloadLogoHidden) {
@@ -252,9 +254,8 @@ export class AppRootComponent implements OnDestroy {
     }
 
     constructor (
+        private injector: Injector,
         private hotkeys: HotkeysService,
-        private commands: CommandService,
-        private profilesService: ProfilesService,
         private tabsService: TabsService,
         private translate: TranslateService,
         public updater: UpdaterService,
@@ -406,6 +407,16 @@ export class AppRootComponent implements OnDestroy {
                 }
             }, 3600 * 12 * 1000)
         })
+    }
+
+    private get commands (): CommandService {
+        this.commandServiceInstance ??= this.injector.get(CommandService)
+        return this.commandServiceInstance
+    }
+
+    private get profilesService (): ProfilesService {
+        this.profilesServiceInstance ??= this.injector.get(ProfilesService)
+        return this.profilesServiceInstance
     }
 
     async ngOnInit () {

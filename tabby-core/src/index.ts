@@ -1,4 +1,4 @@
-import { NgModule, ModuleWithProviders, LOCALE_ID, NgZone } from '@angular/core'
+import { Injector, NgModule, ModuleWithProviders, LOCALE_ID, NgZone } from '@angular/core'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
@@ -147,7 +147,12 @@ export const manifest: TabbyPluginManifest = {
     ],
 })
 export default class AppModule { // eslint-disable-line @typescript-eslint/no-extraneous-class
+    private profilesServiceInstance: ProfilesService | null = null
+    private selectorServiceInstance: SelectorService | null = null
+    private translateServiceInstance: TranslateService | null = null
+
     constructor (
+        private injector: Injector,
         app: AppService,
         config: ConfigService,
         platform: PlatformService,
@@ -155,9 +160,6 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         commands: CommandService,
         ngbTooltipConfig: NgbTooltipConfig,
         public locale: LocaleService,
-        private translate: TranslateService,
-        private profilesService: ProfilesService,
-        private selector: SelectorService,
         private ngZone: NgZone,
     ) {
         app.ready$.subscribe(() => {
@@ -186,14 +188,14 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         hotkeys.hotkey$.subscribe(async hotkey => {
             if (hotkey.startsWith('profile.')) {
                 const id = hotkey.substring(hotkey.indexOf('.') + 1)
-                const profiles = await profilesService.getProfiles()
+                const profiles = await this.profilesService.getProfiles()
                 const profile = profiles.find(x => ProfilesService.getProfileHotkeyName(x) === id)
                 if (profile) {
-                    profilesService.openNewTabForProfile(profile)
+                    this.profilesService.openNewTabForProfile(profile)
                 }
             } else if (hotkey.startsWith('profile-selectors.')) {
                 const id = hotkey.substring(hotkey.indexOf('.') + 1)
-                const provider = profilesService.getProviders().find(x => x.id === id)
+                const provider = this.profilesService.getProviders().find(x => x.id === id)
                 if (!provider) {
                     return
                 }
@@ -216,6 +218,21 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
         ngbTooltipConfig.openDelay = 750
         ngbTooltipConfig.placement = 'top bottom auto'
         ngbTooltipConfig.container = 'body'
+    }
+
+    private get profilesService (): ProfilesService {
+        this.profilesServiceInstance ??= this.injector.get(ProfilesService)
+        return this.profilesServiceInstance
+    }
+
+    private get selector (): SelectorService {
+        this.selectorServiceInstance ??= this.injector.get(SelectorService)
+        return this.selectorServiceInstance
+    }
+
+    private get translate (): TranslateService {
+        this.translateServiceInstance ??= this.injector.get(TranslateService)
+        return this.translateServiceInstance
     }
 
     async showSelector (provider: ProfileProvider<Profile>): Promise<void> {

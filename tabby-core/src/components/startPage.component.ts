@@ -1,4 +1,4 @@
-import { afterNextRender, Component, OnDestroy } from '@angular/core'
+import { afterNextRender, Component, Injector, OnDestroy } from '@angular/core'
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { HomeBaseService } from '../services/homeBase.service'
 import { CommandService } from '../services/commands.service'
@@ -20,15 +20,16 @@ export class StartPageComponent implements OnDestroy {
     commands: StartPageCommand[] = []
     private destroyed = false
     private loadCommandsTimeout: ReturnType<typeof setTimeout> | null = null
+    private commandServiceInstance: CommandService | null = null
 
     constructor (
+        private injector: Injector,
         private domSanitizer: DomSanitizer,
         public homeBase: HomeBaseService,
-        commands: CommandService,
     ) {
         afterNextRender(() => {
             this.loadCommandsTimeout = setTimeout(async () => {
-                const loadedCommands = await commands.getCommands({})
+                const loadedCommands = await this.commandService.getCommands({})
                 if (this.destroyed) {
                     return
                 }
@@ -40,6 +41,11 @@ export class StartPageComponent implements OnDestroy {
                     }))
             }, 0)
         })
+    }
+
+    private get commandService (): CommandService {
+        this.commandServiceInstance ??= this.injector.get(CommandService)
+        return this.commandServiceInstance
     }
 
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types

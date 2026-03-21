@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core'
+import { Injector, NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
@@ -68,19 +68,26 @@ const PROVIDERS = [
     ],
 })
 export default class LocalTerminalModule { // eslint-disable-line @typescript-eslint/no-extraneous-class
+    private terminalServiceInstance: TerminalService | null = null
+
     private constructor (
+        private injector: Injector,
         hotkeys: HotkeysService,
-        terminal: TerminalService,
         hostApp: HostAppService,
     ) {
         hotkeys.hotkey$.subscribe(async (hotkey) => {
             if (hotkey === 'new-tab') {
-                terminal.openTab()
+                this.terminalService.openTab()
             }
             if (hotkey === 'new-window') {
                 hostApp.newWindow()
             }
         })
+    }
+
+    private get terminalService (): TerminalService {
+        this.terminalServiceInstance ??= this.injector.get(TerminalService)
+        return this.terminalServiceInstance
     }
 }
 
