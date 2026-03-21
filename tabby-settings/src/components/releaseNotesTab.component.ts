@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
-import axios from 'axios'
-import { marked } from 'marked'
-import { Component, Injector } from '@angular/core'
+import { Component, HostListener, Injector } from '@angular/core'
 import { BaseTabComponent, TranslateService } from 'tabby-core'
 
 export interface Release {
@@ -20,11 +18,14 @@ export interface Release {
     styleUrls: ['./releaseNotesTab.component.scss'],
 })
 export class ReleaseNotesComponent extends BaseTabComponent {
+    private readonly loadMoreThreshold = 240
     releases: Release[] = []
     lastPage = 1
     loadingReleases = false
     hasMoreReleases = true
     private loadedPages = new Set<number>()
+    private axiosModulePromise: Promise<any> | null = null
+    private markedModulePromise: Promise<any> | null = null
 
     constructor (translate: TranslateService, injector: Injector) {
         super(injector)
@@ -42,6 +43,12 @@ export class ReleaseNotesComponent extends BaseTabComponent {
         this.loadingReleases = true
         console.debug('Loading releases page', page)
         try {
+            const [axiosModule, markedModule] = await Promise.all([
+                this.getAxios(),
+                this.getMarked(),
+            ])
+            const axios = axiosModule.default ?? axiosModule
+            const marked = markedModule.marked ?? markedModule.default ?? markedModule
             const response = await axios.get(`https://api.github.com/repos/htmambo/tabby/releases?page=${page}`, {
                 headers: { Accept: 'application/vnd.github.v3+json' },
             })
@@ -63,10 +70,30 @@ export class ReleaseNotesComponent extends BaseTabComponent {
         }
     }
 
+    @HostListener('scroll', ['$event.target'])
+    onHostScroll (target: HTMLElement | null): void {
+        if (!target || this.loadingReleases || !this.hasMoreReleases) {
+            return
+        }
+        const remaining = target.scrollHeight - target.scrollTop - target.clientHeight
+        if (remaining <= this.loadMoreThreshold) {
+            this.onScrolled()
+        }
+    }
+
     onScrolled (): void {
         void this.loadReleases(this.lastPage + 1).catch(error => {
             console.error('Failed to load release notes', error)
         })
     }
 
+    private async getAxios (): Promise<any> {
+        this.axiosModulePromise ??= import('axios')
+        return this.axiosModulePromise
+    }
+
+    private async getMarked (): Promise<any> {
+        this.markedModulePromise ??= import('marked')
+        return this.markedModulePromise
+    }
 }

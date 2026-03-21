@@ -2,7 +2,6 @@ import { Injector, NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
-import { InfiniteScrollModule } from 'ngx-infinite-scroll'
 import { lastValueFrom } from 'rxjs'
 
 import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest, ConfigService, HostAppService, Platform, AppService } from 'tabby-core'
@@ -64,7 +63,6 @@ function shouldInitializeConfigSync (config: ConfigService): boolean {
         FormsModule,
         NgbModule,
         TabbyCorePlugin,
-        InfiniteScrollModule,
     ],
     providers: PROVIDERS,
     declarations: [
