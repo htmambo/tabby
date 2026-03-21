@@ -126,8 +126,6 @@ export class AppRootComponent implements OnDestroy {
     activeRoyalTab: BaseTabComponent|null = null
     royalSingleExpandMode = false
     royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
-    /** 用于检测 profile 相关配置是否变化的缓存 */
-    private lastProfileConfigVersion: number = 0
     royalSessionGroups: RoyalNavigationGroup[] = []
     private readonly defaultFixedTabWidth = 200
     private readonly minFixedTabWidth = 84
@@ -155,6 +153,8 @@ export class AppRootComponent implements OnDestroy {
     private readonly royalRestoreBindingsMaxAttempts = 20
     private readonly royalSidebarPreviewCloseDelay = 120
     private readonly royalSidebarTransitionFallbackDelay = 260
+    private readonly startupToolbarButtonsDelay = 150
+    private readonly startupRoyalConnectionsDelay = 350
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
@@ -273,7 +273,6 @@ export class AppRootComponent implements OnDestroy {
         private workspaceLayout: WorkspaceLayoutService,
     ) {
         this.restoreRoyalPreferences()
-        this.recomputeRoyalSidebarGroups()
 
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
@@ -372,26 +371,31 @@ export class AppRootComponent implements OnDestroy {
         })
 
         void firstValueFrom(config.ready$).then(async () => {
-            const [leftToolbarButtons, rightToolbarButtons] = await Promise.all([
-                this.getToolbarButtons(false),
-                this.getToolbarButtons(true),
-            ])
             this.runInAngular(() => {
-                this.leftToolbarButtons = leftToolbarButtons
-                this.rightToolbarButtons = rightToolbarButtons
                 this.syncWindowOpacity()
                 this.scheduleViewRefresh()
             })
             this.scheduleTimeout(() => {
+                void this.loadToolbarButtons().catch(error => {
+                    this.logger.warn('Failed to load startup toolbar buttons', error)
+                })
+            }, this.startupToolbarButtonsDelay)
+            this.scheduleTimeout(() => {
+                if (!this.shouldShowRoyalSidebar()) {
+                    return
+                }
                 void this.refreshRoyalConnections().then(() => this.scheduleRoyalActiveSync())
-            })
+            }, this.startupRoyalConnectionsDelay)
             this.config.changed$.subscribe(() => {
                 this.runInAngular(() => {
                     this.syncWindowOpacity()
-                    // 只有 profile 相关配置变化时才刷新连接侧栏
-                    if (this.hasProfileConfigChanged()) {
-                        void this.refreshRoyalConnections()
+                    if (!this.shouldShowRoyalSidebar()) {
+                        this.royalConnectionGroups = []
+                        this.recomputeRoyalSidebarGroups()
+                        this.scheduleViewRefresh()
+                        return
                     }
+                    void this.refreshRoyalConnections()
                 })
             })
 
@@ -451,7 +455,8 @@ export class AppRootComponent implements OnDestroy {
     }
 
     hasVerticalTabs () {
-        return this.config.store.appearance.tabsLocation === 'left' || this.config.store.appearance.tabsLocation === 'right'
+        const tabsLocation = this.config.store?.appearance?.tabsLocation
+        return tabsLocation === 'left' || tabsLocation === 'right'
     }
 
     get targetTabSize (): any {
@@ -481,6 +486,21 @@ export class AppRootComponent implements OnDestroy {
             .filter(x => x.locations?.includes(aboveZero ? CommandLocation.RightToolbar : CommandLocation.LeftToolbar))
     }
 
+    private async loadToolbarButtons (): Promise<void> {
+        const [leftToolbarButtons, rightToolbarButtons] = await Promise.all([
+            this.getToolbarButtons(false),
+            this.getToolbarButtons(true),
+        ])
+        if (this.destroyed) {
+            return
+        }
+        this.runInAngular(() => {
+            this.leftToolbarButtons = leftToolbarButtons
+            this.rightToolbarButtons = rightToolbarButtons
+            this.scheduleViewRefresh()
+        })
+    }
+
     private runInAngular (callback: () => void): void {
         if (NgZone.isInAngularZone()) {
             callback()
@@ -505,7 +525,7 @@ export class AppRootComponent implements OnDestroy {
     }
 
     shouldShowRoyalSidebar (): boolean {
-        const tabsLocation = this.config.store.appearance.tabsLocation
+        const tabsLocation = this.config.store?.appearance?.tabsLocation
         return tabsLocation === 'top' || tabsLocation === 'bottom'
     }
 
@@ -895,6 +915,11 @@ export class AppRootComponent implements OnDestroy {
     }
 
     private recomputeRoyalSidebarGroups (): void {
+        if (!this.shouldShowRoyalSidebar()) {
+            this.filteredRoyalConnectionGroups = []
+            this.royalSessionGroups = []
+            return
+        }
         this.filteredRoyalConnectionGroups = this.buildFilteredRoyalConnectionGroups()
         this.royalSessionGroups = this.buildRoyalSessionGroups()
     }
@@ -1292,6 +1317,11 @@ export class AppRootComponent implements OnDestroy {
     }
 
     private async refreshRoyalConnections (): Promise<void> {
+        if (!this.shouldShowRoyalSidebar()) {
+            this.royalConnectionGroups = []
+            this.recomputeRoyalSidebarGroups()
+            return
+        }
         const refreshToken = ++this.royalConnectionsRefreshToken
         try {
             const groups = await this.profilesService.getProfileGroups({ includeNonUserGroup: true, includeProfiles: true })
@@ -1312,18 +1342,6 @@ export class AppRootComponent implements OnDestroy {
         } catch (error) {
             this.logger.warn('Failed to refresh connection sidebar', error)
         }
-    }
-
-    /**
-     * 检测 profile 相关配置是否发生变化
-     * 使用配置版本号比较，避免 JSON.stringify 开销
-     */
-    private hasProfileConfigChanged (): boolean {
-        if (this.config.storeVersion !== this.lastProfileConfigVersion) {
-            this.lastProfileConfigVersion = this.config.storeVersion
-            return true
-        }
-        return false
     }
 
     private intoRoyalConnectionGroup (group: PartialProfileGroup<ProfileGroup>): RoyalConnectionGroup {

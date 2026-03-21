@@ -18,6 +18,7 @@ interface StartPageCommand extends Command {
 export class StartPageComponent implements OnDestroy {
     version: string
     commands: StartPageCommand[] = []
+    private readonly startupCommandLoadDelay = 150
     private destroyed = false
     private loadCommandsTimeout: ReturnType<typeof setTimeout> | null = null
     private commandServiceInstance: CommandService | null = null
@@ -29,17 +30,21 @@ export class StartPageComponent implements OnDestroy {
     ) {
         afterNextRender(() => {
             this.loadCommandsTimeout = setTimeout(async () => {
-                const loadedCommands = await this.commandService.getCommands({})
-                if (this.destroyed) {
-                    return
+                try {
+                    const loadedCommands = await this.commandService.getCommands({})
+                    if (this.destroyed) {
+                        return
+                    }
+                    this.commands = loadedCommands
+                        .filter(x => x.locations?.includes(CommandLocation.StartPage))
+                        .map(command => ({
+                            ...command,
+                            safeIcon: this.domSanitizer.bypassSecurityTrustHtml(command.icon ?? ''),
+                        }))
+                } catch (error) {
+                    console.warn('Failed to load start page commands', error)
                 }
-                this.commands = loadedCommands
-                    .filter(x => x.locations?.includes(CommandLocation.StartPage))
-                    .map(command => ({
-                        ...command,
-                        safeIcon: this.domSanitizer.bypassSecurityTrustHtml(command.icon ?? ''),
-                    }))
-            }, 0)
+            }, this.startupCommandLoadDelay)
         })
     }
 
