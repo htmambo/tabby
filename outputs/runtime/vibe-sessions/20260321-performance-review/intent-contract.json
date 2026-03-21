@@ -1,0 +1,27 @@
+{
+  "runId": "20260321-performance-review",
+  "createdAt": "2026-03-21T22:39:26+08:00",
+  "stage": "deep_interview",
+  "goal": "Inspect the current Tabby project and propose optimization recommendations focused on performance and speed.",
+  "deliverable": "A prioritized repository-grounded performance review with concrete recommendations and supporting evidence.",
+  "constraints": [
+    "Do not make application code changes in this run.",
+    "Use current repository state as the source of truth.",
+    "Keep conclusions evidence-backed."
+  ],
+  "acceptanceCriteria": [
+    "Capture at least one measurable baseline.",
+    "Cite concrete source locations for key findings.",
+    "Prioritize recommendations by impact and effort."
+  ],
+  "nonGoals": [
+    "Implementing optimizations.",
+    "Running a full interactive Electron profiler session."
+  ],
+  "autonomyMode": "benchmark_autonomous",
+  "openQuestions": [],
+  "inferenceNotes": [
+    "The user asked for recommendations, not immediate implementation.",
+    "Static analysis plus local build/output inspection is sufficient for this review pass."
+  ]
+}

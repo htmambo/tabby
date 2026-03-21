@@ -1,0 +1,25 @@
+{
+  "runId": "20260321-performance-review",
+  "createdAt": "2026-03-21T22:39:26+08:00",
+  "stage": "skeleton_check",
+  "cwd": "/usr/htdocs/tabby",
+  "branch": "fix-ssh-ime-punctuation",
+  "gitStatus": "clean",
+  "runtimeMode": "benchmark_autonomous",
+  "repoSummary": {
+    "packageManager": "yarn@1.22.19",
+    "node": "v20.15.1",
+    "yarn": "1.22.22",
+    "nodeModulesInstalled": true,
+    "buildablePackages": 13
+  },
+  "existingArtifacts": [
+    "docs/Task/Active/TABBY_OPTIMIZATION_PLAN.md",
+    "docs/Task/Active/TABBY_PERFORMANCE_MEMORY_OPTIMIZATION_PLAN_2026-03-16.md",
+    "docs/Analysis/MEMORY_LEAK_ANALYSIS_2026-03-16.md"
+  ],
+  "notes": [
+    "Repository already contains March 2026 optimization documents.",
+    "Current run treats those artifacts as historical context and re-validates against current source."
+  ]
+}

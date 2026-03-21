@@ -1,5 +1,5 @@
 import * as path from 'path'
-import { access, readFile, readdir, rm } from 'node:fs/promises'
+import { access, readFile, readdir, rm, stat } from 'node:fs/promises'
 import * as angularAnimations from '@angular/animations'
 import * as angularCdkClipboard from '@angular/cdk/clipboard'
 import * as angularCdkDragDrop from '@angular/cdk/drag-drop'
@@ -18,7 +18,7 @@ import * as rxjsModule from 'rxjs'
 import * as rxjsOperators from 'rxjs/operators'
 import * as zoneJs from 'zone.js'
 import { TabbyPluginManifest } from '../../tabby-core/src/api/plugin-manifest'
-import { getRuntimeCwd, getRuntimeEnv, getRuntimeResourcesPath, setRuntimeEnv } from '../../tabby-core/src/api/rendererRuntime'
+import { getRuntimeCwd, getRuntimeEnv, getRuntimeResourcesPath, isRuntimeDev, setRuntimeEnv } from '../../tabby-core/src/api/rendererRuntime'
 import { PluginInfo } from '../../tabby-core/src/api/mainProcess'
 import { PLUGIN_BLACKLIST } from './pluginBlacklist'
 import { getNodeRequire, getTabbyBridge } from './tabby-bridge'
@@ -43,12 +43,32 @@ type GlobalModuleTarget = typeof globalThis & {
     }
 }
 
+interface PluginDiscoveryCachePathState {
+    path: string
+    exists: boolean
+    mtimeMs: number
+}
+
+interface PluginDiscoveryCacheEntry {
+    version: number
+    lookupPaths: string[]
+    pathStates: PluginDiscoveryCachePathState[]
+    plugins: PluginInfo[]
+}
+
+export interface FindPluginsResult {
+    plugins: PluginInfo[]
+    fromCache: boolean
+}
+
 const nodeRequire = getNodeRequire()
 const nodeModule = nodeRequire('module') as NodeModuleRuntime
 const bridgeIPC = getTabbyBridge().ipc
 let managedUserPluginsNodeModulesPath: string | null = null
 let pluginLookupPaths: string[] = []
 const pluginRuntimeRoots = new Set<string>()
+const PLUGIN_DISCOVERY_CACHE_KEY = 'tabby.pluginDiscoveryCache.v1'
+const PLUGIN_DISCOVERY_CACHE_VERSION = 1
 
 function normalizePath (p: string): string {
     const cygwinPrefix = '/cygdrive/'
@@ -61,6 +81,193 @@ function normalizePath (p: string): string {
 
 function normalizePathForCompare (p: string): string {
     return normalizePath(path.resolve(p)).replace(/\\/g, '/').toLowerCase()
+}
+
+function parseBooleanRuntimeEnv (name: string, defaultValue: boolean): boolean {
+    const value = getRuntimeEnv(name)?.trim().toLowerCase()
+    if (value === undefined || value === '') {
+        return defaultValue
+    }
+    if (['0', 'false', 'no', 'off'].includes(value)) {
+        return false
+    }
+    if (['1', 'true', 'yes', 'on'].includes(value)) {
+        return true
+    }
+    return defaultValue
+}
+
+function shouldUsePluginDiscoveryCache (): boolean {
+    return !isRuntimeDev() && !parseBooleanRuntimeEnv('TABBY_DISABLE_PLUGIN_DISCOVERY_CACHE', false)
+}
+
+function getPluginDiscoveryStorage (): Storage | null {
+    try {
+        return typeof localStorage === 'undefined' ? null : localStorage
+    } catch {
+        return null
+    }
+}
+
+function normalizeLookupPaths (paths: string[]): string[] {
+    return Array.from(new Set(paths.map(x => normalizePath(path.resolve(x)))))
+}
+
+async function getPluginDiscoveryPathStates (paths: string[]): Promise<PluginDiscoveryCachePathState[]> {
+    return Promise.all(normalizeLookupPaths(paths).map(async pluginPath => {
+        try {
+            const info = await stat(pluginPath)
+            return {
+                path: pluginPath,
+                exists: true,
+                mtimeMs: Math.trunc(info.mtimeMs),
+            }
+        } catch {
+            return {
+                path: pluginPath,
+                exists: false,
+                mtimeMs: 0,
+            }
+        }
+    }))
+}
+
+function serializePluginInfo (plugin: PluginInfo): PluginInfo {
+    return {
+        name: plugin.name,
+        description: plugin.description ?? '',
+        packageName: plugin.packageName,
+        isBuiltin: plugin.isBuiltin,
+        isLegacy: plugin.isLegacy,
+        version: plugin.version,
+        author: plugin.author,
+        homepage: plugin.homepage,
+        path: plugin.path,
+    }
+}
+
+function sanitizeCachedPluginInfo (value: unknown): PluginInfo | null {
+    if (!value || typeof value !== 'object') {
+        return null
+    }
+    const candidate = value as Partial<PluginInfo>
+    if (
+        typeof candidate.name !== 'string' ||
+        typeof candidate.packageName !== 'string' ||
+        typeof candidate.version !== 'string' ||
+        typeof candidate.author !== 'string' ||
+        typeof candidate.isBuiltin !== 'boolean' ||
+        typeof candidate.isLegacy !== 'boolean'
+    ) {
+        return null
+    }
+    return {
+        name: candidate.name,
+        description: typeof candidate.description === 'string' ? candidate.description : '',
+        packageName: candidate.packageName,
+        isBuiltin: candidate.isBuiltin,
+        isLegacy: candidate.isLegacy,
+        version: candidate.version,
+        author: candidate.author,
+        homepage: typeof candidate.homepage === 'string' ? candidate.homepage : undefined,
+        path: typeof candidate.path === 'string' ? candidate.path : undefined,
+    }
+}
+
+function clearPluginDiscoveryCacheStorage (): void {
+    const storage = getPluginDiscoveryStorage()
+    if (!storage) {
+        return
+    }
+    try {
+        storage.removeItem(PLUGIN_DISCOVERY_CACHE_KEY)
+    } catch {
+        // Ignore storage cleanup failures.
+    }
+}
+
+function arePluginDiscoveryPathStatesEqual (
+    a: PluginDiscoveryCachePathState[],
+    b: PluginDiscoveryCachePathState[],
+): boolean {
+    if (a.length !== b.length) {
+        return false
+    }
+    return a.every((state, index) =>
+        state.path === b[index]?.path &&
+        state.exists === b[index]?.exists &&
+        state.mtimeMs === b[index]?.mtimeMs,
+    )
+}
+
+async function readPluginDiscoveryCache (paths: string[]): Promise<PluginInfo[] | null> {
+    if (!shouldUsePluginDiscoveryCache()) {
+        return null
+    }
+
+    const storage = getPluginDiscoveryStorage()
+    if (!storage) {
+        return null
+    }
+
+    let cache: PluginDiscoveryCacheEntry | null = null
+    try {
+        const raw = storage.getItem(PLUGIN_DISCOVERY_CACHE_KEY)
+        cache = raw ? JSON.parse(raw) as PluginDiscoveryCacheEntry : null
+    } catch {
+        clearPluginDiscoveryCacheStorage()
+        return null
+    }
+
+    const normalizedPaths = normalizeLookupPaths(paths)
+    if (
+        !cache ||
+        cache.version !== PLUGIN_DISCOVERY_CACHE_VERSION ||
+        JSON.stringify(cache.lookupPaths) !== JSON.stringify(normalizedPaths)
+    ) {
+        return null
+    }
+
+    const currentPathStates = await getPluginDiscoveryPathStates(normalizedPaths)
+    if (!arePluginDiscoveryPathStatesEqual(cache.pathStates ?? [], currentPathStates)) {
+        return null
+    }
+
+    const cachedPlugins = (cache.plugins ?? [])
+        .map(sanitizeCachedPluginInfo)
+        .filter((plugin): plugin is PluginInfo => !!plugin)
+
+    if (!cachedPlugins.length && cache.plugins?.length) {
+        clearPluginDiscoveryCacheStorage()
+        return null
+    }
+
+    console.debug(`Using cached plugin discovery results (${cachedPlugins.length} plugins)`)
+    return cachedPlugins
+}
+
+async function writePluginDiscoveryCache (paths: string[], plugins: PluginInfo[]): Promise<void> {
+    if (!shouldUsePluginDiscoveryCache()) {
+        return
+    }
+
+    const storage = getPluginDiscoveryStorage()
+    if (!storage) {
+        return
+    }
+
+    try {
+        const normalizedPaths = normalizeLookupPaths(paths)
+        const cache: PluginDiscoveryCacheEntry = {
+            version: PLUGIN_DISCOVERY_CACHE_VERSION,
+            lookupPaths: normalizedPaths,
+            pathStates: await getPluginDiscoveryPathStates(normalizedPaths),
+            plugins: plugins.map(serializePluginInfo),
+        }
+        storage.setItem(PLUGIN_DISCOVERY_CACHE_KEY, JSON.stringify(cache))
+    } catch (error) {
+        console.warn('Failed to persist plugin discovery cache', error)
+    }
 }
 
 function pathExistsSync (targetPath: string): boolean {
@@ -267,10 +474,9 @@ export function initModuleLookup (userPluginsPath: string): void {
         paths.join(path.delimiter),
     ].filter(Boolean).join(path.delimiter))
     nodeModule._initPaths()
-    pluginLookupPaths = Array.from(new Set([
-        ...paths.map(x => normalizePath(path.resolve(x))),
-        ...nodeModule.globalPaths.map(x => normalizePath(path.resolve(x))),
-    ]))
+    pluginLookupPaths = Array.from(new Set(
+        paths.map(x => normalizePath(path.resolve(x))),
+    ))
 
     builtinModules.forEach(m => {
         if (!cachedBuiltinModules[m]) {
@@ -370,8 +576,9 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
             isBuiltin: isBuiltinPluginDir(pluginDir),
             isLegacy: info.keywords.includes('terminus-plugin') || info.keywords.includes('terminus-builtin-plugin'),
             version: info.version,
-            description: info.description,
+            description: info.description ?? '',
             author,
+            homepage: info.homepage,
             path: pluginPath,
             info,
         }
@@ -436,8 +643,22 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
     return existing
 }
 
-export async function findPlugins (): Promise<PluginInfo[]> {
+export function clearPluginDiscoveryCache (): void {
+    clearPluginDiscoveryCacheStorage()
+}
+
+export async function findPlugins (options: { forceRefresh?: boolean } = {}): Promise<FindPluginsResult> {
     const paths = pluginLookupPaths.length ? pluginLookupPaths : nodeModule.globalPaths
+    if (!options.forceRefresh) {
+        const cachedPlugins = await readPluginDiscoveryCache(paths)
+        if (cachedPlugins) {
+            return {
+                plugins: cachedPlugins,
+                fromCache: true,
+            }
+        }
+    }
+
     const foundPlugins: PluginInfo[] = []
 
     const candidateLocations: { pluginDir: string, packageName: string }[] = await getPluginCandidateLocation(paths)
@@ -466,7 +687,11 @@ export async function findPlugins (): Promise<PluginInfo[]> {
 
     foundPlugins.sort((a, b) => a.name > b.name ? 1 : -1)
     foundPlugins.sort((a, b) => a.isBuiltin < b.isBuiltin ? 1 : -1)
-    return foundPlugins
+    await writePluginDiscoveryCache(paths, foundPlugins)
+    return {
+        plugins: foundPlugins,
+        fromCache: false,
+    }
 }
 
 export async function loadPlugins (foundPlugins: PluginInfo[], progress: ProgressCallback): Promise<any[]> {

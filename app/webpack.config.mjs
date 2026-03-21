@@ -22,6 +22,7 @@ const linkerPlugin = createEs2015LinkerPlugin({
 export default () => {
     const isDev = !!process.env.TABBY_DEV
     const enableCache = !process.env.TABBY_DISABLE_CACHE
+    const emitSourceMaps = isDev || !!process.env.CI || !!process.env.TABBY_RELEASE_SOURCEMAPS
     const config = {
         name: 'tabby',
         target: 'node',
@@ -33,7 +34,7 @@ export default () => {
         },
         mode: isDev ? 'development' : 'production',
         optimization:{
-            minimize: false,
+            minimize: !isDev,
             concatenateModules: !isDev,
         },
         cache: enableCache ? {
@@ -52,7 +53,7 @@ export default () => {
             maxEntrypointSize: 20 * 1024 * 1024,
         },
         context: __dirname,
-        devtool: 'source-map',
+        devtool: emitSourceMaps ? (isDev ? 'source-map' : 'hidden-source-map') : false,
         output: {
             path: path.join(__dirname, 'dist'),
             pathinfo: isDev,

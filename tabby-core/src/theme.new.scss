@@ -1,6 +1,6 @@
 @use "sass:math";
 @use "bootstrap/scss/bootstrap" as * with (
-    $font-family-sans-serif: "Source Sans Pro",
+    $font-family-sans-serif: ("Segoe UI", "SF Pro Text", "Noto Sans", system-ui, sans-serif),
     $font-size-base: math.div(14rem, 16),
     $modal-header-border-color: transparent,
     $modal-footer-border-color: transparent,

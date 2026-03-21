@@ -7,6 +7,7 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 const isDev = !!process.env.TABBY_DEV
 const enableCache = !process.env.TABBY_DISABLE_CACHE
 const fastBuild = !!process.env.TABBY_FAST_BUILD
+const emitSourceMaps = isDev || !!process.env.CI || !!process.env.TABBY_RELEASE_SOURCEMAPS
 
 const config = {
     name: 'tabby-main',
@@ -16,11 +17,15 @@ const config = {
     },
     mode: isDev ? 'development' : 'production',
     context: __dirname,
-    devtool: 'source-map',
+    devtool: emitSourceMaps ? (isDev ? 'source-map' : 'hidden-source-map') : false,
     output: {
         path: path.join(__dirname, 'dist'),
         pathinfo: isDev,
         filename: '[name].js',
+    },
+    optimization: {
+        minimize: !isDev,
+        concatenateModules: !isDev,
     },
     cache: enableCache ? {
         type: 'filesystem',

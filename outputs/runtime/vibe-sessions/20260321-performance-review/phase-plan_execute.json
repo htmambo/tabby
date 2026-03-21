@@ -1,0 +1,41 @@
+{
+  "runId": "20260321-performance-review",
+  "stage": "plan_execute",
+  "status": "completed",
+  "commands": [
+    "git status --short --branch",
+    "rg --files -g 'package.json' -g 'webpack.config.*' -g 'docs/**'",
+    "sed -n on package.json, webpack configs, plugin loader, entry, recovery services, terminal frontend, settings modal",
+    "ls -lah app/dist",
+    "du -sh app/dist tabby-core/dist tabby-terminal/dist tabby-ssh/dist",
+    "node -e asset and icon metrics",
+    "time node scripts/build-modules.mjs > /tmp/tabby-build.log",
+    "rm -f /tmp/tabby-build.log"
+  ],
+  "baselines": {
+    "buildTotalSeconds": 47.881,
+    "buildCpuPercent": 185,
+    "appDistApproxMB": 32,
+    "bundleJsBytes": 4135423,
+    "bundleMapBytes": 11208463,
+    "mainJsBytes": 300619,
+    "mainMapBytes": 1179480,
+    "preloadJsBytes": 427276,
+    "preloadMapBytes": 625730,
+    "fontFileCount": 107,
+    "fontApproxMB": 14.38,
+    "mapFileCount": 5,
+    "mapApproxMB": 12.42,
+    "iconCount": 1970,
+    "iconClassVariants": 2141,
+    "buildConfigs": 15
+  },
+  "topFindings": [
+    "Production builds remain debug-heavy: minification is disabled and source maps are emitted broadly.",
+    "Tab recovery still serializes full terminal state too often on the renderer thread.",
+    "Cold start still waits for plugin discovery and eager plugin loading before Angular bootstrap.",
+    "Font/icon payload is disproportionately large for the shipped app assets.",
+    "Production build orchestration is serialized and under-utilizes CPU."
+  ],
+  "reportPath": "docs/Analysis/TABBY_PERFORMANCE_SPEED_REVIEW_2026-03-21.md"
+}

@@ -30,11 +30,18 @@ export interface RecoveredTabsState {
     entries: RecoveredTabEntry[]
 }
 
+export interface SaveTabsOptions extends Partial<GetRecoveryTokenOptions> {
+    changedTabs?: BaseTabComponent[]
+    recoveryScrollbackLines?: number
+    maxStateChars?: number
+}
+
 /** @hidden */
 @Injectable({ providedIn: 'root' })
 export class TabRecoveryService {
     logger: Logger
     enabled = false
+    private cachedTokens = new Map<BaseTabComponent, RecoveryToken>()
 
     private constructor (
         @Inject(TabRecoveryProvider) private tabRecoveryProviders: TabRecoveryProvider<BaseTabComponent>[]|null,
@@ -45,21 +52,46 @@ export class TabRecoveryService {
         this.logger = log.create('tabRecovery')
     }
 
-    async saveTabs (tabs: BaseTabComponent[], activeTab: BaseTabComponent|null = null): Promise<void> {
+    async saveTabs (tabs: BaseTabComponent[], activeTab: BaseTabComponent|null = null, options: SaveTabsOptions = {}): Promise<void> {
         if (!this.enabled || !this.config.store.recoverTabs) {
             return
         }
 
+        const changedTabs = options.changedTabs ?? tabs
+        for (const tab of changedTabs) {
+            if (!tabs.includes(tab)) {
+                this.cachedTokens.delete(tab)
+                continue
+            }
+            const token = await this.getFullRecoveryToken(tab, {
+                includeState: options.includeState ?? true,
+                recoveryScrollbackLines: options.recoveryScrollbackLines,
+            } as GetRecoveryTokenOptions & { recoveryScrollbackLines?: number })
+            const sanitizedToken = this.sanitizeRecoveryToken(token, options.maxStateChars)
+            if (sanitizedToken) {
+                this.cachedTokens.set(tab, sanitizedToken)
+            } else {
+                this.cachedTokens.delete(tab)
+            }
+        }
+
+        for (const cachedTab of Array.from(this.cachedTokens.keys())) {
+            if (!tabs.includes(cachedTab)) {
+                this.cachedTokens.delete(cachedTab)
+            }
+        }
+
         const serializedTabs: RecoveryToken[] = []
         for (const tab of tabs) {
-            const token = await this.getFullRecoveryToken(tab, { includeState: true })
+            const token = this.cachedTokens.get(tab)
             if (!token) {
                 continue
             }
+            const persistedToken = { ...token }
             if (tab === activeTab) {
-                token[ACTIVE_TOP_LEVEL_MARKER] = true
+                persistedToken[ACTIVE_TOP_LEVEL_MARKER] = true
             }
-            serializedTabs.push(token)
+            serializedTabs.push(persistedToken)
         }
 
         if (typeof localStorage === 'undefined') {
@@ -70,6 +102,10 @@ export class TabRecoveryService {
         } catch (error) {
             this.logger.warn('Failed to persist tab recovery state', error)
         }
+    }
+
+    dropCachedTab (tab: BaseTabComponent): void {
+        this.cachedTokens.delete(tab)
     }
 
     async getFullRecoveryToken (tab: BaseTabComponent, options?: GetRecoveryTokenOptions): Promise<RecoveryToken|null> {
@@ -84,6 +120,22 @@ export class TabRecoveryService {
                 token.tabColor = tab.color
             }
             token.disableDynamicTitle = (tab as { disableDynamicTitle?: boolean }).disableDynamicTitle
+        }
+        return token
+    }
+
+    private sanitizeRecoveryToken (token: RecoveryToken|null, maxStateChars?: number): RecoveryToken|null {
+        if (!token) {
+            return null
+        }
+        if (
+            maxStateChars !== undefined &&
+            typeof token.savedState === 'string' &&
+            token.savedState.length > maxStateChars
+        ) {
+            const sanitizedToken = { ...token }
+            delete sanitizedToken.savedState
+            return sanitizedToken
         }
         return token
     }

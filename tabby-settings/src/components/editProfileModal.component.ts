@@ -4,12 +4,19 @@ import { Component, Input, ViewChild, ViewContainerRef, ComponentFactoryResolver
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent, ProfilesService, TAB_COLORS, ProfileGroup, ConnectableProfileProvider, FullyDefined, ConfigProxy, isExpandedControlTarget, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
-const iconsData = require('../../../tabby-core/src/icons.json')
-const iconsClassList = Object.keys(iconsData).map(
-    (icon: string) => iconsData[icon].map(
-        (style: string) => `fa${style[0]} fa-${icon}`,
-    ),
-).flat()
+let iconsClassListCache: string[] | null = null
+
+function getIconsClassList (): string[] {
+    if (iconsClassListCache) {
+        return iconsClassListCache
+    }
+
+    const iconsData = require('../../../tabby-core/src/icons.json') as Record<string, string[]>
+    iconsClassListCache = Object.keys(iconsData).flatMap(
+        icon => iconsData[icon].map(style => `fa${style[0]} fa-${icon}`),
+    )
+    return iconsClassListCache
+}
 
 /** @hidden */
 @Component({
@@ -109,7 +116,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     iconSearch: OperatorFunction<string, string[]> = (text$: Observable<string>) =>
         text$.pipe(
             debounceTime(200),
-            map(term => iconsClassList.filter(v => v.toLowerCase().includes(term.toLowerCase())).slice(0, 10)),
+            map(term => getIconsClassList().filter(v => v.toLowerCase().includes(term.toLowerCase())).slice(0, 10)),
         )
 
     save () {

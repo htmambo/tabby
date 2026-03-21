@@ -18,6 +18,19 @@ import { SelectorService } from './selector.service'
 
 const CLOSED_TAB_RECOVERY_SCROLLBACK_LINES = 200
 const CLOSED_TAB_RECOVERY_MAX_STATE_CHARS = 256 * 1024
+const BACKGROUND_RECOVERY_SCROLLBACK_LINES = 200
+const BACKGROUND_RECOVERY_MAX_STATE_CHARS = 128 * 1024
+const WINDOW_CLOSE_RECOVERY_SCROLLBACK_LINES = 500
+const WINDOW_CLOSE_RECOVERY_MAX_STATE_CHARS = 256 * 1024
+
+type IdleRequestCallbackLike = () => void
+type IdleRequestOptionsLike = {
+    timeout?: number
+}
+type IdleCallbackGlobal = typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallbackLike, options?: IdleRequestOptionsLike) => number
+    cancelIdleCallback?: (handle: number) => void
+}
 
 class CompletionObserver {
     get done$ (): Observable<void> { return this.done }
@@ -68,6 +81,10 @@ export class AppService implements OnDestroy {
 
     private completionObservers = new Map<BaseTabComponent, CompletionObserver>()
     private recoveryHintInterval: ReturnType<typeof setInterval> | null = null
+    private dirtyRecoveryTabs = new Set<BaseTabComponent>()
+    private recoverySaveInFlight = false
+    private recoverySaveQueued = false
+    private recoveryIdleHandle: number | null = null
 
     get activeTabChange$ (): Observable<BaseTabComponent|null> { return this.activeTabChange }
     get tabOpened$ (): Observable<BaseTabComponent> { return this.tabOpened }
@@ -102,11 +119,13 @@ export class AppService implements OnDestroy {
         })
 
         this.recoveryHintInterval = setInterval(() => {
-            this.recoveryStateChangedHint.next()
+            if (this._activeTab && this.tabs.includes(this._activeTab)) {
+                this.markTabRecoveryDirty(this._activeTab)
+            }
         }, 30000)
 
         this.recoveryStateChangedHint.pipe(debounceTime(1000)).subscribe(() => {
-            this.tabRecovery.saveTabs(this.tabs, this.activeTab)
+            this.scheduleRecoverySave()
         })
 
         void lastValueFrom(config.ready$).then(async () => {
@@ -137,6 +156,15 @@ export class AppService implements OnDestroy {
             clearInterval(this.recoveryHintInterval)
             this.recoveryHintInterval = null
         }
+        if (this.recoveryIdleHandle !== null) {
+            const idleGlobal = globalThis as IdleCallbackGlobal
+            if (idleGlobal.cancelIdleCallback) {
+                idleGlobal.cancelIdleCallback(this.recoveryIdleHandle)
+            } else {
+                clearTimeout(this.recoveryIdleHandle)
+            }
+            this.recoveryIdleHandle = null
+        }
     }
 
     addTabRaw (tab: BaseTabComponent, index: number|null = null, options: { select?: boolean } = {}): void {
@@ -150,12 +178,13 @@ export class AppService implements OnDestroy {
         if (shouldSelect) {
             this.selectTab(tab)
         }
+        this.markTabRecoveryDirty(tab)
         this.tabsChanged.next()
         this.tabOpened.next(tab)
 
         if (this.bootstrapData.isMainWindow) {
             tab.recoveryStateChangedHint$.subscribe(() => {
-                this.recoveryStateChangedHint.next()
+                this.markTabRecoveryDirty(tab)
             })
         }
 
@@ -163,9 +192,12 @@ export class AppService implements OnDestroy {
             if (tab === this._activeTab) {
                 this.hostWindow.setTitle(title)
             }
+            this.markTabRecoveryDirty(tab)
         })
 
         tab.destroyed$.subscribe(() => {
+            this.tabRecovery.dropCachedTab(tab)
+            this.dirtyRecoveryTabs.delete(tab)
             this.removeTab(tab)
             this.tabRemoved.next(tab)
             this.tabClosed.next(tab)
@@ -173,6 +205,8 @@ export class AppService implements OnDestroy {
     }
 
     removeTab (tab: BaseTabComponent): void {
+        this.tabRecovery.dropCachedTab(tab)
+        this.dirtyRecoveryTabs.delete(tab)
         const tabIndex = this.tabs.indexOf(tab)
         const nextActiveTab = tabIndex >= 0
             ? this.tabs[tabIndex + 1] ?? this.tabs[tabIndex - 1] ?? null
@@ -424,7 +458,12 @@ export class AppService implements OnDestroy {
 
     async closeWindow (): Promise<void> {
         await this.prepareTabsForRecoverySave(this.tabs)
-        await this.tabRecovery.saveTabs(this.tabs, this.activeTab)
+        await this.tabRecovery.saveTabs(this.tabs, this.activeTab, {
+            changedTabs: this.tabs,
+            includeState: true,
+            recoveryScrollbackLines: WINDOW_CLOSE_RECOVERY_SCROLLBACK_LINES,
+            maxStateChars: WINDOW_CLOSE_RECOVERY_MAX_STATE_CHARS,
+        })
         this.tabRecovery.enabled = false
         if (await this.closeAllTabs()) {
             this.hostWindow.close()
@@ -443,6 +482,57 @@ export class AppService implements OnDestroy {
     private async destroyTab (tab: BaseTabComponent, skipDestroyedEvent = false): Promise<void> {
         const destroy = tab.destroy as (skipDestroyedEvent?: boolean) => void | Promise<void>
         await Promise.resolve(destroy.call(tab, skipDestroyedEvent))
+    }
+
+    private markTabRecoveryDirty (tab: BaseTabComponent): void {
+        if (!this.bootstrapData.isMainWindow || !this.tabs.includes(tab)) {
+            return
+        }
+        this.dirtyRecoveryTabs.add(tab)
+        this.recoveryStateChangedHint.next()
+    }
+
+    private scheduleRecoverySave (): void {
+        if (!this.bootstrapData.isMainWindow || this.recoveryIdleHandle !== null) {
+            return
+        }
+
+        const idleGlobal = globalThis as IdleCallbackGlobal
+        const run = () => {
+            this.recoveryIdleHandle = null
+            void this.persistRecoveryState()
+        }
+
+        if (idleGlobal.requestIdleCallback) {
+            this.recoveryIdleHandle = idleGlobal.requestIdleCallback(run, { timeout: 1000 })
+        } else {
+            this.recoveryIdleHandle = setTimeout(run, 50) as unknown as number
+        }
+    }
+
+    private async persistRecoveryState (): Promise<void> {
+        if (this.recoverySaveInFlight) {
+            this.recoverySaveQueued = true
+            return
+        }
+
+        this.recoverySaveInFlight = true
+        try {
+            const changedTabs = Array.from(this.dirtyRecoveryTabs).filter(tab => this.tabs.includes(tab))
+            this.dirtyRecoveryTabs.clear()
+            await this.tabRecovery.saveTabs(this.tabs, this.activeTab, {
+                changedTabs,
+                includeState: true,
+                recoveryScrollbackLines: BACKGROUND_RECOVERY_SCROLLBACK_LINES,
+                maxStateChars: BACKGROUND_RECOVERY_MAX_STATE_CHARS,
+            })
+        } finally {
+            this.recoverySaveInFlight = false
+            if (this.recoverySaveQueued) {
+                this.recoverySaveQueued = false
+                this.scheduleRecoverySave()
+            }
+        }
     }
 
     /** @hidden */

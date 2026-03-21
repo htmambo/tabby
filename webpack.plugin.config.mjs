@@ -26,6 +26,8 @@ const linkerPlugin = createEs2015LinkerPlugin({
 export default options => {
     const isDev = !!process.env.TABBY_DEV
     const enableCache = !process.env.TABBY_DISABLE_CACHE
+    const emitSourceMaps = isDev || !!process.env.CI || !!process.env.TABBY_RELEASE_SOURCEMAPS
+    const enableSourceMapLoader = !process.env.TABBY_SKIP_SOURCE_MAP_LOADER
     const sassLoader = {
         loader: 'sass-loader',
         options: {
@@ -74,7 +76,7 @@ export default options => {
         },
         mode: isDev ? 'development' : 'production',
         optimization:{
-            minimize: false,
+            minimize: !isDev,
             concatenateModules: !isDev,
         },
         cache: cacheConfig,
@@ -94,8 +96,8 @@ export default options => {
         ignoreWarnings: [/Failed to parse source map/],
         module: {
             rules: [
-                ...options.rules ?? [],
-                {
+                ...(options.rules ?? []),
+                ...(enableSourceMapLoader ? [{
                     test: /\.js$/,
                     enforce: 'pre',
                     use: {
@@ -110,7 +112,7 @@ export default options => {
 
                         },
                     },
-                },
+                }] : []),
                 {
                     test: /\.(m?)js$/,
                     loader: 'babel-loader',
@@ -195,10 +197,10 @@ export default options => {
             /^@ng-bootstrap/,
             /^rxjs/,
             /^tabby-/,
-            ...options.externals || [],
+            ...(options.externals || []),
         ],
         plugins: [
-            new devtoolPlugin(sourceMapOptions),
+            ...(emitSourceMaps ? [new devtoolPlugin(sourceMapOptions)] : []),
             new wp.DefinePlugin({
                 __TABBY_BUILD_VERSION__: JSON.stringify(vars.version),
             }),

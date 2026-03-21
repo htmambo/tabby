@@ -1,0 +1,21 @@
+{
+  "runId": "20260321-performance-review",
+  "stage": "phase_cleanup",
+  "status": "completed",
+  "tempArtifactsRemoved": [
+    "/tmp/tabby-build.log"
+  ],
+  "retainedArtifacts": [
+    "docs/requirements/2026-03-21-performance-review.md",
+    "docs/plans/2026-03-21-performance-review-execution-plan.md",
+    "docs/Analysis/TABBY_PERFORMANCE_SPEED_REVIEW_2026-03-21.md",
+    "outputs/runtime/vibe-sessions/20260321-performance-review/skeleton-receipt.json",
+    "outputs/runtime/vibe-sessions/20260321-performance-review/intent-contract.json",
+    "outputs/runtime/vibe-sessions/20260321-performance-review/phase-skeleton_check.json",
+    "outputs/runtime/vibe-sessions/20260321-performance-review/phase-plan_execute.json"
+  ],
+  "repoHygiene": {
+    "applicationSourceChanged": false,
+    "docsOnlyRun": true
+  }
+}

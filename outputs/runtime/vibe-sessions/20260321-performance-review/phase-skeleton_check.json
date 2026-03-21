@@ -1,0 +1,12 @@
+{
+  "runId": "20260321-performance-review",
+  "stage": "skeleton_check",
+  "status": "completed",
+  "evidence": {
+    "cwd": "/usr/htdocs/tabby",
+    "branch": "fix-ssh-ime-punctuation",
+    "gitStatus": "## fix-ssh-ime-punctuation...origin/fix-ssh-ime-punctuation",
+    "node": "v20.15.1",
+    "yarn": "1.22.22"
+  }
+}

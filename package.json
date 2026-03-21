@@ -246,7 +246,7 @@
     "build:macos:intel": "npm run ensure:rev && ARCH=x86_64 npm run build && ARCH=x86_64 node scripts/prepackage-plugins.mjs && ARCH=x86_64 node scripts/build-macos.mjs",
     "clean:deps": "node scripts/clean-node-modules.mjs",
     "clean:deps:all": "node scripts/clean-node-modules.mjs --include-dist --include-builtin-plugins",
-    "watch": "cross-env TABBY_DEV=1 TABBY_DISABLE_CACHE=1 NODE_OPTIONS=--max-old-space-size=8192 node scripts/watch-modules.mjs",
+    "watch": "cross-env TABBY_DEV=1 TABBY_FAST_BUILD=1 TABBY_SKIP_SOURCE_MAP_LOADER=1 NODE_OPTIONS=--max-old-space-size=8192 node scripts/watch-modules.mjs",
     "start": "cross-env TABBY_DEV=1 electron app -d --no-sandbox --disable-dev-shm-usage",
     "start:prod": "npm run build && node scripts/prepackage-plugins.mjs && cross-env TABBY_PLUGINS=./builtin-plugins TABBY_BUILTIN_PLUGINS=./builtin-plugins electron app -d",
     "prod": "cross-env TABBY_DEV=1 electron app",
