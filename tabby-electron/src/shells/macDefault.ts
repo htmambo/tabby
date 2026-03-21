@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core'
-import promiseIpc, { RendererProcessType } from 'electron-promise-ipc'
 import { HostAppService, Platform, TranslateService } from 'tabby-core'
 
 import { ShellProvider, Shell } from 'tabby-local'
+import { ElectronService } from '../services/electron.service'
 
 /** @hidden */
 @Injectable()
@@ -12,6 +12,7 @@ export class MacOSDefaultShellProvider extends ShellProvider {
     constructor (
         private hostApp: HostAppService,
         private translate: TranslateService,
+        private electron: ElectronService,
     ) {
         super()
     }
@@ -38,7 +39,6 @@ export class MacOSDefaultShellProvider extends ShellProvider {
     }
 
     private async getDefaultShell (): Promise<string> {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        return (promiseIpc as RendererProcessType).send('get-default-mac-shell') as Promise<string>
+        return this.electron.ipcRenderer.invoke<string>('bridge:platform:get-default-mac-shell')
     }
 }

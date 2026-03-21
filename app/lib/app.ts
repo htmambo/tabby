@@ -1,32 +1,72 @@
 import { app, ipcMain, Menu, Tray, shell, screen, globalShortcut, MenuItemConstructorOptions, WebContents, clipboard, dialog, BrowserWindow, nativeTheme, powerSaveBlocker } from 'electron'
-import promiseIpc from 'electron-promise-ipc'
 import { spawn, ChildProcess, exec as nodeExec, execFile as nodeExecFile } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
 import { createRequire } from 'module'
 import { promisify } from 'node:util'
-import { Subject, throttleTime } from 'rxjs'
 
 import { saveConfig } from './config'
 import { Window, WindowOptions } from './window'
-import { pluginManager } from './pluginManager'
 import { PTYManager } from './pty'
-
-/* eslint-disable block-scoped-var */
-
-try {
-    var wnr = require('windows-native-registry') // eslint-disable-line @typescript-eslint/no-var-requires, no-var
-    var windowsProcessTreeNative = require('@tabby-gang/windows-process-tree/build/Release/windows_process_tree.node') // eslint-disable-line @typescript-eslint/no-var-requires, no-var
-} catch (_) { }
-
-try {
-    var keytar = require('keytar') // eslint-disable-line @typescript-eslint/no-var-requires, no-var
-} catch (_) { }
 
 const runtimeRequire = createRequire(__filename)
 const exec = promisify(nodeExec)
 const execFile = promisify(nodeExecFile)
+
+type WindowsRegistryModule = any
+type WindowsProcessTreeModule = {
+    getProcessList: (callback: (list: Array<{ name?: string }>) => void, pid: number) => void
+}
+
+let windowsRegistryModule: WindowsRegistryModule | null | undefined
+let windowsProcessTreeModule: WindowsProcessTreeModule | null | undefined
+let keytarModule: typeof import('keytar') | null | undefined
+let pluginManagerModulePromise: Promise<typeof import('./pluginManager')> | null = null
+
+function getWindowsRegistry (): WindowsRegistryModule | null {
+    if (process.platform !== 'win32') {
+        return null
+    }
+    if (windowsRegistryModule === undefined) {
+        try {
+            windowsRegistryModule = runtimeRequire('windows-native-registry')
+        } catch {
+            windowsRegistryModule = null
+        }
+    }
+    return windowsRegistryModule
+}
+
+function getWindowsProcessTreeNative (): WindowsProcessTreeModule | null {
+    if (process.platform !== 'win32') {
+        return null
+    }
+    if (windowsProcessTreeModule === undefined) {
+        try {
+            windowsProcessTreeModule = runtimeRequire('@tabby-gang/windows-process-tree/build/Release/windows_process_tree.node') as WindowsProcessTreeModule
+        } catch {
+            windowsProcessTreeModule = null
+        }
+    }
+    return windowsProcessTreeModule
+}
+
+function getKeytar (): typeof import('keytar') | null {
+    if (keytarModule === undefined) {
+        try {
+            keytarModule = runtimeRequire('keytar') as typeof import('keytar')
+        } catch {
+            keytarModule = null
+        }
+    }
+    return keytarModule
+}
+
+async function getPluginManager (): Promise<(typeof import('./pluginManager'))['pluginManager']> {
+    pluginManagerModulePromise ??= import('./pluginManager')
+    return (await pluginManagerModulePromise).pluginManager
+}
 
 interface BridgeMenuItemOptions {
     accelerator?: string
@@ -101,7 +141,7 @@ export class Application {
     private tray?: Tray
     private ptyManager = new PTYManager()
     private windows: Window[] = []
-    private globalHotkey$ = new Subject<void>()
+    private lastGlobalHotkeyTime = 0
     private bridgeSubprocesses = new Map<string, BridgeSubprocessState>()
     private bridgeSubprocessOwners = new Map<number, Set<string>>()
     private bridgeFileTransfers = new Map<string, BridgeFileTransferState>()
@@ -155,28 +195,7 @@ export class Application {
         ipcMain.on('app:register-global-hotkey', (_event, specs) => {
             globalShortcut.unregisterAll()
             for (const spec of specs) {
-                globalShortcut.register(spec, () => this.globalHotkey$.next())
-            }
-        })
-
-        this.globalHotkey$.pipe(throttleTime(100)).subscribe(() => {
-            this.onGlobalHotkey()
-        })
-
-        ;(promiseIpc as any).on('plugin-manager:install', (name: string, version: string) => {
-            return pluginManager.install(this.userPluginsPath, name, version)
-        })
-
-        ;(promiseIpc as any).on('plugin-manager:uninstall', (name: string) => {
-            return pluginManager.uninstall(this.userPluginsPath, name)
-        })
-
-        ;(promiseIpc as any).on('get-default-mac-shell', async () => {
-            try {
-                const { stdout } = await exec(`/usr/bin/dscl . -read /Users/${process.env.LOGNAME} UserShell`)
-                return stdout.toString().split(' ')[1].trim()
-            } catch {
-                return '/bin/bash'
+                globalShortcut.register(spec, () => this.onGlobalHotkeyTriggered())
             }
         })
 
@@ -236,14 +255,14 @@ export class Application {
         if (this.windows.length === 1) {
             window.makeMain()
         }
-        window.visible$.subscribe(visible => {
+        window.onVisibleChanged(visible => {
             if (visible) {
                 this.disableTray()
             } else {
                 this.enableTray()
             }
         })
-        window.closed$.subscribe(() => {
+        window.onClosed(() => {
             this.windows = this.windows.filter(x => x !== window)
             if (!this.windows.some(x => x.isMainWindow)) {
                 this.windows[0]?.makeMain()
@@ -255,6 +274,15 @@ export class Application {
         }
         await window.ready
         return window
+    }
+
+    private onGlobalHotkeyTriggered (): void {
+        const now = Date.now()
+        if (now - this.lastGlobalHotkeyTime < 100) {
+            return
+        }
+        this.lastGlobalHotkeyTime = now
+        this.onGlobalHotkey()
     }
 
     onGlobalHotkey (): void {
@@ -362,6 +390,10 @@ export class Application {
 
     private useBuiltinGraphics (): void {
         if (process.platform === 'win32') {
+            const wnr = getWindowsRegistry()
+            if (!wnr) {
+                return
+            }
             const keyPath = 'SOFTWARE\\Microsoft\\DirectX\\UserGpuPreferences'
             const valueName = app.getPath('exe')
             if (!wnr.getRegistryValue(wnr.HK.CU, keyPath, valueName)) {
@@ -442,14 +474,15 @@ export class Application {
         })
 
         ipcMain.handle('bridge:plugin-manager:install', async (_event, name: string, version: string) => {
-            return pluginManager.install(this.userPluginsPath, name, version)
+            return (await getPluginManager()).install(this.userPluginsPath, name, version)
         })
 
         ipcMain.handle('bridge:plugin-manager:uninstall', async (_event, name: string) => {
-            return pluginManager.uninstall(this.userPluginsPath, name)
+            return (await getPluginManager()).uninstall(this.userPluginsPath, name)
         })
 
         ipcMain.handle('bridge:keytar:get-password', async (_event, service: string, account: string): Promise<string | null> => {
+            const keytar = getKeytar()
             if (!keytar) {
                 throw new Error('keytar is unavailable')
             }
@@ -457,6 +490,7 @@ export class Application {
         })
 
         ipcMain.handle('bridge:keytar:set-password', async (_event, service: string, account: string, password: string): Promise<void> => {
+            const keytar = getKeytar()
             if (!keytar) {
                 throw new Error('keytar is unavailable')
             }
@@ -464,6 +498,7 @@ export class Application {
         })
 
         ipcMain.handle('bridge:keytar:delete-password', async (_event, service: string, account: string): Promise<boolean> => {
+            const keytar = getKeytar()
             if (!keytar) {
                 throw new Error('keytar is unavailable')
             }
@@ -753,8 +788,18 @@ export class Application {
             event.returnValue = os.homedir()
         })
 
+        ipcMain.handle('bridge:platform:get-default-mac-shell', async (): Promise<string> => {
+            try {
+                const { stdout } = await exec(`/usr/bin/dscl . -read /Users/${process.env.LOGNAME} UserShell`)
+                return stdout.toString().split(' ')[1].trim()
+            } catch {
+                return '/bin/bash'
+            }
+        })
+
         ipcMain.on('bridge:platform:get-winscp-path', event => {
-            if (process.platform !== 'win32' || !wnr) {
+            const wnr = getWindowsRegistry()
+            if (!wnr) {
                 event.returnValue = null
                 return
             }
@@ -771,6 +816,7 @@ export class Application {
         })
 
         ipcMain.handle('bridge:platform:is-process-running', async (_event, name: string) => {
+            const windowsProcessTreeNative = getWindowsProcessTreeNative()
             if (process.platform !== 'win32' || !windowsProcessTreeNative) {
                 throw new Error('Not supported')
             }
@@ -963,6 +1009,7 @@ export class Application {
         }
 
         if (process.platform === 'win32') {
+            const wnr = getWindowsRegistry()
             if (!wnr) {
                 throw new Error('windows-native-registry is unavailable')
             }
@@ -997,6 +1044,7 @@ export class Application {
             return
         }
 
+        const wnr = getWindowsRegistry()
         if (!wnr) {
             throw new Error('windows-native-registry is unavailable')
         }
@@ -1033,6 +1081,7 @@ export class Application {
             return
         }
 
+        const wnr = getWindowsRegistry()
         if (!wnr) {
             throw new Error('windows-native-registry is unavailable')
         }

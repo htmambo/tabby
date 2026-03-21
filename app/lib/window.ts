@@ -1,12 +1,11 @@
 import * as glasstron from 'glasstron'
-import { autoUpdater } from 'electron-updater'
-import { Subject, Observable, debounceTime } from 'rxjs'
 import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme, IpcMainEvent } from 'electron'
-import ElectronConfig from 'electron-config'
+import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import macOSRelease from 'macos-release'
-import { compare as compareVersions } from 'compare-versions'
+import { createRequire } from 'module'
+import type { AppUpdater } from 'electron-updater'
+import type { AppUpdaterEvents } from 'electron-updater/out/AppUpdater'
 
 import type { Application } from './app'
 import { parseArgs } from './cli'
@@ -16,6 +15,7 @@ let DwmEnableBlurBehindWindow: any = null
 if (process.platform === 'win32') {
     DwmEnableBlurBehindWindow = require('@tabby-gang/windows-blurbehind').DwmEnableBlurBehindWindow
 }
+const runtimeRequire = createRequire(__filename)
 
 export interface WindowOptions {
     hidden?: boolean
@@ -27,7 +27,92 @@ interface ManagedBrowserWindow extends BrowserWindow {
     setBlur?: (_: boolean) => void
 }
 
-const macOSVibrancyType: any = process.platform === 'darwin' ? compareVersions(macOSRelease().version || '0.0', '10.14', '>=') ? 'fullscreen-ui' : 'dark' : null
+class SubscriptionList<TArgs extends any[]> {
+    private listeners = new Set<(...args: TArgs) => void>()
+
+    subscribe (listener: (...args: TArgs) => void): () => void {
+        this.listeners.add(listener)
+        return () => this.listeners.delete(listener)
+    }
+
+    emit (...args: TArgs): void {
+        for (const listener of [...this.listeners]) {
+            listener(...args)
+        }
+    }
+
+    clear (): void {
+        this.listeners.clear()
+    }
+}
+
+interface WindowStateStoreShape {
+    windowBoundaries?: Rectangle
+    maximized?: boolean
+}
+
+class JSONConfigStore<T extends object> {
+    private store: T
+    private readonly filePath: string
+
+    constructor (name: string) {
+        this.filePath = path.join(app.getPath('userData'), `${name}.json`)
+        this.store = this.load()
+    }
+
+    get<K extends keyof T> (key: K): T[K] | undefined {
+        return this.store[key]
+    }
+
+    set<K extends keyof T> (key: K, value: T[K] | undefined): void {
+        if (value === undefined) {
+            delete this.store[key]
+        } else {
+            this.store[key] = value
+        }
+        this.persist()
+    }
+
+    private load (): T {
+        try {
+            return JSON.parse(fs.readFileSync(this.filePath, 'utf8')) as T
+        } catch (error: any) {
+            if (error?.code === 'ENOENT' || error?.name === 'SyntaxError') {
+                return {} as T
+            }
+            throw error
+        }
+    }
+
+    private persist (): void {
+        fs.mkdirSync(path.dirname(this.filePath), { recursive: true })
+        fs.writeFileSync(this.filePath, JSON.stringify(this.store, null, '\t'))
+    }
+}
+
+let sharedWindowStateStore: JSONConfigStore<WindowStateStoreShape> | null = null
+
+function getWindowStateStore (): JSONConfigStore<WindowStateStoreShape> {
+    sharedWindowStateStore ??= new JSONConfigStore<WindowStateStoreShape>('window')
+    return sharedWindowStateStore
+}
+
+function compareVersionSegments (left: string, right: string): number {
+    const leftParts = left.split('.').map(part => Number.parseInt(part, 10) || 0)
+    const rightParts = right.split('.').map(part => Number.parseInt(part, 10) || 0)
+    const maxLength = Math.max(leftParts.length, rightParts.length)
+    for (let index = 0; index < maxLength; index++) {
+        const delta = (leftParts[index] ?? 0) - (rightParts[index] ?? 0)
+        if (delta !== 0) {
+            return delta
+        }
+    }
+    return 0
+}
+
+const macOSVibrancyType: any = process.platform === 'darwin'
+    ? compareVersionSegments(((app as any).getSystemVersion?.() as string | undefined) || '0.0', '10.14') >= 0 ? 'fullscreen-ui' : 'dark'
+    : null
 
 const activityIcon = nativeImage.createFromPath(`${app.getAppPath()}/assets/activity.png`)
 
@@ -35,10 +120,10 @@ export class Window {
     ready: Promise<void>
     isMainWindow = false
     webContents: WebContents
-    private visible = new Subject<boolean>()
-    private closed = new Subject<void>()
+    private visibleListeners = new SubscriptionList<[boolean]>()
+    private closedListeners = new SubscriptionList<[]>()
     private window?: ManagedBrowserWindow
-    private windowConfig: any
+    private windowConfig: JSONConfigStore<WindowStateStoreShape>
     private windowBounds?: Rectangle
     private closing = false
     private lastVibrancy: { enabled: boolean, type?: string } | null = null
@@ -46,6 +131,7 @@ export class Window {
     private touchBarControl: any
     private isFluentVibrancy = false
     private dockHidden = false
+    private autoUpdater: AppUpdater | null = null
     private pendingTimeouts = new Set<ReturnType<typeof setTimeout>>()
     /** 存储已注册的 ipcMain 监听器，用于窗口销毁时清理 */
     private registeredIpcHandlers = new Map<string, (...args: any[]) => void>()
@@ -56,8 +142,13 @@ export class Window {
     /** ready Promise 的 resolve 函数 */
     private readyResolve: (() => void) | null = null
 
-    get visible$ (): Observable<boolean> { return this.visible }
-    get closed$ (): Observable<void> { return this.closed }
+    onVisibleChanged (listener: (visible: boolean) => void): () => void {
+        return this.visibleListeners.subscribe(listener)
+    }
+
+    onClosed (listener: () => void): () => void {
+        return this.closedListeners.subscribe(listener)
+    }
 
     private openDevTools (): void {
         if (!this.window?.isDestroyed() && !this.webContents.isDevToolsOpened()) {
@@ -97,7 +188,7 @@ export class Window {
         options = options ?? {}
         const useNativeBrowserWindow = this.shouldUseNativeBrowserWindow()
 
-        this.windowConfig = new ElectronConfig({ name: 'window' })
+        this.windowConfig = getWindowStateStore()
         this.windowBounds = this.windowConfig.get('windowBoundaries')
 
         const maximized = this.windowConfig.get('maximized')
@@ -437,23 +528,25 @@ export class Window {
 
     private setupWindowManagement () {
         this.window.on('show', () => {
-            this.visible.next(true)
+            this.visibleListeners.emit(true)
             this.send('host:window-shown')
         })
 
         this.window.on('hide', () => {
-            this.visible.next(false)
+            this.visibleListeners.emit(false)
         })
 
-        const moveSubscription = new Observable<void>(observer => {
-            this.window.on('move', () => observer.next())
-        }).pipe(debounceTime(250)).subscribe(() => {
-            this.send('host:window-moved')
-        })
-
-        this.window.on('closed', () => {
-            moveSubscription.unsubscribe()
-        })
+        let moveNotificationTimeout: ReturnType<typeof setTimeout> | null = null
+        const scheduleMoveNotification = () => {
+            if (moveNotificationTimeout !== null) {
+                this.clearScheduledTimeout(moveNotificationTimeout)
+            }
+            moveNotificationTimeout = this.scheduleTimeout(() => {
+                moveNotificationTimeout = null
+                this.send('host:window-moved')
+            }, 250)
+        }
+        this.window.on('move', scheduleMoveNotification)
 
         this.window.on('enter-full-screen', () => this.send('host:window-enter-full-screen'))
         this.window.on('leave-full-screen', () => this.send('host:window-leave-full-screen'))
@@ -665,6 +758,21 @@ export class Window {
     }
 
     private setupUpdater () {
+        this.on('updater:check-for-updates', () => {
+            this.ensureUpdaterInitialized().checkForUpdates()
+        })
+
+        this.on('updater:quit-and-install', () => {
+            this.ensureUpdaterInitialized().quitAndInstall()
+        })
+    }
+
+    private ensureUpdaterInitialized (): AppUpdater {
+        if (this.autoUpdater) {
+            return this.autoUpdater
+        }
+
+        const { autoUpdater } = runtimeRequire('electron-updater') as typeof import('electron-updater')
         autoUpdater.autoDownload = true
         autoUpdater.autoInstallOnAppQuit = true
 
@@ -692,13 +800,8 @@ export class Window {
         autoUpdater.on('update-downloaded', updateDownloadedHandler)
         this.registeredUpdaterHandlers.push({event: 'update-downloaded', handler: updateDownloadedHandler})
 
-        this.on('updater:check-for-updates', () => {
-            autoUpdater.checkForUpdates()
-        })
-
-        this.on('updater:quit-and-install', () => {
-            autoUpdater.quitAndInstall()
-        })
+        this.autoUpdater = autoUpdater
+        return autoUpdater
     }
 
     private destroy () {
@@ -718,14 +821,15 @@ export class Window {
 
         // 清理已注册的 autoUpdater 监听器，防止内存泄漏
         for (const {event, handler} of this.registeredUpdaterHandlers) {
-            autoUpdater.removeListener(event as keyof import('electron-updater/out/AppUpdater').AppUpdaterEvents, handler)
+            this.autoUpdater?.removeListener(event as keyof AppUpdaterEvents, handler)
         }
         this.registeredUpdaterHandlers = []
+        this.autoUpdater = null
 
         this.window = null
-        this.closed.next()
-        this.visible.complete()
-        this.closed.complete()
+        this.closedListeners.emit()
+        this.visibleListeners.clear()
+        this.closedListeners.clear()
     }
 
     private scheduleTimeout (fn: () => void, delay: number): ReturnType<typeof setTimeout> {

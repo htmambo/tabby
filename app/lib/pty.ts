@@ -5,7 +5,6 @@ import { ipcMain } from 'electron'
 import { getWorkingDirectoryFromPID } from 'native-process-working-directory'
 import { Application } from './app'
 import { UTF8Splitter } from '../../tabby-core/src/utfSplitter'
-import { Subject, debounceTime } from 'rxjs'
 
 interface PTYChildProcess {
     pid: number
@@ -134,16 +133,9 @@ class PTYDataQueue {
     private maxDelta = this.maxChunk * 5
     private flowPaused = false
     private decoder = new UTF8Splitter()
-    private output$ = new Subject<Buffer>()
+    private flushTimeout: ReturnType<typeof setTimeout> | null = null
 
-    constructor (private pty: nodePTY.IPty, private onData: (data: Buffer) => void) {
-        this.output$.pipe(debounceTime(500)).subscribe(() => {
-            const remainder = this.decoder.flush()
-            if (remainder.length) {
-                this.onData(remainder)
-            }
-        })
-    }
+    constructor (private pty: nodePTY.IPty, private onData: (data: Buffer) => void) { }
 
     push (data: Buffer) {
         this.buffers.push(data)
@@ -201,7 +193,23 @@ class PTYDataQueue {
     private emitData (data: Buffer) {
         const validChunk = this.decoder.write(data)
         this.onData(validChunk)
-        this.output$.next(validChunk)
+        this.scheduleFlush()
+    }
+
+    private scheduleFlush () {
+        if (this.flushTimeout !== null) {
+            clearTimeout(this.flushTimeout)
+        }
+        this.flushTimeout = setTimeout(() => {
+            this.flushTimeout = null
+            const remainder = this.decoder.flush()
+            if (remainder.length) {
+                this.onData(remainder)
+            }
+        }, 500)
+        if (typeof this.flushTimeout === 'object' && typeof this.flushTimeout.unref === 'function') {
+            this.flushTimeout.unref()
+        }
     }
 
     private pause () {
