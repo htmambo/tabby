@@ -105,6 +105,15 @@
 
                     .form-line(*ngIf='hostApp.platform !== Platform.Web')
                         .header
+                            .title(translate) Delay background tab restore during startup
+                            .description(translate) Restores the active tab first, then brings back the remaining recovered tabs after the window becomes idle.
+                        toggle(
+                            [(ngModel)]='config.store.delayBackgroundTabRestoreForStartup',
+                            (ngModelChange)='saveConfiguration(true)',
+                        )
+
+                    .form-line(*ngIf='hostApp.platform !== Platform.Web')
+                        .header
                             .title(translate) Debugging
 
                         button.btn.btn-secondary((click)='hostWindow.openDevTools()')

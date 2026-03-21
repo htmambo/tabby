@@ -61,6 +61,9 @@ class CompletionObserver {
 
 @Injectable({ providedIn: 'root' })
 export class AppService implements OnDestroy {
+    private readonly startupBackgroundRestoreBatchSize = 2
+    private readonly startupBackgroundRestoreIdleTimeout = 1200
+    private readonly startupBackgroundRestoreDelay = 100
     tabs: BaseTabComponent[] = []
 
     get activeTab (): BaseTabComponent|null { return this._activeTab ?? null }
@@ -85,6 +88,9 @@ export class AppService implements OnDestroy {
     private recoverySaveInFlight = false
     private recoverySaveQueued = false
     private recoveryIdleHandle: number | null = null
+    private pendingBackgroundTabRestores: Array<{ tab: NewTabParameters<BaseTabComponent>, index: number }> = []
+    private backgroundRestoreIdleHandle: number | null = null
+    private backgroundRestoreTimeoutHandle: number | null = null
     private selectorServiceInstance: SelectorService | null = null
     private ngbModalInstance: NgbModal | null = null
 
@@ -176,6 +182,7 @@ export class AppService implements OnDestroy {
             }
             this.recoveryIdleHandle = null
         }
+        this.clearPendingBackgroundTabRestore()
     }
 
     addTabRaw (tab: BaseTabComponent, index: number|null = null, options: { select?: boolean } = {}): void {
@@ -283,15 +290,95 @@ export class AppService implements OnDestroy {
             return
         }
 
-        const restoredTopLevelTabs: BaseTabComponent[] = []
-        for (const tab of recoveredTabs.tabs) {
-            restoredTopLevelTabs.push(this.openNewTabRaw(tab, null, { select: false }))
+        if (!this.shouldDelayRecoveredBackgroundTabs(recoveredTabs)) {
+            const restoredTopLevelTabs: BaseTabComponent[] = []
+            for (const tab of recoveredTabs.tabs) {
+                restoredTopLevelTabs.push(this.openNewTabRaw(tab, null, { select: false }))
+            }
+
+            const activeTabIndex = recoveredTabs.activeTabIndex !== null && recoveredTabs.activeTabIndex < restoredTopLevelTabs.length
+                ? recoveredTabs.activeTabIndex
+                : 0
+            this.selectTab(restoredTopLevelTabs[activeTabIndex])
+            return
         }
 
-        const activeTabIndex = recoveredTabs.activeTabIndex !== null && recoveredTabs.activeTabIndex < restoredTopLevelTabs.length
+        const activeTabIndex = recoveredTabs.activeTabIndex !== null && recoveredTabs.activeTabIndex < recoveredTabs.tabs.length
             ? recoveredTabs.activeTabIndex
             : 0
-        this.selectTab(restoredTopLevelTabs[activeTabIndex])
+        const activeTab = this.openNewTabRaw(recoveredTabs.tabs[activeTabIndex], null, { select: false })
+        this.selectTab(activeTab)
+
+        this.pendingBackgroundTabRestores = recoveredTabs.tabs
+            .map((tab, index) => ({ tab, index }))
+            .filter(entry => entry.index !== activeTabIndex)
+        this.scheduleNextBackgroundTabRestoreBatch()
+    }
+
+    private shouldDelayRecoveredBackgroundTabs (recoveredTabs: RecoveredTabsState): boolean {
+        return !!this.config.store.delayBackgroundTabRestoreForStartup && recoveredTabs.tabs.length > 1
+    }
+
+    private scheduleNextBackgroundTabRestoreBatch (): void {
+        if (!this.pendingBackgroundTabRestores.length) {
+            return
+        }
+        if (this.backgroundRestoreIdleHandle !== null || this.backgroundRestoreTimeoutHandle !== null) {
+            return
+        }
+
+        const scheduleIdle = () => {
+            const run = () => {
+                this.backgroundRestoreIdleHandle = null
+                this.restoreBackgroundTabBatch()
+            }
+            const idleGlobal = globalThis as IdleCallbackGlobal
+            if (idleGlobal.requestIdleCallback) {
+                this.backgroundRestoreIdleHandle = idleGlobal.requestIdleCallback(run, { timeout: this.startupBackgroundRestoreIdleTimeout })
+            } else {
+                this.backgroundRestoreTimeoutHandle = setTimeout(() => {
+                    this.backgroundRestoreTimeoutHandle = null
+                    run()
+                }, 50) as unknown as number
+            }
+        }
+
+        this.backgroundRestoreTimeoutHandle = setTimeout(() => {
+            this.backgroundRestoreTimeoutHandle = null
+            scheduleIdle()
+        }, this.startupBackgroundRestoreDelay) as unknown as number
+    }
+
+    private restoreBackgroundTabBatch (): void {
+        if (!this.pendingBackgroundTabRestores.length) {
+            return
+        }
+
+        const batch = this.pendingBackgroundTabRestores.splice(0, this.startupBackgroundRestoreBatchSize)
+        for (const entry of batch) {
+            this.openNewTabRaw(entry.tab, entry.index, { select: false })
+        }
+
+        if (this.pendingBackgroundTabRestores.length) {
+            this.scheduleNextBackgroundTabRestoreBatch()
+        }
+    }
+
+    private clearPendingBackgroundTabRestore (): void {
+        if (this.backgroundRestoreIdleHandle !== null) {
+            const idleGlobal = globalThis as IdleCallbackGlobal
+            if (idleGlobal.cancelIdleCallback) {
+                idleGlobal.cancelIdleCallback(this.backgroundRestoreIdleHandle)
+            } else {
+                clearTimeout(this.backgroundRestoreIdleHandle)
+            }
+            this.backgroundRestoreIdleHandle = null
+        }
+        if (this.backgroundRestoreTimeoutHandle !== null) {
+            clearTimeout(this.backgroundRestoreTimeoutHandle)
+            this.backgroundRestoreTimeoutHandle = null
+        }
+        this.pendingBackgroundTabRestores = []
     }
 
     async reopenLastTab (): Promise<BaseTabComponent|null> {

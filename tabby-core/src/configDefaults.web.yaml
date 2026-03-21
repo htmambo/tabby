@@ -4,4 +4,5 @@ terminal:
 enableAnalytics: false
 enableWelcomeTab: false
 delayOptionalPluginsForStartup: false
+delayBackgroundTabRestoreForStartup: false
 enableAutomaticUpdates: false
