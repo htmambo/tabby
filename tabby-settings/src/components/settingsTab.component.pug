@@ -96,6 +96,15 @@
 
                     .form-line(*ngIf='hostApp.platform !== Platform.Web')
                         .header
+                            .title(translate) Delay optional plugins during startup
+                            .description(translate) Speeds up app launch by deferring non-essential plugins until later in the session.
+                        toggle(
+                            [(ngModel)]='config.store.delayOptionalPluginsForStartup',
+                            (ngModelChange)='saveConfiguration(true)',
+                        )
+
+                    .form-line(*ngIf='hostApp.platform !== Platform.Web')
+                        .header
                             .title(translate) Debugging
 
                         button.btn.btn-secondary((click)='hostWindow.openDevTools()')

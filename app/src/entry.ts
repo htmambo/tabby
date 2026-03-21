@@ -60,12 +60,16 @@ function getDelayedPluginNames (): Set<string> {
     return new Set(names)
 }
 
-function shouldDelayOptionalPlugins (): boolean {
-    return parseBooleanRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS', false)
+function shouldDelayOptionalPlugins (config: Record<string, any>): boolean {
+    const envValue = getRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS')
+    if (envValue !== undefined && envValue !== '') {
+        return parseBooleanRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS', false)
+    }
+    return !!config.delayOptionalPluginsForStartup
 }
 
-function splitStartupPlugins (plugins: PluginInfo[]): { startupPlugins: PluginInfo[], deferredPlugins: PluginInfo[] } {
-    if (!shouldDelayOptionalPlugins()) {
+function splitStartupPlugins (plugins: PluginInfo[], config: Record<string, any>): { startupPlugins: PluginInfo[], deferredPlugins: PluginInfo[] } {
+    if (!shouldDelayOptionalPlugins(config)) {
         return {
             startupPlugins: plugins,
             deferredPlugins: [],
@@ -106,7 +110,7 @@ function prepareStartupPlugins (bootstrapData: BootstrapData, installedPlugins: 
     }
     plugins = plugins.filter(x => x.name !== 'web')
 
-    const { startupPlugins, deferredPlugins } = splitStartupPlugins(plugins)
+    const { startupPlugins, deferredPlugins } = splitStartupPlugins(plugins, bootstrapData.config)
     if (deferredPlugins.length) {
         console.info('Skipping optional plugins for startup speed in this session:', deferredPlugins.map(x => x.name))
     }
