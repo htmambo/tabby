@@ -11,14 +11,10 @@ const configPaths = [
 ]
 
 async function loadConfigs () {
-    const configs = []
-
-    for (const configPath of configPaths) {
+    return Promise.all(configPaths.map(async configPath => {
         log.info('watch', configPath)
-        configs.push((await import(configPath)).default())
-    }
-
-    return configs
+        return (await import(configPath)).default()
+    }))
 }
 
 const compiler = webpack(await loadConfigs())

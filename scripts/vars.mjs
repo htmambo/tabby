@@ -31,11 +31,11 @@ function normalizeVersionTag (tag) {
 }
 
 const exactTag = safeExec('git describe --tags --exact-match HEAD')
-const nearestTag = safeExec('git describe --tags --abbrev=0')
 
 export let version = normalizeVersionTag(exactTag)
 
 if (!version) {
+    const nearestTag = safeExec('git describe --tags --abbrev=0')
     const baseVersion = normalizeVersionTag(nearestTag) ?? '0.0.0'
     version = semver.inc(baseVersion, 'prepatch').replace('-0', `-nightly.${process.env.REV ?? 0}`)
 }
