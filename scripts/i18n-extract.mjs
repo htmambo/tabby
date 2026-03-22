@@ -1,24 +1,81 @@
 #!/usr/bin/env node
-import sh from 'shelljs'
 import fs from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
+import * as path from 'node:path'
 import * as vars from './vars.mjs'
 import log from 'npmlog'
 import { GettextExtractor, JsExtractors, HtmlExtractors } from 'gettext-extractor'
+import pug from 'pug'
 
-let extractor = new GettextExtractor()
+const extractor = new GettextExtractor()
 
 const tempOutput = 'locale/app.new.pot'
 const pot = 'locale/app.pot'
 const tempHtml = 'locale/tmp-html'
+const PUG_RENDER_OPTIONS = {
+    doctype: 'html',
+    pretty: true,
+    require: () => '',
+}
+
+async function collectPugTemplatePaths (rootDir) {
+    const templatePaths = []
+    const pendingDirs = [rootDir]
+
+    while (pendingDirs.length) {
+        const currentDir = pendingDirs.pop()
+        let entries
+        try {
+            entries = await fs.readdir(currentDir, { withFileTypes: true })
+        } catch (error) {
+            if (error?.code === 'ENOENT') {
+                continue
+            }
+            throw error
+        }
+
+        for (const entry of entries) {
+            const entryPath = path.join(currentDir, entry.name)
+            if (entry.isDirectory()) {
+                if (!['dist', 'node_modules', 'typings'].includes(entry.name)) {
+                    pendingDirs.push(entryPath)
+                }
+                continue
+            }
+            if (entry.isFile() && entry.name.endsWith('.pug')) {
+                templatePaths.push(entryPath)
+            }
+        }
+    }
+
+    templatePaths.sort()
+    return templatePaths
+}
+
+async function compilePluginPugTemplates (plugin) {
+    const pluginDir = vars.resolvePackageDir(plugin)
+    const templatePaths = await collectPugTemplatePaths(pluginDir)
+
+    for (const templatePath of templatePaths) {
+        const relativeTemplatePath = path.relative(pluginDir, templatePath)
+        const outputPath = path.join(
+            tempHtml,
+            plugin,
+            relativeTemplatePath.replace(/\.pug$/u, '.html'),
+        )
+        const html = pug.renderFile(templatePath, PUG_RENDER_OPTIONS)
+        await fs.mkdir(path.dirname(outputPath), { recursive: true })
+        await fs.writeFile(outputPath, html)
+    }
+}
 
 ;(async () => {
-    sh.mkdir('-p', tempHtml)
+    await fs.rm(tempHtml, { recursive: true, force: true })
+    await fs.mkdir(tempHtml, { recursive: true })
     try {
         for (const plugin of vars.builtinPlugins) {
             log.info('compile-pug', plugin)
-
-            sh.exec(`yarn pug --doctype html -s --pretty -O '{require: function(){}}' -o ${tempHtml}/${plugin} ${plugin}`, { fatal: true })
+            await compilePluginPugTemplates(plugin)
         }
 
         log.info('extract-ts')
@@ -55,7 +112,7 @@ const tempHtml = 'locale/tmp-html'
         })
         await fs.writeFile(pot, normalizedPot)
     } finally {
-        sh.rm('-r', tempHtml)
+        await fs.rm(tempHtml, { recursive: true, force: true })
         await fs.rm(tempOutput, { force: true })
     }
 })().catch(error => {
