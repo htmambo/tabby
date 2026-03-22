@@ -12,8 +12,8 @@ const repoRoot = path.resolve(__dirname, '..')
 
 dotenv.config({ path: path.resolve(repoRoot, '.env'), quiet: true })
 
-const electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
 let appPackageInfo
+let electronInfo
 
 function getAppPackageInfo () {
     if (appPackageInfo !== undefined) {
@@ -22,6 +22,15 @@ function getAppPackageInfo () {
 
     appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))
     return appPackageInfo
+}
+
+function getElectronInfo () {
+    if (electronInfo !== undefined) {
+        return electronInfo
+    }
+
+    electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
+    return electronInfo
 }
 
 function safeExec (cmd) {
@@ -139,7 +148,10 @@ export const bundledModules = [
     '@angular',
     '@ng-bootstrap',
 ]
-export const electronVersion = electronInfo.version
+
+export function getElectronVersion () {
+    return getElectronInfo().version
+}
 
 export const keygenConfig = {
     provider: 'keygen',

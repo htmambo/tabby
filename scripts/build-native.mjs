@@ -14,10 +14,11 @@ if (process.platform === 'win32' || process.platform === 'linux') {
 }
 
 let lifecycles = []
+const electronVersion = vars.getElectronVersion()
 for (let dir of ['app', 'tabby-core', 'tabby-local', 'tabby-ssh', 'tabby-terminal']) {
     const build = rebuild({
         buildPath: path.resolve(__dirname, '../' + dir),
-        electronVersion: vars.electronVersion,
+        electronVersion,
         arch: process.env.ARCH,
         force: true,
     })
@@ -28,7 +29,7 @@ for (let dir of ['app', 'tabby-core', 'tabby-local', 'tabby-ssh', 'tabby-termina
     lifecycles.push([build.lifecycle, dir])
 }
 
-console.info('Building against Electron', vars.electronVersion)
+console.info('Building against Electron', electronVersion)
 
 for (let [lc, dir] of lifecycles) {
     lc.on('module-found', name => {

@@ -1,12 +1,13 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import wp from 'webpack'
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import { createRequire } from 'node:module'
 import { AngularWebpackPlugin } from '@ngtools/webpack'
 import * as url from 'url'
 import * as vars from './scripts/vars.mjs'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+const nodeRequire = createRequire(import.meta.url)
 
 import { createEs2015LinkerPlugin } from '@angular/compiler-cli/linker/babel'
 const linkerPlugin = createEs2015LinkerPlugin({
@@ -225,6 +226,7 @@ export default options => {
         ],
     }
     if (process.env.PLUGIN_BUNDLE_ANALYZER === options.name) {
+        const { BundleAnalyzerPlugin } = nodeRequire('webpack-bundle-analyzer')
         config.plugins.push(new BundleAnalyzerPlugin({
             analyzerPort: 0,
         }))

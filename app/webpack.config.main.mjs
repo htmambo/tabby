@@ -1,8 +1,9 @@
 import * as path from 'path'
 import wp from 'webpack'
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import { createRequire } from 'node:module'
 import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+const nodeRequire = createRequire(import.meta.url)
 
 const isDev = !!process.env.TABBY_DEV
 const enableCache = !process.env.TABBY_DISABLE_CACHE
@@ -99,6 +100,7 @@ const config = {
 }
 
 if (process.env.BUNDLE_ANALYZER) {
+    const { BundleAnalyzerPlugin } = nodeRequire('webpack-bundle-analyzer')
     config.plugins.push(new BundleAnalyzerPlugin())
     config.cache = false
 }

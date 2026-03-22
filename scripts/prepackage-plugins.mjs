@@ -11,6 +11,7 @@ import * as url from 'url'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 let target = path.resolve(__dirname, '../builtin-plugins')
+const electronVersion = vars.getElectronVersion()
 sh.mkdir('-p', target)
 fs.writeFileSync(path.join(target, 'package.json'), '{}')
 sh.cd(target)
@@ -45,7 +46,7 @@ for (let plugin of vars.builtinPlugins) {
     if (fs.existsSync('node_modules')) {
         rebuild({
             buildPath: path.resolve('.'),
-            electronVersion: vars.electronVersion,
+            electronVersion,
             arch: process.env.ARCH ?? process.arch,
             force: true,
             useCache: false,
