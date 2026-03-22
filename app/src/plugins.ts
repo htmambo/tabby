@@ -586,18 +586,15 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
 async function getPluginCandidateLocation (paths: any): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocationsPromises: Promise<{ pluginDir: string, packageName: string }[]>[] = []
 
-    const processedPaths: string[] = []
+    const processedPaths = new Set<string>()
 
-    for (let pluginDir of paths) {
-        if (processedPaths.includes(pluginDir)) {
+    for (const rawPluginDir of paths) {
+        const pluginDir = normalizePath(rawPluginDir)
+        if (processedPaths.has(pluginDir)) {
             continue
         }
-        processedPaths.push(pluginDir)
-
-        pluginDir = normalizePath(pluginDir)
-
+        processedPaths.add(pluginDir)
         candidateLocationsPromises.push(getCandidateLocationsInPluginDir(pluginDir))
-
     }
 
     const candidateLocations: { pluginDir: string, packageName: string }[] = []
@@ -729,7 +726,7 @@ export async function findPlugins (options: { forceRefresh?: boolean } = {}): Pr
         }
     }
 
-    const foundPlugins: PluginInfo[] = []
+    const foundPluginsByName = new Map<string, PluginInfo>()
 
     const candidateLocations: { pluginDir: string, packageName: string }[] = await getPluginCandidateLocation(paths)
 
@@ -745,18 +742,22 @@ export async function findPlugins (options: { forceRefresh?: boolean } = {}): Pr
 
     for (const pluginInfo of await Promise.all(foundPluginsPromises)) {
         if (pluginInfo) {
-            const existingIndex = foundPlugins.findIndex(x => x.name === pluginInfo.name)
-            if (existingIndex >= 0) {
-                foundPlugins[existingIndex] = resolveDuplicatePlugin(foundPlugins[existingIndex], pluginInfo)
+            const existingPlugin = foundPluginsByName.get(pluginInfo.name)
+            if (existingPlugin) {
+                foundPluginsByName.set(pluginInfo.name, resolveDuplicatePlugin(existingPlugin, pluginInfo))
                 continue
             }
 
-            foundPlugins.push(pluginInfo)
+            foundPluginsByName.set(pluginInfo.name, pluginInfo)
         }
     }
 
-    foundPlugins.sort((a, b) => a.name > b.name ? 1 : -1)
-    foundPlugins.sort((a, b) => a.isBuiltin < b.isBuiltin ? 1 : -1)
+    const foundPlugins = Array.from(foundPluginsByName.values()).sort((a, b) => {
+        if (a.isBuiltin !== b.isBuiltin) {
+            return a.isBuiltin ? -1 : 1
+        }
+        return a.name.localeCompare(b.name)
+    })
     await writePluginDiscoveryCache(paths, foundPlugins)
     return {
         plugins: foundPlugins,
