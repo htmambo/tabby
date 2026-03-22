@@ -18,6 +18,16 @@ const PUG_RENDER_OPTIONS = {
     require: () => '',
 }
 
+function assertMsgcatAvailable () {
+    try {
+        execFileSync('msgcat', ['--version'], {
+            stdio: 'ignore',
+        })
+    } catch {
+        throw new Error('msgcat is required for i18n extraction. Install gettext to provide it.')
+    }
+}
+
 async function collectPugTemplatePaths (rootDir) {
     const templatePaths = []
     const pendingDirs = [rootDir]
@@ -70,6 +80,7 @@ async function compilePluginPugTemplates (plugin) {
 }
 
 ;(async () => {
+    assertMsgcatAvailable()
     await fs.rm(tempHtml, { recursive: true, force: true })
     await fs.mkdir(tempHtml, { recursive: true })
     try {
