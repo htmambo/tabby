@@ -492,7 +492,7 @@ export class SSHSession {
                 throw new Error('Cannot open agent channel before auth')
             }
 
-            const channel = await this.ssh.activateChannel(event.channel)
+            const channel: russh.Channel = await this.ssh.activateChannel(event.channel)
 
             const forward = this.forwardedPorts.find(x => x.port === event.targetPort && x.host === event.targetAddress)
             if (!forward) {
@@ -532,7 +532,7 @@ export class SSHSession {
                 throw new Error('Cannot open agent channel before auth')
             }
 
-            const channel = await this.ssh.activateChannel(event.channel)
+            const channel: russh.Channel = await this.ssh.activateChannel(event.channel)
 
             const socket = new X11Socket()
             try {
@@ -560,7 +560,7 @@ export class SSHSession {
                 throw new Error('Cannot open agent channel before auth')
             }
 
-            const channel = await this.ssh.activateChannel(newChannel)
+            const channel: russh.Channel = await this.ssh.activateChannel(newChannel)
 
             const spec = await this.getAgentConnectionSpec()
             if (!spec) {
@@ -798,7 +798,7 @@ export class SSHSession {
                     reject()
                     return
                 }
-                const channel = await this.ssh.activateChannel(await this.ssh.openTCPForwardChannel({
+                const channel: russh.Channel = await this.ssh.activateChannel(await this.ssh.openTCPForwardChannel({
                     addressToConnectTo: targetAddress,
                     portToConnectTo: targetPort,
                     originatorAddress: sourceAddress ?? '127.0.0.1',
@@ -900,7 +900,7 @@ export class SSHSession {
         const wrappedCommand = `sh -lc ${escapePOSIXShellArgument(`${command}
 exit_code=$?
 printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
-        const channel = await this.ssh.activateChannel(await this.ssh.openSessionChannel())
+        const channel: russh.Channel = await this.ssh.activateChannel(await this.ssh.openSessionChannel())
         const stdoutBuffers: Buffer[] = []
         const stderrBuffers: Buffer[] = []
         const subscriptions = [
@@ -943,7 +943,7 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
             this.ssh.openSessionChannel(),
             this.translate.instant('opening an SSH session channel'),
         )
-        const ch = await this.withReadyTimeout(
+        const ch: russh.Channel = await this.withReadyTimeout(
             this.ssh.activateChannel(newChannel),
             this.translate.instant('activating the SSH session channel'),
         )
@@ -1050,8 +1050,8 @@ printf '\n${REMOTE_COMMAND_EXIT_SENTINEL}:%s\n' "$exit_code"`)}`
     private setupSocketChannelEvents (channel: russh.Channel, socket: Socket, logPrefix: string): void {
         // Channel → Socket data flow with error handling
         channel.data$.subscribe({
-            next: data => socket.write(data),
-            error: err => {
+            next: (data: Uint8Array) => socket.write(data),
+            error: (err: unknown) => {
                 this.logger.error(`${logPrefix}: channel data error: ${err}`)
                 socket.destroy()
             },

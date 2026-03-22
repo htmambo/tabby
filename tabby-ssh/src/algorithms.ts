@@ -2,10 +2,10 @@ import * as russh from 'russh'
 import { SSHAlgorithmType } from './api'
 
 export const supportedAlgorithms = {
-    [SSHAlgorithmType.KEX]: russh.getSupportedKexAlgorithms().filter(x => x !== 'none'),
-    [SSHAlgorithmType.HOSTKEY]: russh.getSupportedKeyTypes().filter(x => x !== 'none'),
-    [SSHAlgorithmType.CIPHER]: russh.getSupportedCiphers().filter(x => x !== 'clear'),
-    [SSHAlgorithmType.HMAC]: russh.getSupportedMACs().filter(x => x !== 'none'),
+    [SSHAlgorithmType.KEX]: russh.getSupportedKexAlgorithms().filter((x: string) => x !== 'none'),
+    [SSHAlgorithmType.HOSTKEY]: russh.getSupportedKeyTypes().filter((x: string) => x !== 'none'),
+    [SSHAlgorithmType.CIPHER]: russh.getSupportedCiphers().filter((x: string) => x !== 'clear'),
+    [SSHAlgorithmType.HMAC]: russh.getSupportedMACs().filter((x: string) => x !== 'none'),
     [SSHAlgorithmType.COMPRESSION]: russh.getSupportedCompressionAlgorithms().reverse(),
 }
 

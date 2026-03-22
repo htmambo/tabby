@@ -69,9 +69,10 @@ export class SFTPTabLauncherService {
                 if (!(jumpSession.ssh instanceof russh.AuthenticatedSSHClient)) {
                     throw new Error('Jump session is not authenticated yet somehow')
                 }
+                const jumpSSH: russh.AuthenticatedSSHClient = jumpSession.ssh
 
                 try {
-                    session.jumpChannel = await jumpSession.ssh.openTCPForwardChannel({
+                    session.jumpChannel = await jumpSSH.openTCPForwardChannel({
                         addressToConnectTo: profile.options.host,
                         portToConnectTo: profile.options.port ?? 22,
                         originatorAddress: '127.0.0.1',

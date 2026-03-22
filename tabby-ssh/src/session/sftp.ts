@@ -58,7 +58,7 @@ export class SFTPSession {
     async readdir (p: string): Promise<SFTPFile[]> {
         this.logger.debug('readdir', p)
         const entries = await this.sftp.readDirectory(p)
-        return entries.map(entry => this._makeFile(
+        return entries.map((entry: russh.SFTPDirectoryEntry) => this._makeFile(
             posixPath.join(p, entry.name), entry,
         ))
     }

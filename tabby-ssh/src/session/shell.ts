@@ -62,10 +62,10 @@ export class SSHShellSession extends BaseSession {
         this.loginScriptProcessor?.executeUnconditionalScripts()
 
         this.subscriptions.add(this.shell.data$.subscribe({
-            next: data => {
+            next: (data: Uint8Array) => {
                 this.emitOutput(Buffer.from(data))
             },
-            error: err => {
+            error: (err: unknown) => {
                 this.logger.warn('Shell stream error:', err)
                 this.handleShellEnd('stream error')
             },
@@ -91,7 +91,7 @@ export class SSHShellSession extends BaseSession {
             rows,
             pixHeight: 0,
             pixWidth: 0,
-        }).catch(err => {
+        }).catch((err: unknown) => {
             this.logger.warn('Shell resize failed:', err)
             this.handleShellEnd('resize failure')
         })
@@ -99,7 +99,7 @@ export class SSHShellSession extends BaseSession {
 
     write (data: Buffer): void {
         if (this.shell) {
-            this.shell.write(new Uint8Array(data)).catch(err => {
+            this.shell.write(new Uint8Array(data)).catch((err: unknown) => {
                 this.logger.warn('Shell write failed:', err)
                 this.handleShellEnd('write failure')
             })
