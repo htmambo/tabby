@@ -29,6 +29,24 @@ async function readPackageVersion (target) {
     }
 }
 
+async function readExpectedSafeTmpVersion () {
+    try {
+        const pkg = JSON.parse(await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'))
+        const configuredVersion = (
+            pkg.overrides?.tmp
+            ?? pkg.resolutions?.tmp
+            ?? pkg.devDependencies?.tmp
+            ?? pkg.dependencies?.tmp
+        )
+        if (typeof configuredVersion !== 'string' || configuredVersion.length === 0) {
+            return null
+        }
+        return configuredVersion.replace(/^[^\d]*/, '')
+    } catch {
+        return null
+    }
+}
+
 async function ensureSafeTmpVersion () {
     if (!await pathExists(safeTmpDir)) {
         console.warn('[sync-safe-tmp] root tmp package is missing, skipping')
@@ -36,8 +54,9 @@ async function ensureSafeTmpVersion () {
     }
 
     const safeVersion = await readPackageVersion(safeTmpDir)
-    if (safeVersion !== '0.2.4') {
-        throw new Error(`[sync-safe-tmp] expected node_modules/tmp to be 0.2.4, got ${safeVersion ?? 'unknown'}`)
+    const expectedSafeVersion = await readExpectedSafeTmpVersion()
+    if (expectedSafeVersion !== null && safeVersion !== expectedSafeVersion) {
+        throw new Error(`[sync-safe-tmp] expected node_modules/tmp to be ${expectedSafeVersion}, got ${safeVersion ?? 'unknown'}`)
     }
 
     for (const target of targets) {
