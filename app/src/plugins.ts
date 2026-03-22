@@ -74,6 +74,7 @@ let pluginLookupPaths: string[] = []
 const pluginRuntimeRoots = new Set<string>()
 const PLUGIN_DISCOVERY_CACHE_KEY = 'tabby.pluginDiscoveryCache.v1'
 const PLUGIN_DISCOVERY_CACHE_VERSION = 1
+const pluginBlacklist = new Set(PLUGIN_BLACKLIST)
 
 function normalizePath (p: string): string {
     const cygwinPrefix = '/cygdrive/'
@@ -357,6 +358,7 @@ const builtinModules = [
     'tabby-settings',
     'tabby-terminal',
 ]
+const builtinModuleNames = new Set(builtinModules)
 
 function createLazyBuiltinModuleReference (modulePath: string): LazyBuiltinModuleReference {
     return {
@@ -577,7 +579,7 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
 
     for (const entry of pluginEntries) {
         const packageName = entry.name
-        if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !PLUGIN_BLACKLIST.includes(packageName)) {
+        if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !pluginBlacklist.has(packageName)) {
             if (entry.isFile()) {
                 continue
             }
@@ -625,8 +627,10 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
 
     try {
         const info = JSON.parse(await readFile(infoPath, { encoding: 'utf-8' }))
-
-        if (!info.keywords || !(info.keywords.includes('terminus-plugin') || info.keywords.includes('terminus-builtin-plugin') || info.keywords.includes('tabby-plugin') || info.keywords.includes('tabby-builtin-plugin'))) {
+        const keywords = new Set<string>(Array.isArray(info.keywords) ? info.keywords : [])
+        const isLegacyPlugin = keywords.has('terminus-plugin') || keywords.has('terminus-builtin-plugin')
+        const isSupportedPlugin = isLegacyPlugin || keywords.has('tabby-plugin') || keywords.has('tabby-builtin-plugin')
+        if (!isSupportedPlugin) {
             return null
         }
 
@@ -641,7 +645,7 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
             name: name,
             packageName: packageName,
             isBuiltin: isBuiltinPluginDir(pluginDir),
-            isLegacy: info.keywords.includes('terminus-plugin') || info.keywords.includes('terminus-builtin-plugin'),
+            isLegacy: isLegacyPlugin,
             version: info.version,
             description: info.description ?? '',
             author,
@@ -745,7 +749,7 @@ export async function findPlugins (options: { forceRefresh?: boolean } = {}): Pr
 
     const foundPluginsPromises: Promise<PluginInfo|null>[] = []
     for (const { pluginDir, packageName } of candidateLocations) {
-        if (builtinModules.includes(packageName) && !isBuiltinPluginDir(pluginDir)) {
+        if (builtinModuleNames.has(packageName) && !isBuiltinPluginDir(pluginDir)) {
             continue
         }
 
