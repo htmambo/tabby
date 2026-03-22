@@ -2,8 +2,7 @@ import { NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 
 // Tabby modules
-import { ToolbarButtonProvider, ConfigProvider, HotkeyProvider, TabbyPluginManifest } from 'tabby-core'
-import { SettingsTabProvider } from 'tabby-settings'
+import { ToolbarButtonProvider, ConfigProvider, HotkeyProvider, SettingsTabProvider, TabbyPluginManifest } from 'tabby-core'
 import { AiConfigProvider } from './providers/tabby/ai-config.provider'
 import { AiHotkeyProvider } from './providers/tabby/ai-hotkey.provider'
 import { AiLazySettingsTabComponent } from './minimal/ai-lazy-settings-tab.component'

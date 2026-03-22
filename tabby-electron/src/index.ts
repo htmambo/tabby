@@ -39,6 +39,14 @@ import { WindowsStockShellsProvider } from './shells/windowsStock'
 import { WSLShellProvider } from './shells/wsl'
 import { VSDevToolsProvider } from './shells/vs'
 
+type IdleRequestCallbackLike = () => void
+type IdleRequestOptionsLike = {
+    timeout?: number
+}
+type IdleCallbackGlobal = typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallbackLike, options?: IdleRequestOptionsLike) => number
+}
+
 const PROVIDERS = [
     { provide: TerminalColorSchemeProvider, useClass: HyperColorSchemes, multi: true },
     { provide: PlatformService, useExisting: ElectronPlatformService },
@@ -85,9 +93,13 @@ const PROVIDERS = [
     providers: PROVIDERS,
 })
 export default class ElectronModule {
+    private readonly startupPlatformEnhancementsDelay = 1200
+    private readonly startupPlatformEnhancementsIdleTimeout = 2000
     private touchbarServiceInstance: TouchbarService | null = null
     private dockMenuServiceInstance: DockMenuService | null = null
     private themesServiceInstance: ThemesService | null = null
+    private startupPlatformEnhancementsScheduled = false
+    private trafficLightThemeSyncInitialized = false
 
     constructor (
         private injector: Injector,
@@ -102,9 +114,6 @@ export default class ElectronModule {
         const supportsDockMenu = hostApp.platform === Platform.macOS || hostApp.platform === Platform.Windows
 
         void lastValueFrom(config.ready$).then(() => {
-            if (isMacOS) {
-                this.touchbarService.update()
-            }
             docking.dock()
             hostWindow.windowShown$.subscribe(() => {
                 docking.dock()
@@ -112,23 +121,12 @@ export default class ElectronModule {
             this.registerGlobalHotkey()
             this.updateVibrancy()
             this.updateWindowControlsColor()
-            if (supportsDockMenu) {
-                void this.dockMenuService.update()
-            }
+            this.scheduleStartupPlatformEnhancements(isMacOS, supportsDockMenu)
         })
 
         config.changed$.subscribe(() => {
             this.registerGlobalHotkey()
         })
-
-        if (isMacOS) {
-            this.themesService.themeChanged$.subscribe(theme => {
-                hostWindow.setTrafficLightPosition(
-                    theme.macOSWindowButtonsInsetX ?? 14,
-                    theme.macOSWindowButtonsInsetY ?? 11,
-                )
-            })
-        }
 
         let lastProgress: number|null = null
         app.tabOpened$.subscribe(tab => {
@@ -166,6 +164,52 @@ export default class ElectronModule {
     private get themesService (): ThemesService {
         this.themesServiceInstance ??= this.injector.get(ThemesService)
         return this.themesServiceInstance
+    }
+
+    private scheduleStartupPlatformEnhancements (isMacOS: boolean, supportsDockMenu: boolean): void {
+        if (this.startupPlatformEnhancementsScheduled || (!isMacOS && !supportsDockMenu)) {
+            return
+        }
+        this.startupPlatformEnhancementsScheduled = true
+
+        window.setTimeout(() => {
+            const run = () => {
+                if (isMacOS) {
+                    this.touchbarService.update()
+                    this.initializeTrafficLightThemeSync()
+                }
+                if (supportsDockMenu) {
+                    void this.dockMenuService.update()
+                }
+            }
+
+            const idleGlobal = globalThis as IdleCallbackGlobal
+            if (idleGlobal.requestIdleCallback) {
+                idleGlobal.requestIdleCallback(run, {
+                    timeout: this.startupPlatformEnhancementsIdleTimeout,
+                })
+                return
+            }
+            run()
+        }, this.startupPlatformEnhancementsDelay)
+    }
+
+    private initializeTrafficLightThemeSync (): void {
+        if (this.trafficLightThemeSyncInitialized) {
+            return
+        }
+        this.trafficLightThemeSyncInitialized = true
+        const theme = this.themesService.findCurrentTheme()
+        this.hostWindow.setTrafficLightPosition(
+            theme.macOSWindowButtonsInsetX ?? 14,
+            theme.macOSWindowButtonsInsetY ?? 11,
+        )
+        this.themesService.themeChanged$.subscribe(updatedTheme => {
+            this.hostWindow.setTrafficLightPosition(
+                updatedTheme.macOSWindowButtonsInsetX ?? 14,
+                updatedTheme.macOSWindowButtonsInsetY ?? 11,
+            )
+        })
     }
 
     private registerGlobalHotkey () {

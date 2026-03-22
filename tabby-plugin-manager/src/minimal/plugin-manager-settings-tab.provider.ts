@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { SettingsTabProvider } from 'tabby-settings'
+import { SettingsTabProvider } from 'tabby-core'
 import { PluginManagerLazySettingsTabComponent } from './plugin-manager-lazy-settings-tab.component'
 
 @Injectable()

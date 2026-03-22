@@ -9,9 +9,8 @@ import { ChatInterfaceOpener } from './api/chatInterfaceOpener'
 import './styles/ai-assistant.scss'
 
 // Tabby modules
-import TabbyCoreModule, { AppService, ConfigService, ToolbarButtonProvider, ConfigProvider, HotkeyProvider, HotkeysService, TabbyPluginManifest } from 'tabby-core'
+import TabbyCoreModule, { AppService, ConfigService, ToolbarButtonProvider, ConfigProvider, HotkeyProvider, HotkeysService, SettingsTabProvider, TabbyPluginManifest } from 'tabby-core'
 import TabbyTerminalModule from 'tabby-terminal'
-import { SettingsTabProvider } from 'tabby-settings'
 
 // Core Services
 import { AiAssistantService } from './services/core/ai-assistant.service'

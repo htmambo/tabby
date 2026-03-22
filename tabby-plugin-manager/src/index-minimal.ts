@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common'
 import { NgModule } from '@angular/core'
 
-import { TabbyPluginManifest } from 'tabby-core'
-import { SettingsTabProvider } from 'tabby-settings'
+import { SettingsTabProvider, TabbyPluginManifest } from 'tabby-core'
 import { PluginManagerLazySettingsTabComponent } from './minimal/plugin-manager-lazy-settings-tab.component'
 import { PluginManagerMinimalSettingsTabProvider } from './minimal/plugin-manager-settings-tab.provider'
 

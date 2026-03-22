@@ -254,7 +254,16 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy {
 
         switch (event.type) {
             case 'text':
-                message.content += event.content
+                message.content = (message.content || '') + event.content
+                const lastBlock = message.uiBlocks[message.uiBlocks.length - 1]
+                if (lastBlock?.type === 'text') {
+                    lastBlock.content = (lastBlock.content || '') + event.content
+                } else {
+                    message.uiBlocks.push({
+                        type: 'text',
+                        content: event.content,
+                    })
+                }
                 break
 
             case 'tool_start':

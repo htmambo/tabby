@@ -162,13 +162,13 @@ export class AppRootComponent implements OnDestroy {
     private readonly royalRestoreBindingsMaxAttempts = 20
     private readonly royalSidebarPreviewCloseDelay = 120
     private readonly royalSidebarTransitionFallbackDelay = 260
-    private readonly startupToolbarButtonsDelay = 150
-    private readonly startupRoyalConnectionsDelay = 350
-    private readonly startupUpdaterCheckDelay = 1500
+    private readonly startupToolbarButtonsDelay = 400
+    private readonly startupRoyalConnectionsDelay = 900
+    private readonly startupUpdaterCheckDelay = 5000
     private readonly startupIdleFallbackDelay = 50
-    private readonly startupToolbarButtonsIdleTimeout = 800
-    private readonly startupRoyalConnectionsIdleTimeout = 1200
-    private readonly startupUpdaterCheckIdleTimeout = 3000
+    private readonly startupToolbarButtonsIdleTimeout = 1400
+    private readonly startupRoyalConnectionsIdleTimeout = 2200
+    private readonly startupUpdaterCheckIdleTimeout = 6000
     private pendingVibrancySync: number|null = null
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
@@ -184,6 +184,7 @@ export class AppRootComponent implements OnDestroy {
     private updatesCheckInterval: number | null = null
     private automaticUpdatesEnabled = false
     private updaterCheckScheduled = false
+    private updateAvailabilityRefreshToken = 0
     private updaterServiceInstance: UpdaterService | null = null
     private commandServiceInstance: CommandService | null = null
     private profilesServiceInstance: ProfilesService | null = null
@@ -301,6 +302,9 @@ export class AppRootComponent implements OnDestroy {
         this.app.tabsChanged$.subscribe(() => this.scheduleRoyalActiveSync())
         this.app.tabsRestored$.subscribe(() => {
             this.scheduleRoyalActiveSync()
+        })
+        this.app.startupTabRestoreComplete$.subscribe(() => {
+            this.scheduleRoyalActiveSync()
             this.runInAngular(() => this.startRoyalRestoredBindingsRecovery())
         })
         this.app.tabs.forEach(tab => this.observeRoyalTab(tab))
@@ -362,6 +366,7 @@ export class AppRootComponent implements OnDestroy {
             this.runInAngular(() => {
                 this.unsortedTabs.push(tab)
                 this.observeRoyalTab(tab)
+                this.restoreRoyalConnectionBindingsFromTabs()
                 this.scheduleRoyalActiveSync()
                 this.app.emitTabDragEnded()
                 this.schedulePreloadHideCheck()
@@ -415,9 +420,11 @@ export class AppRootComponent implements OnDestroy {
                         this.automaticUpdatesEnabled = automaticUpdatesEnabled
                         if (automaticUpdatesEnabled) {
                             this.scheduleUpdateAvailabilityRefresh()
-                        } else if (this.updatesAvailable) {
-                            this.updatesAvailable = false
-                            this.scheduleViewRefresh()
+                        } else {
+                            const refreshToken = ++this.updateAvailabilityRefreshToken
+                            if (this.updatesAvailable) {
+                                this.scheduleUpdateAvailabilityReset(refreshToken)
+                            }
                         }
                     }
                     if (!this.shouldShowRoyalSidebar()) {
@@ -546,13 +553,52 @@ export class AppRootComponent implements OnDestroy {
         }, delay, this.startupUpdaterCheckIdleTimeout)
     }
 
-    private async refreshUpdateAvailability (): Promise<void> {
-        try {
-            const available = await this.updater.check()
-            if (this.destroyed) {
+    private scheduleUpdateAvailabilityReset (refreshToken = ++this.updateAvailabilityRefreshToken): void {
+        // Delay the reset so config-driven startup writes don't mutate the bound
+        // button visibility in the same Angular check cycle.
+        this.scheduleTimeout(() => {
+            if (
+                this.destroyed
+                || refreshToken !== this.updateAvailabilityRefreshToken
+                || this.automaticUpdatesEnabled
+                || !this.updatesAvailable
+            ) {
                 return
             }
             this.runInAngular(() => {
+                if (
+                    this.destroyed
+                    || refreshToken !== this.updateAvailabilityRefreshToken
+                    || this.automaticUpdatesEnabled
+                    || !this.updatesAvailable
+                ) {
+                    return
+                }
+                this.updatesAvailable = false
+                this.scheduleViewRefresh()
+            })
+        })
+    }
+
+    private async refreshUpdateAvailability (): Promise<void> {
+        const refreshToken = ++this.updateAvailabilityRefreshToken
+        try {
+            const available = await this.updater.check()
+            if (
+                this.destroyed
+                || !this.automaticUpdatesEnabled
+                || refreshToken !== this.updateAvailabilityRefreshToken
+            ) {
+                return
+            }
+            this.runInAngular(() => {
+                if (
+                    this.destroyed
+                    || !this.automaticUpdatesEnabled
+                    || refreshToken !== this.updateAvailabilityRefreshToken
+                ) {
+                    return
+                }
                 this.updatesAvailable = available
                 this.scheduleViewRefresh()
             })

@@ -43,6 +43,11 @@ type GlobalModuleTarget = typeof globalThis & {
     }
 }
 
+interface LazyBuiltinModuleReference {
+    __tabbyLazyBuiltinModule: true
+    path: string
+}
+
 interface PluginDiscoveryCachePathState {
     path: string
     exists: boolean
@@ -313,7 +318,7 @@ const builtinPluginRoots = new Set<string>([
     ...builtinPluginRootPaths.map(x => normalizePathForCompare(x)),
 ])
 
-const cachedBuiltinModules: Record<string, unknown> = {
+const cachedBuiltinModules: Record<string, unknown | LazyBuiltinModuleReference> = {
     '@angular/animations': angularAnimations,
     '@angular/cdk/drag-drop': angularCdkDragDrop,
     '@angular/cdk/clipboard': angularCdkClipboard,
@@ -342,10 +347,40 @@ const builtinModules = [
     'tabby-terminal',
 ]
 
+function createLazyBuiltinModuleReference (modulePath: string): LazyBuiltinModuleReference {
+    return {
+        __tabbyLazyBuiltinModule: true,
+        path: modulePath,
+    }
+}
+
+function isLazyBuiltinModuleReference (value: unknown): value is LazyBuiltinModuleReference {
+    return !!value
+        && typeof value === 'object'
+        && (value as LazyBuiltinModuleReference).__tabbyLazyBuiltinModule === true
+        && typeof (value as LazyBuiltinModuleReference).path === 'string'
+}
+
+function resolveCachedBuiltinModule (query: string): unknown | undefined {
+    if (!Object.prototype.hasOwnProperty.call(cachedBuiltinModules, query)) {
+        return undefined
+    }
+    const cachedModule = cachedBuiltinModules[query]
+    if (!isLazyBuiltinModuleReference(cachedModule)) {
+        return cachedModule
+    }
+    const loadedModule = nodeRequire(cachedModule.path)
+    cachedBuiltinModules[query] = loadedModule
+    return loadedModule
+}
+
 const originalModuleRequire = nodeModule.prototype.require
 nodeModule.prototype.require = (function (this: unknown, query: string) {
-    if (cachedBuiltinModules[query] && isPluginModuleContext(this)) {
-        return cachedBuiltinModules[query]
+    if (isPluginModuleContext(this)) {
+        const cachedBuiltinModule = resolveCachedBuiltinModule(query)
+        if (cachedBuiltinModule !== undefined) {
+            return cachedBuiltinModule
+        }
     }
     return originalModuleRequire.call(this, query)
 }) as NodeJS.Require
@@ -487,14 +522,14 @@ export function initModuleLookup (userPluginsPath: string): void {
     ))
 
     builtinModules.forEach(m => {
-        if (!cachedBuiltinModules[m]) {
+        if (!Object.prototype.hasOwnProperty.call(cachedBuiltinModules, m)) {
             const builtinPackagePath = resolveBuiltinPackagePath(m)
             if (builtinPackagePath) {
                 registerPluginRuntimeRoot(builtinPackagePath)
-                cachedBuiltinModules[m] = nodeRequire(builtinPackagePath)
+                cachedBuiltinModules[m] = createLazyBuiltinModuleReference(builtinPackagePath)
                 console.debug(`Pinned builtin module ${m} to ${builtinPackagePath}`)
             } else {
-                cachedBuiltinModules[m] = nodeRequire(m)
+                cachedBuiltinModules[m] = createLazyBuiltinModuleReference(m)
             }
         }
     })

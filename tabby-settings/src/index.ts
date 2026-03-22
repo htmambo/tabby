@@ -1,4 +1,4 @@
-import { Injector, NgModule } from '@angular/core'
+import { Inject, Injector, NgModule, Optional } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
@@ -29,6 +29,7 @@ import { ButtonProvider } from './buttonProvider'
 import { SettingsHotkeyProvider } from './hotkeys'
 import { SettingsConfigProvider } from './config'
 import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabProvider, ProfilesSettingsTabProvider, ConfigSyncSettingsTabProvider } from './settings'
+import { SETTINGS_LAZY_RUNTIME } from './minimal/lazy-runtime.token'
 
 const PROVIDERS = [
     { provide: ToolbarButtonProvider, useClass: ButtonProvider, multi: true },
@@ -92,7 +93,12 @@ export default class SettingsModule {
         settingsTabOpener: SettingsTabOpener,
         hotkeys: HotkeysService,
         app: AppService,
+        @Optional() @Inject(SETTINGS_LAZY_RUNTIME) lazyRuntime: boolean | null,
     ) {
+        if (lazyRuntime) {
+            return
+        }
+
         hotkeys.hotkey$.subscribe(async hotkey => {
             if (hotkey.startsWith('settings-tab.')) {
                 const id = hotkey.substring(hotkey.indexOf('.') + 1)

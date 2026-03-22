@@ -1,6 +1,5 @@
-import { Injectable, Injector } from '@angular/core'
-import { ToolbarButtonProvider, ToolbarButton, AppService, ConfigService } from 'tabby-core'
-import { SettingsTabComponent } from 'tabby-settings'
+import { Injectable, Injector, Optional } from '@angular/core'
+import { ToolbarButtonProvider, ToolbarButton, ConfigService, SettingsTabOpener } from 'tabby-core'
 import { AiSettingsViewService } from '../services/core/ai-settings-view.service'
 import { AiAssistantLazyLoaderService } from './ai-lazy-loader.service'
 import { isAiAssistantEnabled } from './ai-enabled-state'
@@ -11,9 +10,9 @@ export class AiMinimalToolbarButtonProvider extends ToolbarButtonProvider {
     private settingsViewInstance: AiSettingsViewService | null = null
 
     constructor (
-        private app: AppService,
         private config: ConfigService,
         private injector: Injector,
+        @Optional() private settingsTabOpener: SettingsTabOpener | null,
     ) {
         super()
     }
@@ -85,17 +84,6 @@ export class AiMinimalToolbarButtonProvider extends ToolbarButtonProvider {
 
     private openSettings (): void {
         this.settingsView.requestTab('providers')
-
-        const settingsTab = this.app.tabs.find(tab => tab instanceof SettingsTabComponent) as SettingsTabComponent | undefined
-        if (settingsTab) {
-            settingsTab.activeTab = 'ai-assistant'
-            this.app.selectTab(settingsTab)
-            return
-        }
-
-        this.app.openNewTabRaw({
-            type: SettingsTabComponent,
-            inputs: { activeTab: 'ai-assistant' },
-        })
+        this.settingsTabOpener?.open('ai-assistant')
     }
 }

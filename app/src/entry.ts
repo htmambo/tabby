@@ -35,7 +35,7 @@ if (isRuntimeDev() && !hasRuntimeEnv('TABBY_FORCE_ANGULAR_PROD')) {
 }
 
 const ipc = getTabbyBridge().ipc
-const DEFAULT_DELAYED_PLUGIN_NAMES = ['ai-assistant', 'plugin-manager']
+const DEFAULT_DELAYED_PLUGIN_NAMES = ['ai-assistant', 'plugin-manager', 'settings']
 
 function parseBooleanRuntimeEnv (name: string, defaultValue: boolean): boolean {
     const value = getRuntimeEnv(name)?.trim().toLowerCase()

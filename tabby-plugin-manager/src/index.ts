@@ -3,8 +3,7 @@ import { NgModule } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 
-import TabbyCorePlugin, { TabbyPluginManifest } from 'tabby-core'
-import { SettingsTabProvider } from 'tabby-settings'
+import TabbyCorePlugin, { SettingsTabProvider, TabbyPluginManifest } from 'tabby-core'
 
 import { PluginsSettingsTabComponent } from './components/pluginsSettingsTab.component'
 import { PluginManagerService } from './services/pluginManager.service'

@@ -80,6 +80,7 @@ export class AppService implements OnDestroy {
     private tabDragActive = new Subject<BaseTabComponent|null>()
     private ready = new AsyncSubject<void>()
     private tabsRestored = new AsyncSubject<void>()
+    private startupTabRestoreComplete = new AsyncSubject<void>()
     private recoveryStateChangedHint = new Subject<void>()
 
     private completionObservers = new Map<BaseTabComponent, CompletionObserver>()
@@ -93,6 +94,7 @@ export class AppService implements OnDestroy {
     private backgroundRestoreTimeoutHandle: number | null = null
     private selectorServiceInstance: SelectorService | null = null
     private ngbModalInstance: NgbModal | null = null
+    private startupTabRestoreCompleted = false
 
     get activeTabChange$ (): Observable<BaseTabComponent|null> { return this.activeTabChange }
     get tabOpened$ (): Observable<BaseTabComponent> { return this.tabOpened }
@@ -103,6 +105,9 @@ export class AppService implements OnDestroy {
 
     /** Fires once when saved tabs are restored */
     get tabsRestored$ (): Observable<void> { return this.tabsRestored }
+
+    /** Fires once when startup tab restoration, including deferred background tabs, is fully complete */
+    get startupTabRestoreComplete$ (): Observable<void> { return this.startupTabRestoreComplete }
 
     /** Fires once when the app is ready */
     get ready$ (): Observable<void> { return this.ready }
@@ -141,9 +146,13 @@ export class AppService implements OnDestroy {
                     const recoveredTabs = await this.tabRecovery.recoverTabs()
                     const selectedTabs = await this.selectTabsToRestore(recoveredTabs)
                     this.restoreRecoveredTabs(selectedTabs)
+                } else {
+                    this.completeStartupTabRestore()
                 }
                 /** Continue to store the tabs even if the setting is currently off */
                 this.tabRecovery.enabled = true
+            } else {
+                this.completeStartupTabRestore()
             }
             this.tabsRestored.next()
             this.tabsRestored.complete()
@@ -287,6 +296,7 @@ export class AppService implements OnDestroy {
 
     private restoreRecoveredTabs (recoveredTabs: RecoveredTabsState): void {
         if (!recoveredTabs.tabs.length) {
+            this.completeStartupTabRestore()
             return
         }
 
@@ -300,6 +310,7 @@ export class AppService implements OnDestroy {
                 ? recoveredTabs.activeTabIndex
                 : 0
             this.selectTab(restoredTopLevelTabs[activeTabIndex])
+            this.completeStartupTabRestore()
             return
         }
 
@@ -361,7 +372,10 @@ export class AppService implements OnDestroy {
 
         if (this.pendingBackgroundTabRestores.length) {
             this.scheduleNextBackgroundTabRestoreBatch()
+            return
         }
+
+        this.completeStartupTabRestore()
     }
 
     private clearPendingBackgroundTabRestore (): void {
@@ -379,6 +393,15 @@ export class AppService implements OnDestroy {
             this.backgroundRestoreTimeoutHandle = null
         }
         this.pendingBackgroundTabRestores = []
+    }
+
+    private completeStartupTabRestore (): void {
+        if (this.startupTabRestoreCompleted) {
+            return
+        }
+        this.startupTabRestoreCompleted = true
+        this.startupTabRestoreComplete.next()
+        this.startupTabRestoreComplete.complete()
     }
 
     async reopenLastTab (): Promise<BaseTabComponent|null> {
