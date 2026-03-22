@@ -29,10 +29,10 @@ title-bar(
             cdkAutoDropGroup='app-tabs'
         )
             tab-header(
-                *ngFor='let tab of app.tabs; let idx = index',
+                *ngFor='let tab of tabBarTabs; let idx = index',
                 [index]='idx',
                 [tab]='tab',
-                [active]='tab == app.activeTab',
+                [active]='tab == renderedActiveTab',
                 [@animateTab]='{value: "in", params: {size: targetTabSize}}',
                 [@.disabled]='hasVerticalTabs() || !config.store.accessibility.animations',
                 (click)='app.selectTab(tab)',
@@ -264,8 +264,8 @@ title-bar(
         tab-body.content-tab(
             #tabBodies,
             *ngFor='let tab of unsortedTabs',
-            [class.content-tab-active]='tab == app.activeTab',
-            [active]='tab == app.activeTab',
+            [class.content-tab-active]='tab == renderedActiveTab',
+            [active]='tab == renderedActiveTab',
             [tab]='tab',
         )
 

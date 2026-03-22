@@ -124,6 +124,8 @@ export class AppRootComponent implements OnDestroy {
     @HostBinding('class.platform-linux') get platformClassLinux (): boolean { return this.hostApp.platform === Platform.Linux }
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
+    renderedActiveTab: BaseTabComponent|null = null
+    tabBarTabs: BaseTabComponent[] = []
     unsortedTabs: BaseTabComponent[] = []
     showStartPage = true
     updatesAvailable = false
@@ -257,10 +259,16 @@ export class AppRootComponent implements OnDestroy {
     }
 
     private syncTabSurfaceState (): void {
+        // Snapshot tab headers off the live app.tabs array so Angular does not
+        // observe the tab list shrinking in the same check cycle while tabs are
+        // being closed/restored.
+        this.renderedActiveTab = this.app.activeTab
+        this.tabBarTabs = [...this.app.tabs]
+
         const knownTabs = new Set(this.unsortedTabs)
-        const currentTabs = new Set(this.app.tabs)
+        const currentTabs = new Set(this.tabBarTabs)
         const nextUnsortedTabs = this.unsortedTabs.filter(tab => currentTabs.has(tab))
-        for (const tab of this.app.tabs) {
+        for (const tab of this.tabBarTabs) {
             if (!knownTabs.has(tab)) {
                 nextUnsortedTabs.push(tab)
             }
@@ -325,6 +333,7 @@ export class AppRootComponent implements OnDestroy {
 
         this.app.activeTabChange$.subscribe(() => {
             this.scheduleRoyalActiveSync()
+            this.scheduleTabSurfaceSync()
         })
         this.app.tabsChanged$.subscribe(() => {
             this.scheduleRoyalActiveSync()
