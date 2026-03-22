@@ -118,8 +118,15 @@ function normalizeLookupPaths (paths: string[]): string[] {
     return Array.from(new Set(paths.map(x => normalizePath(path.resolve(x)))))
 }
 
-async function getPluginDiscoveryPathStates (paths: string[]): Promise<PluginDiscoveryCachePathState[]> {
-    return Promise.all(normalizeLookupPaths(paths).map(async pluginPath => {
+function areLookupPathsEqual (a: string[], b: string[]): boolean {
+    if (a.length !== b.length) {
+        return false
+    }
+    return a.every((entry, index) => entry === b[index])
+}
+
+async function getPluginDiscoveryPathStates (normalizedPaths: string[]): Promise<PluginDiscoveryCachePathState[]> {
+    return Promise.all(normalizedPaths.map(async pluginPath => {
         try {
             const info = await stat(pluginPath)
             return {
@@ -228,7 +235,7 @@ async function readPluginDiscoveryCache (paths: string[]): Promise<PluginInfo[] 
     if (
         !cache ||
         cache.version !== PLUGIN_DISCOVERY_CACHE_VERSION ||
-        JSON.stringify(cache.lookupPaths) !== JSON.stringify(normalizedPaths)
+        !areLookupPathsEqual(cache.lookupPaths ?? [], normalizedPaths)
     ) {
         return null
     }
