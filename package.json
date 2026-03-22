@@ -91,7 +91,7 @@
     "@types/minimatch": "5.1.2",
     "lzma-native": "^8.0.6",
     "**/graceful-fs": "^4.2.4",
-    "nan": "2.22.2",
+    "nan": "2.26.2",
     "node-abi": "4.28.0",
     "node-gyp": "^10.0.0",
     "@tabby-gang/to-string-loader/loader-utils": "1.4.2",
