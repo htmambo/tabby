@@ -23,11 +23,27 @@ const linkerPlugin = createEs2015LinkerPlugin({
     },
 })
 
+function parseBooleanEnv (name, defaultValue = false) {
+    const value = process.env[name]?.trim().toLowerCase()
+    if (value === undefined || value === '') {
+        return defaultValue
+    }
+    if (['1', 'true', 'yes', 'on'].includes(value)) {
+        return true
+    }
+    if (['0', 'false', 'no', 'off'].includes(value)) {
+        return false
+    }
+    return defaultValue
+}
+
 export default options => {
     const isDev = !!process.env.TABBY_DEV
     const enableCache = !process.env.TABBY_DISABLE_CACHE
     const emitSourceMaps = isDev || !!process.env.CI || !!process.env.TABBY_RELEASE_SOURCEMAPS
-    const enableSourceMapLoader = !process.env.TABBY_SKIP_SOURCE_MAP_LOADER
+    const enableSourceMapLoader = parseBooleanEnv('TABBY_FORCE_SOURCE_MAP_LOADER', false) || (
+        isDev && !parseBooleanEnv('TABBY_SKIP_SOURCE_MAP_LOADER', false)
+    )
     const sassLoader = {
         loader: 'sass-loader',
         options: {
