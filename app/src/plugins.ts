@@ -554,32 +554,39 @@ const LEGACY_PLUGIN_PREFIX = 'terminus-'
 
 async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocations: { pluginDir: string, packageName: string }[] = []
+    let pluginNames: string[]
 
-    if (await pathExists(pluginDir)) {
-        const pluginNames = await readdir(pluginDir)
-        if (await pathExists(path.join(pluginDir, 'package.json'))) {
-            candidateLocations.push({
-                pluginDir: path.dirname(pluginDir),
-                packageName: path.basename(pluginDir),
-            })
+    try {
+        pluginNames = await readdir(pluginDir)
+    } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (code === 'ENOENT' || code === 'ENOTDIR') {
+            return candidateLocations
         }
-
-        const promises = []
-
-        for (const packageName of pluginNames) {
-            if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !PLUGIN_BLACKLIST.includes(packageName)) {
-                const pluginPath = path.join(pluginDir, packageName)
-                const infoPath = path.join(pluginPath, 'package.json')
-                promises.push(pathExists(infoPath).then(result => {
-                    if (result) {
-                        candidateLocations.push({ pluginDir, packageName })
-                    }
-                }))
-            }
-        }
-
-        await Promise.all(promises)
+        throw error
     }
+
+    if (pluginNames.includes('package.json')) {
+        candidateLocations.push({
+            pluginDir: path.dirname(pluginDir),
+            packageName: path.basename(pluginDir),
+        })
+    }
+
+    const promises = []
+
+    for (const packageName of pluginNames) {
+        if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !PLUGIN_BLACKLIST.includes(packageName)) {
+            const pluginPath = path.join(pluginDir, packageName)
+            const infoPath = path.join(pluginPath, 'package.json')
+            promises.push(pathExists(infoPath).then(result => {
+                if (result) {
+                    candidateLocations.push({ pluginDir, packageName })
+                }
+            }))
+        }
+    }
+    await Promise.all(promises)
 
     return candidateLocations
 }
