@@ -52,18 +52,22 @@ function parseBooleanRuntimeEnv (name: string, defaultValue: boolean): boolean {
     return defaultValue
 }
 
-function getDelayedPluginNames (): Set<string> {
-    const configured = getRuntimeEnv('TABBY_DELAYED_PLUGINS')
-    const names = configured
-        ? configured.split(',').map(x => x.trim()).filter(Boolean)
-        : DEFAULT_DELAYED_PLUGIN_NAMES
-    return new Set(names)
-}
+const configuredDelayedPluginNames = getRuntimeEnv('TABBY_DELAYED_PLUGINS')
+    ?.split(',')
+    .map(x => x.trim())
+    .filter(Boolean)
+const delayedPluginNames = new Set(configuredDelayedPluginNames?.length ? configuredDelayedPluginNames : DEFAULT_DELAYED_PLUGIN_NAMES)
+const delayOptionalPluginsOverrideEnabled = (() => {
+    const envValue = getRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS')
+    if (envValue === undefined || envValue === '') {
+        return null
+    }
+    return parseBooleanRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS', false)
+})()
 
 function shouldDelayOptionalPlugins (config: Record<string, any>): boolean {
-    const envValue = getRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS')
-    if (envValue !== undefined && envValue !== '') {
-        return parseBooleanRuntimeEnv('TABBY_DELAY_OPTIONAL_PLUGINS', false)
+    if (delayOptionalPluginsOverrideEnabled !== null) {
+        return delayOptionalPluginsOverrideEnabled
     }
     return !!config.delayOptionalPluginsForStartup
 }
@@ -79,7 +83,6 @@ function splitStartupPlugins (plugins: PluginInfo[], config: Record<string, any>
         }
     }
 
-    const delayedPluginNames = getDelayedPluginNames()
     const startupPlugins: PluginInfo[] = []
     const deferredPlugins: PluginInfo[] = []
 
