@@ -17,7 +17,7 @@ execFileSync(yarnBin, ['patch-package'], {
 log.info('deps', 'app')
 await runYarnInstallWithRetry({
     cwd: path.join(process.cwd(), 'app'),
-    args: ['install', '--force', '--network-timeout', '1000000'],
+    args: ['install', '--force', '--ignore-engines', '--network-timeout', '1000000'],
     label: 'install app deps',
 })
 sh.cd('app')
@@ -36,7 +36,7 @@ for (let plugin of vars.allPackages) {
     log.info('deps', plugin)
     await runYarnInstallWithRetry({
         cwd: vars.resolvePackageDir(plugin),
-        args: ['install', '--force', '--network-timeout', '1000000'],
+        args: ['install', '--force', '--ignore-engines', '--network-timeout', '1000000'],
         label: `install ${plugin} deps`,
     })
 }
