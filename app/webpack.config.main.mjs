@@ -92,7 +92,6 @@ const config = {
         'yargs/yargs': 'commonjs yargs/yargs',
     },
     plugins: [
-        new wp.optimize.ModuleConcatenationPlugin(),
         new wp.DefinePlugin({
             'process.type': '"main"',
         }),
