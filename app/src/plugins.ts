@@ -106,6 +106,8 @@ function shouldUsePluginDiscoveryCache (): boolean {
     return !isRuntimeDev() && !parseBooleanRuntimeEnv('TABBY_DISABLE_PLUGIN_DISCOVERY_CACHE', false)
 }
 
+const pluginDebugEnabled = isRuntimeDev()
+
 function getPluginDiscoveryStorage (): Storage | null {
     try {
         return typeof localStorage === 'undefined' ? null : localStorage
@@ -254,7 +256,9 @@ async function readPluginDiscoveryCache (paths: string[]): Promise<PluginInfo[] 
         return null
     }
 
-    console.debug(`Using cached plugin discovery results (${cachedPlugins.length} plugins)`)
+    if (pluginDebugEnabled) {
+        console.debug(`Using cached plugin discovery results (${cachedPlugins.length} plugins)`)
+    }
     return cachedPlugins
 }
 
@@ -534,7 +538,9 @@ export function initModuleLookup (userPluginsPath: string): void {
             if (builtinPackagePath) {
                 registerPluginRuntimeRoot(builtinPackagePath)
                 cachedBuiltinModules[m] = createLazyBuiltinModuleReference(builtinPackagePath)
-                console.debug(`Pinned builtin module ${m} to ${builtinPackagePath}`)
+                if (pluginDebugEnabled) {
+                    console.debug(`Pinned builtin module ${m} to ${builtinPackagePath}`)
+                }
             } else {
                 cachedBuiltinModules[m] = createLazyBuiltinModuleReference(m)
             }
@@ -618,7 +624,9 @@ async function parsePluginInfo (pluginDir: string, packageName: string): Promise
         let author = info.author
         author = author.name || author
 
-        console.debug(`Found ${name} in ${pluginDir}`)
+        if (pluginDebugEnabled) {
+            console.debug(`Found ${name} in ${pluginDir}`)
+        }
 
         return {
             name: name,
@@ -652,13 +660,17 @@ function cleanupStaleUserPluginCopy (stalePlugin: PluginInfo, builtinPlugin: Plu
         return
     }
     if (!isManagedUserPluginCopy(stalePlugin.path)) {
-        console.debug(`Skip cleanup for ${stalePlugin.packageName}: path is outside managed user plugin cache (${stalePlugin.path})`)
+        if (pluginDebugEnabled) {
+            console.debug(`Skip cleanup for ${stalePlugin.packageName}: path is outside managed user plugin cache (${stalePlugin.path})`)
+        }
         return
     }
 
     rm(stalePlugin.path, { recursive: true, force: true })
         .then(() => {
-            console.debug(`Removed stale cached plugin ${stalePlugin.packageName}@${stalePlugin.version}, using builtin ${builtinPlugin.version}`)
+            if (pluginDebugEnabled) {
+                console.debug(`Removed stale cached plugin ${stalePlugin.packageName}@${stalePlugin.version}, using builtin ${builtinPlugin.version}`)
+            }
         })
         .catch(error => {
             console.warn(`Failed to remove stale cached plugin ${stalePlugin.packageName} at ${stalePlugin.path}`, error)
@@ -669,7 +681,9 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
     // 优先非 legacy 插件
     if (existing.isLegacy !== candidate.isLegacy) {
         const preferred = existing.isLegacy ? candidate : existing
-        console.debug(`Plugin ${candidate.packageName} already exists, using ${preferred.packageName} (non-legacy preferred)`)
+        if (pluginDebugEnabled) {
+            console.debug(`Plugin ${candidate.packageName} already exists, using ${preferred.packageName} (non-legacy preferred)`)
+        }
         return preferred
     }
 
@@ -680,16 +694,22 @@ function resolveDuplicatePlugin (existing: PluginInfo, candidate: PluginInfo): P
         const builtin = existing.isBuiltin ? existing : candidate
         const cached = existing.isBuiltin ? candidate : existing
         if (builtin.version !== cached.version) {
-            console.debug(`Plugin ${cached.packageName} cache version ${cached.version} differs from builtin ${builtin.version}, using builtin`)
+            if (pluginDebugEnabled) {
+                console.debug(`Plugin ${cached.packageName} cache version ${cached.version} differs from builtin ${builtin.version}, using builtin`)
+            }
         } else {
-            console.debug(`Plugin ${cached.packageName} cache version matches builtin (${builtin.version}), using builtin`)
+            if (pluginDebugEnabled) {
+                console.debug(`Plugin ${cached.packageName} cache version matches builtin (${builtin.version}), using builtin`)
+            }
         }
         cleanupStaleUserPluginCopy(cached, builtin)
         return builtin
     }
 
     // 同来源重复（都内置或都非内置）时保留先发现的一项
-    console.debug(`Plugin ${candidate.packageName} already exists, keeping ${existing.packageName}`)
+    if (pluginDebugEnabled) {
+        console.debug(`Plugin ${candidate.packageName} already exists, keeping ${existing.packageName}`)
+    }
     return existing
 }
 
@@ -762,7 +782,9 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
             if (!pluginEntryPath) {
                 throw new Error(`Plugin ${foundPlugin.name} has no entry path`)
             }
-            console.debug(`Loading ${foundPlugin.name}: ${pluginEntryPath}`)
+            if (pluginDebugEnabled) {
+                console.debug(`Loading ${foundPlugin.name}: ${pluginEntryPath}`)
+            }
             const packageModule = nodeRequire(pluginEntryPath)
             const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
             const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
@@ -779,7 +801,9 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
             if (pluginManifest) {
                 pluginModule.pluginManifest = pluginManifest
             }
-            console.debug(`Loaded ${foundPlugin.name}`)
+            if (pluginDebugEnabled) {
+                console.debug(`Loaded ${foundPlugin.name}`)
+            }
             plugins.push(pluginModule)
         } catch (error) {
             console.error(`Could not load ${foundPlugin.name}:`, error)

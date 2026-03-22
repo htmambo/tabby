@@ -36,6 +36,7 @@ if (isRuntimeDev() && !hasRuntimeEnv('TABBY_FORCE_ANGULAR_PROD')) {
 
 const ipc = getTabbyBridge().ipc
 const DEFAULT_DELAYED_PLUGIN_NAMES = ['ai-assistant', 'plugin-manager', 'settings']
+const startupDebugEnabled = isRuntimeDev()
 
 function parseBooleanRuntimeEnv (name: string, defaultValue: boolean): boolean {
     const value = getRuntimeEnv(name)?.trim().toLowerCase()
@@ -140,7 +141,9 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     })
     logStartupMetric('loadPlugins', loadPluginsStart)
 
-    console.debug('Loaded plugin modules:', pluginModules.map(x => x?.pluginName).filter(Boolean))
+    if (startupDebugEnabled) {
+        console.debug('Loaded plugin modules:', pluginModules.map(x => x?.pluginName).filter(Boolean))
+    }
 
     setRendererPluginModules(pluginModules)
 
@@ -160,7 +163,9 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
 }
 
 ipc.once('start', async (bootstrapData: BootstrapData) => {
-    console.debug('Window bootstrap data:', bootstrapData)
+    if (startupDebugEnabled) {
+        console.debug('Window bootstrap data:', bootstrapData)
+    }
     const startupStart = performance.now()
 
     initModuleLookup(bootstrapData.userPluginsPath)
@@ -170,7 +175,9 @@ ipc.once('start', async (bootstrapData: BootstrapData) => {
     logStartupMetric('findPlugins', findPluginsStart)
     let startupPlugins = prepareStartupPlugins(bootstrapData, pluginDiscovery.plugins)
 
-    console.debug('Starting with plugins:', startupPlugins)
+    if (startupDebugEnabled) {
+        console.debug('Starting with plugins:', startupPlugins)
+    }
     try {
         await bootstrap(bootstrapData, startupPlugins)
     } catch (error) {
@@ -182,7 +189,9 @@ ipc.once('start', async (bootstrapData: BootstrapData) => {
             pluginDiscovery = await findPlugins({ forceRefresh: true })
             logStartupMetric('findPluginsRefresh', refreshPluginsStart)
             startupPlugins = prepareStartupPlugins(bootstrapData, pluginDiscovery.plugins)
-            console.debug('Retrying startup with freshly discovered plugins:', startupPlugins)
+            if (startupDebugEnabled) {
+                console.debug('Retrying startup with freshly discovered plugins:', startupPlugins)
+            }
 
             try {
                 await bootstrap(bootstrapData, startupPlugins)
