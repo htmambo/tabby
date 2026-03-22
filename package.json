@@ -92,14 +92,6 @@
     "nan": "2.26.2",
     "node-abi": "4.28.0",
     "node-gyp": "^12.2.0",
-    "@tabby-gang/to-string-loader/loader-utils": "1.4.2",
-    "apply-loader/loader-utils": "1.4.2",
-    "pug-loader/loader-utils": "1.4.2",
-    "svg-inline-loader/loader-utils": "1.4.2",
-    "file-loader/loader-utils": "2.0.4",
-    "pug-html-loader/loader-utils": "2.0.4",
-    "raw-loader/loader-utils": "2.0.4",
-    "yaml-loader/loader-utils": "2.0.4",
     "flatted": "3.4.2",
     "lodash": "4.17.23",
     "micromatch": "4.0.8",
@@ -148,7 +140,6 @@
       "loader-utils": "2.0.4"
     },
     "yaml-loader": {
-      "loader-utils": "2.0.4",
       "yaml": "2.8.3"
     },
     "ajv@^6.0.0": "6.14.0",
