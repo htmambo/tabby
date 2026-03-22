@@ -4,6 +4,36 @@
 **创建时间**: 2026-03-07
 **当前代码**: 2026-03-15 优化分支（含依赖升级）
 
+## 2026-03-22 增量更新
+
+- 已新增 `eslint.config.mjs` 并完成从 legacy `.eslintrc.yml` 到 flat config 的迁移
+- 已将 `eslint` 从 `9.39.4` 升级到 `10.1.0`
+- 已保留 progressive lint 行为：
+  - `@typescript-eslint/no-floating-promises`: `warn` → `error`
+  - `@typescript-eslint/require-await`: `warn` → `error`
+- 已在 `app/tsconfig.json` 收紧 `types: ["node"]`，避免 ESLint 10 类型依赖渗入应用 webpack 编译并产生额外 warning
+- 已验证：
+  - `./node_modules/.bin/eslint --print-config app/src/app.module.ts`
+  - `TABBY_LINT_PROGRESSIVE=true ./node_modules/.bin/eslint --print-config app/src/app.module.ts`
+  - `yarn lint` 可执行，当前仍回到历史基线失败：`6503 problems (2141 errors, 4362 warnings)`
+  - `./node_modules/.bin/webpack --config app/webpack.config.mjs` 通过
+
+## 当前剩余阻塞项（2026-03-22）
+
+- `@types/minimatch@6`
+  - 升级后会触发 `TS2688: Cannot find type definition file for 'minimatch'`
+- `@types/node@25`
+  - 先前已经引入真实类型回归，当前暂缓
+- `filesize@11`
+  - `ngx-filesize@3.0.7` 仍声明 `filesize: >= 6.0.0 < 10.0.0`
+- `lru-cache@11`
+  - 仍受 ESM/CommonJS 运行时兼容问题阻塞
+
+## 备注（2026-03-22）
+
+- `eslint-plugin-import@2.32.0` 运行实测可兼容 `eslint@10.1.0`，但其 `peerDependencies` 仍只声明到 `^9`
+- 本轮剩余 `yarn outdated` 仅有：`@types/minimatch`、`@types/node`、`filesize`、`lru-cache`
+
 ## 任务目标
 
 继续升级 Tabby 项目中的依赖包，分阶段完成低风险和中风险包的升级；高风险项保留冻结并单独评估。

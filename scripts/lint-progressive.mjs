@@ -28,10 +28,10 @@ if (!targets.length) {
 }
 
 const eslintBin = './node_modules/.bin/eslint'
-execFileSync(eslintBin, ['--config', '.eslintrc.progressive.yml', '--ext', 'ts', ...targets], {
+execFileSync(eslintBin, targets, {
     stdio: 'inherit',
     env: {
         ...process.env,
-        ESLINT_USE_FLAT_CONFIG: 'false',
+        TABBY_LINT_PROGRESSIVE: 'true',
     },
 })

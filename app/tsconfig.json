@@ -17,6 +17,7 @@
         "noUnusedLocals": true,
         "skipLibCheck": true,
         "useDefineForClassFields": false,
+        "types": ["node"],
         "lib": [
            "dom",
            "es2015",
