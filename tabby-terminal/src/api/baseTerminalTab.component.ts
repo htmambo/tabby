@@ -492,7 +492,12 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                         if (this.workspaceLayout.isRoyalSidebarTransitionActive) {
                             return
                         }
-                        this.scheduleVisibleFrontendAction(frontend, () => frontend.refit())
+                        this.scheduleVisibleFrontendAction(frontend, () => {
+                            frontend.refit()
+                            if (this.hasFocus) {
+                                frontend.focus()
+                            }
+                        })
                     } else {
                         this.clearPendingVisibleFrontendAction()
                         this.frontend.xterm.element?.querySelectorAll('canvas').forEach(c => {
