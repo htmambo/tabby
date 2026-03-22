@@ -5,7 +5,7 @@ import { createRequire } from 'module'
 const runtimeRequire = createRequire(__filename)
 
 let yamlModule: typeof import('js-yaml') | null = null
-let atomicallyModule: typeof import('atomically') | null = null
+let atomicWriteCounter = 0
 
 
 export const configPath = path.join(process.env.TABBY_CONFIG_DIRECTORY!, 'config.yaml')
@@ -24,9 +24,49 @@ function getYAML (): typeof import('js-yaml') {
     return yamlModule
 }
 
-function getAtomicallyWriteFile (): typeof import('atomically').writeFile {
-    atomicallyModule ??= runtimeRequire('atomically') as typeof import('atomically')
-    return atomicallyModule.writeFile
+function getAtomicTempPath (filePath: string): string {
+    return path.join(
+        path.dirname(filePath),
+        `.${path.basename(filePath)}.${process.pid}.${Date.now()}.${atomicWriteCounter++}.tmp`,
+    )
+}
+
+async function closeFileHandleQuietly (fileHandle: fs.promises.FileHandle | null): Promise<void> {
+    if (!fileHandle) {
+        return
+    }
+    try {
+        await fileHandle.close()
+    } catch {
+        // Best-effort cleanup only.
+    }
+}
+
+async function removeFileQuietly (filePath: string): Promise<void> {
+    try {
+        await fs.promises.unlink(filePath)
+    } catch {
+        // Best-effort cleanup only.
+    }
+}
+
+async function writeFileAtomically (filePath: string, content: string, encoding: BufferEncoding = 'utf8'): Promise<void> {
+    const tempPath = getAtomicTempPath(filePath)
+    const mode = await fs.promises.stat(filePath).then(stats => stats.mode & 0o777).catch(() => 0o600)
+    let fileHandle: fs.promises.FileHandle | null = null
+
+    try {
+        fileHandle = await fs.promises.open(tempPath, 'wx', mode)
+        await fileHandle.writeFile(content, { encoding })
+        await fileHandle.sync()
+        await fileHandle.close()
+        fileHandle = null
+        await fs.promises.rename(tempPath, filePath)
+    } catch (error) {
+        await closeFileHandleQuietly(fileHandle)
+        await removeFileQuietly(tempPath)
+        throw error
+    }
 }
 
 function loadConfigCache (stats: fs.Stats): ConfigCacheData | null {
@@ -60,7 +100,6 @@ function persistConfigCacheSync (stats: fs.Stats, parsed: any): void {
 async function persistConfigCache (parsed: any): Promise<void> {
     try {
         const stats = fs.statSync(configPath)
-        const writeFile = getAtomicallyWriteFile()
         const cache: ConfigCacheData = {
             mtimeMs: stats.mtimeMs,
             size: stats.size,
@@ -69,7 +108,7 @@ async function persistConfigCache (parsed: any): Promise<void> {
         if (parsed !== undefined) {
             cache.parsed = parsed
         }
-        await writeFile(configCachePath, JSON.stringify(cache), { encoding: 'utf8' })
+        await writeFileAtomically(configCachePath, JSON.stringify(cache), 'utf8')
     } catch {
         // Cache persistence is best-effort and must not block saving the source YAML.
     }
@@ -104,9 +143,8 @@ export function loadConfig (): any {
 }
 
 export async function saveConfig (content: string): Promise<void> {
-    const writeFile = getAtomicallyWriteFile()
-    await writeFile(configPath, content, { encoding: 'utf8' })
-    await writeFile(configPath + '.backup', content, { encoding: 'utf8' })
+    await writeFileAtomically(configPath, content, 'utf8')
+    await writeFileAtomically(configPath + '.backup', content, 'utf8')
     try {
         await persistConfigCache(getYAML().load(content))
     } catch {
