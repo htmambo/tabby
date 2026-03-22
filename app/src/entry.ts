@@ -68,6 +68,9 @@ function shouldDelayOptionalPlugins (config: Record<string, any>): boolean {
     return !!config.delayOptionalPluginsForStartup
 }
 
+const startupMetricsEnabled = parseBooleanRuntimeEnv('TABBY_STARTUP_METRICS', isRuntimeDev())
+const startupDiagnosticsEnabled = startupDebugEnabled || startupMetricsEnabled
+
 function splitStartupPlugins (plugins: PluginInfo[], config: Record<string, any>): { startupPlugins: PluginInfo[], deferredPlugins: PluginInfo[] } {
     if (!shouldDelayOptionalPlugins(config)) {
         return {
@@ -103,7 +106,7 @@ function splitStartupPlugins (plugins: PluginInfo[], config: Record<string, any>
 }
 
 function logStartupMetric (name: string, startTime: number): void {
-    if (!parseBooleanRuntimeEnv('TABBY_STARTUP_METRICS', isRuntimeDev())) {
+    if (!startupMetricsEnabled) {
         return
     }
     console.info(`[startup] ${name}: ${(performance.now() - startTime).toFixed(1)}ms`)
@@ -119,7 +122,7 @@ function prepareStartupPlugins (bootstrapData: BootstrapData, installedPlugins: 
     plugins = plugins.filter(x => x.name !== 'web')
 
     const { startupPlugins, deferredPlugins } = splitStartupPlugins(plugins, bootstrapData.config)
-    if (deferredPlugins.length) {
+    if (deferredPlugins.length && startupDiagnosticsEnabled) {
         console.info('Deferring optional plugin bundles for startup speed in this session:', deferredPlugins.map(x => x.name))
     }
 
