@@ -4438,12 +4438,12 @@ ngx-filesize@^3.0.7:
   dependencies:
     tslib "^2.3.0"
 
-ngx-toastr@^16.0.2:
-  version "16.2.0"
-  resolved "https://registry.npmjs.org/ngx-toastr/-/ngx-toastr-16.2.0.tgz"
-  integrity sha512-7X6UhOKiaUeC2eTOsUqctZH0ZWKG8VlzDxWJhdEF1N3kPod46SU/Vn2l0hbt8EDwTjxHKfKyevU2idkYDoZYog==
+ngx-toastr@^20.0.5:
+  version "20.0.5"
+  resolved "https://registry.yarnpkg.com/ngx-toastr/-/ngx-toastr-20.0.5.tgz#8e7c1855f637e49a4513f74cdfc46808a3bb3084"
+  integrity sha512-JcGu1Cbl+0SovPhxma72ygGeZHtpHWWKwBCyiabb+MSWYtXu/SOwEZ2HTWtZ4wcEYOOiy9tDQZgiEKWXpibpRw==
   dependencies:
-    tslib "^2.3.0"
+    tslib "^2.8.1"
 
 no-case@^3.0.4:
   version "3.0.4"
@@ -6046,7 +6046,7 @@ tsimportlib@^0.0.3:
   resolved "https://registry.npmjs.org/tsimportlib/-/tsimportlib-0.0.3.tgz"
   integrity sha512-U9sW2/3D0P4IVRnhH2RCqjCP0sG66qvb4ahB0aQln5xGMphDjntz5rdk0rFZ6Fg+lW3L+i+gRnIl4VvNBvxiQw==
 
-tslib@2.8.1, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.4.0:
+tslib@2.8.1, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.4.0, tslib@^2.8.1:
   version "2.8.1"
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
   integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
