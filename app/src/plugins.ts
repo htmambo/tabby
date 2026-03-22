@@ -553,18 +553,16 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
         }
         throw error
     }
-
-    if (pluginEntries.some(entry => entry.name === 'package.json')) {
-        candidateLocations.push({
-            pluginDir: path.dirname(pluginDir),
-            packageName: path.basename(pluginDir),
-        })
-    }
+    let hasPackageJson = false
 
     const promises: Promise<void>[] = []
 
     for (const entry of pluginEntries) {
         const packageName = entry.name
+        if (packageName === 'package.json') {
+            hasPackageJson = true
+            continue
+        }
         if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !pluginBlacklist.has(packageName)) {
             if (entry.isFile()) {
                 continue
@@ -579,6 +577,13 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
         }
     }
     await Promise.all(promises)
+
+    if (hasPackageJson) {
+        candidateLocations.unshift({
+            pluginDir: path.dirname(pluginDir),
+            packageName: path.basename(pluginDir),
+        })
+    }
 
     return candidateLocations
 }

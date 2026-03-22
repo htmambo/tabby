@@ -115,11 +115,19 @@ function logStartupMetric (name: string, startTime: number): void {
 function prepareStartupPlugins (bootstrapData: BootstrapData, installedPlugins: PluginInfo[]): PluginInfo[] {
     bootstrapData.installedPlugins = installedPlugins
 
-    let plugins = installedPlugins
-    if (bootstrapData.config.pluginBlacklist) {
-        plugins = plugins.filter(x => !bootstrapData.config.pluginBlacklist.includes(x.name))
+    const pluginBlacklist = bootstrapData.config.pluginBlacklist?.length
+        ? new Set<string>(bootstrapData.config.pluginBlacklist)
+        : null
+    const plugins: PluginInfo[] = []
+    for (const plugin of installedPlugins) {
+        if (plugin.name === 'web') {
+            continue
+        }
+        if (pluginBlacklist?.has(plugin.name)) {
+            continue
+        }
+        plugins.push(plugin)
     }
-    plugins = plugins.filter(x => x.name !== 'web')
 
     const { startupPlugins, deferredPlugins } = splitStartupPlugins(plugins, bootstrapData.config)
     if (deferredPlugins.length && startupDiagnosticsEnabled) {
