@@ -125,6 +125,7 @@ export class AppRootComponent implements OnDestroy {
     @ViewChildren(TabBodyComponent) tabBodies: TabBodyComponent[]
     @ViewChild('activeTransfersDropdown') activeTransfersDropdown: NgbDropdown
     unsortedTabs: BaseTabComponent[] = []
+    showStartPage = true
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
     royalSidebarCollapsed = false
@@ -173,6 +174,7 @@ export class AppRootComponent implements OnDestroy {
     private pendingPreloadHideCheck: number|null = null
     private pendingRoyalActiveSync: number|null = null
     private pendingViewRefresh: number|null = null
+    private pendingTabSurfaceSync: number|null = null
     private royalSidebarPreviewCloseHandle: number|null = null
     private royalSidebarTransitionToken: number|null = null
     private royalSidebarTransitionFallbackHandle: number|null = null
@@ -254,6 +256,30 @@ export class AppRootComponent implements OnDestroy {
         }, delay)
     }
 
+    private syncTabSurfaceState (): void {
+        const knownTabs = new Set(this.unsortedTabs)
+        const currentTabs = new Set(this.app.tabs)
+        const nextUnsortedTabs = this.unsortedTabs.filter(tab => currentTabs.has(tab))
+        for (const tab of this.app.tabs) {
+            if (!knownTabs.has(tab)) {
+                nextUnsortedTabs.push(tab)
+            }
+        }
+        this.unsortedTabs = nextUnsortedTabs
+        this.showStartPage = nextUnsortedTabs.length === 0
+    }
+
+    private scheduleTabSurfaceSync (delay = 0): void {
+        if (this.pendingTabSurfaceSync !== null) {
+            return
+        }
+        this.pendingTabSurfaceSync = this.scheduleTimeout(() => {
+            this.pendingTabSurfaceSync = null
+            this.syncTabSurfaceState()
+            this.scheduleViewRefresh()
+        }, delay)
+    }
+
     private clearRoyalSidebarTransitionFallback (): void {
         this.royalSidebarTransitionFallbackHandle = this.clearScheduledTimeout(this.royalSidebarTransitionFallbackHandle)
     }
@@ -295,11 +321,15 @@ export class AppRootComponent implements OnDestroy {
         // document.querySelector('app-root')?.remove()
         this.logger = log.create('main')
         this.logger.debug('v', this.platform.getAppVersion())
+        this.syncTabSurfaceState()
 
         this.app.activeTabChange$.subscribe(() => {
             this.scheduleRoyalActiveSync()
         })
-        this.app.tabsChanged$.subscribe(() => this.scheduleRoyalActiveSync())
+        this.app.tabsChanged$.subscribe(() => {
+            this.scheduleRoyalActiveSync()
+            this.scheduleTabSurfaceSync()
+        })
         this.app.tabsRestored$.subscribe(() => {
             this.scheduleRoyalActiveSync()
         })
@@ -364,10 +394,10 @@ export class AppRootComponent implements OnDestroy {
 
         this.app.tabOpened$.subscribe(tab => {
             this.runInAngular(() => {
-                this.unsortedTabs.push(tab)
                 this.observeRoyalTab(tab)
                 this.restoreRoyalConnectionBindingsFromTabs()
                 this.scheduleRoyalActiveSync()
+                this.scheduleTabSurfaceSync()
                 this.app.emitTabDragEnded()
                 this.schedulePreloadHideCheck()
                 this.scheduleViewRefresh()
@@ -381,8 +411,8 @@ export class AppRootComponent implements OnDestroy {
                         tabBody.detach()
                     }
                 }
-                this.unsortedTabs = this.unsortedTabs.filter(x => x !== tab)
                 this.scheduleRoyalActiveSync()
+                this.scheduleTabSurfaceSync()
                 this.app.emitTabDragEnded()
                 this.scheduleViewRefresh()
             })
@@ -1758,6 +1788,7 @@ export class AppRootComponent implements OnDestroy {
         this.pendingPreloadHideCheck = this.clearScheduledTimeout(this.pendingPreloadHideCheck)
         this.pendingRoyalActiveSync = this.clearScheduledTimeout(this.pendingRoyalActiveSync)
         this.pendingViewRefresh = this.clearScheduledTimeout(this.pendingViewRefresh)
+        this.pendingTabSurfaceSync = this.clearScheduledTimeout(this.pendingTabSurfaceSync)
         this.pendingVibrancySync = this.clearScheduledTimeout(this.pendingVibrancySync)
         this.royalSidebarPreviewCloseHandle = this.clearScheduledTimeout(this.royalSidebarPreviewCloseHandle)
         this.royalSidebarTransitionFallbackHandle = this.clearScheduledTimeout(this.royalSidebarTransitionFallbackHandle)

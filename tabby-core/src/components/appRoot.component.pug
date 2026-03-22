@@ -259,7 +259,7 @@ title-bar(
                 (mousedown)='onRoyalSidebarResizeStart($event)'
             )
 
-        start-page.content-tab.content-tab-active(*ngIf='app.tabs.length == 0')
+        start-page.content-tab.content-tab-active(*ngIf='showStartPage')
 
         tab-body.content-tab(
             #tabBodies,
