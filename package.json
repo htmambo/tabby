@@ -108,12 +108,10 @@
     "@develar/schema-utils/ajv": "6.14.0",
     "@tabby-gang/to-string-loader/loader-utils/json5": "1.0.2",
     "flatted": "3.4.2",
-    "cookie": "0.7.0",
     "lodash": "4.17.23",
     "micromatch": "4.0.8",
     "serialize-javascript": "7.0.4",
     "tmp": "0.2.5",
-    "undici": "6.24.0",
     "yauzl": "3.2.1",
     "webpack-bundle-analyzer/ws": "8.20.0",
     "yaml-loader/yaml": "2.8.3",
@@ -231,7 +229,6 @@
     "tmp-promise": {
       "tmp": "0.2.5"
     },
-    "undici": "6.24.0",
     "ws@^7.0.0": "7.5.10",
     "yauzl": "3.2.1"
   },
