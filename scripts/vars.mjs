@@ -13,7 +13,16 @@ const repoRoot = path.resolve(__dirname, '..')
 dotenv.config({ path: path.resolve(repoRoot, '.env'), quiet: true })
 
 const electronInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules/electron/package.json')))
-const appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))
+let appPackageInfo
+
+function getAppPackageInfo () {
+    if (appPackageInfo !== undefined) {
+        return appPackageInfo
+    }
+
+    appPackageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../app/package.json')))
+    return appPackageInfo
+}
 
 function safeExec (cmd) {
     try {
@@ -67,7 +76,7 @@ function parseGitHubRepository (value) {
 function getCurrentGitHubRepository () {
     return parseGitHubRepository(process.env.GITHUB_REPOSITORY)
         ?? parseGitHubRepository(safeExec('git config --get remote.origin.url'))
-        ?? parseGitHubRepository(appPackageInfo.repository)
+        ?? parseGitHubRepository(getAppPackageInfo().repository)
 }
 
 export const builtinPlugins = [

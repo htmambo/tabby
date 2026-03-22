@@ -6,9 +6,6 @@ import { AngularWebpackPlugin } from '@ngtools/webpack'
 import * as url from 'url'
 import * as vars from './scripts/vars.mjs'
 
-const bundleAnalyzer = new BundleAnalyzerPlugin({
-    analyzerPort: 0,
-})
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 import { createEs2015LinkerPlugin } from '@angular/compiler-cli/linker/babel'
@@ -228,7 +225,9 @@ export default options => {
         ],
     }
     if (process.env.PLUGIN_BUNDLE_ANALYZER === options.name) {
-        config.plugins.push(bundleAnalyzer)
+        config.plugins.push(new BundleAnalyzerPlugin({
+            analyzerPort: 0,
+        }))
         config.cache = false
     }
     return config
