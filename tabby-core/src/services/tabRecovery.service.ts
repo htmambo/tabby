@@ -8,6 +8,8 @@ import { ConfigService } from './config.service'
 import { NewTabParameters } from './tabs.service'
 
 const ACTIVE_TOP_LEVEL_MARKER = '__tabbyActiveTopLevel'
+const RECOVERY_STORAGE_KEY = 'tabsRecovery'
+const ACTIVE_TAB_INDEX_STORAGE_KEY = 'tabsRecoveryActiveTabIndex'
 
 interface RecoveryEntryDetails {
     detail: string
@@ -42,6 +44,9 @@ export class TabRecoveryService {
     logger: Logger
     enabled = false
     private cachedTokens = new Map<BaseTabComponent, RecoveryToken>()
+    private cachedTokenSnapshots = new Map<BaseTabComponent, string>()
+    private lastPersistedTabsOrder: BaseTabComponent[]|null = null
+    private lastPersistedActiveTabIndex: number|null|undefined
 
     private constructor (
         @Inject(TabRecoveryProvider) private tabRecoveryProviders: TabRecoveryProvider<BaseTabComponent>[]|null,
@@ -58,9 +63,10 @@ export class TabRecoveryService {
         }
 
         const changedTabs = options.changedTabs ?? tabs
+        let tabsStorageDirty = this.hasPersistedTabsOrderChanged(tabs)
         for (const tab of changedTabs) {
             if (!tabs.includes(tab)) {
-                this.cachedTokens.delete(tab)
+                tabsStorageDirty = this.dropCachedTabState(tab) || tabsStorageDirty
                 continue
             }
             const token = await this.getFullRecoveryToken(tab, {
@@ -68,44 +74,54 @@ export class TabRecoveryService {
                 recoveryScrollbackLines: options.recoveryScrollbackLines,
             } as GetRecoveryTokenOptions & { recoveryScrollbackLines?: number })
             const sanitizedToken = this.sanitizeRecoveryToken(token, options.maxStateChars)
-            if (sanitizedToken) {
-                this.cachedTokens.set(tab, sanitizedToken)
-            } else {
-                this.cachedTokens.delete(tab)
+            if (!sanitizedToken) {
+                tabsStorageDirty = this.dropCachedTabState(tab) || tabsStorageDirty
+                continue
             }
+
+            const serializedToken = this.serializeRecoveryToken(sanitizedToken)
+            if (serializedToken === null) {
+                tabsStorageDirty = this.dropCachedTabState(tab) || tabsStorageDirty
+                continue
+            }
+
+            if (this.cachedTokenSnapshots.get(tab) === serializedToken) {
+                continue
+            }
+
+            this.cachedTokens.set(tab, sanitizedToken)
+            this.cachedTokenSnapshots.set(tab, serializedToken)
+            tabsStorageDirty = true
         }
 
         for (const cachedTab of Array.from(this.cachedTokens.keys())) {
             if (!tabs.includes(cachedTab)) {
-                this.cachedTokens.delete(cachedTab)
+                tabsStorageDirty = this.dropCachedTabState(cachedTab) || tabsStorageDirty
             }
-        }
-
-        const serializedTabs: RecoveryToken[] = []
-        for (const tab of tabs) {
-            const token = this.cachedTokens.get(tab)
-            if (!token) {
-                continue
-            }
-            const persistedToken = { ...token }
-            if (tab === activeTab) {
-                persistedToken[ACTIVE_TOP_LEVEL_MARKER] = true
-            }
-            serializedTabs.push(persistedToken)
         }
 
         if (typeof localStorage === 'undefined') {
             return
         }
-        try {
-            localStorage.setItem('tabsRecovery', JSON.stringify(serializedTabs))
-        } catch (error) {
-            this.logger.warn('Failed to persist tab recovery state', error)
+
+        let tabsStorageSynchronized = !tabsStorageDirty
+        if (tabsStorageDirty) {
+            try {
+                localStorage.setItem(RECOVERY_STORAGE_KEY, JSON.stringify(this.buildSerializedTabs(tabs)))
+                this.lastPersistedTabsOrder = [...tabs]
+                tabsStorageSynchronized = true
+            } catch (error) {
+                this.logger.warn('Failed to persist tab recovery state', error)
+            }
+        }
+
+        if (tabsStorageSynchronized) {
+            this.persistActiveTabIndex(tabs, activeTab)
         }
     }
 
     dropCachedTab (tab: BaseTabComponent): void {
-        this.cachedTokens.delete(tab)
+        this.dropCachedTabState(tab)
     }
 
     async getFullRecoveryToken (tab: BaseTabComponent, options?: GetRecoveryTokenOptions): Promise<RecoveryToken|null> {
@@ -124,6 +140,18 @@ export class TabRecoveryService {
         return token
     }
 
+    private buildSerializedTabs (tabs: BaseTabComponent[]): RecoveryToken[] {
+        const serializedTabs: RecoveryToken[] = []
+        for (const tab of tabs) {
+            const token = this.cachedTokens.get(tab)
+            if (!token) {
+                continue
+            }
+            serializedTabs.push({ ...token })
+        }
+        return serializedTabs
+    }
+
     private sanitizeRecoveryToken (token: RecoveryToken|null, maxStateChars?: number): RecoveryToken|null {
         if (!token) {
             return null
@@ -138,6 +166,68 @@ export class TabRecoveryService {
             return sanitizedToken
         }
         return token
+    }
+
+    private serializeRecoveryToken (token: RecoveryToken): string|null {
+        try {
+            return JSON.stringify(token)
+        } catch (error) {
+            this.logger.warn('Failed to serialize tab recovery token', error)
+            return null
+        }
+    }
+
+    private dropCachedTabState (tab: BaseTabComponent): boolean {
+        const tokenDeleted = this.cachedTokens.delete(tab)
+        const snapshotDeleted = this.cachedTokenSnapshots.delete(tab)
+        return tokenDeleted || snapshotDeleted
+    }
+
+    private hasPersistedTabsOrderChanged (tabs: BaseTabComponent[]): boolean {
+        if (this.lastPersistedTabsOrder === null) {
+            return true
+        }
+        if (tabs.length !== this.lastPersistedTabsOrder.length) {
+            return true
+        }
+        return tabs.some((tab, index) => this.lastPersistedTabsOrder?.[index] !== tab)
+    }
+
+    private getActiveTabIndex (tabs: BaseTabComponent[], activeTab: BaseTabComponent|null): number|null {
+        if (!activeTab) {
+            return null
+        }
+        const activeTabIndex = tabs.indexOf(activeTab)
+        return activeTabIndex === -1 ? null : activeTabIndex
+    }
+
+    private persistActiveTabIndex (tabs: BaseTabComponent[], activeTab: BaseTabComponent|null): void {
+        const activeTabIndex = this.getActiveTabIndex(tabs, activeTab)
+        if (this.lastPersistedActiveTabIndex === activeTabIndex) {
+            return
+        }
+
+        try {
+            if (activeTabIndex === null) {
+                localStorage.removeItem(ACTIVE_TAB_INDEX_STORAGE_KEY)
+            } else {
+                localStorage.setItem(ACTIVE_TAB_INDEX_STORAGE_KEY, `${activeTabIndex}`)
+            }
+            this.lastPersistedActiveTabIndex = activeTabIndex
+        } catch (error) {
+            this.logger.warn('Failed to persist active tab recovery index', error)
+        }
+    }
+
+    private parseActiveTabIndex (rawActiveTabIndex: string|null): number|null {
+        if (rawActiveTabIndex === null) {
+            return null
+        }
+        const parsed = Number(rawActiveTabIndex)
+        if (!Number.isInteger(parsed) || parsed < 0) {
+            return null
+        }
+        return parsed
     }
 
     async recoverTab (token: RecoveryToken): Promise<NewTabParameters<BaseTabComponent>|null> {
@@ -165,16 +255,18 @@ export class TabRecoveryService {
         if (typeof localStorage === 'undefined') {
             return { tabs: [], activeTabIndex: null, entries: [] }
         }
-        const rawState = localStorage.getItem('tabsRecovery')
+        const rawState = localStorage.getItem(RECOVERY_STORAGE_KEY)
         if (rawState) {
             const entries: RecoveredTabEntry[] = []
-            let activeTabIndex: number|null = null
+            let markedActiveTabIndex: number|null = null
+            const persistedActiveTabIndex = this.parseActiveTabIndex(localStorage.getItem(ACTIVE_TAB_INDEX_STORAGE_KEY))
             let savedState: unknown
             try {
                 savedState = JSON.parse(rawState)
             } catch (error) {
                 this.logger.warn('Failed to parse tab recovery state', error)
-                localStorage.removeItem('tabsRecovery')
+                localStorage.removeItem(RECOVERY_STORAGE_KEY)
+                localStorage.removeItem(ACTIVE_TAB_INDEX_STORAGE_KEY)
                 return { tabs: [], activeTabIndex: null, entries: [] }
             }
             const savedStateObject = typeof savedState === 'object' && savedState !== null
@@ -190,7 +282,7 @@ export class TabRecoveryService {
                 }
                 const wasActive = !!token?.[ACTIVE_TOP_LEVEL_MARKER]
                 if (wasActive) {
-                    activeTabIndex = entries.length
+                    markedActiveTabIndex = entries.length
                 }
                 const details = this.getRecoveryEntryDetails(token)
                 entries.push({
@@ -203,6 +295,9 @@ export class TabRecoveryService {
                     wasActive,
                 })
             }
+            const activeTabIndex = persistedActiveTabIndex !== null && persistedActiveTabIndex < entries.length
+                ? persistedActiveTabIndex
+                : markedActiveTabIndex
             return {
                 tabs: entries.map(entry => entry.tab),
                 activeTabIndex,
