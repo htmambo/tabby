@@ -3,10 +3,16 @@ import sh from 'shelljs'
 import * as vars from './vars.mjs'
 import log from 'npmlog'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { runYarnInstallWithRetry } from './yarn-install-retry.mjs'
 
+const yarnBin = process.platform === 'win32' ? 'yarn.cmd' : 'yarn'
+
 log.info('patch')
-sh.exec(`yarn patch-package`, { fatal: true })
+execFileSync(yarnBin, ['patch-package'], {
+    cwd: process.cwd(),
+    stdio: 'inherit',
+})
 
 log.info('deps', 'app')
 await runYarnInstallWithRetry({
@@ -16,7 +22,14 @@ await runYarnInstallWithRetry({
 })
 sh.cd('app')
 // Some native packages might fail to build before patch-package gets a chance to run via postinstall
-sh.exec(`yarn postinstall`, { fatal: false })
+try {
+    execFileSync(yarnBin, ['postinstall'], {
+        cwd: process.cwd(),
+        stdio: 'inherit',
+    })
+} catch (error) {
+    log.warn('deps', `app postinstall failed: ${error instanceof Error ? error.message : String(error)}`)
+}
 sh.cd('..')
 
 for (let plugin of vars.allPackages) {
