@@ -4,18 +4,35 @@ import { Component, Input, ViewChild, ViewContainerRef, ComponentFactoryResolver
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import { PartialProfileGroup, Profile, ProfileProvider, ProfileSettingsComponent, ProfilesService, TAB_COLORS, ProfileGroup, ConnectableProfileProvider, FullyDefined, ConfigProxy, isExpandedControlTarget, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
-let iconsClassListCache: string[] | null = null
+let iconsDataCache: Record<string, string[]> | null = null
 
-function getIconsClassList (): string[] {
-    if (iconsClassListCache) {
-        return iconsClassListCache
+function getIconsData (): Record<string, string[]> {
+    if (iconsDataCache) {
+        return iconsDataCache
     }
 
-    const iconsData = require('../../../tabby-core/src/icons.json') as Record<string, string[]>
-    iconsClassListCache = Object.keys(iconsData).flatMap(
-        icon => iconsData[icon].map(style => `fa${style[0]} fa-${icon}`),
-    )
-    return iconsClassListCache
+    iconsDataCache = require('../../../tabby-core/src/icons.json') as Record<string, string[]>
+    return iconsDataCache
+}
+
+function searchIconClasses (term: string, limit = 10): string[] {
+    const normalizedTerm = term.toLowerCase()
+    const matches: string[] = []
+    const iconsData = getIconsData()
+
+    for (const icon of Object.keys(iconsData)) {
+        for (const style of iconsData[icon]) {
+            const iconClass = `fa${style[0]} fa-${icon}`
+            if (!normalizedTerm || iconClass.toLowerCase().includes(normalizedTerm)) {
+                matches.push(iconClass)
+                if (matches.length >= limit) {
+                    return matches
+                }
+            }
+        }
+    }
+
+    return matches
 }
 
 /** @hidden */
@@ -116,7 +133,8 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     iconSearch: OperatorFunction<string, string[]> = (text$: Observable<string>) =>
         text$.pipe(
             debounceTime(200),
-            map(term => getIconsClassList().filter(v => v.toLowerCase().includes(term.toLowerCase())).slice(0, 10)),
+            distinctUntilChanged(),
+            map(term => searchIconClasses(term)),
         )
 
     save () {
