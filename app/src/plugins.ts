@@ -103,19 +103,16 @@ function parseBooleanRuntimeEnv (name: string, defaultValue: boolean): boolean {
     return defaultValue
 }
 
-function shouldUsePluginDiscoveryCache (): boolean {
-    return !isRuntimeDev() && !parseBooleanRuntimeEnv('TABBY_DISABLE_PLUGIN_DISCOVERY_CACHE', false)
-}
-
 const pluginDebugEnabled = isRuntimeDev()
+const pluginDiscoveryCacheEnabled = !isRuntimeDev() && !parseBooleanRuntimeEnv('TABBY_DISABLE_PLUGIN_DISCOVERY_CACHE', false)
 
-function getPluginDiscoveryStorage (): Storage | null {
+const pluginDiscoveryStorage = (() => {
     try {
         return typeof localStorage === 'undefined' ? null : localStorage
     } catch {
         return null
     }
-}
+})()
 
 function normalizeLookupPaths (paths: string[]): string[] {
     return Array.from(new Set(paths.map(x => normalizePath(path.resolve(x)))))
@@ -190,12 +187,11 @@ function sanitizeCachedPluginInfo (value: unknown): PluginInfo | null {
 }
 
 function clearPluginDiscoveryCacheStorage (): void {
-    const storage = getPluginDiscoveryStorage()
-    if (!storage) {
+    if (!pluginDiscoveryStorage) {
         return
     }
     try {
-        storage.removeItem(PLUGIN_DISCOVERY_CACHE_KEY)
+        pluginDiscoveryStorage.removeItem(PLUGIN_DISCOVERY_CACHE_KEY)
     } catch {
         // Ignore storage cleanup failures.
     }
@@ -216,18 +212,13 @@ function arePluginDiscoveryPathStatesEqual (
 }
 
 async function readPluginDiscoveryCache (paths: string[]): Promise<PluginInfo[] | null> {
-    if (!shouldUsePluginDiscoveryCache()) {
-        return null
-    }
-
-    const storage = getPluginDiscoveryStorage()
-    if (!storage) {
+    if (!pluginDiscoveryCacheEnabled || !pluginDiscoveryStorage) {
         return null
     }
 
     let cache: PluginDiscoveryCacheEntry | null = null
     try {
-        const raw = storage.getItem(PLUGIN_DISCOVERY_CACHE_KEY)
+        const raw = pluginDiscoveryStorage.getItem(PLUGIN_DISCOVERY_CACHE_KEY)
         cache = raw ? JSON.parse(raw) as PluginDiscoveryCacheEntry : null
     } catch {
         clearPluginDiscoveryCacheStorage()
@@ -264,12 +255,7 @@ async function readPluginDiscoveryCache (paths: string[]): Promise<PluginInfo[] 
 }
 
 async function writePluginDiscoveryCache (paths: string[], plugins: PluginInfo[]): Promise<void> {
-    if (!shouldUsePluginDiscoveryCache()) {
-        return
-    }
-
-    const storage = getPluginDiscoveryStorage()
-    if (!storage) {
+    if (!pluginDiscoveryCacheEnabled || !pluginDiscoveryStorage) {
         return
     }
 
@@ -281,7 +267,7 @@ async function writePluginDiscoveryCache (paths: string[], plugins: PluginInfo[]
             pathStates: await getPluginDiscoveryPathStates(normalizedPaths),
             plugins: plugins.map(serializePluginInfo),
         }
-        storage.setItem(PLUGIN_DISCOVERY_CACHE_KEY, JSON.stringify(cache))
+        pluginDiscoveryStorage.setItem(PLUGIN_DISCOVERY_CACHE_KEY, JSON.stringify(cache))
     } catch (error) {
         console.warn('Failed to persist plugin discovery cache', error)
     }
