@@ -135,7 +135,6 @@
     "@electron/rebuild/node-gyp/glob/minimatch": "10.2.4",
     "node-gyp/glob/minimatch": "10.2.4",
     "node-gyp/make-fetch-happen/cacache/glob/minimatch": "10.2.4",
-    "cross-spawn/semver": "5.7.2",
     "tiny-async-pool/semver": "5.7.2",
     "electron-installer-snap/semver": "7.7.4",
     "electron-installer-snap/electron-installer-common/semver": "7.7.4",
