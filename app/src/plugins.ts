@@ -400,9 +400,9 @@ function normalizePluginManifest (manifest: TabbyPluginManifest | undefined, plu
     return manifest
 }
 
-function delay (ms: number): Promise<void> {
+function yieldToNextTask (): Promise<void> {
     return new Promise(resolve => {
-        const timer = setTimeout(resolve, ms)
+        const timer = setTimeout(resolve, 0)
         if (typeof timer === 'object' && typeof timer.unref === 'function') {
             timer.unref()
         }
@@ -739,7 +739,6 @@ export async function findPlugins (options: { forceRefresh?: boolean } = {}): Pr
 
 export async function loadPlugins (foundPlugins: PluginInfo[], progress: ProgressCallback): Promise<any[]> {
     const plugins: any[] = []
-    const pluginsPromises: Promise<any>[] = []
 
     foundPlugins.forEach(plugin => registerPluginRuntimeRoot(plugin.path ?? plugin.entryPath))
 
@@ -751,54 +750,52 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
 
     progress(0, 1)
     for (const foundPlugin of foundPlugins) {
-        pluginsPromises.push((async () => {
-            try {
-                const pluginEntryPath = foundPlugin.entryPath ?? foundPlugin.path
-                if (!pluginEntryPath) {
-                    throw new Error(`Plugin ${foundPlugin.name} has no entry path`)
-                }
-                let resolvedPath = pluginEntryPath
-                try {
-                    if (pluginEntryPath) {
-                        resolvedPath = nodeRequire.resolve(pluginEntryPath)
-                    }
-                } catch {
-                    // Ignore resolution errors here; the actual load attempt below will report them if needed.
-                }
-                console.debug(`Loading ${foundPlugin.name}: ${resolvedPath}`)
-                const packageModule = nodeRequire(pluginEntryPath)
-                const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
-                const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
-                if (foundPlugin.packageName.startsWith('tabby-')) {
-                    cachedBuiltinModules[foundPlugin.packageName.replace('tabby-', 'terminus-')] = packageModule
-                }
-                const pluginRootModule = packageModule.default
-                if (!pluginRootModule) {
-                    throw new Error(`Plugin ${foundPlugin.name} has no default export`)
-                }
-                const pluginModule = pluginRootModule.forRoot ? pluginRootModule.forRoot() : pluginRootModule
-                pluginModule.pluginName = foundPlugin.name
-                pluginModule.bootstrap = packageModule.bootstrap
-                if (pluginManifest) {
-                    pluginModule.pluginManifest = pluginManifest
-                }
-                console.debug(`Loaded ${foundPlugin.name}:`, {
-                    hasDefaultExport: !!packageModule.default,
-                    hasBootstrapExport: !!packageModule.bootstrap,
-                    pluginName: pluginModule.pluginName,
-                    moduleName: pluginModule?.constructor?.name,
-                    hasManifest: !!pluginManifest,
-                })
-                plugins.push(pluginModule)
-            } catch (error) {
-                console.error(`Could not load ${foundPlugin.name}:`, error)
+        try {
+            const pluginEntryPath = foundPlugin.entryPath ?? foundPlugin.path
+            if (!pluginEntryPath) {
+                throw new Error(`Plugin ${foundPlugin.name} has no entry path`)
             }
-            setProgress()
-            await delay(50)
-        })())
+            let resolvedPath = pluginEntryPath
+            try {
+                if (pluginEntryPath) {
+                    resolvedPath = nodeRequire.resolve(pluginEntryPath)
+                }
+            } catch {
+                // Ignore resolution errors here; the actual load attempt below will report them if needed.
+            }
+            console.debug(`Loading ${foundPlugin.name}: ${resolvedPath}`)
+            const packageModule = nodeRequire(pluginEntryPath)
+            const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
+            const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
+            if (foundPlugin.packageName.startsWith('tabby-')) {
+                cachedBuiltinModules[foundPlugin.packageName.replace('tabby-', 'terminus-')] = packageModule
+            }
+            const pluginRootModule = packageModule.default
+            if (!pluginRootModule) {
+                throw new Error(`Plugin ${foundPlugin.name} has no default export`)
+            }
+            const pluginModule = pluginRootModule.forRoot ? pluginRootModule.forRoot() : pluginRootModule
+            pluginModule.pluginName = foundPlugin.name
+            pluginModule.bootstrap = packageModule.bootstrap
+            if (pluginManifest) {
+                pluginModule.pluginManifest = pluginManifest
+            }
+            console.debug(`Loaded ${foundPlugin.name}:`, {
+                hasDefaultExport: !!packageModule.default,
+                hasBootstrapExport: !!packageModule.bootstrap,
+                pluginName: pluginModule.pluginName,
+                moduleName: pluginModule?.constructor?.name,
+                hasManifest: !!pluginManifest,
+            })
+            plugins.push(pluginModule)
+        } catch (error) {
+            console.error(`Could not load ${foundPlugin.name}:`, error)
+        }
+        setProgress()
     }
-    await Promise.all(pluginsPromises)
 
     progress(1, 1)
+    // Yield once so the splash progress bar can paint before Angular bootstrap resumes.
+    await yieldToNextTask()
     return plugins
 }
