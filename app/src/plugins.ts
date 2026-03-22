@@ -1,5 +1,6 @@
 import * as path from 'path'
 import { access, readFile, readdir, rm, stat } from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
 import * as angularAnimations from '@angular/animations'
 import * as angularCdkClipboard from '@angular/cdk/clipboard'
 import * as angularCdkDragDrop from '@angular/cdk/drag-drop'
@@ -540,9 +541,9 @@ export function initModuleLookup (userPluginsPath: string): void {
 const PLUGIN_PREFIX = 'tabby-'
 const LEGACY_PLUGIN_PREFIX = 'terminus-'
 
-async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ pluginDir: string, packageName: string }[]> {
+async function getCandidateLocationsInPluginDir (pluginDir: string): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocations: { pluginDir: string, packageName: string }[] = []
-    let pluginEntries: Awaited<ReturnType<typeof readdir>>
+    let pluginEntries: Dirent<string>[]
 
     try {
         pluginEntries = await readdir(pluginDir, { withFileTypes: true })
