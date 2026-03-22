@@ -136,6 +136,8 @@ export class AppRootComponent implements OnDestroy {
     royalConnectionGroups: RoyalConnectionGroup[] = []
     filteredRoyalConnectionGroups: RoyalConnectionGroup[] = []
     activeRoyalTab: BaseTabComponent|null = null
+    renderedActiveRoyalTab: BaseTabComponent|null = null
+    renderedActiveRoyalConnectionProfileID: string|null = null
     royalSingleExpandMode = false
     royalSidebarViewMode: RoyalSidebarViewMode = 'cards'
     royalSessionGroups: RoyalNavigationGroup[] = []
@@ -989,12 +991,11 @@ export class AppRootComponent implements OnDestroy {
     }
 
     isRoyalConnectionActive (item: RoyalConnectionItem): boolean {
-        const boundTab = item.profile.id ? this.getRoyalConnectionBinding(item.profile.id) : null
-        return !!boundTab && this.activeRoyalTab === boundTab
+        return !!item.profile.id && this.renderedActiveRoyalConnectionProfileID === item.profile.id
     }
 
     isRoyalSessionActive (item: RoyalNavigationItem): boolean {
-        return this.activeRoyalTab === item.targetTab
+        return this.renderedActiveRoyalTab === item.targetTab
     }
 
     royalSessionGroupKey (groupID: RoyalEnvironment): string {
@@ -1174,7 +1175,6 @@ export class AppRootComponent implements OnDestroy {
         }
 
         if (this.getRoyalTabProfileID(tab) !== profileID || !this.getRoyalTabTarget(tab)) {
-            this.royalConnectionBindings.delete(profileID)
             return null
         }
 
@@ -1319,8 +1319,24 @@ export class AppRootComponent implements OnDestroy {
     private syncRoyalActiveConnection (): void {
         this.cleanupRoyalConnectionBindings()
         this.activeRoyalTab = this.getRoyalResolvedActiveTab()
+        this.renderedActiveRoyalTab = this.activeRoyalTab
+        this.renderedActiveRoyalConnectionProfileID = this.getRenderedActiveRoyalConnectionProfileID()
         this.recomputeRoyalSidebarGroups()
         this.ensureRoyalActiveGroupExpanded()
+    }
+
+    private getRenderedActiveRoyalConnectionProfileID (): string|null {
+        const activeTab = this.activeRoyalTab
+        if (!activeTab) {
+            return null
+        }
+
+        const profileID = this.getRoyalTabProfileID(activeTab)
+        if (!profileID) {
+            return null
+        }
+
+        return this.getRoyalConnectionBinding(profileID) === activeTab ? profileID : null
     }
 
     private getRoyalProfileTypeKind (tab: BaseTabComponent): string|null {
