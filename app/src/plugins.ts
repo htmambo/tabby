@@ -522,15 +522,16 @@ export function initModuleLookup (userPluginsPath: string): void {
             .filter(Boolean)
             .map(x => paths.push(normalizePath(path.resolve(x))))
     }
+    const normalizedLookupPaths = Array.from(new Set(
+        paths.map(x => normalizePath(path.resolve(x))),
+    ))
 
     setRuntimeEnv('NODE_PATH', [
         getRuntimeEnv('NODE_PATH') ?? '',
-        paths.join(path.delimiter),
+        normalizedLookupPaths.join(path.delimiter),
     ].filter(Boolean).join(path.delimiter))
     nodeModule._initPaths()
-    pluginLookupPaths = Array.from(new Set(
-        paths.map(x => normalizePath(path.resolve(x))),
-    ))
+    pluginLookupPaths = normalizedLookupPaths
 
     builtinModules.forEach(m => {
         if (!Object.prototype.hasOwnProperty.call(cachedBuiltinModules, m)) {
