@@ -755,15 +755,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
             if (!pluginEntryPath) {
                 throw new Error(`Plugin ${foundPlugin.name} has no entry path`)
             }
-            let resolvedPath = pluginEntryPath
-            try {
-                if (pluginEntryPath) {
-                    resolvedPath = nodeRequire.resolve(pluginEntryPath)
-                }
-            } catch {
-                // Ignore resolution errors here; the actual load attempt below will report them if needed.
-            }
-            console.debug(`Loading ${foundPlugin.name}: ${resolvedPath}`)
+            console.debug(`Loading ${foundPlugin.name}: ${pluginEntryPath}`)
             const packageModule = nodeRequire(pluginEntryPath)
             const manifestCandidate = packageModule.manifest ?? packageModule.pluginManifest ?? packageModule.default?.manifest
             const pluginManifest = normalizePluginManifest(manifestCandidate as TabbyPluginManifest | undefined, foundPlugin.name)
@@ -780,13 +772,7 @@ export async function loadPlugins (foundPlugins: PluginInfo[], progress: Progres
             if (pluginManifest) {
                 pluginModule.pluginManifest = pluginManifest
             }
-            console.debug(`Loaded ${foundPlugin.name}:`, {
-                hasDefaultExport: !!packageModule.default,
-                hasBootstrapExport: !!packageModule.bootstrap,
-                pluginName: pluginModule.pluginName,
-                moduleName: pluginModule?.constructor?.name,
-                hasManifest: !!pluginManifest,
-            })
+            console.debug(`Loaded ${foundPlugin.name}`)
             plugins.push(pluginModule)
         } catch (error) {
             console.error(`Could not load ${foundPlugin.name}:`, error)

@@ -132,16 +132,15 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     }
 
     const loadPluginsStart = performance.now()
+    const progressBar = document.querySelector('.progress .bar') as HTMLElement | null
     const pluginModules = await loadPlugins(plugins, (current, total) => {
-        (document.querySelector('.progress .bar') as HTMLElement).style.width = `${100 * current / total}%` // eslint-disable-line
+        if (progressBar) {
+            progressBar.style.width = `${100 * current / total}%`
+        }
     })
     logStartupMetric('loadPlugins', loadPluginsStart)
 
-    console.debug('Loaded plugin modules summary:', JSON.stringify(pluginModules.map(x => ({
-        pluginName: x?.pluginName,
-        hasBootstrap: !!x?.bootstrap,
-        moduleName: x?.constructor?.name,
-    }))))
+    console.debug('Loaded plugin modules:', pluginModules.map(x => x?.pluginName).filter(Boolean))
 
     setRendererPluginModules(pluginModules)
 
