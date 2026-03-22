@@ -306,7 +306,7 @@ function resolveDevelopmentWorkspaceRoot (): string | null {
 }
 
 const appPath = bridgeIPC.sendSync<string>('bridge:app:get-app-path')
-const developmentWorkspaceRoot = resolveDevelopmentWorkspaceRoot()
+const developmentWorkspaceRoot = isRuntimeDev() ? resolveDevelopmentWorkspaceRoot() : null
 const effectiveAppPath = developmentWorkspaceRoot
     ? path.join(developmentWorkspaceRoot, 'app')
     : appPath
