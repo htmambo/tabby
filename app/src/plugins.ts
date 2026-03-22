@@ -745,15 +745,15 @@ export async function findPlugins (options: { forceRefresh?: boolean } = {}): Pr
 
     const foundPluginsPromises: Promise<PluginInfo|null>[] = []
     for (const { pluginDir, packageName } of candidateLocations) {
+        if (builtinModules.includes(packageName) && !isBuiltinPluginDir(pluginDir)) {
+            continue
+        }
+
         const pluginPath = normalizePathForCompare(path.join(pluginDir, packageName))
         if (processedPluginPaths.has(pluginPath)) {
             continue
         }
         processedPluginPaths.add(pluginPath)
-
-        if (builtinModules.includes(packageName) && !isBuiltinPluginDir(pluginDir)) {
-            continue
-        }
 
         foundPluginsPromises.push(parsePluginInfo(pluginDir, packageName))
     }
