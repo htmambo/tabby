@@ -554,10 +554,10 @@ const LEGACY_PLUGIN_PREFIX = 'terminus-'
 
 async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ pluginDir: string, packageName: string }[]> {
     const candidateLocations: { pluginDir: string, packageName: string }[] = []
-    let pluginNames: string[]
+    let pluginEntries: Awaited<ReturnType<typeof readdir>>
 
     try {
-        pluginNames = await readdir(pluginDir)
+        pluginEntries = await readdir(pluginDir, { withFileTypes: true })
     } catch (error) {
         const code = (error as NodeJS.ErrnoException).code
         if (code === 'ENOENT' || code === 'ENOTDIR') {
@@ -566,17 +566,21 @@ async function getCandidateLocationsInPluginDir (pluginDir: any): Promise<{ plug
         throw error
     }
 
-    if (pluginNames.includes('package.json')) {
+    if (pluginEntries.some(entry => entry.name === 'package.json')) {
         candidateLocations.push({
             pluginDir: path.dirname(pluginDir),
             packageName: path.basename(pluginDir),
         })
     }
 
-    const promises = []
+    const promises: Promise<void>[] = []
 
-    for (const packageName of pluginNames) {
+    for (const entry of pluginEntries) {
+        const packageName = entry.name
         if ((packageName.startsWith(PLUGIN_PREFIX) || packageName.startsWith(LEGACY_PLUGIN_PREFIX)) && !PLUGIN_BLACKLIST.includes(packageName)) {
+            if (entry.isFile()) {
+                continue
+            }
             const pluginPath = path.join(pluginDir, packageName)
             const infoPath = path.join(pluginPath, 'package.json')
             promises.push(pathExists(infoPath).then(result => {
