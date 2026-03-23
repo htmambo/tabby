@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { spawn } from 'node:child_process'
@@ -11,6 +12,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
 const tscCliPath = path.resolve(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc')
 const activeChildren = new Set()
+const dependencyFields = ['dependencies', 'peerDependencies', 'devDependencies']
+const packageTypingsDependencies = new Map()
 
 function getDefaultTypingsConcurrency () {
     const totalMemory = os.totalmem()
@@ -82,23 +85,57 @@ function runTypingsBuild (plugin) {
     })
 }
 
-;(async () => {
-    const concurrency = getTypingsConcurrency()
-    log.info('typings', `Using concurrency ${concurrency}`)
+function getPackageTypingsDependencies (plugin) {
+    if (packageTypingsDependencies.has(plugin)) {
+        return packageTypingsDependencies.get(plugin)
+    }
 
+    const packageJson = JSON.parse(fs.readFileSync(vars.resolvePackageFile(plugin, 'package.json'), 'utf8'))
+    const deps = dependencyFields
+        .flatMap(field => Object.keys(packageJson[field] ?? {}))
+        .filter(dep => dep !== plugin && vars.packagesWithTypings.includes(dep))
+    packageTypingsDependencies.set(plugin, deps)
+    return deps
+}
+
+function getTypingsBuildLevels () {
+    const remaining = new Set(vars.packagesWithTypings)
+    const built = new Set()
+    const levels = []
+
+    while (remaining.size) {
+        const ready = [...remaining].filter(plugin =>
+            getPackageTypingsDependencies(plugin).every(dep => built.has(dep)),
+        )
+
+        if (!ready.length) {
+            throw new Error(`Unable to resolve typings build order for: ${[...remaining].join(', ')}`)
+        }
+
+        levels.push(ready)
+        ready.forEach(plugin => {
+            remaining.delete(plugin)
+            built.add(plugin)
+        })
+    }
+
+    return levels
+}
+
+async function runTypingsBuildBatch (plugins, concurrency) {
     let nextIndex = 0
     let failed = false
 
-    const workers = Array.from({ length: Math.min(concurrency, vars.packagesWithTypings.length) }, async () => {
+    const workers = Array.from({ length: Math.min(concurrency, plugins.length) }, async () => {
         while (!failed) {
             const currentIndex = nextIndex
             nextIndex += 1
-            if (currentIndex >= vars.packagesWithTypings.length) {
+            if (currentIndex >= plugins.length) {
                 return
             }
 
             try {
-                await runTypingsBuild(vars.packagesWithTypings[currentIndex])
+                await runTypingsBuild(plugins[currentIndex])
             } catch (error) {
                 failed = true
                 stopActiveChildren()
@@ -106,7 +143,19 @@ function runTypingsBuild (plugin) {
             }
         }
     })
+
     await Promise.all(workers)
+}
+
+;(async () => {
+    const concurrency = getTypingsConcurrency()
+    log.info('typings', `Using concurrency ${concurrency}`)
+    const levels = getTypingsBuildLevels()
+
+    for (const level of levels) {
+        log.info('typings', `Building level: ${level.join(', ')}`)
+        await runTypingsBuildBatch(level, concurrency)
+    }
 })().catch(error => {
     log.error('typings', error.message)
     process.exitCode = 1
