@@ -64,7 +64,7 @@ export class OSCProcessor extends SessionMiddleware {
             if (oscCode === 1337) {
                 const paramString = oscParams.join(';')
                 if (paramString.startsWith('CurrentDir=')) {
-                    const reportedCWD = this.normalizeReportedCWD(paramString.split('=')[1])
+const reportedCWD = this.normalizeReportedCWD(paramString.split('=')[1])
                     if (reportedCWD) {
                         this.cwdReported.next(reportedCWD)
                     }
