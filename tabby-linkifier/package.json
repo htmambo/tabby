@@ -17,6 +17,10 @@
   ],
   "author": "Tabby Developers",
   "license": "MIT",
+  "peerDependencies": {
+    "tabby-core": "*",
+    "tabby-terminal": "*"
+  },
   "devDependencies": {
     "@xterm/addon-web-links": "^0.10.0",
     "untildify": "^4.0.0"
