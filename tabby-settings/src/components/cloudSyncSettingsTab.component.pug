@@ -1,0 +1,446 @@
+h3.mb-3(translate) Cloud Sync
+
+// =============================================================================
+// NO KEY: Master key setup
+// =============================================================================
+.text-center(*ngIf='isNoKey')
+    i.fas.fa-shield-alt.fa-3x.m-3.text-muted
+    h3.m-3(translate) Set up your master password
+    p.text-muted(translate) All sync data is encrypted with your master password. Keep it safe — it cannot be recovered.
+
+    .card.mx-auto(style='max-width: 480px')
+        .card-body
+            .mb-3
+                label.form-label(translate) Master password
+                input.form-control(
+                    type='password',
+                    [(ngModel)]='masterPassword',
+                    (keydown.enter)='setupMasterKey()',
+                    placeholder='{{"At least 8 characters"|translate}}'
+                )
+            .mb-3
+                label.form-label(translate) Confirm password
+                input.form-control(
+                    type='password',
+                    [(ngModel)]='confirmPassword',
+                    (keydown.enter)='setupMasterKey()'
+                )
+            .text-danger.small.mb-3(*ngIf='masterKeyError')
+                i.fas.fa-exclamation-circle.me-1
+                | {{masterKeyError}}
+            button.btn.btn-primary.w-100((click)='setupMasterKey()', [disabled]='!masterPassword || !confirmPassword')
+                i.fas.fa-shield-alt.me-2
+                span(translate) Set up encryption
+
+// =============================================================================
+// LOCKED: Unlock screen
+// =============================================================================
+.text-center(*ngIf='isLocked')
+    i.fas.fa-lock.fa-3x.m-3.text-warning
+    h3.m-3(translate) Vault is locked
+    p.text-muted(translate) Enter your master password to enable cloud sync.
+
+    .card.mx-auto(style='max-width: 480px')
+        .card-body
+            .mb-3
+                label.form-label(translate) Master password
+                input.form-control(
+                    type='password',
+                    [(ngModel)]='unlockPassword',
+                    (keydown.enter)='unlock()',
+                    placeholder='{{"Enter your password"|translate}}'
+                )
+            .text-danger.small.mb-3(*ngIf='masterKeyError')
+                i.fas.fa-exclamation-circle.me-1
+                | {{masterKeyError}}
+            button.btn.btn-primary.w-100((click)='unlock()', [disabled]='!unlockPassword')
+                i.fas.fa-unlock.me-2
+                span(translate) Unlock
+
+    .mt-4
+        button.btn.btn-link((click)='activeSettingsNav = "security"')
+            i.fas.fa-key.me-2
+            span(translate) Forgot password?
+
+// =============================================================================
+// UNLOCKED: Full sync UI
+// =============================================================================
+div(*ngIf='isUnlocked')
+    ul.nav.nav-tabs.mb-3
+        li.nav-item
+            a.nav-link([class.active]='activeNav === "providers"', (click)='activeNav = "providers"', href='javascript:void(0)')
+                i.fas.fa-cloud.me-2
+                span(translate) Providers
+        li.nav-item
+            a.nav-link([class.active]='activeNav === "sync"', (click)='activeNav = "sync"', href='javascript:void(0)')
+                i.fas.fa-sync.me-2([class.fa-spin]='syncing')
+                span(translate) Sync
+        li.nav-item
+            a.nav-link([class.active]='activeNav === "security"', (click)='activeNav = "security"', href='javascript:void(0)')
+                i.fas.fa-shield-alt.me-2
+                span(translate) Security
+
+    // ---- Providers tab ----
+    div(*ngIf='activeNav === "providers"')
+        .mb-3.d-flex.align-items-center
+            h5.m-0(translate) Connected providers
+            .ms-auto
+                span.badge.bg-secondary {{getConnectedProviders().length}}/5
+
+        // Provider cards
+        .row.g-3
+            // GitHub
+            .col-12.col-md-6
+                .card.h-100([class.border-success]='isProviderConnected("github")', [class.border-danger]='isProviderError("github")')
+                    .card-body
+                        .d-flex.align-items-start
+                            i.fab.fa-github.fa-2x.me-3.mt-1
+                            .flex-grow-1
+                                h6.mb-1 GitHub Gist
+                                small.text-muted(translate) Store encrypted vault in a private GitHub Gist
+                            .form-check.form-switch
+                                input.form-check-input(
+                                    type='checkbox',
+                                    [checked]='isProviderConnected("github")',
+                                    (change)='isProviderConnected("github") ? disconnect("github") : connectGitHub()',
+                                    [disabled]='isProviderConnecting("github")'
+                                )
+                        .mt-2(*ngIf='isProviderConnected("github")')
+                            small.text-success
+                                i.fas.fa-check-circle.me-1
+                                | {{formatLastSync(state?.providers?.["github"]?.lastSync)}}
+                        .mt-2(*ngIf='isProviderError("github")')
+                            small.text-danger
+                                i.fas.fa-exclamation-circle.me-1
+                                | {{getProviderError("github")}}
+                        .mt-2(*ngIf='isProviderConnecting("github")')
+                            small.text-warning
+                                i.fas.fa-spinner.fa-spin.me-1
+                                | Connecting...
+                        // GitHub OAuth config
+                        .mt-3(*ngIf='!isProviderConnected("github")')
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='text',
+                                    [(ngModel)]='githubClientId',
+                                    placeholder='{{"cloudSync.clientIdPlaceholder"|translate}}'
+                                )
+                            small.text-muted.d-block.mb-2(translate)="cloudSync.githubClientIdHelp"
+                            a.btn.btn-sm.btn-outline-secondary.d-block(target='_blank', href='https://github.com/settings/developers')
+                                i.fas.fa-external-link-alt.me-1
+                                span(translate) cloudSync.registerOAuthApp
+                        // GitHub device code
+                        .alert.alert-info.mt-3(*ngIf='githubUserCode')
+                            p.m-0(translate) Enter this code on
+                            a([href]='githubVerificationUrl', target='_blank') {{githubVerificationUrl}}
+                            .mt-2
+                                strong.code.fs-5 {{githubUserCode}}
+
+            // Google Drive
+            .col-12.col-md-6
+                .card.h-100([class.border-success]='isProviderConnected("google")', [class.border-danger]='isProviderError("google")')
+                    .card-body
+                        .d-flex.align-items-start
+                            i.fab.fa-google.fa-2x.me-3.mt-1
+                            .flex-grow-1
+                                h6.mb-1 Google Drive
+                                small.text-muted(translate) Store encrypted vault in your Google Drive app folder
+                            .form-check.form-switch
+                                input.form-check-input(
+                                    type='checkbox',
+                                    [checked]='isProviderConnected("google")',
+                                    (change)='isProviderConnected("google") ? disconnect("google") : connectGoogle()',
+                                    [disabled]='isProviderConnecting("google")'
+                                )
+                        .mt-2(*ngIf='isProviderConnected("google")')
+                            small.text-success
+                                i.fas.fa-check-circle.me-1
+                                | {{formatLastSync(state?.providers?.["google"]?.lastSync)}}
+                        .mt-2(*ngIf='isProviderError("google")')
+                            small.text-danger
+                                i.fas.fa-exclamation-circle.me-1
+                                | {{getProviderError("google")}}
+                        // Google OAuth config
+                        .mt-3(*ngIf='!isProviderConnected("google")')
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='text',
+                                    [(ngModel)]='googleClientId',
+                                    placeholder='{{"cloudSync.clientIdPlaceholder"|translate}}'
+                                )
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='password',
+                                    [(ngModel)]='googleClientSecret',
+                                    placeholder='{{"cloudSync.clientSecretPlaceholder"|translate}}'
+                                )
+                            small.text-muted.d-block.mb-2(translate)="cloudSync.googleClientIdHelp"
+
+            // OneDrive
+            .col-12.col-md-6
+                .card.h-100([class.border-success]='isProviderConnected("onedrive")', [class.border-danger]='isProviderError("onedrive")')
+                    .card-body
+                        .d-flex.align-items-start
+                            i.fab.fa-microsoft.fa-2x.me-3.mt-1
+                            .flex-grow-1
+                                h6.mb-1 Microsoft OneDrive
+                                small.text-muted(translate) Store encrypted vault in your OneDrive app folder
+                            .form-check.form-switch
+                                input.form-check-input(
+                                    type='checkbox',
+                                    [checked]='isProviderConnected("onedrive")',
+                                    (change)='isProviderConnected("onedrive") ? disconnect("onedrive") : connectOneDrive()',
+                                    [disabled]='isProviderConnecting("onedrive")'
+                                )
+                        .mt-2(*ngIf='isProviderConnected("onedrive")')
+                            small.text-success
+                                i.fas.fa-check-circle.me-1
+                                | {{formatLastSync(state?.providers?.["onedrive"]?.lastSync)}}
+                        .mt-2(*ngIf='isProviderError("onedrive")')
+                            small.text-danger
+                                i.fas.fa-exclamation-circle.me-1
+                                | {{getProviderError("onedrive")}}
+                        // OneDrive OAuth config
+                        .mt-3(*ngIf='!isProviderConnected("onedrive")')
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='text',
+                                    [(ngModel)]='onedriveClientId',
+                                    placeholder='{{"cloudSync.clientIdPlaceholder"|translate}}'
+                                )
+                            small.text-muted.d-block.mb-2(translate)="cloudSync.onedriveClientIdHelp"
+
+            // WebDAV
+            .col-12.col-md-6
+                .card.h-100([class.border-success]='isProviderConnected("webdav")', [class.border-danger]='isProviderError("webdav")')
+                    .card-body
+                        .d-flex.align-items-start
+                            i.fas.fa-cloud.fa-2x.me-3.mt-1
+                            .flex-grow-1
+                                h6.mb-1 WebDAV
+                                small.text-muted(translate) Connect to any WebDAV-compatible server
+                            .form-check.form-switch
+                                input.form-check-input(
+                                    type='checkbox',
+                                    [checked]='isProviderConnected("webdav")',
+                                    (change)='isProviderConnected("webdav") ? disconnect("webdav") : null',
+                                    [disabled]='isProviderConnecting("webdav")'
+                                )
+                        .mt-2(*ngIf='isProviderConnected("webdav")')
+                            small.text-success
+                                i.fas.fa-check-circle.me-1
+                                | {{formatLastSync(state?.providers?.["webdav"]?.lastSync)}}
+                        .mt-2(*ngIf='isProviderError("webdav")')
+                            small.text-danger
+                                i.fas.fa-exclamation-circle.me-1
+                                | {{getProviderError("webdav")}}
+                        // WebDAV config form
+                        .mt-3(*ngIf='!isProviderConnected("webdav")')
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='text',
+                                    [(ngModel)]='webdavEndpoint',
+                                    placeholder='https://dav.example.com'
+                                )
+                            .row.g-2.mb-2
+                                .col-6
+                                    select.form-select.form-select-sm([(ngModel)]='webdavAuthType')
+                                        option(value='basic') Basic Auth
+                                        option(value='digest') Digest Auth
+                                        option(value='token') Token Auth
+                                .col-6
+                                    input.form-control.form-control-sm(
+                                        type='text',
+                                        [(ngModel)]='webdavUsername',
+                                        placeholder='Username'
+                                    )
+                            .row.g-2.mb-2
+                                .col-6(*ngIf='webdavAuthType !== "token"')
+                                    input.form-control.form-control-sm(
+                                        type='password',
+                                        [(ngModel)]='webdavPassword',
+                                        placeholder='Password'
+                                    )
+                                .col-6(*ngIf='webdavAuthType === "token"')
+                                    input.form-control.form-control-sm(
+                                        type='password',
+                                        [(ngModel)]='webdavToken',
+                                        placeholder='Bearer token'
+                                    )
+                            .form-check.mb-2
+                                input.form-check-input#allowInsecure(type='checkbox', [(ngModel)]='webdavAllowInsecure')
+                                label.form-check-label(for='allowInsecure', translate) Allow insecure (HTTP)
+                            button.btn.btn-sm.btn-primary((click)='connectWebDAV()', [disabled]='!webdavEndpoint || isProviderConnecting("webdav")')
+                                i.fas.fa-link.me-1
+                                span(translate) Connect
+
+            // S3
+            .col-12.col-md-6
+                .card.h-100([class.border-success]='isProviderConnected("s3")', [class.border-danger]='isProviderError("s3")')
+                    .card-body
+                        .d-flex.align-items-start
+                            i.fas.fa-database.fa-2x.me-3.mt-1
+                            .flex-grow-1
+                                h6.mb-1 S3 Compatible
+                                small.text-muted(translate) AWS S3, MinIO, Backblaze B2, and others
+                            .form-check.form-switch
+                                input.form-check-input(
+                                    type='checkbox',
+                                    [checked]='isProviderConnected("s3")',
+                                    (change)='isProviderConnected("s3") ? disconnect("s3") : null',
+                                    [disabled]='isProviderConnecting("s3")'
+                                )
+                        .mt-2(*ngIf='isProviderConnected("s3")')
+                            small.text-success
+                                i.fas.fa-check-circle.me-1
+                                | {{formatLastSync(state?.providers?.["s3"]?.lastSync)}}
+                        .mt-2(*ngIf='isProviderError("s3")')
+                            small.text-danger
+                                i.fas.fa-exclamation-circle.me-1
+                                | {{getProviderError("s3")}}
+                        // S3 config form
+                        .mt-3(*ngIf='!isProviderConnected("s3")')
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='text',
+                                    [(ngModel)]='s3Endpoint',
+                                    placeholder='https://s3.amazonaws.com'
+                                )
+                            .row.g-2.mb-2
+                                .col-4
+                                    input.form-control.form-control-sm(
+                                        type='text',
+                                        [(ngModel)]='s3Bucket',
+                                        placeholder='Bucket'
+                                    )
+                                .col-4
+                                    input.form-control.form-control-sm(
+                                        type='text',
+                                        [(ngModel)]='s3Region',
+                                        placeholder='us-east-1'
+                                    )
+                                .col-4
+                                    input.form-control.form-control-sm(
+                                        type='text',
+                                        [(ngModel)]='s3Prefix',
+                                        placeholder='prefix/'
+                                    )
+                            .row.g-2.mb-2
+                                .col-6
+                                    input.form-control.form-control-sm(
+                                        type='text',
+                                        [(ngModel)]='s3AccessKeyId',
+                                        placeholder='Access Key ID'
+                                    )
+                                .col-6
+                                    input.form-control.form-control-sm(
+                                        type='password',
+                                        [(ngModel)]='s3SecretAccessKey',
+                                        placeholder='Secret Access Key'
+                                    )
+                            .mb-2
+                                input.form-control.form-control-sm(
+                                    type='password',
+                                    [(ngModel)]='s3SessionToken',
+                                    placeholder='Session Token (optional, for STS)'
+                                )
+                            button.btn.btn-sm.btn-primary((click)='connectS3()', [disabled]='!s3Endpoint || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey || isProviderConnecting("s3")')
+                                i.fas.fa-link.me-1
+                                span(translate) Connect
+
+        // Connect error
+        .alert.alert-danger.mt-3(*ngIf='connectError')
+            i.fas.fa-exclamation-triangle.me-2
+            | {{connectError}}
+
+        // Sync error
+        .alert.alert-danger.mt-3(*ngIf='syncError')
+            i.fas.fa-exclamation-triangle.me-2
+            | {{syncError}}
+
+        // Conflict resolution
+        .alert.alert-warning.mt-3(*ngIf='hasConflict()')
+            h5(translate) Sync conflict detected
+            p(translate) Your local data and remote data have diverged. Choose which version to keep:
+            .d-flex.gap-2
+                button.btn.btn-primary((click)='resolveConflict("USE_LOCAL")')
+                    i.fas.fa-laptop.me-1
+                    span(translate) Use local
+                button.btn.btn-outline-primary((click)='resolveConflict("USE_REMOTE")')
+                    i.fas.fa-cloud.me-1
+                    span(translate) Use remote
+
+    // ---- Sync tab ----
+    div(*ngIf='activeNav === "sync"')
+        .mb-3
+            .d-flex.align-items-center
+                h5.m-0(translate) Sync status
+                .ms-auto
+                    button.btn.btn-sm.btn-primary(
+                        (click)='syncNow()',
+                        [disabled]='syncing || !hasAnyConnectedProvider() || !isUnlocked'
+                    )
+                        i.fas.fa-sync.me-1([class.fa-spin]='syncing')
+                        span(translate) Sync now
+
+            .mt-3
+                .d-flex.align-items-center.mb-2
+                    span(translate) Auto-sync
+                    .ms-auto
+                        toggle(
+                            [ngModel]='state?.autoSyncEnabled',
+                            (ngModelChange)='toggleAutoSync()'
+                        )
+                small.text-muted(translate) Automatically sync every {{state?.autoSyncInterval}} minutes when changes are detected
+
+            .mt-3(*ngIf='state?.localVersion > 0')
+                .text-muted.small
+                    span(translate) Last sync:
+                    |  v{{state?.localVersion}} · {{formatLastSync(state?.localUpdatedAt)}}
+
+    // ---- Security tab ----
+    div(*ngIf='activeNav === "security"')
+        .mb-3
+            h5(translate) Master password
+            .text-muted.small.mb-3(translate) Your master password encrypts all synced data. It never leaves your device.
+
+            .card.mb-3
+                .card-body
+                    .mb-3
+                        label.form-label(translate) Current password (required for changes)
+                        input.form-control(
+                            type='password',
+                            [(ngModel)]='unlockPassword',
+                            placeholder='{{"Enter current password"|translate}}'
+                        )
+                    .mb-3
+                        label.form-label(translate) New password
+                        input.form-control(
+                            type='password',
+                            [(ngModel)]='masterPassword',
+                            placeholder='{{"At least 8 characters"|translate}}'
+                        )
+                    .mb-3
+                        label.form-label(translate) Confirm new password
+                        input.form-control(
+                            type='password',
+                            [(ngModel)]='confirmPassword',
+                            placeholder='{{"Confirm new password"|translate}}'
+                        )
+                    .text-danger.small.mb-3(*ngIf='masterKeyError')
+                        i.fas.fa-exclamation-circle.me-1
+                        | {{masterKeyError}}
+                    .d-flex.gap-2
+                        button.btn.btn-primary(
+                            (click)='changePassword()',
+                            [disabled]='changingPassword || !unlockPassword || !masterPassword || !confirmPassword'
+                        )
+                            i.fas.fa-key.me-1
+                            span(translate) Change password
+                        button.btn.btn-outline-danger((click)='cloudSync.removeMasterKey()')
+                            i.fas.fa-trash.me-1
+                            span(translate) Remove master key
+
+            .alert.alert-warning
+                i.fas.fa-exclamation-triangle.me-2
+                span(translate) Removing the master key will delete all synced data. Your local data will not be affected.

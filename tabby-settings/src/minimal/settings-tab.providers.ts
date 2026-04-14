@@ -40,7 +40,7 @@ export class ProfilesMinimalSettingsTabProvider extends SettingsTabProvider {
 export class ConfigSyncMinimalSettingsTabProvider extends SettingsTabProvider {
     id = 'config-sync'
     icon = 'cloud'
-    title = this.translate.instant('Config sync')
+    title = this.translate.instant('Cloud Sync')
 
     constructor (private translate: TranslateService) { super() }
 }

@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.code {
+  font-family: monospace;
+  letter-spacing: 0.1em;
+}
+
+.card {
+  transition: border-color 0.2s ease;
+
+  &.border-success {
+    border-color: var(--bs-success) !important;
+  }
+
+  &.border-danger {
+    border-color: var(--bs-danger) !important;
+  }
+}
+
+.provider-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1.25rem;
+}

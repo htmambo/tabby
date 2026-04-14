@@ -1,10 +1,9 @@
-import { Inject, Injector, NgModule, Optional } from '@angular/core'
+import { Inject, NgModule, Optional } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
-import { lastValueFrom } from 'rxjs'
 
-import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest, ConfigService, HostAppService, Platform, AppService } from 'tabby-core'
+import TabbyCorePlugin, { ToolbarButtonProvider, HotkeyProvider, ConfigProvider, HotkeysService, SettingsTabOpener, TabbyPluginManifest } from 'tabby-core'
 
 import { EditProfileModalComponent } from './components/editProfileModal.component'
 import { EditProfileGroupModalComponent } from './components/editProfileGroupModal.component'
@@ -18,10 +17,9 @@ import { VaultSettingsTabComponent }  from './components/vaultSettingsTab.compon
 import { SetVaultPassphraseModalComponent } from './components/setVaultPassphraseModal.component'
 import { ProfilesSettingsTabComponent } from './components/profilesSettingsTab.component'
 import { ReleaseNotesComponent } from './components/releaseNotesTab.component'
-import { ConfigSyncSettingsTabComponent } from './components/configSyncSettingsTab.component'
+import { CloudSyncSettingsTabComponent } from './components/cloudSyncSettingsTab.component'
 import { ShowSecretModalComponent } from './components/showSecretModal.component'
 
-import { ConfigSyncService } from './services/configSync.service'
 import { SettingsTabOpenerService } from './services/settingsTabOpener.service'
 
 import { SettingsTabProvider } from './api'
@@ -44,19 +42,6 @@ const PROVIDERS = [
     { provide: SettingsTabProvider, useClass: ConfigSyncSettingsTabProvider, multi: true },
 ]
 
-type IdleRequestCallbackLike = () => void
-type IdleRequestOptionsLike = {
-    timeout?: number
-}
-type IdleCallbackGlobal = typeof globalThis & {
-    requestIdleCallback?: (callback: IdleRequestCallbackLike, options?: IdleRequestOptionsLike) => number
-}
-
-function shouldInitializeConfigSync (config: ConfigService): boolean {
-    const sync = config.store?.configSync
-    return !!sync?.auto && !!sync?.host?.trim() && !!sync?.token?.trim() && !!sync?.configID
-}
-
 /** @hidden */
 @NgModule({
     imports: [
@@ -78,21 +63,15 @@ function shouldInitializeConfigSync (config: ConfigService): boolean {
         SetVaultPassphraseModalComponent,
         VaultSettingsTabComponent,
         WindowSettingsTabComponent,
-        ConfigSyncSettingsTabComponent,
         ReleaseNotesComponent,
         ShowSecretModalComponent,
+        CloudSyncSettingsTabComponent,
     ],
 })
 export default class SettingsModule {
-    private configSyncInitScheduled = false
-
     constructor (
-        injector: Injector,
-        config: ConfigService,
-        hostApp: HostAppService,
         settingsTabOpener: SettingsTabOpener,
         hotkeys: HotkeysService,
-        app: AppService,
         @Optional() @Inject(SETTINGS_LAZY_RUNTIME) lazyRuntime: boolean | null,
     ) {
         if (lazyRuntime) {
@@ -105,31 +84,6 @@ export default class SettingsModule {
                 settingsTabOpener.open(id)
             }
         })
-
-        app.ready$.subscribe(() => {
-            void lastValueFrom(config.ready$).then(() => {
-                if (hostApp.platform !== Platform.Web && shouldInitializeConfigSync(config)) {
-                    this.scheduleConfigSyncInit(() => injector.get(ConfigSyncService))
-                }
-            })
-        })
-    }
-
-    private scheduleConfigSyncInit (callback: () => void): void {
-        if (this.configSyncInitScheduled) {
-            return
-        }
-        this.configSyncInitScheduled = true
-
-        const run = () => {
-            callback()
-        }
-        const idleGlobal = globalThis as IdleCallbackGlobal
-        if (idleGlobal.requestIdleCallback) {
-            idleGlobal.requestIdleCallback(run, { timeout: 3000 })
-            return
-        }
-        window.setTimeout(run, 1500)
     }
 }
 

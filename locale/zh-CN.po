@@ -4332,3 +4332,275 @@ msgstr "验证"
 #: tabby-ai-assistant/src/components/settings/ai-settings-tab.component.ts
 msgid "Validate configuration"
 msgstr "验证配置"
+
+# =============================================================================
+# Cloud Sync
+# =============================================================================
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.passwordMinLength"
+msgstr "密码长度至少为 8 个字符"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.passwordsDoNotMatch"
+msgstr "两次输入的密码不匹配"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.incorrectPassword"
+msgstr "密码错误"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.authorizationRequired"
+msgstr "需要授权"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.pasteRedirectUrl"
+msgstr "在浏览器中完成授权后，将您被重定向到的完整 URL（或 URL 中的代码）粘贴到此处。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.continue"
+msgstr "继续"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.webdavEndpointRequired"
+msgstr "WebDAV 端点地址不能为空"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.s3CredentialsRequired"
+msgstr "S3 端点、存储桶和凭证不能为空"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.clientIdRequired"
+msgstr "OAuth 客户端 ID 不能为空"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.clientIdPlaceholder"
+msgstr "客户端 ID"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.clientSecretPlaceholder"
+msgstr "客户端密钥"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.githubClientIdHelp"
+msgstr "在 Settings → Developer settings → OAuth Apps 中创建 GitHub OAuth App。将设备授权流回调 URL 设置为提供的地址。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.googleClientIdHelp"
+msgstr "在 Google Cloud Console 中创建 OAuth 2.0 客户端 ID。将重定向 URI 设置为显示的回环地址。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.onedriveClientIdHelp"
+msgstr "在 Microsoft Entra ID (Azure AD) 门户中注册应用。将重定向 URI 设置为显示的回环地址。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.registerOAuthApp"
+msgstr "注册 OAuth 应用"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.disconnectConfirm"
+msgstr "确定要断开 {provider} 吗？"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.disconnectDetail"
+msgstr "此操作将移除连接并删除云端所有已同步的数据。本地数据不会受影响。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.disconnect"
+msgstr "断开连接"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.cancel"
+msgstr "取消"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.incorrectCurrentPassword"
+msgstr "当前密码不正确"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.enterCurrentPassword"
+msgstr "输入当前密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.ts
+msgid "cloudSync.confirmNewPassword"
+msgstr "再次输入新密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Enter current password"
+msgstr "输入当前密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Confirm new password"
+msgstr "确认新密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Cloud Sync"
+msgstr "云同步"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Set up your master password"
+msgstr "设置主密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "All sync data is encrypted with your master password. Keep it safe — it cannot be recovered."
+msgstr "所有同步数据均使用您的主密码加密。请妥善保管——密码无法恢复。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Master password"
+msgstr "主密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "At least 8 characters"
+msgstr "至少 8 个字符"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Confirm password"
+msgstr "确认密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Set up encryption"
+msgstr "设置加密"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Vault is locked"
+msgstr "密码库已锁定"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Enter your master password to enable cloud sync."
+msgstr "输入您的主密码以启用云同步。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Enter your password"
+msgstr "输入您的密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Unlock"
+msgstr "解锁"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Forgot password?"
+msgstr "忘记密码？"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Providers"
+msgstr "存储提供商"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Connected providers"
+msgstr "已连接的提供商"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Store encrypted vault in a private GitHub Gist"
+msgstr "将加密的密码库存储到私有的 GitHub Gist"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Enter this code on"
+msgstr "在以下网址输入此代码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Store encrypted vault in your Google Drive app folder"
+msgstr "将加密的密码库存储到您的 Google Drive 应用专属文件夹"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Store encrypted vault in your OneDrive app folder"
+msgstr "将加密的密码库存储到您的 OneDrive 应用专属文件夹"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Connect to any WebDAV-compatible server"
+msgstr "连接到任意支持 WebDAV 协议的服务器"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Allow insecure (HTTP)"
+msgstr "允许不安全连接（HTTP）"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Connect"
+msgstr "连接"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "AWS S3, MinIO, Backblaze B2, and others"
+msgstr "AWS S3、MinIO、Backblaze B2 等兼容 S3 的存储服务"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Sync conflict detected"
+msgstr "检测到同步冲突"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Your local data and remote data have diverged. Choose which version to keep:"
+msgstr "本地数据与远程数据已产生分歧，请选择保留哪个版本："
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Use local"
+msgstr "使用本地"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Use remote"
+msgstr "使用云端"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Sync"
+msgstr "同步"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Sync status"
+msgstr "同步状态"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Sync now"
+msgstr "立即同步"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Auto-sync"
+msgstr "自动同步"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Automatically sync every {minutes} minutes when changes are detected"
+msgstr "检测到更改时，每隔 {minutes} 分钟自动同步一次"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Last sync:"
+msgstr "上次同步："
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Security"
+msgstr "安全"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Your master password encrypts all synced data. It never leaves your device."
+msgstr "您的主密码用于加密所有同步数据。密码永远不会离开您的设备。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Current password (required for changes)"
+msgstr "当前密码（修改时必须填写）"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "New password"
+msgstr "新密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Change password"
+msgstr "修改密码"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Remove master key"
+msgstr "删除主密钥"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Removing the master key will delete all synced data. Your local data will not be affected."
+msgstr "删除主密钥将清除所有已同步的数据。本地数据不会受影响。"
+
+#: tabby-settings/src/components/cloudSyncSettingsTab.component.pug
+msgid "Never synced"
+msgstr "从未同步"
+
+#: tabby-settings/src/services/cloudSync/domain/types.ts
+msgid "Just now"
+msgstr "刚刚"
+
+#: tabby-settings/src/services/cloudSync/domain/types.ts
+msgid "{count} min ago"
+msgstr "{count} 分钟前"
+
+#: tabby-settings/src/minimal/settings-tab.providers.ts
+msgid "Cloud Sync"
+msgstr "云同步"
