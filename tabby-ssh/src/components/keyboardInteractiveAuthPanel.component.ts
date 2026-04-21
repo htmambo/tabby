@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectionStrategy, HostListener } from '@angular/core'
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectionStrategy, HostListener, OnInit, ChangeDetectorRef } from '@angular/core'
 import { focusElementLater, isButtonLikeTarget, isPlainEnter } from 'tabby-core'
 import { KeyboardInteractivePrompt } from '../session/ssh'
 import { SSHProfile } from '../api'
@@ -11,7 +11,7 @@ import { PasswordStorageService } from '../services/passwordStorage.service'
     styleUrls: ['./keyboardInteractiveAuthPanel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class KeyboardInteractiveAuthComponent {
+export class KeyboardInteractiveAuthComponent implements OnInit {
     @Input() profile: SSHProfile
     @Input() prompt: KeyboardInteractivePrompt
     @Input() step = 0
@@ -19,10 +19,22 @@ export class KeyboardInteractiveAuthComponent {
     @ViewChild('input', { static: true }) input: ElementRef<HTMLInputElement>
     remember = false
 
-    constructor (private passwordStorage: PasswordStorageService) {}
+    constructor (
+        private passwordStorage: PasswordStorageService,
+        private cdr: ChangeDetectorRef,
+    ) {}
 
-    ngOnInit (): void {
+    async ngOnInit (): Promise<void> {
         focusElementLater(this.input)
+        const savedPassword = await this.passwordStorage.loadPassword(this.profile)
+        if (savedPassword) {
+            for (let i = 0; i < this.prompt.prompts.length; i++) {
+                if (this.prompt.isAPasswordPrompt(i) && !this.prompt.responses[i]) {
+                    this.prompt.responses[i] = savedPassword
+                }
+            }
+            this.cdr.markForCheck()
+        }
     }
 
     isPassword (): boolean {

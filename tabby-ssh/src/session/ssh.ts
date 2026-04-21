@@ -683,6 +683,10 @@ export class SSHSession {
                 })
                 modal.componentInstance.password = true
                 modal.componentInstance.showRememberCheckbox = true
+                const prefilledPassword = await this.passwordStorage.loadPassword(this.profile, this.authUsername)
+                if (prefilledPassword) {
+                    modal.componentInstance.value = prefilledPassword
+                }
 
                 try {
                     const promptResult = await modal.result.catch(() => null)
