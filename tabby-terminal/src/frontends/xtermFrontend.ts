@@ -319,6 +319,7 @@ overviewRuler: {
         //   - explicit scrollToBottom() calls
 
         const doResize = () => {
+        this.resizeHandler = () => {
             try {
                 if (!this.enableResizing) {
                     return
@@ -498,6 +499,54 @@ const subscribeTextureAtlasClear = (clear: () => void): void => {
             if (typeof (timer as any)?.unref === 'function') {
                 (timer as any).unref()
             }
+        await new Promise(r => setTimeout(r, 0))
+
+        // User-initiated scroll detection: only wheel and keyboard events
+        // should unpin. xterm.onScroll is content-driven only and must never
+        // unpin (see constructor comment). Use capture phase — xterm.js
+        // handles wheel/key events on its internal viewport element and may
+        // stop propagation, so bubbling listeners on host would never fire.
+        host.addEventListener('wheel', (event: WheelEvent) => {
+            // Immediately unpin on scroll-up so that writes arriving before
+            // the next animation frame don't yank the viewport back down.
+            if (event.deltaY < 0) {
+                this.pinnedToBottom = false
+            }
+            requestAnimationFrame(() => this.updatePinnedState())
+        }, { capture: true, passive: true })
+
+
+        this.hotkeysService.hotkey$
+            .pipe(
+                takeUntil(this.destroyed$),
+                filter(hk => [
+                    'scroll-up',
+                    'scroll-down',
+                    'scroll-page-up',
+                    'scroll-page-down',
+                    'scroll-to-top',
+                    'scroll-to-bottom',
+                ].includes(hk)),
+            ).subscribe(hk => {
+                if ([
+                    'scroll-up',
+                    'scroll-page-up',
+                    'scroll-to-top',
+                ].includes(hk)) {
+                    this.pinnedToBottom = false
+                }
+                requestAnimationFrame(() => this.updatePinnedState())
+            })
+
+        host.addEventListener('dragOver', (event: any) => this.dragOver.next(event))
+        host.addEventListener('drop', event => this.drop.next(event))
+
+        host.addEventListener('mousedown', event => this.mouseEvent.next(event))
+        host.addEventListener('mouseup', event => this.mouseEvent.next(event))
+        host.addEventListener('mousewheel', event => this.mouseEvent.next(event as MouseEvent))
+        host.addEventListener('contextmenu', event => {
+            event.preventDefault()
+            event.stopPropagation()
         })
 
         // User-initiated scroll detection: only wheel and keyboard events
