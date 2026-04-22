@@ -1,5 +1,5 @@
 import { app, ipcMain, Menu, Tray, shell, screen, globalShortcut, MenuItemConstructorOptions, WebContents, clipboard, dialog, BrowserWindow, nativeTheme, powerSaveBlocker } from 'electron'
-import { spawn, ChildProcess, exec as nodeExec, execFile as nodeExecFile } from 'child_process'
+import { spawn, ChildProcess, exec as nodeExec, execFile as nodeExecFile, spawnSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -142,6 +142,7 @@ export class Application {
     private ptyManager = new PTYManager()
     private windows: Window[] = []
     private lastGlobalHotkeyTime = 0
+    private cachedPlasmaVersion?: [number, number] | null
     private bridgeSubprocesses = new Map<string, BridgeSubprocessState>()
     private bridgeSubprocessOwners = new Map<number, Set<string>>()
     private bridgeFileTransfers = new Map<string, BridgeFileTransferState>()
@@ -194,6 +195,9 @@ export class Application {
 
         ipcMain.on('app:register-global-hotkey', (_event, specs) => {
             globalShortcut.unregisterAll()
+            if (!this.shouldRegisterGlobalHotkeys()) {
+                return
+            }
             for (const spec of specs) {
                 globalShortcut.register(spec, () => this.onGlobalHotkeyTriggered())
             }
@@ -372,6 +376,61 @@ export class Application {
 
     hasWindows (): boolean {
         return !!this.windows.length
+    }
+
+    private shouldRegisterGlobalHotkeys (): boolean {
+        const hotkeyMode = this.configStore.hacks?.globalHotkey
+        if (hotkeyMode != null) {
+            return !hotkeyMode
+        }
+
+        if (process.platform !== 'linux' || !this.isWaylandSession() || !this.isPlasmaSession()) {
+            return true
+        }
+
+        const plasmaVersion = this.getPlasmaVersion()
+        return plasmaVersion ? this.compareVersions(plasmaVersion, [6, 6]) >= 0 : false
+    }
+
+    private isWaylandSession (): boolean {
+        return (process.env.XDG_SESSION_TYPE ?? '').toLowerCase() === 'wayland' || !!process.env.WAYLAND_DISPLAY
+    }
+
+    private isPlasmaSession (): boolean {
+        const sessionInfo = [
+            process.env.XDG_CURRENT_DESKTOP,
+            process.env.DESKTOP_SESSION,
+            process.env.GDMSESSION,
+        ].join(':').toLowerCase()
+
+        return process.env.KDE_FULL_SESSION === 'true' || sessionInfo.includes('kde') || sessionInfo.includes('plasma')
+    }
+
+    private getPlasmaVersion (): [number, number] | null {
+        if (this.cachedPlasmaVersion !== undefined) {
+            return this.cachedPlasmaVersion
+        }
+        try {
+            const result = spawnSync('plasmashell', ['--version'], { encoding: 'utf8' })
+            const output = result.stdout + result.stderr
+            const match = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(output)
+            this.cachedPlasmaVersion = match ? [
+                parseInt(match[1], 10),
+                parseInt(match[2], 10),
+            ] : null
+        } catch {
+            this.cachedPlasmaVersion = null
+        }
+        return this.cachedPlasmaVersion ?? null
+    }
+
+    private compareVersions (a: [number, number], b: [number, number]): number {
+        for (let i = 0; i < 2; i++) {
+            if (a[i] !== b[i]) {
+                return a[i] - b[i]
+            }
+        }
+        return 0
     }
 
     focus (): void {
