@@ -395,6 +395,12 @@ jobs:
       env:
         ARCH: ${{matrix.arch}}
 
+    - name: Build packages without signing
+      run: node scripts/build-windows.mjs
+      if: "! (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags')))"
+      env:
+        ARCH: ${{matrix.arch}}
+
     - name: Build and sign packages
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.HAS_WINDOWS_SIGNING_SECRETS == 'true' && vars.SM_HOST != '' && vars.SM_CODE_SIGNING_CERT_SHA1_HASH != '' && vars.SM_KEYPAIR_ALIAS != ''
       shell: powershell
