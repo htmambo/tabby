@@ -17,6 +17,7 @@ interface BridgeUploadDescriptor {
 @Injectable({ providedIn: 'root' })
 export class ElectronPlatformService extends PlatformService {
     supportsWindowControls = true
+    private safeExternalSchemes = new Set(['http', 'https', 'ftp', 'mailto'])
     private configPath: string
 
     constructor (
@@ -127,13 +128,48 @@ export class ElectronPlatformService extends PlatformService {
         this.electron.shell.showItemInFolder(p)
     }
 
-    openExternal (url: string): void {
+    async openExternal (url: string): Promise<void> {
         const safeURL = normalizeExternalURL(url)
         if (!safeURL) {
             console.warn('Blocked unsafe external URL:', url)
             return
         }
-        void this.electron.shell.openExternal(safeURL)
+        const scheme = this.getExternalScheme(safeURL)
+        if (scheme && this.safeExternalSchemes.has(scheme)) {
+            await this.electron.shell.openExternal(safeURL)
+        } else {
+            await this.confirmAndOpenExternal(safeURL)
+        }
+    }
+
+    private getExternalScheme (url: string): string | null {
+        try {
+            const protocol = new URL(url.trim()).protocol
+            return protocol ? protocol.replace(':', '').toLowerCase() : null
+        } catch {
+            return null
+        }
+    }
+
+    private async confirmAndOpenExternal (url: string): Promise<void> {
+        const scheme = this.getExternalScheme(url)
+        const result = await this.electron.dialog.showMessageBox(
+            {
+                type: 'warning',
+                message: this.translate.instant(`Open this app-specific "${scheme}" URI?`),
+                detail: url,
+                buttons: [
+                    this.translate.instant('Open'),
+                    this.translate.instant('Cancel'),
+                ],
+                defaultId: 0,
+                cancelId: 1,
+            },
+        )
+
+        if (result.response === 0) {
+            await this.electron.shell.openExternal(url)
+        }
     }
 
     openPath (p: string): void {
