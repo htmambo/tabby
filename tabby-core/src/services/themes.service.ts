@@ -2,7 +2,7 @@ import { Inject, Injectable, OnDestroy } from '@angular/core'
 import { Subject, Observable, lastValueFrom, Subscription } from 'rxjs'
 import * as Color from 'color'
 import { ConfigService } from '../services/config.service'
-import { Theme } from '../api/theme'
+import { TerminalColorScheme, Theme } from '../api/theme'
 import { PlatformService, PlatformTheme } from '../api/platform'
 import { getRuntimePlatform } from '../api/rendererRuntime'
 import { NewTheme } from '../theme'
@@ -265,7 +265,7 @@ export class ThemesService implements OnDestroy {
     }
 
     /// @hidden
-    _getActiveColorScheme (): any {
+    _getActiveColorScheme (): TerminalColorScheme {
         let theme: PlatformTheme = 'dark'
         if (this.getConfigStoreOrDefaults().appearance.colorSchemeMode === 'light') {
             theme = 'light'
@@ -274,9 +274,9 @@ export class ThemesService implements OnDestroy {
         }
 
         if (theme === 'light') {
-            return this.getConfigStoreOrDefaults().terminal.lightColorScheme
+            return this.getConfigStoreOrDefaults().terminal.lightColorScheme as TerminalColorScheme
         } else {
-            return this.getConfigStoreOrDefaults().terminal.colorScheme
+            return this.getConfigStoreOrDefaults().terminal.colorScheme as TerminalColorScheme
         }
     }
 
