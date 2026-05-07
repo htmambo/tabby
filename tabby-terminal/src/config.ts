@@ -52,6 +52,8 @@ export class TerminalConfigProvider extends ConfigProvider {
             drawBoldTextInBrightColors: true,
             sixel: false,
             minimumContrastRatio: 4,
+            paletteGenerate: false,
+            paletteHarmonious: false,
             replaceNewlinesWithSpacesOnPaste: false,
             trimWhitespaceOnPaste: true,
         },
