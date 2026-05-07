@@ -766,6 +766,15 @@ theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') 
             )
         }
 
+        if (this.configService.store.terminal.paletteGenerate) {
+            theme.extendedAnsi = generatePalette(
+                scheme.colors,
+                scheme.background,
+                scheme.foreground,
+                this.configService.store.terminal.paletteHarmonious,
+            )
+        }
+
         if (!deepEqual(this.configuredTheme, theme)) {
             this.xterm.options.theme = theme
             this.configuredTheme = theme
