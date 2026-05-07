@@ -588,7 +588,9 @@ export class ProfilesService {
     * arg: skipUserDefaults -> do not merge global provider defaults in ConfigProxy
     */
     getProviderProfileGroupDefaults (groupId: string, provider: ProfileProvider<Profile>): any {
-        return this.getSyncProfileGroups().find((g: PartialProfileGroup<ProfileGroup>) => g.id === groupId)?.defaults?.[provider.id] ?? {}
+        // Read the store directly: this runs per-profile in the settings UI and
+        // getSyncProfileGroups() would deepClone the whole group list each call.
+        return (this.config.store.groups ?? []).find((g: PartialProfileGroup<ProfileGroup>) => g.id === groupId)?.defaults?.[provider.id] ?? {}
     }
 
 }
