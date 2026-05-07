@@ -217,7 +217,7 @@ export class SSHSession {
         if (!this.profile.options.auth || this.profile.options.auth === 'agent') {
             const spec = await this.getAgentConnectionSpec()
             if (!spec) {
-                this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Agent auth selected, but no running Agent process is found'))
+this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Agent auth selected, but no running Agent process is found'))
             } else {
                 // If user configured specific private keys, try to load their corresponding
                 // .pub files and use them first for agent-identity authentication
@@ -345,9 +345,23 @@ export class SSHSession {
                 }
             }
         } else {
-            const agentSocketPath = getRuntimeEnv('SSH_AUTH_SOCK')
+            const configuredPath = (this.config.store.ssh.agentPath ?? '').trim()
+            const envPath = getRuntimeEnv('SSH_AUTH_SOCK')?.trim() ?? ''
+            const agentSocketPath = configuredPath || envPath
+
             if (!agentSocketPath) {
+                this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + this.translate.instant('Agent auth selected, but no running Agent process is found'))
                 return null
+            }
+
+            // Skip filesystem checks for abstract namespace sockets.
+            if (!agentSocketPath.startsWith('@')) {
+                try {
+                    await stat(agentSocketPath)
+                } catch (e) {
+                    this.emitServiceMessage(colors.bgYellow.yellow.black(' ! ') + ` Could not access agent socket ${agentSocketPath}: ${e}`)
+                    return null
+                }
             }
             return {
                 kind: 'unix-socket',
