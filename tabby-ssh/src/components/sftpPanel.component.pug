@@ -92,6 +92,8 @@
                         )
                             i.fas.fa-ellipsis-vertical
                         div(ngbDropdownMenu)
+                            button.dropdown-item(ngbDropdownItem, (click)='navigate(path)')
+                                span(translate) Refresh
                             button.dropdown-item(ngbDropdownItem, *ngIf='!showFilter', (click)='showFilter = true')
                                 span(translate) Filter
                             button.dropdown-item(ngbDropdownItem, *ngIf='filteredFileList.length > 0 && !areAllRemoteItemsSelected', (click)='selectAllRemoteItems()')
