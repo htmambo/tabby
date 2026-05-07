@@ -360,6 +360,7 @@ export class Window {
         this.window.webContents.session.setPermissionCheckHandler((_wc, permission) => allowedPermissions.has(permission))
         this.window.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => callback(allowedPermissions.has(permission)))
         this.window.webContents.session.setDevicePermissionHandler(() => false)
+        this.window.webContents.session.setSpellCheckerEnabled(false)
 
         if (process.platform === 'darwin') {
             this.touchBarControl = new TouchBar.TouchBarSegmentedControl({
