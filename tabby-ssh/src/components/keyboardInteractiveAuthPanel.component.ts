@@ -51,6 +51,10 @@ export class KeyboardInteractiveAuthComponent implements OnInit {
         this.next()
     }
 
+    shouldEcho (): boolean {
+        return this.prompt.prompts[this.step].echo ?? false
+    }
+
     previous (): void {
         if (this.step > 0) {
             this.step--
