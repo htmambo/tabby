@@ -71,13 +71,11 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
     }
 
     private async getPowerShellPath () {
-        for (const name of ['pwsh.exe', 'powershell.exe']) {
-            if (await which(name, { nothrow: true })) {
-                return name
-            }
-        }
+        // Check well-known paths first to avoid slow PATH scanning via `which`
         for (const psPath of [
             `${getRuntimeEnv('USERPROFILE') ?? 'C:\\Users\\Default'}\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe`,
+            `${getRuntimeEnv('ProgramFiles') ?? 'C:\\Program Files'}\\PowerShell\\7\\pwsh.exe`,
+            `${getRuntimeEnv('ProgramFiles(x86)') ?? 'C:\\Program Files (x86)'}\\PowerShell\\7\\pwsh.exe`,
             `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`,
             `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\System32\\powershell.exe`,
             `${getRuntimeEnv('SystemRoot') ?? 'C:\\Windows'}\\powerhshell.exe`,
@@ -85,6 +83,13 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
             const stat = await readPathStat(psPath)
             if (stat?.isFile) {
                 return psPath
+            }
+        }
+        // Fall back to PATH search only if not found in standard locations
+        for (const name of ['pwsh.exe', 'powershell.exe']) {
+            const found = await which(name, { nothrow: true })
+            if (found) {
+                return found
             }
         }
         return 'powershell.exe'

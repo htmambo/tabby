@@ -11,6 +11,7 @@ export class FastHtmlBindDirective implements OnChanges, OnDestroy {
     @Input() fastHtmlBind?: string
     @Input() fastHtmlBindSanitize = false
     private boundLinks: HTMLAnchorElement[] = []
+    private _lastValue?: string
 
     constructor (
         private el: ElementRef,
@@ -18,6 +19,10 @@ export class FastHtmlBindDirective implements OnChanges, OnDestroy {
     ) { }
 
     ngOnChanges (): void {
+        if (this.fastHtmlBind === this._lastValue) {
+            return
+        }
+        this._lastValue = this.fastHtmlBind
         this.clearBoundLinks()
         const html = this.fastHtmlBind ?? ''
         this.el.nativeElement.innerHTML = this.fastHtmlBindSanitize ? sanitizeHTML(html) : html
