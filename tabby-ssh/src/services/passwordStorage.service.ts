@@ -47,7 +47,12 @@ export class PasswordStorageService {
                 return null
             }
             const key = this.getKeytarKeyForConnection(profile)
-            return getNativeSecret(key, account)
+try {
+                return await getNativeSecret(key, account)
+            } catch (e) {
+                console.warn(`Failed to load stored password for ${account}@${profile.options.host}:${profile.options.port ?? 22}`, e)
+                return null
+            }
         }
     }
 
