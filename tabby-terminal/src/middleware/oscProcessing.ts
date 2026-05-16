@@ -78,6 +78,8 @@ export class OSCProcessor extends SessionMiddleware {
                 } else {
                     console.debug('Unsupported OSC 7 parameter:', oscParams.join(';'))
                 }
+            } else {
+                processedData.push(data.subarray(prefixIndex, foundSuffix[1] + foundSuffix[0].length))
             }
 
             // Move past this OSC sequence
