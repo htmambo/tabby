@@ -36,6 +36,7 @@ export class CmderShellProvider extends ShellProvider {
                 env: {
                     TERM: 'cygwin',
                 },
+                shellType: 'cmd',
             },
             {
                 id: 'cmderps',
@@ -52,6 +53,7 @@ export class CmderShellProvider extends ShellProvider {
                 ],
                 icon: require('../icons/cmder-powershell.svg'),
                 env: {},
+                shellType: 'powershell',
             },
         ]
     }

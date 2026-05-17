@@ -77,6 +77,7 @@ export class WSLShellProvider extends ShellProvider {
                         TERM: 'xterm-color',
                         COLORTERM: 'truecolor',
                     },
+                    shellType: 'unix',
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     icon: wslIconMap[defaultDistKey.DistributionName.value] ?? wslIconMap.Linux,
                 }
@@ -95,6 +96,7 @@ export class WSLShellProvider extends ShellProvider {
                         TERM: 'xterm-color',
                         COLORTERM: 'truecolor',
                     },
+                    shellType: 'unix',
                 }]
             } else {
                 return []
@@ -119,6 +121,7 @@ export class WSLShellProvider extends ShellProvider {
                     TERM: 'xterm-color',
                     COLORTERM: 'truecolor',
                 },
+                shellType: 'unix',
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 icon: wslIconMap[name] ?? wslIconMap.Linux,
             }

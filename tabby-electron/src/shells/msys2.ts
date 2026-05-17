@@ -38,6 +38,7 @@ export class MSYS2ShellProvider extends ShellProvider {
             icon: require('../icons/msys2.svg'),
             env: {},
             cwd: homePath,
+            shellType: 'unix',
         }))
     }
 }
