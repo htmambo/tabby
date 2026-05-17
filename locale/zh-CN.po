@@ -4612,5 +4612,3 @@ msgstr "{count} 分钟前"
 #: tabby-settings/src/minimal/settings-tab.providers.ts
 msgid "Cloud Sync"
 msgstr "云同步"
-=======
->>>>>>> 3832a9d3 (fix: improve menu readability and Chinese localization (#11272))
