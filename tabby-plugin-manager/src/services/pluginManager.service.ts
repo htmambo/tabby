@@ -36,6 +36,7 @@ interface NPMRegistrySearchResponse {
 
 export interface AvailablePluginInfo extends PluginInfo {
     isOfficial: boolean
+    searchScore?: number
 }
 
 export interface AvailablePluginsResult {
@@ -78,7 +79,7 @@ export class PluginManagerService {
                     return true
                 })
             }),
-            map(x => x.sort((a, b) => a.name.localeCompare(b.name))),
+map(x => x.sort((a, b) => b.searchScore! - a.searchScore!)),
             map(plugins => ({
                 plugins,
                 warnings: [...warnings],
@@ -97,7 +98,7 @@ export class PluginManagerService {
         return from(
             axios.get<NPMRegistrySearchResponse>(url, { timeout: 10000 }),
         ).pipe(
-            map(response => response.data.objects ?? []),
+map(response => response.data.objects ?? []),
             map(items => items
                 .map(item => this.parseRegistryPlugin(item, namePrefix))
                 .filter((plugin): plugin is AvailablePluginInfo => plugin !== null),
@@ -148,6 +149,7 @@ export class PluginManagerService {
             homepage: info.links?.homepage,
             author: this.getPluginAuthor(info),
             isOfficial: info.publisher?.username === OFFICIAL_NPM_ACCOUNT,
+            searchScore: item.searchScore,
             isBuiltin: false,
             isLegacy: [
                 info.name.startsWith('terminus-'),
