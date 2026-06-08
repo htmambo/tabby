@@ -9,6 +9,7 @@ import { BaseSession } from '../session'
 
 import { Frontend } from '../frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
+import { syncTerminalVisibility } from '../frontends/visibility'
 import { ResizeEvent, BaseTerminalProfile } from './interfaces'
 import { TerminalDecorator } from './decorator'
 import { SearchPanelComponent } from '../components/searchPanel.component'
@@ -487,23 +488,20 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             .pipe(debounce(visibility => interval(visibility ? 0 : INACTIVE_TAB_UNLOAD_DELAY)))
             .subscribe(visibility => {
                 if (this.frontend instanceof XTermFrontend) {
-                    if (visibility) {
+if (visibility) {
                         const frontend = this.frontend
                         if (this.workspaceLayout.isRoyalSidebarTransitionActive) {
                             return
                         }
                         this.scheduleVisibleFrontendAction(frontend, () => {
-                            frontend.refit()
+                            frontend.reactivateAfterVisibilityChange()
                             if (this.hasFocus) {
                                 frontend.focus()
                             }
                         })
                     } else {
                         this.clearPendingVisibleFrontendAction()
-                        this.frontend.xterm.element?.querySelectorAll('canvas').forEach(c => {
-                            c.height = c.width = 0
-                            c.style.height = c.style.width = '0px'
-                        })
+                        frontend.deactivateAfterVisibilityChange()
                     }
                 }
             })

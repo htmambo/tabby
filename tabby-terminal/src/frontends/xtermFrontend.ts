@@ -1,7 +1,7 @@
 import deepEqual from 'deep-equal'
 import { BehaviorSubject, filter, firstValueFrom, takeUntil } from 'rxjs'
 import { Injector } from '@angular/core'
-import { ConfigService, getCSSFontFamily, getRuntimePlatform, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, TerminalColorScheme, ThemesService, TranslateService, isIMEKeyboardEvent } from 'tabby-core'
+import { ConfigService, getCSSFontFamily, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, TerminalColorScheme, ThemesService, TranslateService, isIMEKeyboardEvent } from 'tabby-core'
 import { Frontend, SearchOptions, SearchState } from './frontend'
 import { Terminal, ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
@@ -160,20 +160,26 @@ export class XTermFrontend extends Frontend {
         this.notifications = injector.get(NotificationsService)
         this.translate = injector.get(TranslateService)
 
-        this.xterm = new Terminal({
+        const terminalOptions = {
             allowTransparency: true,
             allowProposedApi: true,
-            overviewRuler: {
+overviewRuler: {
                 width: 8,
                 showBottomBorder: false,
                 showTopBorder: false,
             },
             reflowCursorLine: true,
-            windowsPty: getRuntimePlatform() === 'win32' ? {
-                backend: this.configService.store.terminal.useConPTY ? 'conpty' : 'winpty',
+            windowsPty: process.platform === 'win32' ? {
+                backend: this.configService.store.terminal.useConPTY ? 'conpty' as const : 'winpty' as const,
                 buildNumber: getWindows10Build(),
             } : undefined,
-        })
+        }
+        ;(terminalOptions as Record<string, unknown>).overviewRuler = {
+            width: 8,
+            showBottomBorder: false,
+            showTopBorder: false,
+        }
+        this.xterm = new Terminal(terminalOptions)
         this.flowControl = new FlowControl(this.xterm)
         this.xtermCore = (this.xterm as any)._core
 
@@ -522,6 +528,17 @@ export class XTermFrontend extends Frontend {
             this.attachedHost.removeEventListener('contextmenu', this.boundContextMenu)
             this.attachedHost = undefined
         }
+    }
+
+    reactivateAfterVisibilityChange (): void {
+        this.resizeHandler()
+    }
+
+    deactivateAfterVisibilityChange (): void {
+        this.xterm.element?.querySelectorAll('canvas').forEach(c => {
+            c.height = c.width = 0
+            c.style.height = c.style.width = '0px'
+        })
     }
 
     destroy (): void {
