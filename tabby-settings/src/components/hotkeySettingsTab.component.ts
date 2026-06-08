@@ -7,7 +7,7 @@ import {
     HotkeyDescription,
     HotkeysService,
     HostAppService,
-} from 'tabby-core'
+    PlatformService } from 'tabby-core'
 
 _('Search hotkeys')
 
@@ -16,6 +16,7 @@ _('Search hotkeys')
     standalone: false,
     selector: 'hotkey-settings-tab',
     templateUrl: './hotkeySettingsTab.component.pug',
+    styleUrls: ['./hotkeySettingsTab.component.scss'],
 })
 export class HotkeySettingsTabComponent {
     hotkeyFilter = ''
@@ -26,6 +27,7 @@ export class HotkeySettingsTabComponent {
         public config: ConfigService,
         public hostApp: HostAppService,
         public zone: NgZone,
+        private platform: PlatformService,
         hotkeys: HotkeysService,
     ) {
         hotkeys.getHotkeyDescriptions().then(descriptions => {
@@ -55,6 +57,12 @@ export class HotkeySettingsTabComponent {
         )
         this.config.save()
         this.allDuplicateHotkeys = this.getAllDuplicateHotkeys()
+    }
+
+    copyId (id: string) {
+        this.platform.setClipboard({
+            text: id,
+        })
     }
 
     hotkeyFilterFn (hotkey: HotkeyDescription, query: string): boolean {
