@@ -29,7 +29,7 @@ app-root {
         }
     }
 
-    &> .content {
+    .main.content {
         .tab-bar {
             background: var(--theme-bg-more-2);
 

@@ -28,6 +28,7 @@ import { StartupTabsRecoveryModalComponent } from './components/startupTabsRecov
 import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
+import { ProfileTreeComponent } from './components/profileTree.component'
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -128,6 +129,7 @@ export const manifest: TabbyPluginManifest = {
         DropZoneDirective,
         CdkAutoDropGroup,
         ProfileIconComponent,
+        ProfileTreeComponent,
         TabbyFormatedDatePipe,
     ],
     exports: [

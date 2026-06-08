@@ -93,4 +93,8 @@ export const manifest: TabbyPluginManifest = {
 }
 
 export * from './api'
-export { SettingsTabComponent }
+export {
+    SettingsTabComponent,
+    EditProfileModalComponent,
+    EditProfileGroupModalComponent,
+}
