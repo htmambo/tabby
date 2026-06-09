@@ -160,7 +160,7 @@ export class XTermFrontend extends Frontend {
         this.notifications = injector.get(NotificationsService)
         this.translate = injector.get(TranslateService)
 
-        const terminalOptions = {
+        this.xterm = new Terminal({
             allowTransparency: true,
             allowProposedApi: true,
 overviewRuler: {
@@ -170,16 +170,10 @@ overviewRuler: {
             },
             reflowCursorLine: true,
             windowsPty: process.platform === 'win32' ? {
-                backend: this.configService.store.terminal.useConPTY ? 'conpty' as const : 'winpty' as const,
+                backend: this.configService.store.terminal.useConPTY ? 'conpty' : 'winpty',
                 buildNumber: getWindows10Build(),
             } : undefined,
-        }
-        ;(terminalOptions as Record<string, unknown>).overviewRuler = {
-            width: 8,
-            showBottomBorder: false,
-            showTopBorder: false,
-        }
-        this.xterm = new Terminal(terminalOptions)
+        })
         this.flowControl = new FlowControl(this.xterm)
         this.xtermCore = (this.xterm as any)._core
 
@@ -528,17 +522,6 @@ overviewRuler: {
             this.attachedHost.removeEventListener('contextmenu', this.boundContextMenu)
             this.attachedHost = undefined
         }
-    }
-
-    reactivateAfterVisibilityChange (): void {
-        this.resizeHandler()
-    }
-
-    deactivateAfterVisibilityChange (): void {
-        this.xterm.element?.querySelectorAll('canvas').forEach(c => {
-            c.height = c.width = 0
-            c.style.height = c.style.width = '0px'
-        })
     }
 
     destroy (): void {
