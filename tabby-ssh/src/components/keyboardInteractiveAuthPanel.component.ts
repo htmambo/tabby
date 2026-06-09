@@ -1,8 +1,16 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, ChangeDetectionStrategy, HostListener, OnInit, ChangeDetectorRef } from '@angular/core'
-import { focusElementLater, isButtonLikeTarget, isPlainEnter } from 'tabby-core'
+import { focusElementLater, isButtonLikeTarget, isPlainEnter, PlatformService } from 'tabby-core'
 import { KeyboardInteractivePrompt } from '../session/ssh'
 import { SSHProfile } from '../api'
 import { PasswordStorageService } from '../services/passwordStorage.service'
+
+const PROMPT_URL_REGEX = /https?:\/\/[^\s<>"']+/g
+const TRAILING_PROMPT_URL_PUNCTUATION = /[),.;:!?]+$/
+
+interface PromptPart {
+    text: string
+    url?: string
+}
 
 @Component({
     standalone: false,
@@ -21,6 +29,7 @@ export class KeyboardInteractiveAuthComponent implements OnInit {
 
     constructor (
         private passwordStorage: PasswordStorageService,
+        private platform: PlatformService,
         private cdr: ChangeDetectorRef,
     ) {}
 
@@ -55,6 +64,52 @@ export class KeyboardInteractiveAuthComponent implements OnInit {
         return this.prompt.prompts[this.step].echo ?? false
     }
 
+    getPromptParts (): PromptPart[] {
+        return this.parsePromptText(this.prompt.prompts[this.step].prompt)
+    }
+
+    parsePromptText (text: string): PromptPart[] {
+        const parts: PromptPart[] = []
+        let lastIndex = 0
+
+        for (const match of text.matchAll(PROMPT_URL_REGEX)) {
+            const matchedText = match[0]
+            const matchIndex = match.index ?? 0
+            const punctuationMatch = TRAILING_PROMPT_URL_PUNCTUATION.exec(matchedText)
+            const trailingPunctuation = punctuationMatch?.[0] ?? ''
+            const url = trailingPunctuation ? matchedText.slice(0, -trailingPunctuation.length) : matchedText
+
+            if (matchIndex > lastIndex) {
+                parts.push({ text: text.slice(lastIndex, matchIndex) })
+            }
+
+            if (this.isPromptUrl(url)) {
+                parts.push({ text: url, url })
+                if (trailingPunctuation) {
+                    parts.push({ text: trailingPunctuation })
+                }
+            } else {
+                parts.push({ text: matchedText })
+            }
+
+            lastIndex = matchIndex + matchedText.length
+        }
+
+        if (lastIndex < text.length) {
+            parts.push({ text: text.slice(lastIndex) })
+        }
+
+        return parts.length ? parts : [{ text }]
+    }
+
+    openPromptLink (url: string|undefined, event: Event): void {
+        event.preventDefault()
+
+        if (url) {
+            this.platform.openExternal(url)
+        }
+    }
+
     previous (): void {
         if (this.step > 0) {
             this.step--
@@ -74,5 +129,14 @@ export class KeyboardInteractiveAuthComponent implements OnInit {
         }
         this.step++
         focusElementLater(this.input)
+    }
+
+    private isPromptUrl (url: string): boolean {
+        try {
+            const parsedUrl = new URL(url)
+            return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+        } catch {
+            return false
+        }
     }
 }
