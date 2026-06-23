@@ -93,27 +93,49 @@ function convertSSHConfigValuesToString (arg: string | string[] | object[]): str
         .join(' ')
 }
 
-// Function to read in the SSH config file recursively and parse any Include directives
+// ssh_config(5) says "Files without absolute paths are assumed to be in ~/.ssh if included in a user configuration file or /etc/ssh if included from the system configuration file."
+function resolveSSHIncludePath (value: string): string {
+    if (path.isAbsolute(value)) {
+        return value
+    }
+    if (value.startsWith('~')) {
+        return path.join(process.env.HOME ?? '~', value.slice(1))
+    }
+    return path.join(process.env.HOME ?? '~', '.ssh', value)
+}
+
+interface ParsedSSHConfig {
+    config: SSHConfig
+    // Newest mtime across the config file and every file it Includes, so the
+    // import cache is invalidated when an included file changes — not only
+    // when the top-level ~/.ssh/config does.
+    mtime: number
+}
+
+// Read the SSH config file recursively, merging any Include directives and
+// tracking the newest mtime among all files involved.
 async function parseSSHConfigFile (
     filePath: string,
     visited = new Set<string>(),
-): Promise<SSHConfig> {
+): Promise<ParsedSSHConfig> {
     // If we've already processed this file, return an empty config to avoid infinite recursion
     if (visited.has(filePath)) {
-        return SSHConfig.parse('')
+        return { config: SSHConfig.parse(''), mtime: 0 }
     }
     visited.add(filePath)
 
     let raw = ''
-    const stat = await readPathStat(filePath)
-    if (!stat?.isFile) {
-        return SSHConfig.parse('')
-    }
+    let mtime = 0
     try {
+        const stat = await readPathStat(filePath)
+        if (!stat?.isFile) {
+            return { config: SSHConfig.parse(''), mtime: 0 }
+        }
+        mtime = stat.mtimeMs
         raw = await readTextFile(filePath)
     } catch (err) {
         console.error(`Error reading SSH config file: ${filePath}`, err)
-        return SSHConfig.parse('')
+        return { config: SSHConfig.parse(''), mtime: 0 }
     }
 
     const parsed = SSHConfig.parse(raw)
@@ -125,7 +147,7 @@ async function parseSSHConfigFile (
                 continue
             }
 
-            // ssh_config(5) says "Files without absolute paths are assumed to be in ~/.ssh if included in a user configuration file or /etc/ssh if included from the system configuration file."
+// ssh_config(5) says "Files without absolute paths are assumed to be in ~/.ssh if included in a user configuration file or /etc/ssh if included from the system configuration file."
             let incPath = ''
             if (path.isAbsolute(directive.value)) {
                 incPath = directive.value
@@ -141,14 +163,15 @@ async function parseSSHConfigFile (
                 if (!includeStat || includeStat.isDirectory) {
                     continue
                 }
-                const matchedConfig = await parseSSHConfigFile(match, visited)
-                merged.push(...matchedConfig)
+                const included = await parseSSHConfigFile(match, visited)
+                mtime = Math.max(mtime, included.mtime)
+                merged.push(...included.config)
             }
         } else {
             merged.push(entry)
         }
     }
-    return merged
+    return { config: merged, mtime }
 }
 
 // Function to convert an SSH Profile name into a sha256 hash-based ID
@@ -392,8 +415,7 @@ export class OpenSSHImporter extends SSHProfileImporter {
 
         _openSSHCachePromise = (async () => {
             try {
-                const stat = await fs.stat(configPath)
-                const mtime = stat.mtimeMs
+                const { config, mtime } = await parseSSHConfigFile(configPath)
 
                 if (_openSSHCache && _openSSHCacheMtime === mtime) {
                     return _openSSHCache
@@ -411,7 +433,6 @@ export class OpenSSHImporter extends SSHProfileImporter {
                     }
                 } catch { /* no cache or invalid */ }
 
-                const config: SSHConfig = await parseSSHConfigFile(configPath)
                 _openSSHCache = await convertToSSHProfiles(config)
                 _openSSHCacheMtime = mtime
 
