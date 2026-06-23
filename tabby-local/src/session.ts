@@ -2,8 +2,23 @@ import { Injector } from '@angular/core'
 import { HostAppService, ConfigService, WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, Platform, BootstrapData, BOOTSTRAP_DATA, LogService, pathExists, resolveRealPath, getRuntimeEnv } from 'tabby-core'
 import { BaseSession } from 'tabby-terminal'
 import { SessionOptions, ChildProcess, PTYInterface, PTYProxy } from './api'
+import { getEnvironment, substituteEnv } from './environment'
 
 const windowsDirectoryRegex = /([a-zA-Z]:[^\:\[\]\?\"\<\>\|]+)/mi
+
+function mergeEnv (...envs) {
+    const result = {}
+    const keyMap = {}
+    for (const env of envs) {
+        for (const [key, value] of Object.entries(env)) {
+            // const lookup = process.platform === 'win32' ? key.toLowerCase() : key
+            const lookup = key.toLowerCase()
+            keyMap[lookup] ??= key
+            result[keyMap[lookup]] = value
+        }
+    }
+    return result
+}
 
 /** @hidden */
 export class Session extends BaseSession {
@@ -36,6 +51,39 @@ export class Session extends BaseSession {
         }
 
         if (!pty) {
+            const baseEnv = getEnvironment(
+                this.hostApp.platform === Platform.Windows && this.config.store.terminal.windowsRefreshEnvironment,
+            )
+
+            let env = mergeEnv(
+                baseEnv,
+                {
+                    COLORTERM: 'truecolor',
+                    TERM: 'xterm-256color',
+                    TERM_PROGRAM: 'Tabby',
+                },
+                substituteEnv(options.env),
+                this.config.store.terminal.environment || {},
+            )
+
+            if (this.hostApp.platform === Platform.Windows && this.config.store.terminal.setComSpec) {
+                env = mergeEnv(env, { COMSPEC: this.bootstrapData.executable })
+            }
+
+            delete env['']
+
+            if (this.hostApp.platform === Platform.macOS && !process.env.LC_ALL) {
+                const locale = process.env.LC_CTYPE ?? 'en_US.UTF-8'
+                Object.assign(env, {
+                    LANG: locale,
+                    LC_ALL: locale,
+                    LC_MESSAGES: locale,
+                    LC_NUMERIC: locale,
+                    LC_COLLATE: locale,
+                    LC_MONETARY: locale,
+                })
+            }
+
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
             let cwd = options.cwd || getRuntimeEnv('HOME')
 
