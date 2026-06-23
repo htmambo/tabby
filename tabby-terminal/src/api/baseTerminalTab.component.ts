@@ -486,14 +486,14 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.visibility$
             .pipe(debounce(visibility => interval(visibility ? 0 : INACTIVE_TAB_UNLOAD_DELAY)))
             .subscribe(visibility => {
-                if (this.frontend instanceof XTermFrontend) {
+if (this.frontend instanceof XTermFrontend) {
                     if (visibility) {
                         const frontend = this.frontend
                         if (this.workspaceLayout.isRoyalSidebarTransitionActive) {
                             return
                         }
                         this.scheduleVisibleFrontendAction(frontend, () => {
-                            frontend.reactivateAfterVisibilityChange()
+                            frontend.reactivate()
                             if (this.hasFocus) {
                                 frontend.focus()
                             }

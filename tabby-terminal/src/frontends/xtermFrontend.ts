@@ -1,5 +1,5 @@
 import deepEqual from 'deep-equal'
-import { BehaviorSubject, filter, firstValueFrom, takeUntil } from 'rxjs'
+import { BehaviorSubject, filter, firstValueFrom, fromEvent, takeUntil } from 'rxjs'
 import { Injector } from '@angular/core'
 import { ConfigService, getCSSFontFamily, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, TerminalColorScheme, ThemesService, TranslateService, isIMEKeyboardEvent } from 'tabby-core'
 import { Frontend, SearchOptions, SearchState } from './frontend'
@@ -60,6 +60,10 @@ function getRootCSSVariable (name: string): string | undefined {
     const value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim()
     return value || undefined
 }
+
+// How many times to recreate the WebGL renderer after a lost GPU context
+// before giving up and letting xterm fall back to its DOM renderer.
+const MAX_WEBGL_RECOVERY_ATTEMPTS = 3
 
 class FlowControl {
     private blocked = false
@@ -122,7 +126,7 @@ export class XTermFrontend extends Frontend {
     private resizeObserver?: any
     private flowControl: FlowControl
     private pinnedToBottom = true
-    private layoutTransitionActive = false
+private layoutTransitionActive = false
     private skipObservedResizeUntil = 0
     private pendingObservedResizeFrame: number|null = null
     private readonly observedResizeResumeDelay = 120
@@ -142,6 +146,9 @@ export class XTermFrontend extends Frontend {
     private boundDeferredPrintableInput?: (event: Event) => void
     private attachedHost?: HTMLElement
 
+    private pendingRendererRecovery = false
+    private rendererRecoveryAttempts = 0
+
     private configService: ConfigService
     private hotkeysService: HotkeysService
     private platformService: PlatformService
@@ -160,7 +167,7 @@ export class XTermFrontend extends Frontend {
         this.notifications = injector.get(NotificationsService)
         this.translate = injector.get(TranslateService)
 
-        const terminalOptions = {
+        this.xterm = new Terminal({
             allowTransparency: true,
             allowProposedApi: true,
 overviewRuler: {
@@ -173,8 +180,7 @@ overviewRuler: {
                 backend: this.configService.store.terminal.useConPTY ? 'conpty' as const : 'winpty' as const,
                 buildNumber: getWindows10Build(),
             } : undefined,
-        }
-        this.xterm = new Terminal(terminalOptions)
+        })
         this.flowControl = new FlowControl(this.xterm)
         this.xtermCore = (this.xterm as any)._core
 
@@ -381,7 +387,7 @@ overviewRuler: {
         // Just configure the colors to avoid a flash
         this.configureColors(profile.terminalColorScheme)
 
-        const subscribeTextureAtlasClear = (clear: () => void): void => {
+const subscribeTextureAtlasClear = (clear: () => void): void => {
             this.platformService.displayMetricsChanged$.pipe(
                 takeUntil(this.destroyed$),
             ).subscribe(() => {
@@ -397,8 +403,7 @@ overviewRuler: {
 
         if (this.enableWebGL) {
             try {
-                this.webGLAddon = new WebglAddon()
-                this.xterm.loadAddon(this.webGLAddon)
+                this.attachWebGLAddon()
                 subscribeTextureAtlasClear(() => this.webGLAddon?.clearTextureAtlas())
             } catch (error) {
                 console.warn('Could not enable xterm WebGL renderer, falling back to canvas renderer', error)
@@ -441,6 +446,12 @@ overviewRuler: {
         })
 
         window.addEventListener('resize', this.resizeHandler)
+
+        // The GPU context is often dropped while the app is in the background;
+        // retry recovery once the window is focused again and WebGL is usable.
+        fromEvent(window, 'focus').pipe(
+            takeUntil(this.destroyed$),
+        ).subscribe(() => this.recoverRenderer())
 
         this.resizeHandler()
 
@@ -523,17 +534,6 @@ overviewRuler: {
             this.attachedHost.removeEventListener('contextmenu', this.boundContextMenu)
             this.attachedHost = undefined
         }
-    }
-
-    reactivateAfterVisibilityChange (): void {
-        this.resizeHandler()
-    }
-
-    deactivateAfterVisibilityChange (): void {
-        this.xterm.element?.querySelectorAll('canvas').forEach(c => {
-            c.height = c.width = 0
-            c.style.height = c.style.width = '0px'
-        })
     }
 
     destroy (): void {
@@ -943,6 +943,63 @@ theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') 
         // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
         this.xterm.options.lineHeight = Math.max(1, (this.configuredFontSize + this.configuredLinePadding * 2) / this.configuredFontSize)
         this.resizeHandler()
+    }
+
+    /**
+     * Redraw the terminal and recover the renderer when its tab is shown again.
+     * Reactivating clears stale renderer state left behind while the tab was
+     * hidden, and flushes any GPU context recovery deferred until now.
+     */
+    reactivate (): void {
+        if (this.pendingRendererRecovery) {
+            this.recoverRenderer()
+        } else {
+            this.redraw()
+        }
+    }
+
+    private attachWebGLAddon (): void {
+        const addon = new WebglAddon()
+        // xterm fires this when the GPU drops the canvas context (driver reset,
+        // backgrounded app, too many live contexts).
+        addon.onContextLoss(() => this.onWebGLContextLoss())
+        this.xterm.loadAddon(addon)
+        this.webGLAddon = addon
+    }
+
+    private onWebGLContextLoss (): void {
+        this.webGLAddon?.dispose()
+        this.webGLAddon = undefined
+        this.pendingRendererRecovery = true
+        this.recoverRenderer()
+    }
+
+    /**
+     * Recreate the WebGL renderer after a lost GPU context. A new context can
+     * only be created on a visible, focused canvas, so this no-ops while the
+     * tab is hidden and is retried on reactivation or window focus.
+     */
+    private recoverRenderer (): void {
+        if (!this.pendingRendererRecovery || !this.canRecoverRenderer()) {
+            return
+        }
+        this.pendingRendererRecovery = false
+        if (this.rendererRecoveryAttempts < MAX_WEBGL_RECOVERY_ATTEMPTS) {
+            this.rendererRecoveryAttempts++
+            this.attachWebGLAddon()
+        }
+        // Once the retry budget is exhausted xterm falls back to its DOM renderer.
+        this.redraw()
+    }
+
+    private canRecoverRenderer (): boolean {
+        return !!this.element && this.element.offsetParent !== null && document.hasFocus()
+    }
+
+    private redraw (): void {
+        const renderService = this.xtermCore._renderService
+        renderService?.clear()
+        renderService?.handleResize(this.xterm.cols, this.xterm.rows)
     }
 
     private getSelectionAsHTML (): string {
