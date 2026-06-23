@@ -147,6 +147,7 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
         void this.write(this.translate.instant(_('Reconnecting...')) + '\r\n')
         try {
             await this.session?.destroy()
+            this.frontend?.resetTerminalModes()
             await this.initializeSession()
             this.clearServiceMessagesOnConnect()
             this.session?.releaseInitialDataBuffer()
