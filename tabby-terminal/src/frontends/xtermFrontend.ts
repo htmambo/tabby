@@ -318,7 +318,7 @@ overviewRuler: {
         //   - wheel/keyboard event listeners (below)
         //   - explicit scrollToBottom() calls
 
-        this.resizeHandler = () => {
+        const doResize = () => {
             try {
                 if (!this.enableResizing) {
                     return
@@ -338,10 +338,47 @@ overviewRuler: {
                         const targetY = Math.min(savedViewportY, maxScroll)
                         this.xterm.scrollToLine(targetY)
                     }
+
+                    // fitAddon.fit() resizes the renderer's drawing buffer,
+                    // which blanks it synchronously, but xterm only repaints on
+                    // the next animation frame — leaving one blank frame that
+                    // reads as flicker during a window drag. Force the repaint
+                    // now (after scrolling settles) to close that gap.
+                    this.xtermCore._renderService?._renderRows(0, this.xterm.rows - 1)
                 }
             } catch (e) {
                 // tends to throw when element wasn't shown yet
                 console.warn('Could not resize xterm', e)
+            }
+        }
+
+        // Rate-limit reflows during a window drag. The window 'resize' event and
+        // the ResizeObserver fire many times per frame; each reflow resizes the
+        // renderer's drawing buffer and re-uploads the glyph atlas texture. At
+        // full frame rate a fast drag issues reflows faster than the GPU can
+        // finish one, so frames composite with the text not yet repainted —
+        // visible as a flicker that only shows up when dragging quickly (slow
+        // drags leave enough time between reflows). Capping the reflow rate and
+        // always running a trailing fit keeps the final size correct without
+        // outrunning the renderer. Tune RESIZE_MIN_INTERVAL if needed.
+        const RESIZE_MIN_INTERVAL = 32
+        let resizePending = false
+        let lastResize = 0
+        const runResize = () => {
+            resizePending = false
+            lastResize = Date.now()
+            doResize()
+        }
+        this.resizeHandler = () => {
+            if (resizePending) {
+                return
+            }
+            resizePending = true
+            const wait = Math.max(0, RESIZE_MIN_INTERVAL - (Date.now() - lastResize))
+            if (wait > 0) {
+                setTimeout(() => requestAnimationFrame(runResize), wait)
+            } else {
+                requestAnimationFrame(runResize)
             }
         }
 
@@ -951,9 +988,19 @@ theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') 
      * hidden, and flushes any GPU context recovery deferred until now.
      */
     reactivate (): void {
-        if (this.pendingRendererRecovery) {
+        // An app- or window-level GPU reset can blank the canvas without firing
+        // xterm's per-canvas contextlost event, so pendingRendererRecovery stays
+        // unset. Treat a WebGL frontend that has lost its addon as needing
+        // recovery too, so a shown-but-blank pane always gets its context back
+        // instead of relying on a manual window resize.
+        if (this.pendingRendererRecovery || this.enableWebGL && !this.webGLAddon) {
+            this.pendingRendererRecovery = true
             this.recoverRenderer()
         } else {
+            // The pane is shown with a live renderer, so any earlier transient
+            // losses shouldn't count against a future recovery — reset the budget
+            // to avoid permanently downgrading the pane to the DOM renderer.
+            this.rendererRecoveryAttempts = 0
             this.redraw()
         }
     }
@@ -999,6 +1046,11 @@ theme.scrollbarSliderBackground = getRootCSSVariable('--theme-scrollbar-thumb') 
     private redraw (): void {
         const renderService = this.xtermCore._renderService
         renderService?.clear()
+        // handleResize() alone is a no-op when cols/rows are unchanged
+        // resizeHandler() runs a real itAddon.fit() followed
+        // by an unconditional viewport._refresh(),
+        // forcing a full repaint
+        this.resizeHandler()
         renderService?.handleResize(this.xterm.cols, this.xterm.rows)
     }
 
