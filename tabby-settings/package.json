@@ -19,12 +19,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/marked": "^5.0.1",
-    "marked": "^5.1.2",
+"marked": "^9.1.4",
     "ngx-infinite-scroll": "^21.0.0"
-  },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.1030.0",
-    "webdav": "^5.9.0"
   },
   "peerDependencies": {
     "@angular/animations": "^21",
