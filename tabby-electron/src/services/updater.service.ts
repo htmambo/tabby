@@ -79,7 +79,7 @@ export class ElectronUpdaterService extends UpdaterService {
             })
         } else {
             this.logger.debug('Checking for updates through fallback method.')
-            const axiosModule = await import('axios')
+const axiosModule = await import('axios')
             const axios = axiosModule.default ?? axiosModule
             const response = await axios.get(UPDATES_URL)
             const data = response.data

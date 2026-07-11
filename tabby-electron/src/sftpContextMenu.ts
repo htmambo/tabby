@@ -1,4 +1,3 @@
-import * as path from 'path'
 import { Injectable } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { MenuItemOptions, TranslateService, chmodPath, readPathStat } from 'tabby-core'

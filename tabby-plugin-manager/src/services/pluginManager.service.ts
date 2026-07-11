@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { compare as semverCompare } from 'semver'
 import { Observable, catchError, from, forkJoin, map, of } from 'rxjs'
 import { Injectable, Inject } from '@angular/core'
@@ -98,11 +97,10 @@ map(x => x.sort((a, b) => b.searchScore! - a.searchScore!)),
         return from(
             axios.get<NPMRegistrySearchResponse>(url, { timeout: 10000 }),
         ).pipe(
-map(response => response.data.objects ?? []),
-            map(items => items
+map(items => items
                 .map(item => this.parseRegistryPlugin(item, namePrefix))
                 .filter((plugin): plugin is AvailablePluginInfo => plugin !== null),
-            ),
+        ),
             map(plugins => {
                 const mapping: Record<string, AvailablePluginInfo[]> = {}
                 for (const p of plugins) {
