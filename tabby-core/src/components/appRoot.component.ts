@@ -379,12 +379,14 @@ export class AppRootComponent implements OnDestroy {
                 if (hotkey === 'duplicate-tab') {
                     this.app.duplicateTab(this.app.activeTab)
                 }
-                if (hotkey === 'rename-tab') {
+if (hotkey === 'rename-tab') {
                     this.app.renameTab(this.app.activeTab)
                 }
+                if (hotkey === 'pin-tab') {
+                    this.app.toggleTabPinned(this.app.activeTab)
+                }
                 if (hotkey === 'restart-tab') {
-                    this.app.duplicateTab(this.app.activeTab)
-                    this.app.closeTab(this.app.activeTab, true)
+                    this.app.restartTab(this.app.activeTab)
                 }
             }
             if (hotkey === 'reopen-tab') {
@@ -585,7 +587,17 @@ export class AppRootComponent implements OnDestroy {
     }
 
     onTabsReordered (event: CdkDragDrop<BaseTabComponent[]>) {
-        moveItemInArray(this.app.tabs, event.previousIndex, event.currentIndex)
+        const tab: BaseTabComponent = event.item.data
+        if (!this.app.tabs.includes(tab)) {
+            if (tab.parent instanceof SplitTabComponent) {
+                tab.parent.removeTab(tab)
+                this.app.wrapAndAddTab(tab)
+            }
+        }
+        if (this.app.tabs.includes(tab)) {
+            moveItemInArray(this.app.tabs, event.previousIndex, event.currentIndex)
+            this.app.moveTabToIndex(tab, event.currentIndex)
+        }
         this.app.emitTabsChanged()
     }
 

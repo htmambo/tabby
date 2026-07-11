@@ -27,6 +27,7 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
             {
                 label: this.translate.instant('Close'),
                 commandLabel: this.translate.instant('Close tab'),
+                enabled: !tab.effectivelyPinned,
                 click: () => {
                     if (this.app.tabs.includes(tab)) {
                         this.app.closeTab(tab, true)
@@ -98,6 +99,13 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
                     label: this.translate.instant('Duplicate'),
                     commandLabel: this.translate.instant('Duplicate tab'),
                     click: () => this.app.duplicateTab(tab),
+                },
+                {
+                    label: this.translate.instant('Pin'),
+                    commandLabel: this.translate.instant('Pin tab'),
+                    type: 'checkbox',
+                    checked: tab.pinned,
+                    click: () => this.app.toggleTabPinned(tab),
                 },
                 {
                     label: this.translate.instant('Color'),
