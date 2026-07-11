@@ -33,7 +33,7 @@ export class ReleaseNotesComponent extends BaseTabComponent {
         void this.loadReleases(1).catch(error => {
             console.error('Failed to load release notes', error)
         })
-    }
+}
 
     async loadReleases (page: number): Promise<void> {
         if (this.loadingReleases || this.loadedPages.has(page) || !this.hasMoreReleases) {
