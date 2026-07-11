@@ -339,8 +339,8 @@ export class VaultService {
     async getPassphrase (): Promise<string> {
         if (!_rememberedPassphrase) {
             const modal = this.ngbModal.open(UnlockVaultModalComponent)
-            const result = await modal.result
-            if (!result?.passphrase) {
+            const result = await modal.result.catch(() => null)
+            if (!result) {
                 throw new Error('Vault unlock cancelled')
             }
             const { passphrase, rememberFor } = result
