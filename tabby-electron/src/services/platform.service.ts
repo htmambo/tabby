@@ -343,7 +343,12 @@ export class ElectronPlatformService extends PlatformService {
             selectedFolder = defaultDirectory
         }
 
-        const downloadPath = await this.getAvailableDownloadDirectoryPath(selectedFolder, name)
+let downloadPath = resolveInsideBase(selectedFolder, name)
+        let counter = 1
+        while (fsSync.existsSync(downloadPath)) {
+            downloadPath = resolveInsideBase(selectedFolder, `${name} (${counter})`)
+            counter++
+        }
 
         const transfer = new ElectronDirectoryDownload(downloadPath, name, estimatedSize ?? 0, this.electron, this.zone)
         await wrapPromise(this.zone, transfer.open())
