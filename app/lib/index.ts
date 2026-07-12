@@ -1,7 +1,7 @@
+// Registers main-process error logging - must be first so it catches import-time errors
+import { logMainError } from './errors'
+
 import { app, ipcMain, Menu, dialog } from 'electron'
-import { createRequire } from 'module'
-import * as fs from 'fs'
-import * as path from 'path'
 
 // set userData Path on portable version
 import './portable'
@@ -16,36 +16,7 @@ import './lru'
 import { Application } from './app'
 import { loadConfig } from './config'
 
-function logMainError (label: string, err: any): void {
-    const message = `[${new Date().toISOString()}] ${label}: ${err?.stack ?? err}\n`
-    process.stderr.write(message)
-    try {
-        fs.appendFileSync(path.join(process.env.TABBY_CONFIG_DIRECTORY!, 'main-process-errors.log'), message)
-    } catch { }
-}
-const runtimeRequire = createRequire(__filename)
-
-if (process.env.TABBY_DEV || process.env.CI || process.env.TABBY_RELEASE_SOURCEMAPS) {
-    runtimeRequire('source-map-support/register')
-}
-
-function parseStartupWindowOptions (argv: string[]): { hidden: boolean, d: boolean } {
-    const args = argv[0]?.includes('node') ? argv.slice(2) : argv.slice(1)
-    let hidden = false
-    let d = false
-
-    for (const arg of args) {
-        if (arg === '--hidden') {
-            hidden = true
-        } else if (arg === '--debug' || arg === '-d') {
-            d = true
-        }
-    }
-
-    return { hidden, d }
-}
-
-const argv = parseStartupWindowOptions(process.argv)
+const argv = parseArgs(process.argv, process.cwd())
 
 // eslint-disable-next-line @typescript-eslint/init-declarations
 let configStore: any
@@ -74,13 +45,8 @@ ipcMain.on('app:new-window', () => {
     application.newWindow()
 })
 
-process.on('uncaughtException' as any, (err: Error) => {
-    logMainError('uncaughtException', err)
+process.on('uncaughtException', err => {
     application.broadcast('uncaughtException', err)
-})
-
-process.on('unhandledRejection', reason => {
-    logMainError('unhandledRejection', reason)
 })
 
 if (argv.d) {
