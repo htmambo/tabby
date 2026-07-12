@@ -1,5 +1,7 @@
 import { app, ipcMain, Menu, dialog } from 'electron'
 import { createRequire } from 'module'
+import * as fs from 'fs'
+import * as path from 'path'
 
 // set userData Path on portable version
 import './portable'
@@ -14,6 +16,13 @@ import './lru'
 import { Application } from './app'
 import { loadConfig } from './config'
 
+function logMainError (label: string, err: any): void {
+    const message = `[${new Date().toISOString()}] ${label}: ${err?.stack ?? err}\n`
+    process.stderr.write(message)
+    try {
+        fs.appendFileSync(path.join(process.env.TABBY_CONFIG_DIRECTORY!, 'main-process-errors.log'), message)
+    } catch { }
+}
 const runtimeRequire = createRequire(__filename)
 
 if (process.env.TABBY_DEV || process.env.CI || process.env.TABBY_RELEASE_SOURCEMAPS) {
@@ -66,9 +75,21 @@ ipcMain.on('app:new-window', () => {
 })
 
 process.on('uncaughtException' as any, (err: Error) => {
-    console.error(err)
+    logMainError('uncaughtException', err)
     application.broadcast('uncaughtException', err)
 })
+
+process.on('unhandledRejection', reason => {
+    logMainError('unhandledRejection', reason)
+})
+
+if (argv.d) {
+    electronDebug({
+        isEnabled: true,
+        showDevTools: true,
+        devToolsMode: 'undocked',
+    })
+}
 
 app.on('activate', async () => {
     if (!application.hasWindows()) {
@@ -111,10 +132,16 @@ app.on('ready', async () => {
         ]))
     }
 
-    application.init()
+    try {
+        application.init()
 
-    const window = await application.newWindow({ hidden: argv.hidden, debug: argv.d })
-    await window.ready
-    await window.passCliArguments(process.argv, process.cwd(), false)
-    window.focus()
+        const window = await application.newWindow({ hidden: argv.hidden, debug: argv.d })
+        await window.ready
+        await window.passCliArguments(process.argv, process.cwd(), false)
+        window.focus()
+    } catch (err) {
+        logMainError('Failed to open window', err)
+        dialog.showErrorBox('Tabby failed to start', String(err?.stack ?? err))
+        app.exit(1)
+    }
 })
