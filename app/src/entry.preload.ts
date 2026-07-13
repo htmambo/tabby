@@ -1,3 +1,4 @@
+require('module').enableCompileCache?.()
 import '../lib/lru'
 import '@fortawesome/fontawesome-free/css/solid.css'
 import '@fortawesome/fontawesome-free/css/brands.css'

@@ -142,3 +142,25 @@ export default () => {
 
     return config
 }
+    },
+    externals: {
+        '@electron/remote': 'commonjs @electron/remote',
+        child_process: 'commonjs child_process',
+        electron: 'commonjs electron',
+        fs: 'commonjs fs',
+        module: 'commonjs module',
+        mz: 'commonjs mz',
+        path: 'commonjs path',
+    },
+    plugins: [
+        new wp.optimize.ModuleConcatenationPlugin(),
+        new wp.DefinePlugin({
+            'process.type': '"renderer"',
+        }),
+        new AngularWebpackPlugin({
+            tsconfig: path.resolve(__dirname, 'tsconfig.json'),
+            directTemplateLoading: false,
+            jitMode: true,
+        })
+    ],
+})

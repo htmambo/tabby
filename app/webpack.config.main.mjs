@@ -80,6 +80,8 @@ const config = {
         module: 'commonjs module',
         'native-process-working-directory': 'commonjs native-process-working-directory',
         npm: 'commonjs npm',
+        mz: 'commonjs mz',
+        '@npmcli/arborist': 'commonjs @npmcli/arborist',
         'node:os': 'commonjs os',
         'node-pty': 'commonjs node-pty',
         path: 'commonjs path',
