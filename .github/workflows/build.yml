@@ -25,7 +25,7 @@ jobs:
 
     - name: Install deps
       run: |
-        sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+        sudo apt-get update && sudo apt-get install -y libfontconfig1-dev libsecret-1-dev
         npm i -g yarn
         node scripts/yarn-install-retry.mjs --cwd app
         rm app/node_modules/.yarn-integrity
