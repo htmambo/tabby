@@ -6,6 +6,14 @@ export class TerminalConfigProvider extends ConfigProvider {
     defaults = {
         hotkeys: {
             'copy-current-path': [],
+            'debug-save-state': ['Ctrl-Shift-Alt-1'],
+            'debug-load-state': ['Ctrl-Shift-Alt-2'],
+            'debug-copy-state': ['Ctrl-Shift-Alt-3'],
+            'debug-paste-state': ['Ctrl-Shift-Alt-4'],
+            'debug-save-output': ['Ctrl-Shift-Alt-5'],
+            'debug-load-output': ['Ctrl-Shift-Alt-6'],
+            'debug-copy-output': ['Ctrl-Shift-Alt-7'],
+            'debug-paste-output': ['Ctrl-Shift-Alt-8'],
         },
         terminal: {
             frontend: 'xterm-webgl',
@@ -52,6 +60,9 @@ export class TerminalConfigProvider extends ConfigProvider {
             drawBoldTextInBrightColors: true,
             sixel: true,
             minimumContrastRatio: 4,
+            paletteGenerate: false,
+            paletteHarmonious: false,
+            replaceNewlinesWithSpacesOnPaste: false,
             trimWhitespaceOnPaste: true,
         },
     }
