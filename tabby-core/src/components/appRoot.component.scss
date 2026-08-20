@@ -905,6 +905,10 @@ $tab-border-radius: 4px;
     }
 }
 
+.content.tabs-on-top:not(.tabs-on-left):not(.tabs-on-right) > .tab-bar.tab-bar-no-controls-overlay {
+    padding-left: 70px;
+}
+
 .content.tabs-on-left > .tab-bar.tab-bar-no-controls-overlay, .content.tabs-titlebar-enabled {
     .tabs {
         padding-top: 0 !important;
@@ -954,6 +958,8 @@ $tab-border-radius: 4px;
         flex: 0 1 auto;
         display: flex;
         min-width: 0;
+        gap: 1px;
+        background-color: var(--theme-bg);
     }
 
     &>.btn-space {

@@ -5,38 +5,30 @@ title-bar(
   [class.inset]='hostApp.platform == Platform.macOS && !hostWindow.isFullscreen'
 )
 
-.window.h-100.d-flex
-    profile-tree(
-        *ngIf='ready && config.store.showProfileTree',
-        [class.mac-inset]='hostApp.platform == Platform.macOS \
-        && !hostWindow.isFullscreen \
-        && config.store.appearance.frame == "thin"'
+.content.main.h-100(
+    *ngIf='ready',
+    [class.tabs-on-top]='config.store.appearance.tabsLocation == "top" || config.store.appearance.tabsLocation == "left" || config.store.appearance.tabsLocation == "right"',
+    [class.tabs-on-left]='hasVerticalTabs() && config.store.appearance.tabsLocation == "left"',
+    [class.tabs-titlebar-enabled]='isTitleBarNeeded()',
+    [class.tabs-on-right]='hasVerticalTabs() && config.store.appearance.tabsLocation == "right"',
+    [style.--tab-fixed-width.px]='fixedTabWidth'
+)
+    .tab-bar(
+        *ngIf='!hostWindow.isFullscreen || config.store.appearance.tabsInFullscreen',
+        [class.tab-bar-no-controls-overlay]='hostApp.platform == Platform.macOS',
+        (dblclick)='!isTitleBarNeeded() && toggleMaximize()'
     )
-
-    .content.main.h-100(
-        *ngIf='ready',
-        [class.tabs-on-top]='config.store.appearance.tabsLocation == "top" || config.store.appearance.tabsLocation == "left" || config.store.appearance.tabsLocation == "right"',
-        [class.tabs-on-left]='hasVerticalTabs() && config.store.appearance.tabsLocation == "left"',
-        [class.tabs-titlebar-enabled]='isTitleBarNeeded()',
-        [class.tabs-on-right]='hasVerticalTabs() && config.store.appearance.tabsLocation == "right"',
-        [style.--tab-fixed-width.px]='fixedTabWidth'
-    )
-        .tab-bar(
-            *ngIf='!hostWindow.isFullscreen || config.store.appearance.tabsInFullscreen',
-            [class.tab-bar-no-controls-overlay]='hostApp.platform == Platform.macOS',
-            (dblclick)='!isTitleBarNeeded() && toggleMaximize()'
+        tab-header(
+            *ngFor='let tab of tabBarTabs; let idx = index',
+            [index]='idx',
+            [tab]='tab',
+            [active]='tab == renderedActiveTab',
+            [@animateTab]='{value: "in", params: {size: targetTabSize}}',
+            [@.disabled]='hasVerticalTabs() || !config.store.accessibility.animations',
+            (click)='app.selectTab(tab)',
+            [class.fully-draggable]='hostApp.platform !== Platform.macOS',
+            [ngbTooltip]='tab.customTitle || tab.title'
         )
-            tab-header(
-                *ngFor='let tab of tabBarTabs; let idx = index',
-                [index]='idx',
-                [tab]='tab',
-                [active]='tab == renderedActiveTab',
-                [@animateTab]='{value: "in", params: {size: targetTabSize}}',
-                [@.disabled]='hasVerticalTabs() || !config.store.accessibility.animations',
-                (click)='app.selectTab(tab)',
-                [class.fully-draggable]='hostApp.platform !== Platform.macOS',
-                [ngbTooltip]='tab.customTitle || tab.title'
-            )
 
         .btn-group.background
             .d-flex(

@@ -111,7 +111,6 @@ export default () => {
         externals: {
             '@tabby-gang/windows-blurbehind': 'commonjs @tabby-gang/windows-blurbehind',
             '@tabby-gang/windows-process-tree': 'commonjs @tabby-gang/windows-process-tree',
-            'v8-compile-cache': 'commonjs v8-compile-cache',
             child_process: 'commonjs child_process',
             electron: 'commonjs electron',
             'fontmanager-redux': 'commonjs fontmanager-redux',

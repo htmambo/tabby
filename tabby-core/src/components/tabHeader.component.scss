@@ -21,6 +21,13 @@ $tabs-height: 38px;
 
     overflow: hidden;
 
+    border-right: 1px solid var(--theme-bg);
+
+    &.active {
+        background-color: var(--theme-bg);
+        color: var(--theme-fg);
+    }
+
     &.flex-width {
         flex: 1000 1 auto;
         width: auto;
@@ -81,6 +88,8 @@ $tabs-height: 38px;
         top: 2px;
         right: 3px;
         opacity: 0;
+        color: var(--theme-fg);
+        pointer-events: auto;
 
         button {
             display: flex;
@@ -90,6 +99,7 @@ $tabs-height: 38px;
 
             background: transparent;
             -webkit-app-region: no-drag;
+            color: inherit;
 
             $button-size: 26px;
             width: $button-size;
@@ -103,6 +113,11 @@ $tabs-height: 38px;
 
             &:focus {
               outline: 0;
+            }
+
+            &:hover {
+                color: var(--theme-primary);
+                background-color: var(--theme-secondary);
             }
         }
     }

@@ -66,7 +66,6 @@ const config = {
         '@tabby-gang/windows-process-tree': 'commonjs @tabby-gang/windows-process-tree',
         '@tabby-gang/windows-process-tree/build/Release/windows_process_tree.node': 'commonjs @tabby-gang/windows-process-tree/build/Release/windows_process_tree.node',
         atomically: 'commonjs atomically',
-        'v8-compile-cache': 'commonjs v8-compile-cache',
         'any-promise': 'commonjs any-promise',
         child_process: 'commonjs child_process',
         electron: 'commonjs electron',
