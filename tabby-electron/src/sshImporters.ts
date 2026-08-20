@@ -1,3 +1,4 @@
+import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as glob from 'glob'
 import * as yaml from 'js-yaml'
@@ -91,17 +92,6 @@ function convertSSHConfigValuesToString (arg: string | string[] | object[]): str
     return objList.filter(obj => 'val' in obj)
         .map(obj => 'val' in obj ? obj.val as string: '')
         .join(' ')
-}
-
-// ssh_config(5) says "Files without absolute paths are assumed to be in ~/.ssh if included in a user configuration file or /etc/ssh if included from the system configuration file."
-function resolveSSHIncludePath (value: string): string {
-    if (path.isAbsolute(value)) {
-        return value
-    }
-    if (value.startsWith('~')) {
-        return path.join(process.env.HOME ?? '~', value.slice(1))
-    }
-    return path.join(process.env.HOME ?? '~', '.ssh', value)
 }
 
 interface ParsedSSHConfig {

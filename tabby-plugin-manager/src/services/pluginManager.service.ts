@@ -1,6 +1,7 @@
 import { compare as semverCompare } from 'semver'
 import { Observable, catchError, from, forkJoin, map, of } from 'rxjs'
 import { Injectable, Inject } from '@angular/core'
+import axios from 'axios'
 import { Logger, LogService, PlatformService, BOOTSTRAP_DATA, BootstrapData, PluginInfo } from 'tabby-core'
 import { PLUGIN_BLACKLIST } from '../../../app/src/pluginBlacklist'
 
@@ -27,6 +28,7 @@ interface NPMRegistrySearchPackage {
 
 interface NPMRegistrySearchObject {
     package?: NPMRegistrySearchPackage
+    searchScore?: number
 }
 
 interface NPMRegistrySearchResponse {
@@ -97,7 +99,7 @@ map(x => x.sort((a, b) => b.searchScore! - a.searchScore!)),
         return from(
             axios.get<NPMRegistrySearchResponse>(url, { timeout: 10000 }),
         ).pipe(
-map(items => items
+map(items => (items.data.objects ?? [])
                 .map(item => this.parseRegistryPlugin(item, namePrefix))
                 .filter((plugin): plugin is AvailablePluginInfo => plugin !== null),
         ),

@@ -5,7 +5,7 @@ const origLstat = fs.realpathSync.bind(fs)
 
 // NB: The biggest offender of thrashing realpathSync is the node module system
 // itself, which we can't get into via any sane means.
-require('fs').realpathSync = function (p: fs.PathLike) {
+require('fs').realpathSync = function (p: string) {
     let r = lru.get(p)
     if (r) {
         return r

@@ -203,22 +203,6 @@ export class Application {
             }
         })
 
-        ;(promiseIpc as any).on('plugin-manager:install', (name, version) => {
-            return pluginManager.install(this.userPluginsPath, name, version)
-        })
-
-        ;(promiseIpc as any).on('plugin-manager:uninstall', (name) => {
-            return pluginManager.uninstall(this.userPluginsPath, name)
-        })
-
-        ;(promiseIpc as any).on('get-default-mac-shell', async () => {
-            try {
-                return (await execFile('/usr/bin/dscl', ['.', '-read', `/Users/${process.env.LOGNAME}`, 'UserShell']))[0].toString().split(' ')[1].trim()
-            } catch {
-                return '/bin/bash'
-            }
-        })
-
         if (process.platform === 'linux') {
             app.commandLine.appendSwitch('no-sandbox')
             app.commandLine.appendSwitch('disable-dev-shm-usage')

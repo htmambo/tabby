@@ -13,8 +13,8 @@ process.env.TABBY_CONFIG_DIRECTORY ??= app.getPath('userData')
 
 import 'v8-compile-cache'
 import 'source-map-support/register'
-import './sentry'
 import './lru'
+import { parseArgs } from './cli'
 import { Application } from './app'
 import { loadConfig } from './config'
 
@@ -50,14 +50,6 @@ ipcMain.on('app:new-window', () => {
 process.on('uncaughtException', err => {
     application.broadcast('uncaughtException', err)
 })
-
-if (argv.d) {
-    electronDebug({
-        isEnabled: true,
-        showDevTools: true,
-        devToolsMode: 'undocked',
-    })
-}
 
 app.on('activate', async () => {
     if (!application.hasWindows()) {

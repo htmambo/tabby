@@ -18,8 +18,10 @@
   "author": "Tabby Developers",
   "license": "MIT",
   "devDependencies": {
-"marked": "^18",
-    "ngx-infinite-scroll": "^21.0.0"
+    "@aws-sdk/client-s3": "^3",
+    "marked": "^18",
+    "ngx-infinite-scroll": "^21.0.0",
+    "webdav": "^5"
   },
   "peerDependencies": {
     "@angular/animations": "^21",

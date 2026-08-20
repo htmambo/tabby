@@ -579,7 +579,7 @@ export class ProfilesService {
     * Resolve and return ProfileGroup | null from ProfileGroup ID
     */
     resolveProfileGroup (groupId: string): PartialProfileGroup<ProfileGroup> | null {
-        return this.config.store.groups.find(g => g.id === groupId) ?? null
+        return (this.config.store.groups as PartialProfileGroup<ProfileGroup>[]).find(g => g.id === groupId) ?? null
     }
 
     /**

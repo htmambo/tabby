@@ -54,7 +54,7 @@ class ZModemMiddleware extends SessionMiddleware {
             // where "OO" and the prompt arrive in the same chunk (Linux).
             // While trailingBuffer is active they are queued so the final
             // status messages can be printed first; otherwise forward directly.
-            to_terminal: data => {
+            to_terminal: (data: Uint8Array | string) => {
                 if (this.trailingBuffer) {
                     this.trailingBuffer.push(Buffer.from(data))
                 } else {
@@ -151,7 +151,7 @@ class ZModemMiddleware extends SessionMiddleware {
                 this.showMessage(colors.bgBlue.black(' ZMODEM ') + ' Complete')
             } else {
 const pendingReceives: Promise<void>[] = []
-                zsession.on('offer', xfer => {
+                zsession.on('offer', (xfer: any) => {
                     pendingReceives.push(this.receiveFile(xfer, zsession))
                 })
 

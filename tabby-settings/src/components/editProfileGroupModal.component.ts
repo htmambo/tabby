@@ -4,7 +4,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 import { Observable, OperatorFunction, debounceTime, map, distinctUntilChanged } from 'rxjs'
 import { ConfigProxy, ProfileGroup, Profile, ProfileProvider, PlatformService, TranslateService, PartialProfileGroup, ProfilesService, TAB_COLORS, isPlainEnter, isTextInputTarget } from 'tabby-core'
 
-const iconsData = require('../../../tabby-core/src/icons.json')
+const iconsData: Record<string, string[][]> = require('../../../tabby-core/src/icons.json')
 const iconsClassList = Object.keys(iconsData).map(
     icon => iconsData[icon].map(
         style => `fa${style[0]} fa-${icon}`,
@@ -72,7 +72,7 @@ export class EditProfileGroupModalComponent<G extends ProfileGroup> {
         this.selectedParentGroup = groups.find(g => g.id === this.group.parentGroupId) ?? undefined
     }
 
-    colorsAutocomplete = text$ => text$.pipe(
+    colorsAutocomplete = (text$: Observable<string>) => text$.pipe(
         debounceTime(200),
         distinctUntilChanged(),
         map((q: string) =>
@@ -82,7 +82,7 @@ export class EditProfileGroupModalComponent<G extends ProfileGroup> {
         ),
     )
 
-    colorsFormatter = value => {
+    colorsFormatter = (value: string) => {
         return TAB_COLORS.find(x => x.value === value)?.name ?? value
     }
 

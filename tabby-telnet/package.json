@@ -19,7 +19,6 @@
   "license": "MIT",
   "devDependencies": {
     "ansi-colors": "^4.1.1",
-    "@types/node": "20.19.37"
     "@types/node": "22"
   },
   "peerDependencies": {

@@ -6,9 +6,9 @@ import { getEnvironment, substituteEnv } from './environment'
 
 const windowsDirectoryRegex = /([a-zA-Z]:[^\:\[\]\?\"\<\>\|]+)/mi
 
-function mergeEnv (...envs) {
-    const result = {}
-    const keyMap = {}
+function mergeEnv (...envs: Record<string, string>[]) {
+    const result: Record<string, string> = {}
+    const keyMap: Record<string, string> = {}
     for (const env of envs) {
         for (const [key, value] of Object.entries(env)) {
             // const lookup = process.platform === 'win32' ? key.toLowerCase() : key

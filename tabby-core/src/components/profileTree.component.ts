@@ -81,7 +81,7 @@ export class ProfileTreeComponent extends BaseComponent {
     }
 
     private async editProfile (profile: PartialProfile<Profile>): Promise<void> {
-        const { EditProfileModalComponent } = window['nodeRequire']('tabby-settings')
+        const { EditProfileModalComponent } = (window as any).nodeRequire('tabby-settings')
         const modal = this.ngbModal.open(
             EditProfileModalComponent,
             { size: 'lg' },
@@ -103,7 +103,7 @@ export class ProfileTreeComponent extends BaseComponent {
     }
 
     private async editProfileGroup (group: PartialProfileGroup<CollapsableProfileGroup>): Promise<void> {
-        const { EditProfileGroupModalComponent } = window['nodeRequire']('tabby-settings')
+        const { EditProfileGroupModalComponent } = (window as any).nodeRequire('tabby-settings')
 
         const modal = this.ngbModal.open(
             EditProfileGroupModalComponent,
@@ -128,7 +128,7 @@ export class ProfileTreeComponent extends BaseComponent {
     }
 
     private async editProfileGroupDefaults (group: PartialProfileGroup<CollapsableProfileGroup>, provider: ProfileProvider<Profile>): Promise<void> {
-        const { EditProfileModalComponent } = window['nodeRequire']('tabby-settings')
+        const { EditProfileModalComponent } = (window as any).nodeRequire('tabby-settings')
 
         const modal = this.ngbModal.open(
             EditProfileModalComponent,

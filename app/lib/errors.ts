@@ -5,7 +5,8 @@ import * as path from 'path'
 
 // This module is imported before any other main-process module so that errors thrown
 // while importing those modules (which run before index.ts's own body) still get logged.
-nodeModule.enableCompileCache?.()
+// enableCompileCache landed in Node 22.1; @types/node 20 doesn't know it yet.
+(nodeModule as any).enableCompileCache?.()
 
 export function logMainError (label: string, err: unknown): void {
     const detail = err instanceof Error ? err.stack ?? err.message : String(err)

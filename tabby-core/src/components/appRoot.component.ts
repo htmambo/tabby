@@ -558,21 +558,6 @@ if (hotkey === 'rename-tab') {
                 document.body.classList.remove('resizing')
             }, 200)
         })
-
-        // While the window is being dragged, suppress the split-pane layout
-        // transition (see splitTab.component.scss). Animating pane geometry on
-        // every resize frame triggers a full-layer repaint that flickers the
-        // terminal; the transition is only wanted for split/close/maximize.
-        let resizeEndTimeout: any = null
-        window.addEventListener('resize', () => {
-            document.body.classList.add('resizing')
-            if (resizeEndTimeout) {
-                clearTimeout(resizeEndTimeout)
-            }
-            resizeEndTimeout = setTimeout(() => {
-                document.body.classList.remove('resizing')
-            }, 200)
-        })
     }
 
     @HostListener('dragover')
@@ -603,12 +588,6 @@ if (hotkey === 'rename-tab') {
 
     onTabsReordered (event: CdkDragDrop<BaseTabComponent[]>) {
         const tab: BaseTabComponent = event.item.data
-        if (!this.app.tabs.includes(tab)) {
-            if (tab.parent instanceof SplitTabComponent) {
-                tab.parent.removeTab(tab)
-                this.app.wrapAndAddTab(tab)
-            }
-        }
         if (this.app.tabs.includes(tab)) {
             moveItemInArray(this.app.tabs, event.previousIndex, event.currentIndex)
             this.app.moveTabToIndex(tab, event.currentIndex)

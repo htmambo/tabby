@@ -106,7 +106,7 @@ const registerEvent = (
                     if (this.destroyed) {
                         return
                     }
-                    this._keyEvent.next(event)
+                    this._keyEvent.next(event as KeyboardEvent|WheelEvent|MouseEvent)
                     this.pushKeyEvent(eventType, event as any)
                     if (hostApp.platform === Platform.Web && this.matchActiveHotkey(true) !== null) {
                         event.preventDefault()
@@ -154,7 +154,7 @@ if (hostApp.platform === Platform.Web && this.matchActiveHotkey(true) !== null) 
             return
         }
 
-        if (isIMEKeyboardEvent(nativeEvent)) {
+        if (nativeEvent instanceof KeyboardEvent && isIMEKeyboardEvent(nativeEvent)) {
             this.clearCurrentKeystrokes()
             this.lastEventTimestamp = nativeEvent.timeStamp
             return

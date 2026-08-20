@@ -30,5 +30,8 @@
     "rxjs": "^7",
     "tabby-core": "*",
     "tabby-settings": "*"
+  },
+  "dependencies": {
+    "axios": "^1.19.0"
   }
 }

@@ -39,7 +39,7 @@ export class OSCProcessor extends SessionMiddleware {
 
             // Look for suffix after the prefix
             const suffixSearchStart = prefixIndex + OSCPrefix.length
-            let foundSuffix: [Buffer, number] | null = null
+            let foundSuffix: [string, number] | null = null
 
             for (const suffix of OSCSuffixes) {
                 const suffixIndex = data.indexOf(suffix, suffixSearchStart)

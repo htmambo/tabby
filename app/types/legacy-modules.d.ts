@@ -1,4 +1,3 @@
-declare module 'lru-cache';
 declare module 'uuid';
 declare module 'shell-quote';
 declare module 'glasstron';
@@ -9,3 +8,4 @@ declare module 'native-process-working-directory';
 declare module 'hexer';
 declare module 'buffer-replace';
 declare module 'binstring';
+declare module '@npmcli/arborist';
